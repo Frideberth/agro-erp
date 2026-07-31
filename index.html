@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minha Fazenda — Caderno de Gestão</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#1C2818;
+    --panel:#223020;
+    --panel-line:#33452D;
+    --paper:#F1E9D2;
+    --paper-2:#E8DCB9;
+    --paper-line:#CBB98C;
+    --ink:#2A2016;
+    --ink-soft:#6B5D46;
+    --accent:#C98A2B;
+    --accent-dark:#9C6A1E;
+    --growth:#4F7942;
+    --growth-dark:#3B5B32;
+    --cost:#A23E2E;
+    --cost-dark:#7E2F22;
+    --khaki:#8B8368;
+    --radius:6px;
+    --shadow: 0 2px 0 rgba(0,0,0,0.15), 0 8px 20px -12px rgba(0,0,0,0.5);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    background-image:linear-gradient(rgba(0,0,0,0.12) 1px, transparent 1px);
+    background-size: 100% 3px;
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+  }
+  a{color:inherit;}
+  button{font-family:inherit; cursor:pointer;}
+  input,select{font-family:inherit;}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+  #app{display:grid; grid-template-columns:232px 1fr; min-height:100vh;}
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    background:var(--panel);
+    border-right:1px solid var(--panel-line);
+    padding:22px 16px;
+    display:flex; flex-direction:column; gap:18px;
+    position:sticky; top:0; height:100vh; overflow-y:auto;
+  }
+  .brand{display:flex; align-items:center; gap:10px; padding:0 4px;}
+  .brand-mark{
+    width:34px; height:34px; border-radius:50%;
+    background:var(--accent); color:var(--panel);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Zilla Slab', serif; font-weight:700; font-size:17px; flex:none;
+  }
+  .brand-text{display:flex; flex-direction:column; line-height:1.25;}
+  .brand-text strong{font-family:'Zilla Slab', serif; font-size:16px; color:var(--paper); letter-spacing:0.2px;}
+  .brand-text span{font-size:11px; color:#9FAE93; text-transform:uppercase; letter-spacing:0.08em;}
+
+  nav{display:flex; flex-direction:column; gap:2px;}
+  .nav-group-label{
+    font-size:10px; text-transform:uppercase; letter-spacing:0.08em;
+    color:#7C8A70; font-weight:700; padding:12px 12px 2px;
+  }
+  .nav-btn{
+    display:flex; align-items:center; gap:10px;
+    background:transparent; border:1px solid transparent;
+    color:#C7D0BC; text-align:left; padding:9px 12px;
+    border-radius:var(--radius); font-size:13.5px; font-weight:500;
+    transition:background .15s ease, color .15s ease;
+  }
+  .nav-btn:hover{background:rgba(255,255,255,0.05); color:var(--paper);}
+  .nav-btn.active{background:var(--accent); color:#241704; font-weight:600;}
+  .sidebar-footer{margin-top:auto; font-size:11px; color:#7C8A70; line-height:1.5; padding:0 4px;}
+
+  /* ---------- Main ---------- */
+  main{padding:28px 34px 60px; max-width:1180px;}
+  .topbar{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:8px;}
+  .topbar h1{font-family:'Zilla Slab', serif; font-size:28px; color:var(--paper); margin:0; font-weight:600;}
+  .topbar .subtitle{color:#8E9B82; font-size:13px; margin-top:2px;}
+  #loading-indicator{color:#9FAE93; font-size:12.5px; font-style:italic; max-width:260px; text-align:right;}
+  #loading-indicator.hidden{display:none;}
+  .tab-content.hidden{display:none;}
+
+  /* ---------- Cards / paper ---------- */
+  .paper{background:var(--paper); border:1px solid var(--paper-line); border-radius:var(--radius); box-shadow:var(--shadow);}
+  .stat-row{display:grid; grid-template-columns:repeat(auto-fit, minmax(170px,1fr)); gap:14px; margin-bottom:24px;}
+  .stat-card{padding:16px 18px;}
+  .stat-card .label{font-size:11px; text-transform:uppercase; letter-spacing:0.07em; color:var(--ink-soft); font-weight:600;}
+  .stat-card .value{font-family:'JetBrains Mono', monospace; font-size:22px; font-weight:600; margin-top:6px; color:var(--ink);}
+  .stat-card .value.growth{color:var(--growth-dark);}
+  .stat-card .value.cost{color:var(--cost-dark);}
+
+  .section-title{font-family:'Zilla Slab', serif; font-size:18px; font-weight:600; color:var(--paper); margin:26px 0 12px;}
+  .section-title:first-child{margin-top:0;}
+
+  .alert-box{padding:14px 18px; margin-bottom:8px;}
+  .alert-box div{font-size:13.5px; margin-bottom:6px;}
+  .alert-box div:last-child{margin-bottom:0;}
+
+  .note-box{padding:12px 18px; margin-top:16px; font-size:12px; color:var(--ink-soft);}
+
+  /* ---------- Plot map ---------- */
+  .plot-map{display:flex; flex-wrap:wrap; gap:10px; padding:16px; background:var(--paper); border:1px solid var(--paper-line); border-radius:var(--radius); box-shadow:var(--shadow);}
+  .plot{
+    position:relative; min-width:130px; flex:1 1 130px; max-width:220px; aspect-ratio:4/3;
+    border-radius:4px; border:1px solid rgba(0,0,0,0.18); padding:10px;
+    display:flex; flex-direction:column; justify-content:space-between; color:#1B1508;
+    background-image: repeating-linear-gradient(100deg, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 2px, transparent 2px, transparent 9px);
+  }
+  .plot.status-andamento{background-color:#DFA84E;}
+  .plot.status-planejada{background-color:#C9C3A4;}
+  .plot.status-colhida{background-color:#7FA36D;}
+  .plot.status-none{background-color:#DCD2AE; opacity:.75;}
+  .plot .plot-name{font-family:'Zilla Slab', serif; font-weight:600; font-size:14px;}
+  .plot .plot-area{font-family:'JetBrains Mono', monospace; font-size:11px; opacity:.85;}
+  .plot .plot-crop{font-size:12px; font-weight:600;}
+  .plot .plot-status{align-self:flex-start; font-size:10px; text-transform:uppercase; letter-spacing:0.05em; background:rgba(255,255,255,0.55); padding:2px 6px; border-radius:3px; font-weight:600;}
+
+  /* ---------- Recent lists ---------- */
+  .list-card{padding:6px 0;}
+  .list-row{padding:8px 16px; border-bottom:1px solid var(--paper-2); font-size:13px; display:flex; justify-content:space-between; gap:8px;}
+  .list-row:last-child{border-bottom:none;}
+  .list-row .flag-late{color:var(--cost-dark); font-weight:700; font-size:10.5px; text-transform:uppercase; margin-left:6px;}
+
+  /* ---------- Property cards (nested talhões) ---------- */
+  .property-card{padding:16px 18px; margin-bottom:14px;}
+  .property-head{display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px;}
+  .property-title{font-family:'Zilla Slab', serif; font-size:16px; font-weight:600;}
+  .property-sub{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+  .property-sublabel{margin-top:14px; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:700;}
+
+  /* ---------- Forms ---------- */
+  .form-card{padding:16px 18px; margin-bottom:20px;}
+  .form-card h3{font-family:'Zilla Slab', serif; margin:0 0 12px; font-size:15px; color:var(--ink); border-bottom:1px dashed var(--paper-line); padding-bottom:8px;}
+  form.entry-form{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:12px; align-items:end;}
+  .field{display:flex; flex-direction:column; gap:4px;}
+  .field label{font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em;}
+  .field input, .field select{padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; color:var(--ink); font-size:13px;}
+  .field input:focus, .field select:focus{border-color:var(--accent);}
+  .btn{padding:9px 16px; border-radius:4px; border:none; font-size:13px; font-weight:600; background:var(--accent); color:#241704; transition:background .15s ease;}
+  .btn:hover{background:var(--accent-dark); color:var(--paper);}
+  .btn-del{background:transparent; border:1px solid var(--cost); color:var(--cost-dark); padding:4px 9px; font-size:11px; border-radius:4px; font-weight:600;}
+  .btn-del:hover{background:var(--cost); color:#fff;}
+
+  /* ---------- Tables ---------- */
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  thead th{text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-soft); border-bottom:1px solid var(--paper-line); padding:8px 10px; font-weight:600;}
+  tbody td{padding:9px 10px; border-bottom:1px solid var(--paper-2);}
+  tbody tr:last-child td{border-bottom:none;}
+  .num{font-family:'JetBrains Mono', monospace;}
+  .num.growth{color:var(--growth-dark); font-weight:600;}
+  .num.cost{color:var(--cost-dark); font-weight:600;}
+  .badge{font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; padding:2px 7px; border-radius:3px; font-weight:700;}
+  .badge.status-andamento{background:#DFA84E; color:#241704;}
+  .badge.status-planejada{background:#C9C3A4; color:#241704;}
+  .badge.status-colhida{background:#7FA36D; color:#0E1D0A;}
+  .badge.tipo-custo{background:var(--cost); color:#fff;}
+  .badge.tipo-receita{background:var(--growth); color:#fff;}
+
+  .empty-state{padding:30px 20px; text-align:center; color:var(--ink-soft); font-size:13.5px;}
+  .table-wrap{overflow-x:auto;}
+
+  @media (max-width: 820px){
+    #app{grid-template-columns:1fr;}
+    .sidebar{position:sticky; top:0; z-index:10; height:auto; flex-direction:row; align-items:center; padding:12px 14px; gap:14px; overflow-x:auto; overflow-y:visible;}
+    .brand-text span{display:none;}
+    nav{flex-direction:row;}
+    .nav-group-label{display:none;}
+    .sidebar-footer{display:none;}
+    main{padding:20px 16px 50px;}
+  }
+
+  .no-print{}
+  @media print{
+    .sidebar, #loading-indicator, .form-card, .btn-del, .no-print{display:none !important;}
+    #app{display:block;}
+    main{padding:0; max-width:100%;}
+    body{background:#fff;}
+    .paper{box-shadow:none; border:1px solid #ccc;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">⌂</div>
+      <div class="brand-text"><strong>Minha Fazenda</strong><span>Caderno de gestão</span></div>
+    </div>
+    <nav id="nav">
+      <button class="nav-btn active" data-tab="painel">Dashboard</button>
+      <div class="nav-group-label">Cadastros</div>
+      <button class="nav-btn" data-tab="propriedades">Propriedades</button>
+      <button class="nav-btn" data-tab="talhoes">Talhões</button>
+      <button class="nav-btn" data-tab="safras">Safras</button>
+      <button class="nav-btn" data-tab="culturas">Culturas</button>
+      <button class="nav-btn" data-tab="produtos">Produtos</button>
+      <button class="nav-btn" data-tab="parceiros">Parceiros</button>
+      <button class="nav-btn" data-tab="equipe">Equipe</button>
+      <button class="nav-btn" data-tab="patrimonio">Patrimônio</button>
+      <div class="nav-group-label">Produção</div>
+      <button class="nav-btn" data-tab="producao">Estoque de Colheita</button>
+      <div class="nav-group-label">Operações</div>
+      <button class="nav-btn" data-tab="operacoes">Diário de Campo</button>
+      <div class="nav-group-label">Financeiro</div>
+      <button class="nav-btn" data-tab="financeiro">Lançamentos</button>
+      <button class="nav-btn" data-tab="pagamentos">Pagamentos</button>
+      <button class="nav-btn" data-tab="contasPagar">Contas a Pagar</button>
+      <button class="nav-btn" data-tab="contasReceber">Contas a Receber</button>
+      <div class="nav-group-label">Análise</div>
+      <button class="nav-btn" data-tab="rentabilidade">Rentabilidade</button>
+      <button class="nav-btn" data-tab="fluxoCaixa">Fluxo de Caixa</button>
+      <div class="nav-group-label">Inteligência</div>
+      <button class="nav-btn" data-tab="indicadores">Indicadores</button>
+    </nav>
+    <div class="sidebar-footer">Dados compartilhados com quem acessa este app.</div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div>
+        <h1 id="page-title">Dashboard</h1>
+        <div class="subtitle" id="page-subtitle">Visão geral da propriedade</div>
+      </div>
+      <div id="loading-indicator">Carregando dados…</div>
+    </div>
+
+    <section id="tab-painel" class="tab-content"></section>
+    <section id="tab-propriedades" class="tab-content hidden"></section>
+    <section id="tab-talhoes" class="tab-content hidden"></section>
+    <section id="tab-safras" class="tab-content hidden"></section>
+    <section id="tab-culturas" class="tab-content hidden"></section>
+    <section id="tab-produtos" class="tab-content hidden"></section>
+    <section id="tab-parceiros" class="tab-content hidden"></section>
+    <section id="tab-equipe" class="tab-content hidden"></section>
+    <section id="tab-patrimonio" class="tab-content hidden"></section>
+    <section id="tab-producao" class="tab-content hidden"></section>
+    <section id="tab-operacoes" class="tab-content hidden"></section>
+    <section id="tab-financeiro" class="tab-content hidden"></section>
+    <section id="tab-pagamentos" class="tab-content hidden"></section>
+    <section id="tab-contasPagar" class="tab-content hidden"></section>
+    <section id="tab-contasReceber" class="tab-content hidden"></section>
+    <section id="tab-rentabilidade" class="tab-content hidden"></section>
+    <section id="tab-fluxoCaixa" class="tab-content hidden"></section>
+    <section id="tab-indicadores" class="tab-content hidden"></section>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber'];
+  var state = {};
+  ALL_KEYS.forEach(function(k){ state[k] = []; });
+
+  var pageMeta = {
+    painel: {title:'Dashboard', subtitle:'Visão geral da propriedade'},
+    propriedades: {title:'Propriedades', subtitle:'Áreas e imóveis rurais cadastrados'},
+    talhoes: {title:'Talhões', subtitle:'Áreas cadastradas na propriedade'},
+    safras: {title:'Safras', subtitle:'Ciclos de plantio e colheita'},
+    culturas: {title:'Culturas', subtitle:'Tipos de cultura cultivados'},
+    produtos: {title:'Produtos', subtitle:'Insumos, defensivos e controle de estoque'},
+    parceiros: {title:'Parceiros', subtitle:'Fornecedores e clientes'},
+    equipe: {title:'Equipe', subtitle:'Pessoas com acesso ao caderno'},
+    patrimonio: {title:'Patrimônio', subtitle:'Máquinas, veículos e benfeitorias, com valor depreciado'},
+    producao: {title:'Estoque de Colheita', subtitle:'Produção colhida, saídas e valor projetado'},
+    operacoes: {title:'Diário de Campo', subtitle:'Atividades registradas na propriedade'},
+    financeiro: {title:'Financeiro', subtitle:'Custos, receitas e valor projetado em estoque'},
+    pagamentos: {title:'Pagamentos', subtitle:'Funcionários e prestadores de serviço'},
+    contasPagar: {title:'Contas a Pagar', subtitle:'Obrigações futuras com fornecedores e outros'},
+    contasReceber: {title:'Contas a Receber', subtitle:'Valores a receber de clientes e parceiros'},
+    rentabilidade: {title:'Rentabilidade', subtitle:'Gastos, receitas e potencial de geração de caixa por talhão e cultura'},
+    fluxoCaixa: {title:'Fluxo de Caixa', subtitle:'Projeção mensal de entradas e saídas'},
+    indicadores: {title:'Indicadores', subtitle:'Gráficos, dashboards e exportação para Excel e PDF'}
+  };
+
+  var STATUS_LABEL = {andamento:'Em andamento', planejada:'Planejada', colhida:'Colhida'};
+  var OPERACAO_TIPOS = ['Plantio','Pulverização','Adubação','Colheita','Compra','Venda'];
+  var OPERACAO_COLORS = {'Plantio':'#7FA36D','Pulverização':'#C98A2B','Adubação':'#8B8368','Colheita':'#4F7942','Compra':'#A9B7C6','Venda':'#DFA84E'};
+  var CATEGORIAS_CUSTO = ['Insumos','Mão de obra','Maquinário','Combustível','Sementes','Defensivos','Outros'];
+  var CATEGORIAS_RECEITA = ['Venda de colheita','Arrendamento','Outros'];
+  var MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+  function calcDepreciacao(item){
+    var valor = Number(item.valor) || 0;
+    var vidaUtil = Number(item.vidaUtilAnos) || 0;
+    if(!item.dataAquisicao || !vidaUtil) return valor;
+    var aquisicao = new Date(item.dataAquisicao);
+    if(isNaN(aquisicao.getTime())) return valor;
+    var hoje = new Date();
+    var anos = (hoje - aquisicao) / (365.25 * 24 * 3600 * 1000);
+    if(anos < 0) anos = 0;
+    var fracao = Math.min(anos / vidaUtil, 1);
+    var atual = valor - (valor * fracao);
+    return Math.max(atual, 0);
+  }
+
+  function talhaoOptionsFn(){ return [{value:'', label:'—'}].concat(state.talhoes.map(function(t){ return {value:t.id, label:t.nome}; })); }
+  function parceiroOptionsFn(){ return [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })); }
+
+  var ENTITY_CONFIGS = {
+    propriedades: {
+      label: 'Propriedade',
+      fields: [
+        {name:'nome', type:'text', label:'Nome', required:true, placeholder:'Ex: Fazenda Santa Luzia'},
+        {name:'areaTotal', type:'number', label:'Área total (ha)', extra:{step:'0.01', min:'0'}, placeholder:'0'},
+        {name:'cidade', type:'text', label:'Cidade', placeholder:'Ex: Uberlândia'},
+        {name:'estado', type:'text', label:'UF', placeholder:'Ex: MG'}
+      ],
+      columns: [
+        {key:'nome', label:'Nome'},
+        {key:'areaTotal', label:'Área', format:'ha'},
+        {key:'cidade', label:'Cidade'},
+        {key:'estado', label:'UF'}
+      ]
+    },
+    culturas: {
+      label: 'Cultura',
+      fields: [
+        {name:'nome', type:'text', label:'Nome', required:true, placeholder:'Ex: Soja'},
+        {name:'cicloDias', type:'number', label:'Ciclo (dias)', extra:{step:'1', min:'0'}, placeholder:'0'}
+      ],
+      columns: [
+        {key:'nome', label:'Nome'},
+        {key:'cicloDias', label:'Ciclo (dias)', format:'num'}
+      ]
+    },
+    produtos: {
+      label: 'Produto',
+      fields: [
+        {name:'nome', type:'text', label:'Nome', required:true, placeholder:'Ex: Adubo NPK'},
+        {name:'categoria', type:'select', label:'Categoria', options:['Insumo','Defensivo','Semente','Combustível','Outro'].map(function(c){return {value:c,label:c};})},
+        {name:'unidade', type:'text', label:'Unidade', placeholder:'Ex: kg, L, sc'},
+        {name:'estoqueAtual', type:'number', label:'Estoque atual', extra:{step:'0.01', min:'0'}, placeholder:'0'},
+        {name:'estoqueMinimo', type:'number', label:'Estoque mínimo', extra:{step:'0.01', min:'0'}, placeholder:'0'}
+      ],
+      columns: [
+        {key:'nome', label:'Nome'},
+        {key:'categoria', label:'Categoria'},
+        {key:'unidade', label:'Unidade'},
+        {key:'estoqueAtual', label:'Estoque', format:'num'},
+        {key:'estoqueMinimo', label:'Mínimo', format:'num'}
+      ]
+    },
+    parceiros: {
+      label: 'Parceiro',
+      fields: [
+        {name:'nome', type:'text', label:'Nome', required:true, placeholder:'Ex: Cooperativa Central'},
+        {name:'tipo', type:'select', label:'Tipo', options:['Fornecedor','Cliente','Fornecedor e Cliente'].map(function(c){return {value:c,label:c};})},
+        {name:'contato', type:'text', label:'Contato', placeholder:'Telefone ou e-mail'}
+      ],
+      columns: [
+        {key:'nome', label:'Nome'},
+        {key:'tipo', label:'Tipo'},
+        {key:'contato', label:'Contato'}
+      ]
+    },
+    patrimonio: {
+      label: 'item de patrimônio',
+      fields: [
+        {name:'nome', type:'text', label:'Nome', required:true, placeholder:'Ex: Trator Massey 275'},
+        {name:'categoria', type:'select', label:'Categoria', options:['Máquina','Veículo','Benfeitoria','Outro'].map(function(c){return {value:c,label:c};})},
+        {name:'status', type:'select', label:'Status', options:['Operando','Em manutenção','Parado'].map(function(c){return {value:c,label:c};})},
+        {name:'valor', type:'number', label:'Valor de compra (R$)', extra:{step:'0.01', min:'0'}, placeholder:'0,00'},
+        {name:'dataAquisicao', type:'date', label:'Data de aquisição'},
+        {name:'vidaUtilAnos', type:'number', label:'Vida útil (anos)', extra:{step:'1', min:'1'}, placeholder:'10'}
+      ],
+      columns: [
+        {key:'nome', label:'Nome'},
+        {key:'categoria', label:'Categoria'},
+        {key:'status', label:'Status', format:'badge', colors:{'Operando':'#7FA36D','Em manutenção':'#DFA84E','Parado':'#D79A8A'}},
+        {key:'valor', label:'Valor de compra', format:'brl'},
+        {key:'valorAtual', label:'Valor atual (depreciado)', format:'brl', compute: calcDepreciacao}
+      ]
+    },
+    pagamentos: {
+      label: 'pagamento',
+      fields: [
+        {name:'tipo', type:'select', label:'Tipo', options:['Funcionário','Prestador de Serviço'].map(function(c){return {value:c,label:c};})},
+        {name:'beneficiario', type:'text', label:'Nome', required:true, placeholder:'Pessoa ou empresa'},
+        {name:'categoria', type:'select', label:'Categoria', options:['Salário','Diária','Empreitada','Serviço','Outro'].map(function(c){return {value:c,label:c};})},
+        {name:'valor', type:'number', label:'Valor (R$)', required:true, extra:{step:'0.01', min:'0'}, placeholder:'0,00'},
+        {name:'vencimento', type:'date', label:'Vencimento'},
+        {name:'status', type:'select', label:'Status', options:['Pendente','Pago'].map(function(c){return {value:c,label:c};})},
+        {name:'dataPagamento', type:'date', label:'Data do pagamento'},
+        {name:'talhaoId', type:'select', label:'Talhão (opcional)', optionsFn: talhaoOptionsFn},
+        {name:'observacao', type:'text', label:'Observação', placeholder:''}
+      ],
+      columns: [
+        {key:'beneficiario', label:'Beneficiário'},
+        {key:'tipo', label:'Tipo'},
+        {key:'categoria', label:'Categoria'},
+        {key:'valor', label:'Valor', format:'brl'},
+        {key:'vencimento', label:'Vencimento', format:'date'},
+        {key:'status', label:'Status', format:'badge', colors:{'Pendente':'#DFA84E','Pago':'#7FA36D'}}
+      ]
+    },
+    contasPagar: {
+      label: 'conta a pagar',
+      fields: [
+        {name:'descricao', type:'text', label:'Descrição', required:true, placeholder:'Ex: Fatura de fertilizante'},
+        {name:'categoria', type:'select', label:'Categoria', options:['Fornecedor','Insumo','Financiamento','Imposto','Aluguel','Outro'].map(function(c){return {value:c,label:c};})},
+        {name:'parceiroId', type:'select', label:'Parceiro (opcional)', optionsFn: parceiroOptionsFn},
+        {name:'talhaoId', type:'select', label:'Talhão (opcional)', optionsFn: talhaoOptionsFn},
+        {name:'valor', type:'number', label:'Valor (R$)', required:true, extra:{step:'0.01', min:'0'}, placeholder:'0,00'},
+        {name:'vencimento', type:'date', label:'Vencimento'},
+        {name:'status', type:'select', label:'Status', options:['Pendente','Pago'].map(function(c){return {value:c,label:c};})},
+        {name:'dataPagamento', type:'date', label:'Data do pagamento'}
+      ],
+      columns: [
+        {key:'descricao', label:'Descrição'},
+        {key:'categoria', label:'Categoria'},
+        {key:'valor', label:'Valor', format:'brl'},
+        {key:'vencimento', label:'Vencimento', format:'date'},
+        {key:'status', label:'Status', format:'badge', colors:{'Pendente':'#DFA84E','Pago':'#7FA36D'}}
+      ]
+    },
+    contasReceber: {
+      label: 'conta a receber',
+      fields: [
+        {name:'descricao', type:'text', label:'Descrição', required:true, placeholder:'Ex: Venda de soja - lote 2'},
+        {name:'categoria', type:'select', label:'Categoria', options:['Venda de colheita','Arrendamento','Outro'].map(function(c){return {value:c,label:c};})},
+        {name:'parceiroId', type:'select', label:'Parceiro (opcional)', optionsFn: parceiroOptionsFn},
+        {name:'talhaoId', type:'select', label:'Talhão (opcional)', optionsFn: talhaoOptionsFn},
+        {name:'valor', type:'number', label:'Valor (R$)', required:true, extra:{step:'0.01', min:'0'}, placeholder:'0,00'},
+        {name:'vencimento', type:'date', label:'Vencimento'},
+        {name:'status', type:'select', label:'Status', options:['Pendente','Recebido'].map(function(c){return {value:c,label:c};})},
+        {name:'dataRecebimento', type:'date', label:'Data do recebimento'}
+      ],
+      columns: [
+        {key:'descricao', label:'Descrição'},
+        {key:'categoria', label:'Categoria'},
+        {key:'valor', label:'Valor', format:'brl'},
+        {key:'vencimento', label:'Vencimento', format:'date'},
+        {key:'status', label:'Status', format:'badge', colors:{'Pendente':'#DFA84E','Recebido':'#7FA36D'}}
+      ]
+    }
+  };
+
+  function uid(){
+    if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+  }
+  function fmtBRL(n){ return (Number(n) || 0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
+  function fmtHa(n){ return (Number(n) || 0).toLocaleString('pt-BR', {maximumFractionDigits:2}) + ' ha'; }
+  function fmtNum(n){ return (Number(n) || 0).toLocaleString('pt-BR', {maximumFractionDigits:2}); }
+  function fmtDate(d){
+    if(!d) return '—';
+    var parts = d.split('-');
+    if(parts.length !== 3) return d;
+    return parts[2] + '/' + parts[1] + '/' + parts[0];
+  }
+  function monthLabel(ym){
+    var parts = ym.split('-');
+    var idx = parseInt(parts[1], 10) - 1;
+    return (MESES[idx] || parts[1]) + '/' + parts[0];
+  }
+  function escapeHtml(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  /* ---------------- Storage ---------------- */
+  var hasCloudStorage = !!(window.storage && typeof window.storage.get === 'function');
+  var hasLocalStorage = (function(){
+    try{ var k='__fazenda_test__'; window.localStorage.setItem(k,'1'); window.localStorage.removeItem(k); return true; }
+    catch(e){ return false; }
+  })();
+  var LS_PREFIX = 'fazenda:';
+
+  function loadKey(key){
+    if(hasCloudStorage){
+      return Promise.resolve()
+        .then(function(){ return window.storage.get(key, true); })
+        .then(function(res){ return res && res.value ? JSON.parse(res.value) : []; })
+        .catch(function(){ return []; });
+    }
+    if(hasLocalStorage){
+      try{
+        var raw = window.localStorage.getItem(LS_PREFIX + key);
+        return Promise.resolve(raw ? JSON.parse(raw) : []);
+      }catch(e){ return Promise.resolve([]); }
+    }
+    return Promise.resolve([]);
+  }
+  function saveKey(key, arr){
+    if(hasCloudStorage){
+      return Promise.resolve()
+        .then(function(){ return window.storage.set(key, JSON.stringify(arr), true); })
+        .catch(function(err){ console.error('Erro ao salvar', key, err); });
+    }
+    if(hasLocalStorage){
+      try{ window.localStorage.setItem(LS_PREFIX + key, JSON.stringify(arr)); }catch(e){ console.error('Erro ao salvar', key, e); }
+    }
+    return Promise.resolve();
+  }
+
+  function init(){
+    var loading = document.getElementById('loading-indicator');
+    if(!hasCloudStorage && !hasLocalStorage){
+      loading.textContent = 'Sem armazenamento disponível neste navegador — os dados não serão salvos ao recarregar.';
+    }
+    Promise.all(ALL_KEYS.map(loadKey))
+      .catch(function(){ return ALL_KEYS.map(function(){ return []; }); })
+      .then(function(results){
+        ALL_KEYS.forEach(function(k, i){ state[k] = results[i] || []; });
+        if(hasCloudStorage || hasLocalStorage) loading.classList.add('hidden');
+        renderAll();
+      })
+      .catch(function(err){ console.error('Falha ao iniciar o app', err); renderAll(); });
+  }
+
+  /* ---------------- Derived helpers ---------------- */
+  function safraAtualDoTalhao(talhaoId){
+    var list = state.safras.filter(function(s){ return s.talhaoId === talhaoId; });
+    if(!list.length) return null;
+    list.sort(function(a,b){ return (b.criadoEm||0) - (a.criadoEm||0); });
+    return list[0];
+  }
+  function talhaoNome(id){ var t = state.talhoes.find(function(t){ return t.id === id; }); return t ? t.nome : '—'; }
+  function culturaNome(id){ var c = state.culturas.find(function(c){ return c.id === id; }); return c ? c.nome : '—'; }
+  function propriedadeNome(id){ var p = state.propriedades.find(function(p){ return p.id === id; }); return p ? p.nome : '—'; }
+  function produtoNome(id){ var p = state.produtos.find(function(p){ return p.id === id; }); return p ? p.nome : '—'; }
+  function parceiroNome(id){ var p = state.parceiros.find(function(p){ return p.id === id; }); return p ? p.nome : '—'; }
+  function membroNome(id){ var m = state.equipe.find(function(m){ return m.id === id; }); return m ? m.nome : '—'; }
+  function safraLabel(id){
+    var s = state.safras.find(function(s){ return s.id === id; });
+    if(!s) return '—';
+    return talhaoNome(s.talhaoId) + ' · ' + culturaNome(s.culturaId);
+  }
+
+  function estoquePorSafra(){
+    var map = {};
+    state.producao.forEach(function(p){
+      if(!map[p.safraId]) map[p.safraId] = {entrada:0, saida:0, precoSoma:0, precoCount:0};
+      if(p.tipo === 'entrada'){
+        map[p.safraId].entrada += Number(p.quantidade) || 0;
+        if(Number(p.precoUnitario) > 0){ map[p.safraId].precoSoma += Number(p.precoUnitario); map[p.safraId].precoCount++; }
+      } else {
+        map[p.safraId].saida += Number(p.quantidade) || 0;
+      }
+    });
+    return map;
+  }
+  function estoqueResumo(){
+    var estoque = estoquePorSafra();
+    var total = 0;
+    var itens = Object.keys(estoque).map(function(sid){
+      var e = estoque[sid];
+      var qtd = e.entrada - e.saida;
+      var preco = e.precoCount ? (e.precoSoma / e.precoCount) : 0;
+      var valor = Math.max(qtd, 0) * preco;
+      total += valor;
+      return {safraId: sid, qtd: qtd, preco: preco, valor: valor};
+    });
+    return {total: total, itens: itens};
+  }
+  function estoqueValorPorSafraIds(safraIds){
+    var estoque = estoquePorSafra();
+    var total = 0;
+    safraIds.forEach(function(sid){
+      var e = estoque[sid];
+      if(!e) return;
+      var qtd = e.entrada - e.saida;
+      var preco = e.precoCount ? (e.precoSoma / e.precoCount) : 0;
+      total += Math.max(qtd, 0) * preco;
+    });
+    return total;
+  }
+
+  function contasAVencer(dias){
+    var hoje = new Date(); hoje.setHours(0,0,0,0);
+    var limite = new Date(hoje.getTime() + dias * 24 * 3600 * 1000);
+    var lista = [];
+    state.pagamentos.forEach(function(p){
+      if(p.status === 'Pendente' && p.vencimento){
+        var d = new Date(p.vencimento);
+        if(d <= limite) lista.push({desc:'Pagamento · ' + p.beneficiario, valor:Number(p.valor)||0, vencimento:p.vencimento, tipo:'saida', atrasado: d < hoje});
+      }
+    });
+    state.contasPagar.forEach(function(c){
+      if(c.status === 'Pendente' && c.vencimento){
+        var d = new Date(c.vencimento);
+        if(d <= limite) lista.push({desc:'A pagar · ' + c.descricao, valor:Number(c.valor)||0, vencimento:c.vencimento, tipo:'saida', atrasado: d < hoje});
+      }
+    });
+    state.contasReceber.forEach(function(c){
+      if(c.status === 'Pendente' && c.vencimento){
+        var d = new Date(c.vencimento);
+        if(d <= limite) lista.push({desc:'A receber · ' + c.descricao, valor:Number(c.valor)||0, vencimento:c.vencimento, tipo:'entrada', atrasado: d < hoje});
+      }
+    });
+    lista.sort(function(a,b){ return new Date(a.vencimento) - new Date(b.vencimento); });
+    return lista;
+  }
+
+  function buildCashEvents(){
+    var events = [];
+    state.financeiro.forEach(function(f){
+      events.push({date: f.data, valor: Number(f.valor)||0, tipo: f.tipo === 'receita' ? 'entrada' : 'saida', realizado:true});
+    });
+    state.pagamentos.forEach(function(p){
+      if(p.status === 'Pago'){ events.push({date: p.dataPagamento || p.vencimento, valor:Number(p.valor)||0, tipo:'saida', realizado:true}); }
+      else { events.push({date: p.vencimento, valor:Number(p.valor)||0, tipo:'saida', realizado:false}); }
+    });
+    state.contasPagar.forEach(function(c){
+      if(c.status === 'Pago'){ events.push({date: c.dataPagamento || c.vencimento, valor:Number(c.valor)||0, tipo:'saida', realizado:true}); }
+      else { events.push({date: c.vencimento, valor:Number(c.valor)||0, tipo:'saida', realizado:false}); }
+    });
+    state.contasReceber.forEach(function(c){
+      if(c.status === 'Recebido'){ events.push({date: c.dataRecebimento || c.vencimento, valor:Number(c.valor)||0, tipo:'entrada', realizado:true}); }
+      else { events.push({date: c.vencimento, valor:Number(c.valor)||0, tipo:'entrada', realizado:false}); }
+    });
+    return events.filter(function(e){ return e.date; });
+  }
+
+  /* ---------------- Tab switching ---------------- */
+  function switchTab(tab){
+    document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.tab === tab); });
+    document.querySelectorAll('.tab-content').forEach(function(sec){ sec.classList.toggle('hidden', sec.id !== 'tab-' + tab); });
+    document.getElementById('page-title').textContent = pageMeta[tab].title;
+    document.getElementById('page-subtitle').textContent = pageMeta[tab].subtitle;
+  }
+
+  function renderAll(){
+    renderPainel();
+    renderPropriedades();
+    renderTalhoes();
+    renderSafras();
+    renderGenericTab('culturas');
+    renderGenericTab('produtos');
+    renderGenericTab('parceiros');
+    renderEquipe();
+    renderGenericTab('patrimonio');
+    renderProducao();
+    renderOperacoes();
+    renderFinanceiro();
+    renderPagamentos();
+    renderContasPagar();
+    renderContasReceber();
+    renderRentabilidade();
+    renderFluxoCaixa();
+    renderIndicadores();
+  }
+
+  function statCard(label, value, valueClass){
+    return '<div class="paper stat-card"><div class="label">' + label + '</div><div class="value' + (valueClass ? ' ' + valueClass : '') + '">' + value + '</div></div>';
+  }
+
+  /* ---------------- Dashboard ---------------- */
+  function renderPainel(){
+    var el = document.getElementById('tab-painel');
+    var areaTotal = state.talhoes.reduce(function(sum,t){ return sum + (Number(t.area)||0); }, 0);
+    var safrasAndamento = state.safras.filter(function(s){ return s.status === 'andamento'; }).length;
+    var totalCustos = state.financeiro.filter(function(f){ return f.tipo === 'custo'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+    var totalReceitas = state.financeiro.filter(function(f){ return f.tipo === 'receita'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+    var saldo = totalReceitas - totalCustos;
+    var estoque = estoqueResumo();
+
+    var html = '';
+    html += '<div class="stat-row">';
+    html += statCard('Área total', fmtHa(areaTotal));
+    html += statCard('Propriedades', state.propriedades.length);
+    html += statCard('Talhões', state.talhoes.length);
+    html += statCard('Safras em andamento', safrasAndamento);
+    html += statCard('Saldo financeiro', fmtBRL(saldo), saldo >= 0 ? 'growth' : 'cost');
+    html += statCard('Produção em estoque', fmtBRL(estoque.total), 'growth');
+    html += '</div>';
+
+    var estoqueBaixo = state.produtos.filter(function(p){ return Number(p.estoqueMinimo) > 0 && Number(p.estoqueAtual) < Number(p.estoqueMinimo); });
+    var manutencao = state.patrimonio.filter(function(p){ return p.status === 'Em manutenção'; });
+    if(estoqueBaixo.length || manutencao.length){
+      html += '<div class="paper alert-box">';
+      if(estoqueBaixo.length){
+        html += '<div><strong style="color:var(--cost-dark);">Estoque abaixo do mínimo:</strong> ' + estoqueBaixo.map(function(p){ return escapeHtml(p.nome); }).join(', ') + '</div>';
+      }
+      if(manutencao.length){
+        html += '<div><strong style="color:var(--accent-dark);">Patrimônio em manutenção:</strong> ' + manutencao.map(function(p){ return escapeHtml(p.nome); }).join(', ') + '</div>';
+      }
+      html += '</div>';
+    }
+
+    var vencendo = contasAVencer(7);
+    if(vencendo.length){
+      html += '<div class="section-title">Contas a vencer (próximos 7 dias)</div>';
+      html += '<div class="paper list-card">';
+      vencendo.forEach(function(v){
+        html += '<div class="list-row"><span>' + escapeHtml(v.desc) + (v.atrasado ? '<span class="flag-late">Atrasado</span>' : '') + '</span>';
+        html += '<span class="num ' + (v.tipo==='entrada'?'growth':'cost') + '">' + (v.tipo==='entrada'?'+':'−') + ' ' + fmtBRL(v.valor) + ' · ' + fmtDate(v.vencimento) + '</span></div>';
+      });
+      html += '</div>';
+    }
+
+    html += '<div class="section-title">Mapa de talhões</div>';
+    if(!state.talhoes.length){
+      html += '<div class="paper empty-state">Nenhum talhão cadastrado ainda. Vá até a aba <strong>Talhões</strong> para mapear a primeira área da propriedade.</div>';
+    } else {
+      html += '<div class="plot-map">';
+      state.talhoes.forEach(function(t){
+        var safra = safraAtualDoTalhao(t.id);
+        var statusClass = safra ? 'status-' + safra.status : 'status-none';
+        var statusLabel = safra ? STATUS_LABEL[safra.status] : 'Sem safra';
+        html += '<div class="plot ' + statusClass + '">';
+        html += '<div><div class="plot-name">' + escapeHtml(t.nome) + '</div><div class="plot-area">' + fmtHa(t.area) + '</div></div>';
+        html += '<div><div class="plot-crop">' + (safra ? escapeHtml(culturaNome(safra.culturaId)) : '—') + '</div><span class="plot-status">' + statusLabel + '</span></div>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+
+    html += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin-top:24px;">';
+
+    html += '<div><div class="section-title" style="margin-top:0;">Últimas atividades</div>';
+    var recentOps = state.operacoes.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).slice(0,5);
+    if(!recentOps.length){
+      html += '<div class="paper empty-state">Nenhuma atividade registrada.</div>';
+    } else {
+      html += '<div class="paper list-card">';
+      recentOps.forEach(function(o){
+        html += '<div class="list-row"><span>' + escapeHtml(o.tipo) + (o.talhaoId ? ' · ' + escapeHtml(talhaoNome(o.talhaoId)) : '') + '</span><span class="num" style="color:var(--ink-soft);">' + fmtDate(o.data) + '</span></div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+
+    html += '<div><div class="section-title" style="margin-top:0;">Produção em estoque</div>';
+    var topEstoque = estoque.itens.filter(function(i){ return i.qtd > 0; }).sort(function(a,b){ return b.valor - a.valor; }).slice(0,5);
+    if(!topEstoque.length){
+      html += '<div class="paper empty-state">Nenhuma produção em estoque no momento.</div>';
+    } else {
+      html += '<div class="paper list-card">';
+      topEstoque.forEach(function(i){
+        html += '<div class="list-row"><span>' + escapeHtml(safraLabel(i.safraId)) + '</span><span class="num growth">' + fmtBRL(i.valor) + '</span></div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+
+    html += '<div><div class="section-title" style="margin-top:0;">Últimos lançamentos</div>';
+    var recentFin = state.financeiro.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).slice(0,5);
+    if(!recentFin.length){
+      html += '<div class="paper empty-state">Nenhum lançamento ainda.</div>';
+    } else {
+      html += '<div class="paper list-card">';
+      recentFin.forEach(function(f){
+        html += '<div class="list-row"><span>' + escapeHtml(f.categoria) + '</span><span class="num ' + (f.tipo==='custo'?'cost':'growth') + '">' + (f.tipo==='custo'?'−':'+') + ' ' + fmtBRL(f.valor) + '</span></div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+
+    html += '</div>';
+    el.innerHTML = html;
+  }
+
+  /* ---------------- Generic cadastro helpers ---------------- */
+  function formatColumn(col, value){
+    if(value === undefined || value === null || value === ''){ return '—'; }
+    switch(col.format){
+      case 'ha': return fmtHa(value);
+      case 'brl': return fmtBRL(value);
+      case 'num': return escapeHtml(value);
+      case 'date': return fmtDate(value);
+      case 'badge':
+        var bg = (col.colors && col.colors[value]) ? col.colors[value] : '#C9C3A4';
+        return '<span class="badge" style="background:' + bg + '; color:#1B1508">' + escapeHtml(value) + '</span>';
+      default: return escapeHtml(value);
+    }
+  }
+
+  function buildGenericFormHtml(entityKey){
+    var cfg = ENTITY_CONFIGS[entityKey];
+    var html = '<div class="paper form-card"><h3>Novo(a) ' + cfg.label.toLowerCase() + '</h3>';
+    html += '<form class="entry-form" data-form="generic" data-entity="' + entityKey + '">';
+    cfg.fields.forEach(function(f){
+      if(f.type === 'select'){
+        var opts = typeof f.optionsFn === 'function' ? f.optionsFn() : f.options;
+        html += selectField(f.name, f.label, opts);
+      } else {
+        html += field(f.type, f.name, f.label, !!f.required, f.placeholder || '', f.extra || {});
+      }
+    });
+    html += '<button type="submit" class="btn">Adicionar</button></form></div>';
+    return html;
+  }
+
+  function buildGenericTableHtml(entityKey){
+    var cfg = ENTITY_CONFIGS[entityKey];
+    var list = state[entityKey];
+    var html = '<div class="paper">';
+    if(!list.length){
+      html += '<div class="empty-state">Nenhum(a) ' + cfg.label.toLowerCase() + ' cadastrado(a) ainda.</div>';
+    } else {
+      html += '<div class="table-wrap"><table><thead><tr>';
+      cfg.columns.forEach(function(c){ html += '<th>' + c.label + '</th>'; });
+      html += '<th></th></tr></thead><tbody>';
+      list.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(item){
+        html += '<tr>';
+        cfg.columns.forEach(function(c){
+          var val = c.compute ? c.compute(item) : item[c.key];
+          var numClass = (c.format === 'ha' || c.format === 'brl' || c.format === 'num') ? ' class="num"' : '';
+          html += '<td' + numClass + '>' + formatColumn(c, val) + '</td>';
+        });
+        html += '<td><button class="btn-del" data-action="del-generic" data-entity="' + entityKey + '" data-id="' + item.id + '">Remover</button></td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function renderGenericTab(entityKey){
+    document.getElementById('tab-' + entityKey).innerHTML = buildGenericFormHtml(entityKey) + buildGenericTableHtml(entityKey);
+  }
+
+  /* ---------------- Propriedades (com talhões aninhados) ---------------- */
+  function renderPropriedades(){
+    var el = document.getElementById('tab-propriedades');
+    var html = buildGenericFormHtml('propriedades');
+
+    if(!state.propriedades.length){
+      html += '<div class="paper empty-state">Nenhuma propriedade cadastrada ainda.</div>';
+    } else {
+      state.propriedades.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(p){
+        var talhoesDaProp = state.talhoes.filter(function(t){ return t.propriedadeId === p.id; });
+        var areaTalhoes = talhoesDaProp.reduce(function(s,t){ return s + (Number(t.area)||0); }, 0);
+        html += '<div class="paper property-card">';
+        html += '<div class="property-head">';
+        html += '<div><div class="property-title">' + escapeHtml(p.nome) + '</div>';
+        var subParts = [];
+        if(p.cidade) subParts.push(escapeHtml(p.cidade));
+        if(p.estado) subParts.push(escapeHtml(p.estado));
+        var subLine = subParts.join(' - ');
+        if(p.areaTotal) subLine += (subLine ? ' · ' : '') + 'Área registrada: ' + fmtHa(p.areaTotal);
+        html += '<div class="property-sub">' + (subLine || '—') + '</div></div>';
+        html += '<button class="btn-del" data-action="del-generic" data-entity="propriedades" data-id="' + p.id + '">Remover</button>';
+        html += '</div>';
+
+        html += '<div class="property-sublabel">Talhões desta propriedade (' + talhoesDaProp.length + ' · ' + fmtHa(areaTalhoes) + ')</div>';
+        if(!talhoesDaProp.length){
+          html += '<div style="font-size:13px; color:var(--ink-soft); margin-top:4px;">Nenhum talhão vinculado ainda. Ao cadastrar um talhão, selecione esta propriedade.</div>';
+        } else {
+          html += '<div class="table-wrap" style="margin-top:6px;"><table><thead><tr><th>Talhão</th><th>Área</th><th>Cultura atual</th><th>Status</th></tr></thead><tbody>';
+          talhoesDaProp.forEach(function(t){
+            var safra = safraAtualDoTalhao(t.id);
+            html += '<tr><td>' + escapeHtml(t.nome) + '</td><td class="num">' + fmtHa(t.area) + '</td>';
+            html += '<td>' + (safra ? escapeHtml(culturaNome(safra.culturaId)) : '—') + '</td>';
+            html += '<td>' + (safra ? '<span class="badge status-' + safra.status + '">' + STATUS_LABEL[safra.status] + '</span>' : '—') + '</td></tr>';
+          });
+          html += '</tbody></table></div>';
+        }
+        html += '</div>';
+      });
+
+      var semPropriedade = state.talhoes.filter(function(t){ return !t.propriedadeId; });
+      if(semPropriedade.length){
+        html += '<div class="paper" style="padding:16px 18px;"><div class="property-sublabel" style="margin-top:0;">Talhões sem propriedade vinculada</div>';
+        html += '<div style="font-size:13px; margin-top:6px;">' + semPropriedade.map(function(t){ return escapeHtml(t.nome); }).join(', ') + '</div></div>';
+      }
+    }
+    el.innerHTML = html;
+  }
+
+  /* ---------------- Talhões ---------------- */
+  function renderTalhoes(){
+    var el = document.getElementById('tab-talhoes');
+    var html = '';
+    html += '<div class="paper form-card"><h3>Novo talhão</h3>';
+    html += '<form class="entry-form" id="form-talhao">';
+    html += field('text', 'nome', 'Nome do talhão', true, 'Ex: Talhão 3 — Fundo');
+    html += field('number', 'area', 'Área (hectares)', true, '0', {step:'0.01', min:'0'});
+    html += selectField('propriedadeId', 'Propriedade (opcional)', [{value:'', label:'—'}].concat(state.propriedades.map(function(p){ return {value:p.id, label:p.nome}; })));
+    html += '<button type="submit" class="btn">Adicionar talhão</button>';
+    html += '</form></div>';
+
+    html += '<div class="paper">';
+    if(!state.talhoes.length){
+      html += '<div class="empty-state">Nenhum talhão cadastrado ainda.</div>';
+    } else {
+      html += '<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Área</th><th>Propriedade</th><th>Safra atual</th><th>Status</th><th></th></tr></thead><tbody>';
+      state.talhoes.forEach(function(t){
+        var safra = safraAtualDoTalhao(t.id);
+        html += '<tr>';
+        html += '<td>' + escapeHtml(t.nome) + '</td>';
+        html += '<td class="num">' + fmtHa(t.area) + '</td>';
+        html += '<td>' + (t.propriedadeId ? escapeHtml(propriedadeNome(t.propriedadeId)) : '—') + '</td>';
+        html += '<td>' + (safra ? escapeHtml(culturaNome(safra.culturaId)) : '—') + '</td>';
+        html += '<td>' + (safra ? '<span class="badge status-' + safra.status + '">' + STATUS_LABEL[safra.status] + '</span>' : '—') + '</td>';
+        html += '<td><button class="btn-del" data-action="del-talhao" data-id="' + t.id + '">Remover</button></td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+    html += '</div>';
+    el.innerHTML = html;
+  }
+
+  /* ---------------- Safras ---------------- */
+  function renderSafras(){
+    var el = document.getElementById('tab-safras');
+    var html = '';
+    html += '<div class="paper form-card"><h3>Nova safra</h3>';
+    if(!state.talhoes.length){
+      html += '<div class="empty-state">Cadastre um talhão antes de lançar uma safra.</div>';
+    } else if(!state.culturas.length){
+      html += '<div class="empty-state">Cadastre uma cultura antes de lançar uma safra.</div>';
+    } else {
+      html += '<form class="entry-form" id="form-safra">';
+      html += selectField('talhaoId', 'Talhão', state.talhoes.map(function(t){ return {value:t.id, label:t.nome}; }));
+      html += selectField('culturaId', 'Cultura', state.culturas.map(function(c){ return {value:c.id, label:c.nome}; }));
+      html += field('date', 'dataPlantio', 'Data de plantio', false);
+      html += field('date', 'previsaoColheita', 'Previsão de colheita', false);
+      html += selectField('status', 'Status', [{value:'planejada', label:'Planejada'}, {value:'andamento', label:'Em andamento'}, {value:'colhida', label:'Colhida'}]);
+      html += '<button type="submit" class="btn">Adicionar safra</button>';
+      html += '</form>';
+    }
+    html += '</div>';
+
+    html += '<div class="paper">';
+    if(!state.safras.length){
+      html += '<div class="empty-state">Nenhuma safra lançada ainda.</div>';
+    } else {
+      html += '<div class="table-wrap"><table><thead><tr><th>Talhão</th><th>Cultura</th><th>Plantio</th><th>Prev. colheita</th><th>Status</th><th></th></tr></thead><tbody>';
+      state.safras.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(s){
+        html += '<tr>';
+        html += '<td>' + escapeHtml(talhaoNome(s.talhaoId)) + '</td>';
+        html += '<td>' + escapeHtml(culturaNome(s.culturaId)) + '</td>';
+        html += '<td>' + fmtDate(s.dataPlantio) + '</td>';
+        html += '<td>' + fmtDate(s.previsaoColheita) + '</td>';
+        html += '<td><span class="badge status-' + s.status + '">' + STATUS_LABEL[s.status] + '</span></td>';
+        html += '<td><button class="btn-del" data-action="del-safra" data-id="' + s.id + '">Remover</button></td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+    html += '</div>';
+    el.innerHTML = html;
+  }
+
+  /* ---------------- Estoque de Colheita (Produção) ---------------- */
+  function renderProducao(){
+    var el = document.getElementById('tab-producao');
+    var estoque = estoqueResumo();
+
+    var html = '';
+    html += '<div class="stat-row">';
+    html += statCard('Valor projetado em estoque', fmtBRL(estoque.total), 'growth');
+    html += statCard('Lotes de safra com estoque', estoque.itens.filter(function(i){ return i.qtd > 0; }).length);
+    html += '</div>';
+
+    html += '<div class="paper form-card"><h3>Novo registro de estoque</h3>';
+    if(!state.safras.length){
+      html += '<div class="empty-state">Cadastre uma safra antes de registrar produção.</div>';
+    } else {
+      html += '<form class="entry-form" id="form-producao">';
+      html += selectField('tipo', 'Movimento', [{value:'entrada', label:'Entrada (colheita)'}, {value:'saida', label:'Saída (venda/consumo)'}]);
+      html += selectField('safraId', 'Safra', state.safras.map(function(s){ return {value:s.id, label:safraLabel(s.id)}; }));
+      html += field('number', 'quantidade', 'Quantidade', true, '0', {step:'0.01', min:'0'});
+      html += field('text', 'unidade', 'Unidade', false, 'Ex: sc, kg, ton');
+      html += field('number', 'precoUnitario', 'Preço estimado (R$/unid.)', false, '0,00', {step:'0.01', min:'0'});
+      html += field('date', 'data', 'Data', false);
+      html += field('text', 'observacao', 'Observação', false, '');
+      html += '<button type="submit" class="btn">Registrar</button></form>';
+    }
+    html += '</div>';
+
+    html += '<div class="section-title" style="margin-top:0;">Estoque atual por safra</div>';
+    if(!estoque.itens.length){
+      html += '<div class="paper empty-state">Nenhuma movimentação de estoque registrada ainda.</div>';
+    } else {
+      html += '<div class="paper table-wrap"><table><thead><tr><th>Talhão / Cultura</th><th>Em estoque</th><th>Preço médio</th><th>Valor estimado</th></tr></thead><tbody>';
+      estoque.itens.forEach(function(i){
+        html += '<tr><td>' + escapeHtml(safraLabel(i.safraId)) + '</td><td class="num">' + fmtNum(i.qtd) + '</td><td class="num">' + fmtBRL(i.preco) + '</td><td class="num growth">' + fmtBRL(i.valor) + '</td></tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+
+    html += '<div class="section-title">Movimentações</div>';
+    if(!state.producao.length){
+      html += '<div class="paper empty-state">Nenhuma movimentação registrada ainda.</div>';
+    } else {
+      html += '<div class="paper table-wrap"><table><thead><tr><th>Data</th><th>Movimento</th><th>Safra</th><th>Quantidade</th><th>Preço</th><th>Obs.</th><th></th></tr></thead><tbody>';
+      state.producao.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(p){
+        html += '<tr>';
+        html += '<td>' + fmtDate(p.data) + '</td>';
+        html += '<td><span class="badge" style="background:' + (p.tipo==='entrada' ? '#7FA36D' : '#DFA84E') + '; color:#1B1508">' + (p.tipo==='entrada' ? 'Entrada' : 'Saída') + '</span></td>';
+        html += '<td>' + escapeHtml(safraLabel(p.safraId)) + '</td>';
+        html += '<td class="num">' + fmtNum(p.quantidade) + (p.unidade ? ' ' + escapeHtml(p.unidade) : '') + '</td>';
+        html += '<td class="num">' + (p.precoUnitario ? fmtBRL(p.precoUnitario) : '—') + '</td>';
+        html += '<td>' + escapeHtml(p.observacao || '—') + '</td>';
+        html += '<td><button class="btn-del" data-action="del-producao" data-id="' + p.id + '">Remover</button></td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+    el.innerHTML = html;
+  }
+
+  /* ---------------- Diário de Campo (Operações) ---------------- */
+  function renderOperacoes(){
+    var el = document.getElementById('tab-operacoes');
+    var html = '';
+    html += '<div class="paper form-card"><h3>Nova atividade</h3>';
+    html += '<form class="entry-form" id="form-operacao">';
+    html += selectField('tipo', 'Tipo', OPERACAO_TIPOS.map(function(t){ return {value:t, label:t}; }));
+    html += selectField('talhaoId', 'Talhão (opcional)', [{value:'', label:'—'}].concat(state.talhoes.map(function(t){ return {value:t.id, label:t.nome}; })));
+    html += selectField('safraId', 'Safra (opcional)', [{value:'', label:'—'}].concat(state.safras.map(function(s){ return {value:s.id, label:safraLabel(s.id)}; })));
+    html += selectField('produtoId', 'Produto (opcional)', [{value:'', label:'—'}].concat(state.produtos.map(function(p){ return {value:p.id, label:p.nome}; })));
+    html += field('number', 'quantidade', 'Quantidade', false, '0', {step:'0.01', min:'0'});
+    html += field('text', 'unidade', 'Unidade', false, 'Ex: kg, L, sc');
+    html += selectField('parceiroId', 'Parceiro (opcional)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })));
+    html += selectField('responsavelId', 'Responsável (opcional)', [{value:'', label:'—'}].concat(state.equipe.map(function(m){ return {value:m.id, label:m.nome}; })));
+    html += field('date', 'data', 'Data', false);
+    html += field('text', 'observacao', 'Observação', false, 'Ex: Aplicação pós-chuva');
+    html += '<button type="submit" class="btn">Registrar atividade</button>';
+    html += '</form></div>';
+
+    html += '<div class="paper">';
+    if(!state.operacoes.length){
+      html += '<div class="empty-state">Nenhuma atividade registrada ainda.</div>';
+    } else {
+      html += '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Talhão</th><th>Produto</th><th>Qtd.</th><th>Parceiro</th><th>Responsável</th><th>Obs.</th><th></th></tr></thead><tbody>';
+      state.operacoes.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(o){
+        html += '<tr>';
+        html += '<td>' + fmtDate(o.data) + '</td>';
+        html += '<td><span class="badge" style="background:' + (OPERACAO_COLORS[o.tipo] || '#C9C3A4') + '; color:#1B1508">' + escapeHtml(o.tipo) + '</span></td>';
+        html += '<td>' + (o.talhaoId ? escapeHtml(talhaoNome(o.talhaoId)) : '—') + '</td>';
+        html += '<td>' + (o.produtoId ? escapeHtml(produtoNome(o.produtoId)) : '—') + '</td>';
+        html += '<td class="num">' + (o.quantidade ? o.quantidade + (o.unidade ? ' ' + escapeHtml(o.unidade) : '') : '—') + '</td>';
+        html += '<td>' + (o.parceiroId ? escapeHtml(parceiroNome(o.parceiroId)) : '—') + '</td>';
+        html += '<td>' + (o.responsavelId ? escapeHtml(membroNome(o.responsavelId)) : '—') + '</td>';
+        html += '<td>' + escapeHtml(o.observacao || '—') + '</td>';
+        html += '<td><button class="btn-del" data-action="del-operacao" data-id="' + o.id + '">Remover</button></td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+    html += '</div>';
+    el.innerHTML = html;
+  }
+
+  /* ---------------- Financeiro ---------------- */
+  function renderFinanceiro(){
+    var el = document.getElementById('tab-financeiro');
+    var totalCustos = state.financeiro.filter(function(f){ return f.tipo === 'custo'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+    var totalReceitas = state.financeiro.filter(function(f){ return f.tipo === 'receita'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+    var saldo = totalReceitas - totalCustos;
+    var estoque = estoqueResumo();
+    var saldoProjetado = saldo + estoque.total;
+
+    var html = '';
+    html += '<div class="stat-row">';
+    html += statCard('Total de custos', fmtBRL(totalCustos), 'cost');
+    html += statCard('Total de receitas', fmtBRL(totalReceitas), 'growth');
+    html += statCard('Saldo atual', fmtBRL(saldo), saldo >= 0 ? 'growth' : 'cost');
+    html += statCard('Valor projetado (estoque)', fmtBRL(estoque.total), 'growth');
+    html += statCard('Saldo projetado', fmtBRL(saldoProjetado), saldoProjetado >= 0 ? 'growth' : 'cost');
+    html += '</div>';
+
+    html += '<div class="paper form-card"><h3>Novo lançamento</h3>';
+    html += '<form class="entry-form" id="form-financeiro">';
+    html += selectField('tipo', 'Tipo', [{value:'custo', label:'Custo'}, {value:'receita', label:'Receita'}]);
+    html += selectField('categoria', 'Categoria', CATEGORIAS_CUSTO.concat(CATEGORIAS_RECEITA).filter(function(v,i,a){ return a.indexOf(v)===i; }).map(function(c){ return {value:c, label:c}; }));
+    html += field('number', 'valor', 'Valor (R$)', true, '0,00', {step:'0.01', min:'0'});
+    html += field('date', 'data', 'Data', false);
+    html += selectField('talhaoId', 'Talhão (opcional)', [{value:'', label:'—'}].concat(state.talhoes.map(function(t){ return {value:t.id, label:t.nome}; })));
+    html += selectField('parceiroId', 'Parceiro (opcional)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })));
+    html += selectField('membroId', 'Lançado por (opcional)', [{value:'', label:'—'}].concat(state.equipe.map(function(m){ return {value:m.id, label:m.nome}; })));
+    html += field('text', 'descricao', 'Descrição', false, 'Ex: Compra de adubo');
+    html += '<button type="submit" class="btn">Adicionar lançamento</button>';
+    html += '</form></div>';
+
+    html += '<div class="paper">';
+    if(!state.financeiro.length){
+      html += '<div class="empty-state">Nenhum lançamento financeiro ainda.</div>';
+    } else {
+      html += '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Talhão</th><th>Descrição</th><th>Por</th><th>Valor</th><th></th></tr></thead><tbody>';
+      state.financeiro.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(f){
+        html += '<tr>';
+        html += '<td>' + fmtDate(f.data) + '</td>';
+        html += '<td><span class="badge tipo-' + f.tipo + '">' + (f.tipo === 'custo' ? 'Custo' : 'Receita') + '</span></td>';
+        html += '<td>' + escapeHtml(f.categoria) + '</td>';
+        html += '<td>' + (f.talhaoId ? escapeHtml(talhaoNome(f.talhaoId)) : '—') + '</td>';
+        html += '<td>' + escapeHtml(f.descricao || '—') + '</td>';
+        html += '<td>' + (f.membroId ? escapeHtml(membroNome(f.membroId)) : '—') + '</td>';
+        html += '<td class="num ' + (f.tipo === 'custo' ? 'cost' : 'growth') + '">' + (f.tipo === 'custo' ? '−' : '+') + ' ' + fmtBRL(f.valor) + '</td>';
+        html += '<td><button class="btn-del" data-action="del-financeiro" data-id="' + f.id + '">Remover</button></td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+    html += '</div>';
+    html += '<div class="paper note-box">O valor projetado considera a produção em estoque (aba Estoque de Colheita) ao preço estimado informado em cada movimentação.</div>';
+    el.innerHTML = html;
+  }
+
+  /* ---------------- Pagamentos / Contas a Pagar / Contas a Receber ---------------- */
+  function renderPagamentos(){
+    var el = document.getElementById('tab-pagamentos');
+    var pendente = state.pagamentos.filter(function(p){ return p.status === 'Pendente'; }).reduce(function(s,p){ return s + Number(p.valor||0); }, 0);
+    var pago = state.pagamentos.filter(function(p){ return p.status === 'Pago'; }).reduce(function(s,p){ return s + Number(p.valor||0); }, 0);
+
+    var html = '<div class="stat-row">';
+    html += statCard('Total pendente', fmtBRL(pendente), 'cost');
+    html += statCard('Total pago', fmtBRL(pago), 'growth');
+    html += '</div>';
+    html += buildGenericFormHtml('pagamentos');
+    html += buildGenericTableHtml('pagamentos');
+    html += '<div class="paper note-box">Pagamentos marcados como "Pago" e vinculados a um talhão entram automaticamente no cálculo de custos da aba Rentabilidade e no Fluxo de Caixa.</div>';
+    el.innerHTML = html;
+  }
+
+  function renderContasPagar(){
+    var el = document.getElementById('tab-contasPagar');
+    var pendente = state.contasPagar.filter(function(c){ return c.status === 'Pendente'; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0);
+    var pago = state.contasPagar.filter(function(c){ return c.status === 'Pago'; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0);
+
+    var html = '<div class="stat-row">';
+    html += statCard('Total pendente', fmtBRL(pendente), 'cost');
+    html += statCard('Total pago', fmtBRL(pago), 'growth');
+    html += '</div>';
+    html += buildGenericFormHtml('contasPagar');
+    html += buildGenericTableHtml('contasPagar');
+    html += '<div class="paper note-box">Estes lançamentos alimentam o Fluxo de Caixa. Quando vinculados a um talhão e marcados como "Pago", também entram nos custos da Rentabilidade.</div>';
+    el.innerHTML = html;
+  }
+
+  function renderContasReceber(){
+    var el = document.getElementById('tab-contasReceber');
+    var pendente = state.contasReceber.filter(function(c){ return c.status === 'Pendente'; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0);
+    var recebido = state.contasReceber.filter(function(c){ return c.status === 'Recebido'; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0);
+
+    var html = '<div class="stat-row">';
+    html += statCard('Total pendente', fmtBRL(pendente), 'growth');
+    html += statCard('Total recebido', fmtBRL(recebido), 'growth');
+    html += '</div>';
+    html += buildGenericFormHtml('contasReceber');
+    html += buildGenericTableHtml('contasReceber');
+    html += '<div class="paper note-box">Estes lançamentos alimentam o Fluxo de Caixa. Eles são independentes do Estoque de Colheita — se a venda já foi registrada lá, evite lançar aqui em duplicidade.</div>';
+    el.innerHTML = html;
+  }
+
+  /* ---------------- Equipe ---------------- */
+  function renderEquipe(){
+    var el = document.getElementById('tab-equipe');
+    var html = '';
+    html += '<div class="paper form-card"><h3>Novo membro</h3>';
+    html += '<form class="entry-form" id="form-equipe">';
+    html += field('text', 'nome', 'Nome', true, 'Ex: João');
+    html += field('text', 'papel', 'Função', false, 'Ex: Encarregado de campo');
+    html += '<button type="submit" class="btn">Adicionar membro</button>';
+    html += '</form></div>';
+
+    html += '<div class="paper">';
+    if(!state.equipe.length){
+      html += '<div class="empty-state">Nenhum membro cadastrado ainda.</div>';
+    } else {
+      html += '<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Função</th><th></th></tr></thead><tbody>';
+      state.equipe.forEach(function(m){
+        html += '<tr><td>' + escapeHtml(m.nome) + '</td><td>' + escapeHtml(m.papel || '—') + '</td>';
+        html += '<td><button class="btn-del" data-action="del-equipe" data-id="' + m.id + '">Remover</button></td></tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+    html += '</div>';
+    el.innerHTML = html;
+  }
+
+  /* ---------------- Rentabilidade ---------------- */
+  function custosFinanceiroPorTalhao(talhaoId){
+    return state.financeiro.filter(function(f){ return f.tipo === 'custo' && f.talhaoId === talhaoId; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+  }
+  function receitasFinanceiroPorTalhao(talhaoId){
+    return state.financeiro.filter(function(f){ return f.tipo === 'receita' && f.talhaoId === talhaoId; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+  }
+  function pagamentosPagosPorTalhao(talhaoId){
+    return state.pagamentos.filter(function(p){ return p.status === 'Pago' && p.talhaoId === talhaoId; }).reduce(function(s,p){ return s + Number(p.valor||0); }, 0);
+  }
+
+  function renderRentabilidade(){
+    var el = document.getElementById('tab-rentabilidade');
+    var html = '';
+
+    html += '<div class="section-title" style="margin-top:0;">Por talhão</div>';
+    if(!state.talhoes.length){
+      html += '<div class="paper empty-state">Cadastre talhões para ver a rentabilidade.</div>';
+    } else {
+      html += '<div class="paper table-wrap"><table><thead><tr><th>Talhão</th><th>Cultura atual</th><th>Custos</th><th>Receitas</th><th>Estoque projetado</th><th>Resultado</th><th>Retorno s/ custo</th></tr></thead><tbody>';
+      state.talhoes.forEach(function(t){
+        var safraIdsDoTalhao = state.safras.filter(function(s){ return s.talhaoId === t.id; }).map(function(s){ return s.id; });
+        var custos = custosFinanceiroPorTalhao(t.id) + pagamentosPagosPorTalhao(t.id);
+        var receitas = receitasFinanceiroPorTalhao(t.id);
+        var estoqueValor = estoqueValorPorSafraIds(safraIdsDoTalhao);
+        var resultado = receitas + estoqueValor - custos;
+        var retorno = custos > 0 ? (resultado / custos * 100) : null;
+        var safra = safraAtualDoTalhao(t.id);
+        html += '<tr>';
+        html += '<td>' + escapeHtml(t.nome) + '</td>';
+        html += '<td>' + (safra ? escapeHtml(culturaNome(safra.culturaId)) : '—') + '</td>';
+        html += '<td class="num cost">' + fmtBRL(custos) + '</td>';
+        html += '<td class="num growth">' + fmtBRL(receitas) + '</td>';
+        html += '<td class="num growth">' + fmtBRL(estoqueValor) + '</td>';
+        html += '<td class="num ' + (resultado >= 0 ? 'growth' : 'cost') + '">' + fmtBRL(resultado) + '</td>';
+        html += '<td class="num">' + (retorno === null ? '—' : retorno.toLocaleString('pt-BR', {maximumFractionDigits:1}) + '%') + '</td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+
+    html += '<div class="section-title">Por cultura</div>';
+    if(!state.culturas.length){
+      html += '<div class="paper empty-state">Cadastre culturas para ver a rentabilidade agrupada.</div>';
+    } else {
+      html += '<div class="paper table-wrap"><table><thead><tr><th>Cultura</th><th>Custos</th><th>Receitas</th><th>Estoque projetado</th><th>Resultado</th><th>Retorno s/ custo</th></tr></thead><tbody>';
+      state.culturas.forEach(function(c){
+        var safrasDaCultura = state.safras.filter(function(s){ return s.culturaId === c.id; });
+        var talhaoIds = safrasDaCultura.map(function(s){ return s.talhaoId; }).filter(function(v,i,a){ return a.indexOf(v)===i; });
+        var safraIds = safrasDaCultura.map(function(s){ return s.id; });
+        var custos = talhaoIds.reduce(function(sum,tid){ return sum + custosFinanceiroPorTalhao(tid) + pagamentosPagosPorTalhao(tid); }, 0);
+        var receitas = talhaoIds.reduce(function(sum,tid){ return sum + receitasFinanceiroPorTalhao(tid); }, 0);
+        var estoqueValor = estoqueValorPorSafraIds(safraIds);
+        var resultado = receitas + estoqueValor - custos;
+        var retorno = custos > 0 ? (resultado / custos * 100) : null;
+        html += '<tr>';
+        html += '<td>' + escapeHtml(c.nome) + '</td>';
+        html += '<td class="num cost">' + fmtBRL(custos) + '</td>';
+        html += '<td class="num growth">' + fmtBRL(receitas) + '</td>';
+        html += '<td class="num growth">' + fmtBRL(estoqueValor) + '</td>';
+        html += '<td class="num ' + (resultado >= 0 ? 'growth' : 'cost') + '">' + fmtBRL(resultado) + '</td>';
+        html += '<td class="num">' + (retorno === null ? '—' : retorno.toLocaleString('pt-BR', {maximumFractionDigits:1}) + '%') + '</td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+
+    html += '<div class="paper note-box">Custos somam os lançamentos do Financeiro e os Pagamentos com status "Pago", ambos vinculados ao talhão. Como um talhão pode ter mais de uma cultura ao longo do tempo, o agrupamento por cultura soma os talhões onde ela já foi ou está sendo cultivada — evite lançar o mesmo custo em Financeiro e em Pagamentos para não contar em duplicidade.</div>';
+
+    el.innerHTML = html;
+  }
+
+  /* ---------------- Fluxo de Caixa ---------------- */
+  function renderFluxoCaixa(){
+    var el = document.getElementById('tab-fluxoCaixa');
+    var events = buildCashEvents();
+    var buckets = {};
+    events.forEach(function(e){
+      var ym = e.date.slice(0,7);
+      if(!buckets[ym]) buckets[ym] = {entradaReal:0, saidaReal:0, entradaPrev:0, saidaPrev:0};
+      if(e.tipo === 'entrada'){
+        if(e.realizado) buckets[ym].entradaReal += e.valor; else buckets[ym].entradaPrev += e.valor;
+      } else {
+        if(e.realizado) buckets[ym].saidaReal += e.valor; else buckets[ym].saidaPrev += e.valor;
+      }
+    });
+    var months = Object.keys(buckets).sort();
+
+    var saldoRealizado = events.filter(function(e){ return e.realizado; }).reduce(function(s,e){ return s + (e.tipo==='entrada' ? e.valor : -e.valor); }, 0);
+    var totalPendenteReceber = state.contasReceber.filter(function(c){ return c.status === 'Pendente'; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0);
+    var totalPendentePagar = state.contasPagar.filter(function(c){ return c.status === 'Pendente'; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0)
+      + state.pagamentos.filter(function(p){ return p.status === 'Pendente'; }).reduce(function(s,p){ return s + Number(p.valor||0); }, 0);
+    var saldoProjetadoFinal = saldoRealizado + totalPendenteReceber - totalPendentePagar;
+    var estoque = estoqueResumo();
+
+    var html = '<div class="stat-row">';
+    html += statCard('Saldo realizado', fmtBRL(saldoRealizado), saldoRealizado >= 0 ? 'growth' : 'cost');
+    html += statCard('A receber (pendente)', fmtBRL(totalPendenteReceber), 'growth');
+    html += statCard('A pagar (pendente)', fmtBRL(totalPendentePagar), 'cost');
+    html += statCard('Saldo projetado', fmtBRL(saldoProjetadoFinal), saldoProjetadoFinal >= 0 ? 'growth' : 'cost');
+    html += '</div>';
+
+    html += '<div class="paper note-box" style="margin-top:-8px; margin-bottom:16px;">Esta projeção não inclui o valor da produção em estoque (' + fmtBRL(estoque.total) + '), que ainda não tem data prevista de venda — acompanhe em Estoque de Colheita, ou lance a venda em Contas a Receber quando houver data.</div>';
+
+    if(!months.length){
+      html += '<div class="paper empty-state">Nenhum lançamento com data para projetar o fluxo de caixa ainda.</div>';
+    } else {
+      html += '<div class="paper table-wrap"><table><thead><tr><th>Mês</th><th>Entradas realizadas</th><th>Saídas realizadas</th><th>Entradas previstas</th><th>Saídas previstas</th><th>Saldo do mês</th><th>Saldo acumulado</th></tr></thead><tbody>';
+      var acumulado = 0;
+      months.forEach(function(ym){
+        var b = buckets[ym];
+        var saldoMes = (b.entradaReal + b.entradaPrev) - (b.saidaReal + b.saidaPrev);
+        acumulado += saldoMes;
+        html += '<tr>';
+        html += '<td>' + monthLabel(ym) + '</td>';
+        html += '<td class="num growth">' + fmtBRL(b.entradaReal) + '</td>';
+        html += '<td class="num cost">' + fmtBRL(b.saidaReal) + '</td>';
+        html += '<td class="num growth">' + fmtBRL(b.entradaPrev) + '</td>';
+        html += '<td class="num cost">' + fmtBRL(b.saidaPrev) + '</td>';
+        html += '<td class="num ' + (saldoMes >= 0 ? 'growth' : 'cost') + '">' + fmtBRL(saldoMes) + '</td>';
+        html += '<td class="num ' + (acumulado >= 0 ? 'growth' : 'cost') + '">' + fmtBRL(acumulado) + '</td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+    el.innerHTML = html;
+  }
+
+  /* ---------------- Indicadores (gráficos e exportação) ---------------- */
+  function financeiroPorMes(){
+    var map = {};
+    state.financeiro.forEach(function(f){
+      if(!f.data) return;
+      var ym = f.data.slice(0,7);
+      if(!map[ym]) map[ym] = {custo:0, receita:0};
+      map[ym][f.tipo === 'custo' ? 'custo' : 'receita'] += Number(f.valor) || 0;
+    });
+    var months = Object.keys(map).sort();
+    return {
+      labels: months.map(monthLabel),
+      custos: months.map(function(m){ return map[m].custo; }),
+      receitas: months.map(function(m){ return map[m].receita; })
+    };
+  }
+  function custosPorCategoria(){
+    var map = {};
+    state.financeiro.filter(function(f){ return f.tipo === 'custo'; }).forEach(function(f){
+      map[f.categoria] = (map[f.categoria] || 0) + Number(f.valor || 0);
+    });
+    var labels = Object.keys(map);
+    return {labels: labels, valores: labels.map(function(l){ return map[l]; })};
+  }
+  function resultadoPorTalhaoChart(){
+    var labels = [], valores = [], cores = [];
+    state.talhoes.forEach(function(t){
+      var safraIdsDoTalhao = state.safras.filter(function(s){ return s.talhaoId === t.id; }).map(function(s){ return s.id; });
+      var custos = custosFinanceiroPorTalhao(t.id) + pagamentosPagosPorTalhao(t.id);
+      var receitas = receitasFinanceiroPorTalhao(t.id);
+      var estoqueValor = estoqueValorPorSafraIds(safraIdsDoTalhao);
+      var resultado = receitas + estoqueValor - custos;
+      labels.push(t.nome); valores.push(Math.round(resultado * 100) / 100); cores.push(resultado >= 0 ? '#4F7942' : '#A23E2E');
+    });
+    return {labels: labels, valores: valores, cores: cores};
+  }
+  function saldoAcumuladoMensal(){
+    var events = buildCashEvents();
+    var buckets = {};
+    events.forEach(function(e){
+      var ym = e.date.slice(0,7);
+      if(!buckets[ym]) buckets[ym] = 0;
+      buckets[ym] += (e.tipo === 'entrada' ? e.valor : -e.valor);
+    });
+    var months = Object.keys(buckets).sort();
+    var acumulado = 0, serie = [];
+    months.forEach(function(m){ acumulado += buckets[m]; serie.push(Math.round(acumulado * 100) / 100); });
+    return {labels: months.map(monthLabel), valores: serie};
+  }
+
+  var chartInstances = {};
+  function drawChart(canvasId, type, data, extraOptions){
+    var canvas = document.getElementById(canvasId);
+    if(!canvas || !window.Chart) return;
+    if(chartInstances[canvasId]) chartInstances[canvasId].destroy();
+    var options = {responsive:true, plugins:{legend:{labels:{color:'#2A2016'}}}, scales:{x:{ticks:{color:'#6B5D46'}}, y:{ticks:{color:'#6B5D46'}}}};
+    if(extraOptions){ Object.keys(extraOptions).forEach(function(k){ options[k] = extraOptions[k]; }); }
+    chartInstances[canvasId] = new Chart(canvas.getContext('2d'), {type:type, data:data, options:options});
+  }
+
+  function exportarExcel(){
+    if(!window.XLSX){ alert('A biblioteca de exportação ainda está carregando (ou não pôde ser carregada). Tente novamente em instantes.'); return; }
+    var wb = XLSX.utils.book_new();
+    function addSheet(name, rows){ var ws = XLSX.utils.json_to_sheet(rows); XLSX.utils.book_append_sheet(wb, ws, name.slice(0,31)); }
+
+    addSheet('Propriedades', state.propriedades.map(function(p){ return {Nome:p.nome, 'Area total (ha)':p.areaTotal, Cidade:p.cidade, UF:p.estado}; }));
+    addSheet('Talhoes', state.talhoes.map(function(t){ return {Nome:t.nome, 'Area (ha)':t.area, Propriedade: t.propriedadeId ? propriedadeNome(t.propriedadeId) : ''}; }));
+    addSheet('Safras', state.safras.map(function(s){ return {Talhao:talhaoNome(s.talhaoId), Cultura:culturaNome(s.culturaId), Plantio:s.dataPlantio, PrevisaoColheita:s.previsaoColheita, Status:STATUS_LABEL[s.status]}; }));
+    addSheet('Culturas', state.culturas.map(function(c){ return {Nome:c.nome, 'Ciclo (dias)':c.cicloDias}; }));
+    addSheet('Produtos', state.produtos.map(function(p){ return {Nome:p.nome, Categoria:p.categoria, Unidade:p.unidade, Estoque:p.estoqueAtual, EstoqueMinimo:p.estoqueMinimo}; }));
+    addSheet('Parceiros', state.parceiros.map(function(p){ return {Nome:p.nome, Tipo:p.tipo, Contato:p.contato}; }));
+    addSheet('Equipe', state.equipe.map(function(m){ return {Nome:m.nome, Funcao:m.papel}; }));
+    addSheet('Patrimonio', state.patrimonio.map(function(p){ return {Nome:p.nome, Categoria:p.categoria, Status:p.status, ValorCompra:p.valor, ValorAtual: Math.round(calcDepreciacao(p)*100)/100}; }));
+    addSheet('EstoqueColheita', state.producao.map(function(p){ return {Movimento:p.tipo, Safra:safraLabel(p.safraId), Quantidade:p.quantidade, Unidade:p.unidade, PrecoUnitario:p.precoUnitario, Data:p.data}; }));
+    addSheet('DiarioDeCampo', state.operacoes.map(function(o){ return {Data:o.data, Tipo:o.tipo, Talhao: o.talhaoId?talhaoNome(o.talhaoId):'', Produto: o.produtoId?produtoNome(o.produtoId):'', Quantidade:o.quantidade, Unidade:o.unidade, Parceiro: o.parceiroId?parceiroNome(o.parceiroId):'', Responsavel: o.responsavelId?membroNome(o.responsavelId):''}; }));
+    addSheet('Financeiro', state.financeiro.map(function(f){ return {Data:f.data, Tipo:f.tipo, Categoria:f.categoria, Talhao: f.talhaoId?talhaoNome(f.talhaoId):'', Descricao:f.descricao, Valor:f.valor}; }));
+    addSheet('Pagamentos', state.pagamentos.map(function(p){ return {Beneficiario:p.beneficiario, Tipo:p.tipo, Categoria:p.categoria, Valor:p.valor, Vencimento:p.vencimento, Status:p.status}; }));
+    addSheet('ContasAPagar', state.contasPagar.map(function(c){ return {Descricao:c.descricao, Categoria:c.categoria, Valor:c.valor, Vencimento:c.vencimento, Status:c.status}; }));
+    addSheet('ContasAReceber', state.contasReceber.map(function(c){ return {Descricao:c.descricao, Categoria:c.categoria, Valor:c.valor, Vencimento:c.vencimento, Status:c.status}; }));
+
+    var rentTalhao = state.talhoes.map(function(t){
+      var safraIdsDoTalhao = state.safras.filter(function(s){ return s.talhaoId === t.id; }).map(function(s){ return s.id; });
+      var custos = custosFinanceiroPorTalhao(t.id) + pagamentosPagosPorTalhao(t.id);
+      var receitas = receitasFinanceiroPorTalhao(t.id);
+      var estoqueValor = estoqueValorPorSafraIds(safraIdsDoTalhao);
+      return {Talhao:t.nome, Custos:custos, Receitas:receitas, EstoqueProjetado:estoqueValor, Resultado: receitas + estoqueValor - custos};
+    });
+    addSheet('Rentabilidade', rentTalhao);
+
+    XLSX.writeFile(wb, 'fazenda-relatorio.xlsx');
+  }
+
+  function renderIndicadores(){
+    var el = document.getElementById('tab-indicadores');
+    var html = '';
+    html += '<div class="no-print" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px;">';
+    html += '<button class="btn" type="button" data-action="export-excel">Exportar para Excel</button>';
+    html += '<button class="btn" type="button" data-action="export-pdf" style="background:var(--panel); color:var(--paper);">Imprimir / Salvar como PDF</button>';
+    html += '</div>';
+
+    html += '<div class="section-title" style="margin-top:0;">Custos vs. receitas por mês</div>';
+    html += '<div class="paper" style="padding:16px;"><canvas id="chart-mes" height="90"></canvas></div>';
+
+    html += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; margin-top:20px;">';
+    html += '<div><div class="section-title" style="margin-top:0;">Custos por categoria</div><div class="paper" style="padding:16px;"><canvas id="chart-categoria" height="220"></canvas></div></div>';
+    html += '<div><div class="section-title" style="margin-top:0;">Resultado por talhão</div><div class="paper" style="padding:16px;"><canvas id="chart-talhao" height="220"></canvas></div></div>';
+    html += '</div>';
+
+    html += '<div class="section-title">Saldo acumulado projetado</div>';
+    html += '<div class="paper" style="padding:16px;"><canvas id="chart-saldo" height="90"></canvas></div>';
+
+    if(!window.Chart){
+      html += '<div class="paper note-box" style="margin-top:16px;">Não foi possível carregar a biblioteca de gráficos (conexão bloqueada?). Os dados continuam disponíveis nas demais abas e na exportação para Excel.</div>';
+    }
+
+    el.innerHTML = html;
+    if(!window.Chart) return;
+
+    var mesData = financeiroPorMes();
+    drawChart('chart-mes', 'bar', {
+      labels: mesData.labels,
+      datasets: [
+        {label:'Custos', data:mesData.custos, backgroundColor:'#A23E2E'},
+        {label:'Receitas', data:mesData.receitas, backgroundColor:'#4F7942'}
+      ]
+    });
+
+    var catData = custosPorCategoria();
+    var palette = ['#C98A2B','#4F7942','#A23E2E','#8B8368','#7FA36D','#DFA84E','#9C6A1E','#3B5B32'];
+    drawChart('chart-categoria', 'doughnut', {
+      labels: catData.labels,
+      datasets: [{data: catData.valores, backgroundColor: catData.labels.map(function(_, i){ return palette[i % palette.length]; })}]
+    });
+
+    var talhaoData = resultadoPorTalhaoChart();
+    drawChart('chart-talhao', 'bar', {
+      labels: talhaoData.labels,
+      datasets: [{label:'Resultado (R$)', data: talhaoData.valores, backgroundColor: talhaoData.cores}]
+    }, {indexAxis:'y'});
+
+    var saldoData = saldoAcumuladoMensal();
+    drawChart('chart-saldo', 'line', {
+      labels: saldoData.labels,
+      datasets: [{label:'Saldo acumulado (R$)', data: saldoData.valores, borderColor:'#C98A2B', backgroundColor:'rgba(201,138,43,0.15)', fill:true, tension:0.25}]
+    });
+  }
+
+  /* ---------------- Form field helpers ---------------- */
+  function field(type, name, label, required, placeholder, extra){
+    extra = extra || {};
+    var attrs = '';
+    Object.keys(extra).forEach(function(k){ attrs += ' ' + k + '="' + extra[k] + '"'; });
+    return '<div class="field"><label for="f-' + name + '">' + label + '</label>' +
+      '<input type="' + type + '" id="f-' + name + '" name="' + name + '"' +
+      (required ? ' required' : '') +
+      (placeholder ? ' placeholder="' + placeholder + '"' : '') + attrs + '></div>';
+  }
+  function selectField(name, label, options){
+    var html = '<div class="field"><label for="f-' + name + '">' + label + '</label><select id="f-' + name + '" name="' + name + '">';
+    options.forEach(function(o){ html += '<option value="' + escapeHtml(o.value) + '">' + escapeHtml(o.label) + '</option>'; });
+    html += '</select></div>';
+    return html;
+  }
+
+  /* ---------------- Event delegation ---------------- */
+  document.getElementById('nav').addEventListener('click', function(e){
+    var btn = e.target.closest('.nav-btn');
+    if(!btn) return;
+    switchTab(btn.dataset.tab);
+  });
+
+  document.addEventListener('submit', function(e){
+    var form = e.target;
+    e.preventDefault();
+    var data = new FormData(form);
+
+    if(form.dataset.form === 'generic'){
+      var entityKey = form.dataset.entity;
+      var cfg = ENTITY_CONFIGS[entityKey];
+      var record = {id: uid(), criadoEm: Date.now()};
+      cfg.fields.forEach(function(f){
+        var raw = data.get(f.name);
+        record[f.name] = f.type === 'number' ? (parseFloat(raw) || 0) : (raw || '').trim();
+      });
+      state[entityKey].push(record);
+      saveKey(entityKey, state[entityKey]);
+      form.reset();
+      renderAll();
+      return;
+    }
+
+    if(form.id === 'form-talhao'){
+      state.talhoes.push({ id: uid(), nome: data.get('nome').trim(), area: parseFloat(data.get('area')) || 0, propriedadeId: data.get('propriedadeId') || '', criadoEm: Date.now() });
+      saveKey('talhoes', state.talhoes);
+      form.reset(); renderAll(); return;
+    }
+
+    if(form.id === 'form-safra'){
+      state.safras.push({ id: uid(), talhaoId: data.get('talhaoId'), culturaId: data.get('culturaId'), dataPlantio: data.get('dataPlantio') || '', previsaoColheita: data.get('previsaoColheita') || '', status: data.get('status'), criadoEm: Date.now() });
+      saveKey('safras', state.safras);
+      form.reset(); renderAll(); return;
+    }
+
+    if(form.id === 'form-producao'){
+      state.producao.push({
+        id: uid(), tipo: data.get('tipo'), safraId: data.get('safraId'), quantidade: parseFloat(data.get('quantidade')) || 0,
+        unidade: (data.get('unidade')||'').trim(), precoUnitario: parseFloat(data.get('precoUnitario')) || 0,
+        data: data.get('data') || '', observacao: (data.get('observacao')||'').trim(), criadoEm: Date.now()
+      });
+      saveKey('producao', state.producao);
+      form.reset(); renderAll(); return;
+    }
+
+    if(form.id === 'form-operacao'){
+      state.operacoes.push({
+        id: uid(), tipo: data.get('tipo'), talhaoId: data.get('talhaoId') || '', safraId: data.get('safraId') || '',
+        produtoId: data.get('produtoId') || '', quantidade: parseFloat(data.get('quantidade')) || 0, unidade: (data.get('unidade')||'').trim(),
+        parceiroId: data.get('parceiroId') || '', responsavelId: data.get('responsavelId') || '', data: data.get('data') || '',
+        observacao: (data.get('observacao')||'').trim(), criadoEm: Date.now()
+      });
+      saveKey('operacoes', state.operacoes);
+      form.reset(); renderAll(); return;
+    }
+
+    if(form.id === 'form-financeiro'){
+      state.financeiro.push({
+        id: uid(), tipo: data.get('tipo'), categoria: data.get('categoria'), valor: parseFloat(data.get('valor')) || 0,
+        data: data.get('data') || '', talhaoId: data.get('talhaoId') || '', parceiroId: data.get('parceiroId') || '',
+        membroId: data.get('membroId') || '', descricao: (data.get('descricao') || '').trim(), criadoEm: Date.now()
+      });
+      saveKey('financeiro', state.financeiro);
+      form.reset(); renderAll(); return;
+    }
+
+    if(form.id === 'form-equipe'){
+      state.equipe.push({ id: uid(), nome: data.get('nome').trim(), papel: (data.get('papel') || '').trim(), criadoEm: Date.now() });
+      saveKey('equipe', state.equipe);
+      form.reset(); renderAll(); return;
+    }
+  });
+
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('[data-action]');
+    if(!btn) return;
+    var action = btn.dataset.action;
+    var id = btn.dataset.id;
+
+    if(action === 'export-excel'){ exportarExcel(); return; }
+    if(action === 'export-pdf'){ window.print(); return; }
+    if(action === 'del-generic'){
+      var entityKey = btn.dataset.entity;
+      state[entityKey] = state[entityKey].filter(function(x){ return x.id !== id; });
+      saveKey(entityKey, state[entityKey]);
+      renderAll(); return;
+    }
+    if(action === 'del-talhao'){ state.talhoes = state.talhoes.filter(function(t){ return t.id !== id; }); saveKey('talhoes', state.talhoes); renderAll(); return; }
+    if(action === 'del-safra'){ state.safras = state.safras.filter(function(s){ return s.id !== id; }); saveKey('safras', state.safras); renderAll(); return; }
+    if(action === 'del-producao'){ state.producao = state.producao.filter(function(p){ return p.id !== id; }); saveKey('producao', state.producao); renderAll(); return; }
+    if(action === 'del-operacao'){ state.operacoes = state.operacoes.filter(function(o){ return o.id !== id; }); saveKey('operacoes', state.operacoes); renderAll(); return; }
+    if(action === 'del-financeiro'){ state.financeiro = state.financeiro.filter(function(f){ return f.id !== id; }); saveKey('financeiro', state.financeiro); renderAll(); return; }
+    if(action === 'del-equipe'){ state.equipe = state.equipe.filter(function(m){ return m.id !== id; }); saveKey('equipe', state.equipe); renderAll(); return; }
+  });
+
+  init();
+})();
+</script>
+</body>
+</html>
