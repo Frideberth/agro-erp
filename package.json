@@ -1,0 +1,9 @@
+{
+  "name": "minha-fazenda",
+  "version": "1.0.0",
+  "private": true,
+  "description": "App de gestão agrícola com armazenamento em Netlify Blobs",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}

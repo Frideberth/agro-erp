@@ -115,7 +115,15 @@
     border-radius:4px; border:1px solid rgba(0,0,0,0.18); padding:10px;
     display:flex; flex-direction:column; justify-content:space-between; color:#1B1508;
     background-image: repeating-linear-gradient(100deg, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 2px, transparent 2px, transparent 9px);
+    font-family:inherit; margin:0; text-align:left; cursor:pointer;
+    transition:transform .12s ease, box-shadow .12s ease;
   }
+  .plot:hover, .plot:focus-visible{transform:translateY(-2px); box-shadow:0 4px 10px rgba(0,0,0,0.25);}
+  .plot .plot-cta{
+    align-self:flex-end; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;
+    opacity:0; transition:opacity .12s ease;
+  }
+  .plot:hover .plot-cta, .plot:focus-visible .plot-cta{opacity:0.85;}
   .plot.status-andamento{background-color:#DFA84E;}
   .plot.status-planejada{background-color:#C9C3A4;}
   .plot.status-colhida{background-color:#7FA36D;}
@@ -150,6 +158,10 @@
   .btn:hover{background:var(--accent-dark); color:var(--paper);}
   .btn-del{background:transparent; border:1px solid var(--cost); color:var(--cost-dark); padding:4px 9px; font-size:11px; border-radius:4px; font-weight:600;}
   .btn-del:hover{background:var(--cost); color:#fff;}
+  .btn-edit{background:transparent; border:1px solid var(--accent-dark); color:var(--accent-dark); padding:4px 9px; font-size:11px; border-radius:4px; font-weight:600; margin-right:6px;}
+  .btn-edit:hover{background:var(--accent-dark); color:var(--paper);}
+  .btn-cancel{background:transparent; border:1px solid var(--paper-line); color:var(--ink-soft); padding:9px 16px; font-size:13px; border-radius:4px; font-weight:600; margin-left:8px;}
+  .btn-cancel:hover{background:var(--paper-2);}
 
   /* ---------- Tables ---------- */
   table{width:100%; border-collapse:collapse; font-size:13px;}
@@ -180,9 +192,28 @@
   }
 
   .no-print{}
+
+  .auth-screen{
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .auth-card{
+    width:100%; max-width:380px; padding:30px 28px;
+  }
+  .auth-card h2{font-family:'Zilla Slab', serif; margin:0 0 4px; font-size:22px; color:var(--ink);}
+  .auth-card p{font-size:13px; color:var(--ink-soft); margin:0 0 20px; line-height:1.5;}
+  .auth-card .field{margin-bottom:14px;}
+  .auth-card .btn{width:100%;}
+  .auth-error{color:var(--cost-dark); font-size:12.5px; margin:-6px 0 14px; font-weight:600;}
+  .auth-link{background:none; border:none; color:var(--ink-soft); font-size:12px; text-decoration:underline; cursor:pointer; margin-top:14px; padding:0;}
+  .workspace-item{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:12px 14px; border:1px solid var(--paper-line); border-radius:4px; margin-bottom:8px;
+    background:#FBF7EC; cursor:pointer; font-size:14px; font-weight:600;
+  }
+  .workspace-item:hover{border-color:var(--accent);}
   @media print{
     .sidebar, #loading-indicator, .form-card, .btn-del, .no-print{display:none !important;}
-    #app{display:block;}
+    #app{display:block !important;}
     main{padding:0; max-width:100%;}
     body{background:#fff;}
     .paper{box-shadow:none; border:1px solid #ccc;}
@@ -190,7 +221,13 @@
 </style>
 </head>
 <body>
-<div id="app">
+<div id="gate-screen" class="auth-screen" style="display:none;">
+  <div class="auth-card paper"></div>
+</div>
+<div id="workspace-screen" class="auth-screen" style="display:none;">
+  <div class="auth-card paper"></div>
+</div>
+<div id="app" style="display:none;">
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-mark">⌂</div>
@@ -203,26 +240,35 @@
       <button class="nav-btn" data-tab="talhoes">Talhões</button>
       <button class="nav-btn" data-tab="safras">Safras</button>
       <button class="nav-btn" data-tab="culturas">Culturas</button>
+      <button class="nav-btn" data-tab="categoriasProduto">Categorias de Produto</button>
       <button class="nav-btn" data-tab="produtos">Produtos</button>
       <button class="nav-btn" data-tab="parceiros">Parceiros</button>
-      <button class="nav-btn" data-tab="equipe">Equipe</button>
+      <button class="nav-btn" data-tab="equipe">Funcionários</button>
       <button class="nav-btn" data-tab="patrimonio">Patrimônio</button>
       <div class="nav-group-label">Produção</div>
-      <button class="nav-btn" data-tab="producao">Estoque de Colheita</button>
+      <button class="nav-btn" data-tab="producao">Colheita</button>
       <div class="nav-group-label">Operações</div>
+      <button class="nav-btn" data-tab="tiposAtividade">Tipos de Atividade</button>
       <button class="nav-btn" data-tab="operacoes">Diário de Campo</button>
+      <div class="nav-group-label">Plano de Contas</div>
+      <button class="nav-btn" data-tab="subgruposFinanceiro">Subgrupos</button>
+      <button class="nav-btn" data-tab="contasFinanceiro">Contas</button>
       <div class="nav-group-label">Financeiro</div>
       <button class="nav-btn" data-tab="financeiro">Lançamentos</button>
-      <button class="nav-btn" data-tab="pagamentos">Pagamentos</button>
       <button class="nav-btn" data-tab="contasPagar">Contas a Pagar</button>
       <button class="nav-btn" data-tab="contasReceber">Contas a Receber</button>
       <div class="nav-group-label">Análise</div>
       <button class="nav-btn" data-tab="rentabilidade">Rentabilidade</button>
       <button class="nav-btn" data-tab="fluxoCaixa">Fluxo de Caixa</button>
+      <button class="nav-btn" data-tab="relatorios">Relatórios</button>
       <div class="nav-group-label">Inteligência</div>
       <button class="nav-btn" data-tab="indicadores">Indicadores</button>
     </nav>
-    <div class="sidebar-footer">Dados compartilhados com quem acessa este app.</div>
+    <div class="sidebar-footer">
+      Dados compartilhados com quem acessa este app.<br>
+      <button type="button" class="auth-link" data-action="switch-workspace" style="color:#9FAE93;">Trocar propriedade</button>
+      <button type="button" class="auth-link" data-action="lock-app" style="color:#9FAE93;">Sair</button>
+    </div>
   </aside>
 
   <main>
@@ -239,18 +285,22 @@
     <section id="tab-talhoes" class="tab-content hidden"></section>
     <section id="tab-safras" class="tab-content hidden"></section>
     <section id="tab-culturas" class="tab-content hidden"></section>
+    <section id="tab-categoriasProduto" class="tab-content hidden"></section>
     <section id="tab-produtos" class="tab-content hidden"></section>
     <section id="tab-parceiros" class="tab-content hidden"></section>
     <section id="tab-equipe" class="tab-content hidden"></section>
     <section id="tab-patrimonio" class="tab-content hidden"></section>
     <section id="tab-producao" class="tab-content hidden"></section>
+    <section id="tab-tiposAtividade" class="tab-content hidden"></section>
     <section id="tab-operacoes" class="tab-content hidden"></section>
+    <section id="tab-subgruposFinanceiro" class="tab-content hidden"></section>
+    <section id="tab-contasFinanceiro" class="tab-content hidden"></section>
     <section id="tab-financeiro" class="tab-content hidden"></section>
-    <section id="tab-pagamentos" class="tab-content hidden"></section>
     <section id="tab-contasPagar" class="tab-content hidden"></section>
     <section id="tab-contasReceber" class="tab-content hidden"></section>
     <section id="tab-rentabilidade" class="tab-content hidden"></section>
     <section id="tab-fluxoCaixa" class="tab-content hidden"></section>
+    <section id="tab-relatorios" class="tab-content hidden"></section>
     <section id="tab-indicadores" class="tab-content hidden"></section>
   </main>
 </div>
@@ -261,8 +311,9 @@
 (function(){
   "use strict";
 
-  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber'];
+  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro'];
   var state = {};
+  var editState = null; // {scope:'generic', entityKey, id} ou {scope:'talhoes'|'safras'|'operacoes'|'financeiro'|'producao', id}
   ALL_KEYS.forEach(function(k){ state[k] = []; });
 
   var pageMeta = {
@@ -271,31 +322,33 @@
     talhoes: {title:'Talhões', subtitle:'Áreas cadastradas na propriedade'},
     safras: {title:'Safras', subtitle:'Ciclos de plantio e colheita'},
     culturas: {title:'Culturas', subtitle:'Tipos de cultura cultivados'},
+    categoriasProduto: {title:'Categorias de Produto', subtitle:'Categorias usadas no cadastro de produtos'},
     produtos: {title:'Produtos', subtitle:'Insumos, defensivos e controle de estoque'},
     parceiros: {title:'Parceiros', subtitle:'Fornecedores e clientes'},
-    equipe: {title:'Equipe', subtitle:'Pessoas com acesso ao caderno'},
+    equipe: {title:'Funcionários', subtitle:'Funcionários e colaboradores da propriedade'},
     patrimonio: {title:'Patrimônio', subtitle:'Máquinas, veículos e benfeitorias, com valor depreciado'},
-    producao: {title:'Estoque de Colheita', subtitle:'Produção colhida, saídas e valor projetado'},
+    producao: {title:'Colheita', subtitle:'Registro de colheita e vendas, com controle de estoque e financeiro'},
+    tiposAtividade: {title:'Tipos de Atividade', subtitle:'Categorias usadas no Diário de Campo'},
     operacoes: {title:'Diário de Campo', subtitle:'Atividades registradas na propriedade'},
-    financeiro: {title:'Financeiro', subtitle:'Custos, receitas e valor projetado em estoque'},
-    pagamentos: {title:'Pagamentos', subtitle:'Funcionários e prestadores de serviço'},
+    subgruposFinanceiro: {title:'Subgrupos', subtitle:'Grandes grupos de receitas e despesas (plano de contas)'},
+    contasFinanceiro: {title:'Contas', subtitle:'Contas financeiras, organizadas dentro de cada subgrupo'},
+    financeiro: {title:'Financeiro', subtitle:'Lançamentos, pagamentos e valor projetado em estoque'},
     contasPagar: {title:'Contas a Pagar', subtitle:'Obrigações futuras com fornecedores e outros'},
     contasReceber: {title:'Contas a Receber', subtitle:'Valores a receber de clientes e parceiros'},
     rentabilidade: {title:'Rentabilidade', subtitle:'Gastos, receitas e potencial de geração de caixa por talhão e cultura'},
     fluxoCaixa: {title:'Fluxo de Caixa', subtitle:'Projeção mensal de entradas e saídas'},
+    relatorios: {title:'Relatórios', subtitle:'Resultado de receitas e despesas por subgrupo e conta'},
     indicadores: {title:'Indicadores', subtitle:'Gráficos, dashboards e exportação para Excel e PDF'}
   };
 
   var STATUS_LABEL = {andamento:'Em andamento', planejada:'Planejada', colhida:'Colhida'};
-  var OPERACAO_TIPOS = ['Plantio','Pulverização','Adubação','Colheita','Compra','Venda'];
-  var OPERACAO_COLORS = {'Plantio':'#7FA36D','Pulverização':'#C98A2B','Adubação':'#8B8368','Colheita':'#4F7942','Compra':'#A9B7C6','Venda':'#DFA84E'};
-  var CATEGORIAS_CUSTO = ['Insumos','Mão de obra','Maquinário','Combustível','Sementes','Defensivos','Outros'];
-  var CATEGORIAS_RECEITA = ['Venda de colheita','Arrendamento','Outros'];
+  var COLOR_PALETTE = {'Verde':'#7FA36D', 'Ocre':'#C98A2B', 'Marrom':'#8B8368', 'Verde escuro':'#4F7942', 'Azul-acinzentado':'#A9B7C6', 'Amarelo':'#DFA84E', 'Vermelho':'#D08370'};
   var MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
   function calcDepreciacao(item){
     var valor = Number(item.valor) || 0;
     var vidaUtil = Number(item.vidaUtilAnos) || 0;
+    var percResidual = Number(item.percentualResidual) || 0;
     if(!item.dataAquisicao || !vidaUtil) return valor;
     var aquisicao = new Date(item.dataAquisicao);
     if(isNaN(aquisicao.getTime())) return valor;
@@ -303,14 +356,49 @@
     var anos = (hoje - aquisicao) / (365.25 * 24 * 3600 * 1000);
     if(anos < 0) anos = 0;
     var fracao = Math.min(anos / vidaUtil, 1);
-    var atual = valor - (valor * fracao);
-    return Math.max(atual, 0);
+    var valorResidual = valor * (percResidual / 100);
+    var depreciavel = valor - valorResidual;
+    var atual = valor - (depreciavel * fracao);
+    return Math.max(atual, valorResidual);
   }
 
   function talhaoOptionsFn(){ return [{value:'', label:'—'}].concat(state.talhoes.map(function(t){ return {value:t.id, label:t.nome}; })); }
   function parceiroOptionsFn(){ return [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })); }
 
   var ENTITY_CONFIGS = {
+    subgruposFinanceiro: {
+      label: 'subgrupo financeiro',
+      fields: [
+        {name:'nome', type:'text', label:'Nome', required:true, placeholder:'Ex: Custo Insumos Agrícolas'},
+        {name:'tipo', type:'select', label:'Tipo', options:[{value:'custo', label:'Despesa'}, {value:'receita', label:'Receita'}]}
+      ],
+      columns: [
+        {key:'nome', label:'Nome'},
+        {key:'tipo', label:'Tipo', format:'badge', compute: function(item){ return item.tipo === 'custo' ? 'Despesa' : 'Receita'; }, colors:{'Despesa':'#A23E2E','Receita':'#4F7942'}}
+      ]
+    },
+    contasFinanceiro: {
+      label: 'conta financeira',
+      fields: [
+        {name:'nome', type:'text', label:'Nome da conta', required:true, placeholder:'Ex: Fertilizante Líquido'},
+        {name:'subgrupoId', type:'select', label:'Subgrupo', optionsFn: function(){ return state.subgruposFinanceiro.map(function(s){ return {value:s.id, label:s.nome + ' (' + (s.tipo === 'custo' ? 'Despesa' : 'Receita') + ')'}; }); }}
+      ],
+      columns: [
+        {key:'nome', label:'Conta'},
+        {key:'subgrupoId', label:'Subgrupo', compute: function(item){ var s = state.subgruposFinanceiro.find(function(x){ return x.id === item.subgrupoId; }); return s ? s.nome : '—'; }}
+      ]
+    },
+    tiposAtividade: {
+      label: 'tipo de atividade',
+      fields: [
+        {name:'nome', type:'text', label:'Nome', required:true, placeholder:'Ex: Colheita'},
+        {name:'cor', type:'select', label:'Cor no diário', options:Object.keys(COLOR_PALETTE).map(function(c){ return {value:c, label:c}; })}
+      ],
+      columns: [
+        {key:'nome', label:'Nome'},
+        {key:'cor', label:'Cor', format:'badge', colors:COLOR_PALETTE}
+      ]
+    },
     propriedades: {
       label: 'Propriedade',
       fields: [
@@ -329,19 +417,17 @@
     culturas: {
       label: 'Cultura',
       fields: [
-        {name:'nome', type:'text', label:'Nome', required:true, placeholder:'Ex: Soja'},
-        {name:'cicloDias', type:'number', label:'Ciclo (dias)', extra:{step:'1', min:'0'}, placeholder:'0'}
+        {name:'nome', type:'text', label:'Nome', required:true, placeholder:'Ex: Soja'}
       ],
       columns: [
-        {key:'nome', label:'Nome'},
-        {key:'cicloDias', label:'Ciclo (dias)', format:'num'}
+        {key:'nome', label:'Nome'}
       ]
     },
     produtos: {
       label: 'Produto',
       fields: [
         {name:'nome', type:'text', label:'Nome', required:true, placeholder:'Ex: Adubo NPK'},
-        {name:'categoria', type:'select', label:'Categoria', options:['Insumo','Defensivo','Semente','Combustível','Outro'].map(function(c){return {value:c,label:c};})},
+        {name:'categoria', type:'select', label:'Categoria', optionsFn: function(){ return state.categoriasProduto.map(function(c){ return {value:c.nome, label:c.nome}; }); }},
         {name:'unidade', type:'text', label:'Unidade', placeholder:'Ex: kg, L, sc'},
         {name:'estoqueAtual', type:'number', label:'Estoque atual', extra:{step:'0.01', min:'0'}, placeholder:'0'},
         {name:'estoqueMinimo', type:'number', label:'Estoque mínimo', extra:{step:'0.01', min:'0'}, placeholder:'0'}
@@ -352,6 +438,15 @@
         {key:'unidade', label:'Unidade'},
         {key:'estoqueAtual', label:'Estoque', format:'num'},
         {key:'estoqueMinimo', label:'Mínimo', format:'num'}
+      ]
+    },
+    categoriasProduto: {
+      label: 'categoria de produto',
+      fields: [
+        {name:'nome', type:'text', label:'Nome', required:true, placeholder:'Ex: Fertilizante'}
+      ],
+      columns: [
+        {key:'nome', label:'Nome'}
       ]
     },
     parceiros: {
@@ -367,6 +462,17 @@
         {key:'contato', label:'Contato'}
       ]
     },
+    equipe: {
+      label: 'funcionário',
+      fields: [
+        {name:'nome', type:'text', label:'Nome', required:true, placeholder:'Ex: João'},
+        {name:'papel', type:'text', label:'Função', placeholder:'Ex: Encarregado de campo'}
+      ],
+      columns: [
+        {key:'nome', label:'Nome'},
+        {key:'papel', label:'Função'}
+      ]
+    },
     patrimonio: {
       label: 'item de patrimônio',
       fields: [
@@ -375,38 +481,19 @@
         {name:'status', type:'select', label:'Status', options:['Operando','Em manutenção','Parado'].map(function(c){return {value:c,label:c};})},
         {name:'valor', type:'number', label:'Valor de compra (R$)', extra:{step:'0.01', min:'0'}, placeholder:'0,00'},
         {name:'dataAquisicao', type:'date', label:'Data de aquisição'},
-        {name:'vidaUtilAnos', type:'number', label:'Vida útil (anos)', extra:{step:'1', min:'1'}, placeholder:'10'}
+        {name:'vidaUtilAnos', type:'number', label:'Vida útil (anos)', extra:{step:'1', min:'1'}, placeholder:'10'},
+        {name:'percentualResidual', type:'number', label:'% Residual', extra:{step:'0.01', min:'0', max:'100'}, placeholder:'20'}
       ],
       columns: [
         {key:'nome', label:'Nome'},
         {key:'categoria', label:'Categoria'},
         {key:'status', label:'Status', format:'badge', colors:{'Operando':'#7FA36D','Em manutenção':'#DFA84E','Parado':'#D79A8A'}},
         {key:'valor', label:'Valor de compra', format:'brl'},
+        {key:'percentualResidual', label:'% Residual', format:'num'},
         {key:'valorAtual', label:'Valor atual (depreciado)', format:'brl', compute: calcDepreciacao}
       ]
     },
-    pagamentos: {
-      label: 'pagamento',
-      fields: [
-        {name:'tipo', type:'select', label:'Tipo', options:['Funcionário','Prestador de Serviço'].map(function(c){return {value:c,label:c};})},
-        {name:'beneficiario', type:'text', label:'Nome', required:true, placeholder:'Pessoa ou empresa'},
-        {name:'categoria', type:'select', label:'Categoria', options:['Salário','Diária','Empreitada','Serviço','Outro'].map(function(c){return {value:c,label:c};})},
-        {name:'valor', type:'number', label:'Valor (R$)', required:true, extra:{step:'0.01', min:'0'}, placeholder:'0,00'},
-        {name:'vencimento', type:'date', label:'Vencimento'},
-        {name:'status', type:'select', label:'Status', options:['Pendente','Pago'].map(function(c){return {value:c,label:c};})},
-        {name:'dataPagamento', type:'date', label:'Data do pagamento'},
-        {name:'talhaoId', type:'select', label:'Talhão (opcional)', optionsFn: talhaoOptionsFn},
-        {name:'observacao', type:'text', label:'Observação', placeholder:''}
-      ],
-      columns: [
-        {key:'beneficiario', label:'Beneficiário'},
-        {key:'tipo', label:'Tipo'},
-        {key:'categoria', label:'Categoria'},
-        {key:'valor', label:'Valor', format:'brl'},
-        {key:'vencimento', label:'Vencimento', format:'date'},
-        {key:'status', label:'Status', format:'badge', colors:{'Pendente':'#DFA84E','Pago':'#7FA36D'}}
-      ]
-    },
+
     contasPagar: {
       label: 'conta a pagar',
       fields: [
@@ -479,45 +566,421 @@
     try{ var k='__fazenda_test__'; window.localStorage.setItem(k,'1'); window.localStorage.removeItem(k); return true; }
     catch(e){ return false; }
   })();
+  var hasNetlifyBlobs = false;
+  var NETLIFY_STORAGE_ENDPOINT = '/.netlify/functions/storage';
   var LS_PREFIX = 'fazenda:';
+  var currentWorkspaceId = null;
 
-  function loadKey(key){
+  function blobsGet(storageKey){
+    return fetch(NETLIFY_STORAGE_ENDPOINT + '?key=' + encodeURIComponent(storageKey))
+      .then(function(res){ return res.ok ? res.json() : null; })
+      .then(function(v){ return (v === undefined) ? null : v; })
+      .catch(function(err){ console.error('Erro ao ler (Netlify Blobs)', storageKey, err); return null; });
+  }
+  function blobsSet(storageKey, value){
+    return fetch(NETLIFY_STORAGE_ENDPOINT, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({key: storageKey, value: value})
+    }).catch(function(err){ console.error('Erro ao salvar (Netlify Blobs)', storageKey, err); });
+  }
+
+  function rawGet(storageKey){
+    if(hasNetlifyBlobs){ return blobsGet(storageKey); }
     if(hasCloudStorage){
       return Promise.resolve()
-        .then(function(){ return window.storage.get(key, true); })
-        .then(function(res){ return res && res.value ? JSON.parse(res.value) : []; })
-        .catch(function(){ return []; });
+        .then(function(){ return window.storage.get(storageKey, true); })
+        .then(function(res){ return res && res.value ? JSON.parse(res.value) : null; })
+        .catch(function(){ return null; });
     }
     if(hasLocalStorage){
       try{
-        var raw = window.localStorage.getItem(LS_PREFIX + key);
-        return Promise.resolve(raw ? JSON.parse(raw) : []);
-      }catch(e){ return Promise.resolve([]); }
+        var raw = window.localStorage.getItem(LS_PREFIX + storageKey);
+        return Promise.resolve(raw ? JSON.parse(raw) : null);
+      }catch(e){ return Promise.resolve(null); }
     }
-    return Promise.resolve([]);
+    return Promise.resolve(null);
   }
-  function saveKey(key, arr){
+  function rawSet(storageKey, value){
+    if(hasNetlifyBlobs){ return blobsSet(storageKey, value); }
     if(hasCloudStorage){
       return Promise.resolve()
-        .then(function(){ return window.storage.set(key, JSON.stringify(arr), true); })
-        .catch(function(err){ console.error('Erro ao salvar', key, err); });
+        .then(function(){ return window.storage.set(storageKey, JSON.stringify(value), true); })
+        .catch(function(err){ console.error('Erro ao salvar', storageKey, err); });
     }
     if(hasLocalStorage){
-      try{ window.localStorage.setItem(LS_PREFIX + key, JSON.stringify(arr)); }catch(e){ console.error('Erro ao salvar', key, e); }
+      try{ window.localStorage.setItem(LS_PREFIX + storageKey, JSON.stringify(value)); }catch(e){ console.error('Erro ao salvar', storageKey, e); }
     }
     return Promise.resolve();
   }
 
+  function migrateLocalStorageToBlobs(){
+    if(!hasLocalStorage) return Promise.resolve();
+    var chaves = [];
+    try{
+      for(var i = 0; i < window.localStorage.length; i++){
+        var k = window.localStorage.key(i);
+        if(k && k.indexOf(LS_PREFIX) === 0) chaves.push(k.slice(LS_PREFIX.length));
+      }
+    }catch(e){ return Promise.resolve(); }
+    var tarefas = chaves.map(function(chave){
+      var raw = null;
+      try{ raw = window.localStorage.getItem(LS_PREFIX + chave); }catch(e){}
+      if(!raw) return Promise.resolve();
+      var valor;
+      try{ valor = JSON.parse(raw); }catch(e){ return Promise.resolve(); }
+      return blobsSet(chave, valor);
+    });
+    return Promise.all(tarefas);
+  }
+
+  function detectStorageBackend(){
+    if(hasCloudStorage) return Promise.resolve();
+    return fetch(NETLIFY_STORAGE_ENDPOINT + '?key=__ping__')
+      .then(function(res){
+        if(!res.ok){
+          console.warn('Netlify Blobs: function respondeu com status ' + res.status + ' — usando localStorage como alternativa.');
+          return;
+        }
+        hasNetlifyBlobs = true;
+        console.info('Netlify Blobs: conectado com sucesso.');
+        return blobsGet('global::workspaces').then(function(blobsWs){
+          if(blobsWs && blobsWs.length) return;
+          var lsWs = null;
+          try{ var raw = window.localStorage.getItem(LS_PREFIX + 'global::workspaces'); lsWs = raw ? JSON.parse(raw) : null; }catch(e){}
+          if(lsWs && lsWs.length){
+            console.info('Netlify Blobs: migrando dados locais existentes...');
+            return migrateLocalStorageToBlobs();
+          }
+        });
+      })
+      .catch(function(err){
+        console.warn('Netlify Blobs: não foi possível conectar (' + err + ') — usando localStorage como alternativa.');
+      });
+  }
+
+  // Chaves globais (não dependem de qual propriedade/cliente está selecionado)
+  function loadGlobal(key){ return rawGet('global::' + key); }
+  function saveGlobal(key, value){ return rawSet('global::' + key, value); }
+
+  // Chaves de dados da propriedade/cliente atualmente selecionado
+  function loadKey(key){
+    return rawGet(currentWorkspaceId + '::' + key).then(function(v){ return v || []; });
+  }
+  function saveKey(key, arr){
+    return rawSet(currentWorkspaceId + '::' + key, arr);
+  }
+
+  function loadWorkspaces(){ return loadGlobal('workspaces').then(function(v){ return Array.isArray(v) ? v : []; }); }
+  function saveWorkspaces(list){ return saveGlobal('workspaces', list); }
+
+  function migrateLegacyIfNeeded(){
+    return rawGet('talhoes').then(function(legacyTalhoes){
+      if(!legacyTalhoes || !legacyTalhoes.length){ return null; }
+      var newId = 'ws-' + Date.now();
+      return Promise.all(ALL_KEYS.map(function(k){
+        return rawGet(k).then(function(val){
+          if(val && val.length){ return rawSet(newId + '::' + k, val); }
+        });
+      })).then(function(){
+        return loadWorkspaces().then(function(list){
+          list.push({id:newId, nome:'Minha Fazenda', criadoEm:Date.now()});
+          return saveWorkspaces(list).then(function(){ return newId; });
+        });
+      });
+    });
+  }
+
+  function seedFromNotion(){
+    var now = Date.now();
+    var culturaCafe = {id:'seed-cultura-cafe', nome:'Café', criadoEm:now};
+    var culturaSoja = {id:'seed-cultura-soja', nome:'Soja', criadoEm:now + 1};
+    state.culturas = [culturaCafe, culturaSoja];
+
+    state.talhoes = [
+      {id:'seed-talhao-amarelo', nome:'Amarelo', area:3, propriedadeId:'', tipoSolo:'Argiloso', culturaAnteriorId:culturaCafe.id, criadoEm:now + 2},
+      {id:'seed-talhao-cafenovo', nome:'Café Novo', area:3, propriedadeId:'', tipoSolo:'Argiloso', culturaAnteriorId:culturaSoja.id, criadoEm:now + 3},
+      {id:'seed-talhao-catuai', nome:'Catuai', area:7, propriedadeId:'', tipoSolo:'Argiloso', culturaAnteriorId:culturaCafe.id, criadoEm:now + 4}
+    ];
+
+    state.safras = [
+      {id:'seed-safra-amarelo', talhaoId:'seed-talhao-amarelo', culturaId:culturaCafe.id, dataPlantio:'2018-03-01', anoAgricola:'', status:'andamento', criadoEm:now + 5},
+      {id:'seed-safra-cafenovo', talhaoId:'seed-talhao-cafenovo', culturaId:culturaCafe.id, dataPlantio:'2026-05-01', anoAgricola:'2026/2027', status:'andamento', criadoEm:now + 6},
+      {id:'seed-safra-catuai', talhaoId:'seed-talhao-catuai', culturaId:culturaCafe.id, dataPlantio:'2015-03-01', anoAgricola:'', status:'andamento', criadoEm:now + 7}
+    ];
+
+    saveKey('culturas', state.culturas);
+    saveKey('talhoes', state.talhoes);
+    saveKey('safras', state.safras);
+  }
+
+  /* ---------------- Login leve + Propriedade/Cliente ---------------- */
+  var PASS_KEY = 'app-password';
+  var UNLOCK_FLAG = 'fazenda-unlocked';
+
+  function boot(){
+    detectStorageBackend().then(function(){
+      var unlocked = false;
+      try{ unlocked = window.sessionStorage.getItem(UNLOCK_FLAG) === '1'; }catch(e){}
+      if(unlocked){ afterUnlock(); } else { showGateScreen(); }
+    });
+  }
+
+  function showGateScreen(errorMsg){
+    loadGlobal(PASS_KEY).then(function(pwd){
+      var el = document.querySelector('#gate-screen .auth-card');
+      var html = '';
+      if(!pwd){
+        html += '<h2>Defina uma senha de acesso</h2>';
+        html += '<p>Isso é apenas um filtro simples para afastar acessos casuais — não é uma segurança forte, já que este app não tem servidor por trás. Qualquer pessoa com acesso ao código consegue contorná-la.</p>';
+        html += '<form id="form-gate" data-mode="setup">';
+        html += '<div class="field"><label for="gate-pass1">Nova senha</label><input type="password" id="gate-pass1" name="pass1" required></div>';
+        html += '<div class="field"><label for="gate-pass2">Confirmar senha</label><input type="password" id="gate-pass2" name="pass2" required></div>';
+        if(errorMsg) html += '<div class="auth-error">' + escapeHtml(errorMsg) + '</div>';
+        html += '<button type="submit" class="btn">Definir senha e entrar</button>';
+        html += '</form>';
+      } else {
+        html += '<h2>Minha Fazenda</h2>';
+        html += '<p>Digite a senha de acesso.</p>';
+        html += '<form id="form-gate" data-mode="login">';
+        html += '<div class="field"><label for="gate-pass">Senha</label><input type="password" id="gate-pass" name="pass" required></div>';
+        if(errorMsg) html += '<div class="auth-error">' + escapeHtml(errorMsg) + '</div>';
+        html += '<button type="submit" class="btn">Entrar</button>';
+        html += '</form>';
+        html += '<button type="button" class="auth-link" data-action="reset-password">Esqueci a senha</button>';
+      }
+      el.innerHTML = html;
+      document.getElementById('gate-screen').style.display = 'flex';
+      document.getElementById('workspace-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'none';
+    });
+  }
+
+  function unlockSession(){
+    try{ window.sessionStorage.setItem(UNLOCK_FLAG, '1'); }catch(e){}
+    afterUnlock();
+  }
+
+  function afterUnlock(){
+    document.getElementById('gate-screen').style.display = 'none';
+    loadWorkspaces().then(function(list){
+      if(list.length === 1){ selectWorkspace(list[0].id); return; }
+      if(list.length > 1){ showWorkspaceScreen(list); return; }
+      migrateLegacyIfNeeded().then(function(migratedId){
+        if(migratedId){ selectWorkspace(migratedId); } else { showWorkspaceScreen([]); }
+      });
+    });
+  }
+
+  function showWorkspaceScreen(list){
+    var el = document.querySelector('#workspace-screen .auth-card');
+    var html = '<h2>' + (list.length ? 'Selecione a propriedade' : 'Vamos começar') + '</h2>';
+    html += '<p>' + (list.length ? 'Cada propriedade/cliente tem seus próprios dados, separados dos demais.' : 'Dê um nome para a primeira propriedade ou cliente que você vai gerenciar aqui.') + '</p>';
+    list.forEach(function(ws){
+      html += '<div class="workspace-item" data-action="select-workspace" data-id="' + ws.id + '">' + escapeHtml(ws.nome) + '</div>';
+    });
+    html += '<form id="form-workspace" style="margin-top:' + (list.length ? '16px' : '0') + ';">';
+    html += '<div class="field"><label for="ws-nome">' + (list.length ? 'Nova propriedade/cliente' : 'Nome da propriedade/cliente') + '</label><input type="text" id="ws-nome" name="nome" placeholder="Ex: Fazenda Santa Luzia" required></div>';
+    html += '<button type="submit" class="btn">' + (list.length ? 'Criar e entrar' : 'Criar e começar') + '</button>';
+    html += '</form>';
+    el.innerHTML = html;
+    document.getElementById('workspace-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+  }
+
+  function selectWorkspace(id){
+    currentWorkspaceId = id;
+    document.getElementById('workspace-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'grid';
+    init();
+  }
+
   function init(){
     var loading = document.getElementById('loading-indicator');
-    if(!hasCloudStorage && !hasLocalStorage){
+    if(!hasCloudStorage && !hasLocalStorage && !hasNetlifyBlobs){
       loading.textContent = 'Sem armazenamento disponível neste navegador — os dados não serão salvos ao recarregar.';
     }
     Promise.all(ALL_KEYS.map(loadKey))
       .catch(function(){ return ALL_KEYS.map(function(){ return []; }); })
       .then(function(results){
         ALL_KEYS.forEach(function(k, i){ state[k] = results[i] || []; });
-        if(hasCloudStorage || hasLocalStorage) loading.classList.add('hidden');
+        if(!state.talhoes.length && !state.culturas.length){ seedFromNotion(); }
+        if(!state.tiposAtividade.length){
+          var nowTipos = Date.now();
+          state.tiposAtividade = [
+            {id:'seed-tipo-plantio', nome:'Plantio', cor:'Verde', criadoEm:nowTipos},
+            {id:'seed-tipo-pulverizacao', nome:'Pulverização', cor:'Ocre', criadoEm:nowTipos+1},
+            {id:'seed-tipo-adubacao', nome:'Adubação', cor:'Marrom', criadoEm:nowTipos+2},
+            {id:'seed-tipo-compra', nome:'Compra', cor:'Azul-acinzentado', criadoEm:nowTipos+3}
+          ];
+          saveKey('tiposAtividade', state.tiposAtividade);
+        }
+        if(!state.categoriasProduto.length){
+          var nowCat = Date.now();
+          state.categoriasProduto = ['Insumo','Defensivo','Semente','Combustível','Outro'].map(function(nome, i){
+            return {id:'seed-categoria-' + i, nome:nome, criadoEm:nowCat + i};
+          });
+          saveKey('categoriasProduto', state.categoriasProduto);
+        }
+        if(state.pagamentos && state.pagamentos.length){
+          state.pagamentos.forEach(function(p){
+            var desc = (p.beneficiario || '') + (p.tipo ? ' (' + p.tipo + ')' : '');
+            if(p.observacao) desc += (desc ? ' — ' : '') + p.observacao;
+            state.financeiro.push({
+              id: uid(), tipo:'custo', categoria: p.categoria || 'Outros', valor: Number(p.valor) || 0,
+              status: p.status === 'Pago' ? 'Pago' : 'Pendente',
+              data: p.dataPagamento || '', vencimento: p.vencimento || '',
+              talhaoId: p.talhaoId || '', parceiroId: '', membroId: '',
+              descricao: desc, criadoEm: p.criadoEm || Date.now()
+            });
+          });
+          saveKey('financeiro', state.financeiro);
+          state.pagamentos = [];
+          saveKey('pagamentos', state.pagamentos);
+        }
+        if(!state.patrimonio.some(function(p){ return p.id === 'import-patr-01'; })){
+          var itensPatrimonio = [
+            {id:'import-patr-01', nome:'Barracão Novo', categoria:'Benfeitoria', status:'Operando', valor:150000, dataAquisicao:'2021-06-01', vidaUtilAnos:30, percentualResidual:20},
+            {id:'import-patr-02', nome:'Barracão Velho', categoria:'Benfeitoria', status:'Operando', valor:50000, dataAquisicao:'2012-01-01', vidaUtilAnos:30, percentualResidual:20},
+            {id:'import-patr-03', nome:'Carreta Massey Ferguson', categoria:'Máquina', status:'Operando', valor:3500, dataAquisicao:'2012-06-01', vidaUtilAnos:2, percentualResidual:20},
+            {id:'import-patr-04', nome:'Carreta Metálica para Silagem e Café', categoria:'Máquina', status:'Operando', valor:25000, dataAquisicao:'2022-06-01', vidaUtilAnos:3, percentualResidual:20},
+            {id:'import-patr-05', nome:'Descascador/Desmucilador de Café (Pinhal Máquinas)', categoria:'Máquina', status:'Operando', valor:38000, dataAquisicao:'2014-06-01', vidaUtilAnos:20, percentualResidual:20},
+            {id:'import-patr-06', nome:'Ensiladeira de Milho (JF Máquinas — JF 10F)', categoria:'Máquina', status:'Operando', valor:25000, dataAquisicao:'2022-06-01', vidaUtilAnos:10, percentualResidual:20},
+            {id:'import-patr-07', nome:'Grade Niveladora 42 Discos (Tatu)', categoria:'Máquina', status:'Operando', valor:15000, dataAquisicao:'2020-06-01', vidaUtilAnos:5, percentualResidual:20},
+            {id:'import-patr-08', nome:'Hilux CD Dsl 4x4 SR AT (Toyota, 2025)', categoria:'Veículo', status:'Operando', valor:242967.90, dataAquisicao:'2025-03-01', vidaUtilAnos:5, percentualResidual:20},
+            {id:'import-patr-09', nome:'Jacto Advance 2000 (AM18, 2006)', categoria:'Máquina', status:'Operando', valor:26000, dataAquisicao:'2018-01-01', vidaUtilAnos:5, percentualResidual:20},
+            {id:'import-patr-10', nome:'Lavador de Café (Induscom)', categoria:'Máquina', status:'Operando', valor:8000, dataAquisicao:'2012-06-01', vidaUtilAnos:13, percentualResidual:20},
+            {id:'import-patr-11', nome:'Lavoura de Café Plantada em 2015 e 2018', categoria:'Outro', status:'Operando', valor:300000, dataAquisicao:'2015-06-01', vidaUtilAnos:20, percentualResidual:0},
+            {id:'import-patr-12', nome:'Massey Ferguson 3407 (2025)', categoria:'Máquina', status:'Operando', valor:278000, dataAquisicao:'2026-05-29', vidaUtilAnos:9, percentualResidual:20},
+            {id:'import-patr-13', nome:'Mercedes-Benz 1113 (MB 1113, 1977)', categoria:'Veículo', status:'Operando', valor:60240, dataAquisicao:'2025-08-18', vidaUtilAnos:5, percentualResidual:20},
+            {id:'import-patr-14', nome:'New Holland TL5.100 (2022)', categoria:'Máquina', status:'Operando', valor:250000, dataAquisicao:'2022-06-01', vidaUtilAnos:10, percentualResidual:20},
+            {id:'import-patr-15', nome:'New Holland TT3880F (2012)', categoria:'Máquina', status:'Operando', valor:65000, dataAquisicao:'2012-03-01', vidaUtilAnos:10, percentualResidual:20},
+            {id:'import-patr-16', nome:'Plantadeira Valtra BP905L (2013)', categoria:'Máquina', status:'Operando', valor:75000, dataAquisicao:'2013-06-01', vidaUtilAnos:10, percentualResidual:20},
+            {id:'import-patr-17', nome:'Plataforma 20 Pés Soja/Trigo (New Holland, 2017)', categoria:'Máquina', status:'Operando', valor:25000, dataAquisicao:'2017-03-01', vidaUtilAnos:10, percentualResidual:20},
+            {id:'import-patr-18', nome:'Plataforma de Milho (New Holland 1409, 2020)', categoria:'Máquina', status:'Operando', valor:130000, dataAquisicao:'2020-06-01', vidaUtilAnos:10, percentualResidual:20},
+            {id:'import-patr-19', nome:'Pulverizador Berthoud 400 Litros (1990)', categoria:'Máquina', status:'Operando', valor:0.01, dataAquisicao:'2012-06-01', vidaUtilAnos:4, percentualResidual:20}
+          ];
+          var nowPatr = Date.now();
+          itensPatrimonio.forEach(function(it, i){ it.criadoEm = nowPatr + i; state.patrimonio.push(it); });
+          saveKey('patrimonio', state.patrimonio);
+        }
+        if(!state.patrimonio.some(function(p){ return p.id === 'import-patr-20'; })){
+          var itensPatrimonio2 = [
+            {id:'import-patr-20', nome:'Represa', categoria:'Benfeitoria', status:'Operando', valor:500000, dataAquisicao:'2021-03-01', vidaUtilAnos:30, percentualResidual:20},
+            {id:'import-patr-21', nome:'Roçadeira (Agrale 1600, 2005)', categoria:'Máquina', status:'Operando', valor:3500, dataAquisicao:'2012-06-01', vidaUtilAnos:6, percentualResidual:20},
+            {id:'import-patr-22', nome:'Secador Moreira (2012)', categoria:'Máquina', status:'Operando', valor:15000, dataAquisicao:'2012-06-01', vidaUtilAnos:20, percentualResidual:20},
+            {id:'import-patr-23', nome:'Secador Rotativo Pinhalense (2015)', categoria:'Máquina', status:'Operando', valor:15000, dataAquisicao:'2015-06-01', vidaUtilAnos:20, percentualResidual:20},
+            {id:'import-patr-24', nome:'Tanque Bazuka JAN 10.000 (2020)', categoria:'Máquina', status:'Operando', valor:20000, dataAquisicao:'2022-06-01', vidaUtilAnos:3, percentualResidual:20},
+            {id:'import-patr-25', nome:'Tanque 2000L', categoria:'Máquina', status:'Operando', valor:3000, dataAquisicao:'2012-06-01', vidaUtilAnos:6, percentualResidual:20},
+            {id:'import-patr-26', nome:'TC5070 (New Holland, 2017)', categoria:'Máquina', status:'Operando', valor:360000, dataAquisicao:'2017-03-01', vidaUtilAnos:10, percentualResidual:20},
+            {id:'import-patr-27', nome:'Trincha (Pinhalense TPL 160, 2018)', categoria:'Máquina', status:'Operando', valor:17000, dataAquisicao:'2018-06-01', vidaUtilAnos:12, percentualResidual:20},
+            {id:'import-patr-28', nome:'Tulha de Armazenagem de Café em Coco', categoria:'Benfeitoria', status:'Operando', valor:60000, dataAquisicao:'2022-06-01', vidaUtilAnos:20, percentualResidual:15},
+            {id:'import-patr-29', nome:'Usina Solar (Krilltech, 2024)', categoria:'Benfeitoria', status:'Operando', valor:221190.81, dataAquisicao:'2024-09-01', vidaUtilAnos:10, percentualResidual:20},
+            {id:'import-patr-30', nome:'Valtra BM125 (2013)', categoria:'Máquina', status:'Operando', valor:130000, dataAquisicao:'2013-09-01', vidaUtilAnos:10, percentualResidual:20}
+          ];
+          var nowPatr2 = Date.now();
+          itensPatrimonio2.forEach(function(it, i){ it.criadoEm = nowPatr2 + i; state.patrimonio.push(it); });
+          saveKey('patrimonio', state.patrimonio);
+        }
+        (function(){
+          var residuaisConhecidos = {
+            'import-patr-01':20, 'import-patr-02':20, 'import-patr-03':20, 'import-patr-04':20, 'import-patr-05':20,
+            'import-patr-06':20, 'import-patr-07':20, 'import-patr-08':20, 'import-patr-09':20, 'import-patr-10':20,
+            'import-patr-11':0, 'import-patr-12':20, 'import-patr-13':20, 'import-patr-14':20, 'import-patr-15':20,
+            'import-patr-16':20, 'import-patr-17':20, 'import-patr-18':20, 'import-patr-19':20,
+            'import-patr-20':20, 'import-patr-21':20, 'import-patr-22':20, 'import-patr-23':20, 'import-patr-24':20,
+            'import-patr-25':20, 'import-patr-26':20, 'import-patr-27':20, 'import-patr-28':15, 'import-patr-29':20, 'import-patr-30':20
+          };
+          var mudou = false;
+          state.patrimonio.forEach(function(p){
+            if(residuaisConhecidos.hasOwnProperty(p.id) && (p.percentualResidual === undefined || p.percentualResidual === null || p.percentualResidual === '')){
+              p.percentualResidual = residuaisConhecidos[p.id];
+              mudou = true;
+            }
+          });
+          if(mudou) saveKey('patrimonio', state.patrimonio);
+        })();
+        var SEED_SUBGRUPOS_FINANCEIRO = [
+          {id:'sg-receita-producao', nome:'Receita Produção Agrícola', tipo:'receita', criadoEm:1},
+          {id:'sg-receita-servicos', nome:'Receitas Serviços', tipo:'receita', criadoEm:2},
+          {id:'sg-receita-naooperacional', nome:'Receitas Não Operacionais', tipo:'receita', criadoEm:3},
+          {id:'sg-custo-insumos', nome:'Custo Insumos Agrícolas', tipo:'custo', criadoEm:4},
+          {id:'sg-custo-servicos', nome:'Despesas com Serviços', tipo:'custo', criadoEm:5},
+          {id:'sg-custo-operacional', nome:'Despesas Operacionais', tipo:'custo', criadoEm:6},
+          {id:'sg-custo-administrativo', nome:'Despesas Administrativas', tipo:'custo', criadoEm:7}
+        ];
+        var SEED_CONTAS_FINANCEIRO = [
+          {id:'ct-soja-comercial', nome:'Soja Comercial', subgrupoId:'sg-receita-producao', criadoEm:1},
+          {id:'ct-venda-colheita', nome:'Venda de Colheita', subgrupoId:'sg-receita-producao', criadoEm:2},
+          {id:'ct-colheita-servico', nome:'Colheita', subgrupoId:'sg-receita-servicos', criadoEm:3},
+          {id:'ct-frete-receita', nome:'Frete', subgrupoId:'sg-receita-servicos', criadoEm:4},
+          {id:'ct-servicos-solo', nome:'Serviços com Solo', subgrupoId:'sg-receita-servicos', criadoEm:5},
+          {id:'ct-outras-receitas', nome:'Outras Receitas', subgrupoId:'sg-receita-naooperacional', criadoEm:6},
+          {id:'ct-arrendamento', nome:'Arrendamento', subgrupoId:'sg-receita-naooperacional', criadoEm:7},
+          {id:'ct-acaricida', nome:'Acaricida', subgrupoId:'sg-custo-insumos', criadoEm:8},
+          {id:'ct-adjuvante', nome:'Adjuvante', subgrupoId:'sg-custo-insumos', criadoEm:9},
+          {id:'ct-outros-defensivos', nome:'Outros Defensivos Agrícolas', subgrupoId:'sg-custo-insumos', criadoEm:10},
+          {id:'ct-fertilizante-liquido', nome:'Fertilizante Líquido', subgrupoId:'sg-custo-insumos', criadoEm:11},
+          {id:'ct-fert-solido-base', nome:'Fert. Sólido Base', subgrupoId:'sg-custo-insumos', criadoEm:12},
+          {id:'ct-fungicida', nome:'Fungicida', subgrupoId:'sg-custo-insumos', criadoEm:13},
+          {id:'ct-herbicida', nome:'Herbicida', subgrupoId:'sg-custo-insumos', criadoEm:14},
+          {id:'ct-inseticida', nome:'Inseticida', subgrupoId:'sg-custo-insumos', criadoEm:15},
+          {id:'ct-semente-milho', nome:'Semente Milho', subgrupoId:'sg-custo-insumos', criadoEm:16},
+          {id:'ct-semente-soja', nome:'Semente Soja', subgrupoId:'sg-custo-insumos', criadoEm:17},
+          {id:'ct-sementes-outras', nome:'Sementes', subgrupoId:'sg-custo-insumos', criadoEm:18},
+          {id:'ct-aplic-agroquimico', nome:'Aplic. Agroquímico', subgrupoId:'sg-custo-servicos', criadoEm:19},
+          {id:'ct-capina', nome:'Capina', subgrupoId:'sg-custo-servicos', criadoEm:20},
+          {id:'ct-colheita-despesa', nome:'Colheita', subgrupoId:'sg-custo-servicos', criadoEm:21},
+          {id:'ct-frete-despesa', nome:'Frete', subgrupoId:'sg-custo-servicos', criadoEm:22},
+          {id:'ct-plantio', nome:'Plantio', subgrupoId:'sg-custo-servicos', criadoEm:23},
+          {id:'ct-seguro-producao', nome:'Seguro Produção', subgrupoId:'sg-custo-servicos', criadoEm:24},
+          {id:'ct-conservacao-solo', nome:'Conservação de Solo', subgrupoId:'sg-custo-servicos', criadoEm:25},
+          {id:'ct-servicos-gerais', nome:'Serviços Gerais', subgrupoId:'sg-custo-servicos', criadoEm:26},
+          {id:'ct-servicos-contratados', nome:'Serviços Contratados', subgrupoId:'sg-custo-servicos', criadoEm:27},
+          {id:'ct-combustivel', nome:'Combustível', subgrupoId:'sg-custo-operacional', criadoEm:28},
+          {id:'ct-manutencao-maquinas', nome:'Manutenção de Máquinas', subgrupoId:'sg-custo-operacional', criadoEm:29},
+          {id:'ct-energia-eletrica', nome:'Energia Elétrica', subgrupoId:'sg-custo-operacional', criadoEm:30},
+          {id:'ct-maquinario', nome:'Maquinário', subgrupoId:'sg-custo-operacional', criadoEm:31},
+          {id:'ct-insumos-gerais', nome:'Insumos', subgrupoId:'sg-custo-operacional', criadoEm:32},
+          {id:'ct-outros-operacional', nome:'Outros', subgrupoId:'sg-custo-operacional', criadoEm:33},
+          {id:'ct-salario', nome:'Salário', subgrupoId:'sg-custo-administrativo', criadoEm:34},
+          {id:'ct-diaria', nome:'Diária', subgrupoId:'sg-custo-administrativo', criadoEm:35},
+          {id:'ct-empreitada', nome:'Empreitada', subgrupoId:'sg-custo-administrativo', criadoEm:36},
+          {id:'ct-servico-admin', nome:'Serviço', subgrupoId:'sg-custo-administrativo', criadoEm:37},
+          {id:'ct-mao-de-obra', nome:'Mão de obra', subgrupoId:'sg-custo-administrativo', criadoEm:38},
+          {id:'ct-outros-admin', nome:'Outros', subgrupoId:'sg-custo-administrativo', criadoEm:39}
+        ];
+        if(!state.subgruposFinanceiro.length){
+          state.subgruposFinanceiro = SEED_SUBGRUPOS_FINANCEIRO;
+          saveKey('subgruposFinanceiro', state.subgruposFinanceiro);
+        }
+        if(!state.contasFinanceiro.length){
+          // Repara mesmo se os Subgrupos já existiam mas as Contas não foram salvas (ex: falha anterior de armazenamento)
+          state.contasFinanceiro = SEED_CONTAS_FINANCEIRO;
+          saveKey('contasFinanceiro', state.contasFinanceiro);
+        }
+        (function(){
+          var mapaCategoria = {
+            'custo|Insumos':'ct-insumos-gerais', 'custo|Mão de obra':'ct-mao-de-obra', 'custo|Salário':'ct-salario',
+            'custo|Diária':'ct-diaria', 'custo|Empreitada':'ct-empreitada', 'custo|Serviço':'ct-servico-admin',
+            'custo|Maquinário':'ct-maquinario', 'custo|Combustível':'ct-combustivel', 'custo|Sementes':'ct-sementes-outras',
+            'custo|Defensivos':'ct-outros-defensivos', 'custo|Outros':'ct-outros-operacional',
+            'receita|Venda de colheita':'ct-venda-colheita', 'receita|Venda de Colheita':'ct-venda-colheita',
+            'receita|Arrendamento':'ct-arrendamento', 'receita|Outros':'ct-outras-receitas'
+          };
+          var mudouFin = false;
+          state.financeiro.forEach(function(f){
+            if(!f.contaId){
+              var chave = f.tipo + '|' + f.categoria;
+              f.contaId = mapaCategoria[chave] || (f.tipo === 'custo' ? 'ct-outros-operacional' : 'ct-outras-receitas');
+              if(f.quantidade === undefined) f.quantidade = 0;
+              if(f.peso === undefined) f.peso = 0;
+              if(f.unidade === undefined) f.unidade = '';
+              mudouFin = true;
+            }
+          });
+          if(mudouFin) saveKey('financeiro', state.financeiro);
+        })();
+        if(hasCloudStorage || hasLocalStorage || hasNetlifyBlobs) loading.classList.add('hidden');
         renderAll();
       })
       .catch(function(err){ console.error('Falha ao iniciar o app', err); renderAll(); });
@@ -536,10 +999,27 @@
   function produtoNome(id){ var p = state.produtos.find(function(p){ return p.id === id; }); return p ? p.nome : '—'; }
   function parceiroNome(id){ var p = state.parceiros.find(function(p){ return p.id === id; }); return p ? p.nome : '—'; }
   function membroNome(id){ var m = state.equipe.find(function(m){ return m.id === id; }); return m ? m.nome : '—'; }
+  function subgrupoNome(id){ var s = state.subgruposFinanceiro.find(function(s){ return s.id === id; }); return s ? s.nome : '—'; }
+  function contaNome(id){ var c = state.contasFinanceiro.find(function(c){ return c.id === id; }); return c ? c.nome : '—'; }
+  function contaLabel(id){
+    var c = state.contasFinanceiro.find(function(c){ return c.id === id; });
+    if(!c) return '—';
+    return subgrupoNome(c.subgrupoId) + ' · ' + c.nome;
+  }
+  function contaTipo(id){
+    var c = state.contasFinanceiro.find(function(c){ return c.id === id; });
+    if(!c) return 'custo';
+    var s = state.subgruposFinanceiro.find(function(s){ return s.id === c.subgrupoId; });
+    return s ? s.tipo : 'custo';
+  }
+  function tipoAtividadeCor(nomeTipo){
+    var t = state.tiposAtividade.find(function(x){ return x.nome === nomeTipo; });
+    return t && COLOR_PALETTE[t.cor] ? COLOR_PALETTE[t.cor] : '#C9C3A4';
+  }
   function safraLabel(id){
     var s = state.safras.find(function(s){ return s.id === id; });
     if(!s) return '—';
-    return talhaoNome(s.talhaoId) + ' · ' + culturaNome(s.culturaId);
+    return talhaoNome(s.talhaoId) + ' · ' + culturaNome(s.culturaId) + (s.anoAgricola ? ' (' + s.anoAgricola + ')' : '');
   }
 
   function estoquePorSafra(){
@@ -585,10 +1065,10 @@
     var hoje = new Date(); hoje.setHours(0,0,0,0);
     var limite = new Date(hoje.getTime() + dias * 24 * 3600 * 1000);
     var lista = [];
-    state.pagamentos.forEach(function(p){
-      if(p.status === 'Pendente' && p.vencimento){
-        var d = new Date(p.vencimento);
-        if(d <= limite) lista.push({desc:'Pagamento · ' + p.beneficiario, valor:Number(p.valor)||0, vencimento:p.vencimento, tipo:'saida', atrasado: d < hoje});
+    state.financeiro.forEach(function(f){
+      if(f.status === 'Pendente' && f.vencimento){
+        var d = new Date(f.vencimento);
+        if(d <= limite) lista.push({desc:(f.tipo==='custo'?'A pagar':'A receber') + ' · ' + (f.descricao || f.categoria), valor:Number(f.valor)||0, vencimento:f.vencimento, tipo: f.tipo==='receita'?'entrada':'saida', atrasado: d < hoje});
       }
     });
     state.contasPagar.forEach(function(c){
@@ -610,11 +1090,9 @@
   function buildCashEvents(){
     var events = [];
     state.financeiro.forEach(function(f){
-      events.push({date: f.data, valor: Number(f.valor)||0, tipo: f.tipo === 'receita' ? 'entrada' : 'saida', realizado:true});
-    });
-    state.pagamentos.forEach(function(p){
-      if(p.status === 'Pago'){ events.push({date: p.dataPagamento || p.vencimento, valor:Number(p.valor)||0, tipo:'saida', realizado:true}); }
-      else { events.push({date: p.vencimento, valor:Number(p.valor)||0, tipo:'saida', realizado:false}); }
+      var st = f.status || 'Pago';
+      if(st === 'Pendente'){ events.push({date: f.vencimento || f.data, valor: Number(f.valor)||0, tipo: f.tipo === 'receita' ? 'entrada' : 'saida', realizado:false}); }
+      else { events.push({date: f.data, valor: Number(f.valor)||0, tipo: f.tipo === 'receita' ? 'entrada' : 'saida', realizado:true}); }
     });
     state.contasPagar.forEach(function(c){
       if(c.status === 'Pago'){ events.push({date: c.dataPagamento || c.vencimento, valor:Number(c.valor)||0, tipo:'saida', realizado:true}); }
@@ -641,18 +1119,22 @@
     renderTalhoes();
     renderSafras();
     renderGenericTab('culturas');
+    renderGenericTab('categoriasProduto');
     renderGenericTab('produtos');
     renderGenericTab('parceiros');
-    renderEquipe();
-    renderGenericTab('patrimonio');
+    renderGenericTab('equipe');
+    renderPatrimonio();
     renderProducao();
+    renderGenericTab('tiposAtividade');
     renderOperacoes();
+    renderGenericTab('subgruposFinanceiro');
+    renderGenericTab('contasFinanceiro');
     renderFinanceiro();
-    renderPagamentos();
     renderContasPagar();
     renderContasReceber();
     renderRentabilidade();
     renderFluxoCaixa();
+    renderRelatorios();
     renderIndicadores();
   }
 
@@ -665,13 +1147,14 @@
     var el = document.getElementById('tab-painel');
     var areaTotal = state.talhoes.reduce(function(sum,t){ return sum + (Number(t.area)||0); }, 0);
     var safrasAndamento = state.safras.filter(function(s){ return s.status === 'andamento'; }).length;
-    var totalCustos = state.financeiro.filter(function(f){ return f.tipo === 'custo'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
-    var totalReceitas = state.financeiro.filter(function(f){ return f.tipo === 'receita'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+    var totalCustos = state.financeiro.filter(function(f){ return f.tipo === 'custo' && (f.status||'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+    var totalReceitas = state.financeiro.filter(function(f){ return f.tipo === 'receita' && (f.status||'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
     var saldo = totalReceitas - totalCustos;
     var estoque = estoqueResumo();
 
     var html = '';
     html += '<div class="stat-row">';
+    html += '<div class="paper stat-card" id="weather-widget"><div class="label">Clima agora</div><div style="font-size:12px; color:var(--ink-soft); margin-top:6px;">Carregando…</div></div>';
     html += statCard('Área total', fmtHa(areaTotal));
     html += statCard('Propriedades', state.propriedades.length);
     html += statCard('Talhões', state.talhoes.length);
@@ -713,10 +1196,11 @@
         var safra = safraAtualDoTalhao(t.id);
         var statusClass = safra ? 'status-' + safra.status : 'status-none';
         var statusLabel = safra ? STATUS_LABEL[safra.status] : 'Sem safra';
-        html += '<div class="plot ' + statusClass + '">';
+        html += '<button type="button" class="plot ' + statusClass + '" data-talhao-id="' + t.id + '" title="Registrar atividade no talhão ' + escapeHtml(t.nome) + '">';
         html += '<div><div class="plot-name">' + escapeHtml(t.nome) + '</div><div class="plot-area">' + fmtHa(t.area) + '</div></div>';
         html += '<div><div class="plot-crop">' + (safra ? escapeHtml(culturaNome(safra.culturaId)) : '—') + '</div><span class="plot-status">' + statusLabel + '</span></div>';
-        html += '</div>';
+        html += '<span class="plot-cta">+ Atividade</span>';
+        html += '</button>';
       });
       html += '</div>';
     }
@@ -764,6 +1248,45 @@
 
     html += '</div>';
     el.innerHTML = html;
+    loadWeather();
+  }
+
+  var WEATHER_LABELS = {0:'Céu limpo', 1:'Poucas nuvens', 2:'Parcialmente nublado', 3:'Nublado', 45:'Neblina', 48:'Neblina', 51:'Garoa leve', 53:'Garoa', 55:'Garoa forte', 61:'Chuva leve', 63:'Chuva', 65:'Chuva forte', 71:'Neve leve', 73:'Neve', 75:'Neve forte', 80:'Pancadas de chuva', 81:'Pancadas de chuva', 82:'Pancadas fortes', 95:'Tempestade', 96:'Tempestade com granizo', 99:'Tempestade com granizo'};
+
+  var weatherCache = null;
+
+  function loadWeather(){
+    var el = document.getElementById('weather-widget');
+    if(!el) return;
+    if(weatherCache){ el.innerHTML = weatherCache; return; }
+    if(!navigator.geolocation){
+      el.innerHTML = '<div class="label">Clima agora</div><div style="font-size:12px; color:var(--ink-soft); margin-top:6px;">Geolocalização não disponível neste navegador.</div>';
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(function(pos){
+      var lat = pos.coords.latitude, lon = pos.coords.longitude;
+      fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current=temperature_2m,weather_code&timezone=auto')
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          if(data && data.current){
+            var temp = Math.round(data.current.temperature_2m);
+            var label = WEATHER_LABELS[data.current.weather_code] || '';
+            weatherCache = '<div class="label">Clima agora</div><div class="value">' + temp + '°C</div><div style="font-size:12px; color:var(--ink-soft); margin-top:2px;">' + escapeHtml(label) + '</div>';
+          } else {
+            weatherCache = '<div class="label">Clima agora</div><div style="font-size:12px; color:var(--ink-soft); margin-top:6px;">Não foi possível carregar.</div>';
+          }
+          var wEl = document.getElementById('weather-widget');
+          if(wEl) wEl.innerHTML = weatherCache;
+        })
+        .catch(function(){
+          weatherCache = '<div class="label">Clima agora</div><div style="font-size:12px; color:var(--ink-soft); margin-top:6px;">Não foi possível carregar.</div>';
+          var wEl2 = document.getElementById('weather-widget');
+          if(wEl2) wEl2.innerHTML = weatherCache;
+        });
+    }, function(){
+      var wEl3 = document.getElementById('weather-widget');
+      if(wEl3) wEl3.innerHTML = '<div class="label">Clima agora</div><div style="font-size:12px; color:var(--ink-soft); margin-top:6px;">Permita a localização para ver o clima.</div>';
+    }, {timeout:8000});
   }
 
   /* ---------------- Generic cadastro helpers ---------------- */
@@ -783,17 +1306,24 @@
 
   function buildGenericFormHtml(entityKey){
     var cfg = ENTITY_CONFIGS[entityKey];
-    var html = '<div class="paper form-card"><h3>Novo(a) ' + cfg.label.toLowerCase() + '</h3>';
-    html += '<form class="entry-form" data-form="generic" data-entity="' + entityKey + '">';
+    var editingRecord = null;
+    if(editState && editState.scope === 'generic' && editState.entityKey === entityKey){
+      editingRecord = state[entityKey].find(function(x){ return x.id === editState.id; }) || null;
+    }
+    var html = '<div class="paper form-card"><h3>' + (editingRecord ? 'Editar ' + cfg.label.toLowerCase() : 'Novo(a) ' + cfg.label.toLowerCase()) + '</h3>';
+    html += '<form class="entry-form" data-form="generic" data-entity="' + entityKey + '"' + (editingRecord ? ' data-editing-id="' + editingRecord.id + '"' : '') + '>';
     cfg.fields.forEach(function(f){
+      var current = editingRecord ? editingRecord[f.name] : undefined;
       if(f.type === 'select'){
         var opts = typeof f.optionsFn === 'function' ? f.optionsFn() : f.options;
-        html += selectField(f.name, f.label, opts);
+        html += selectField(f.name, f.label, opts, current);
       } else {
-        html += field(f.type, f.name, f.label, !!f.required, f.placeholder || '', f.extra || {});
+        html += field(f.type, f.name, f.label, !!f.required, f.placeholder || '', f.extra || {}, current);
       }
     });
-    html += '<button type="submit" class="btn">Adicionar</button></form></div>';
+    html += '<button type="submit" class="btn">' + (editingRecord ? 'Salvar alterações' : 'Adicionar') + '</button>';
+    if(editingRecord) html += '<button type="button" class="btn-cancel" data-action="cancel-edit">Cancelar</button>';
+    html += '</form></div>';
     return html;
   }
 
@@ -804,6 +1334,9 @@
     if(!list.length){
       html += '<div class="empty-state">Nenhum(a) ' + cfg.label.toLowerCase() + ' cadastrado(a) ainda.</div>';
     } else {
+      if(list.length > 4){
+        html += '<div style="padding:14px 18px 0;"><input type="text" id="search-' + entityKey + '" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+      }
       html += '<div class="table-wrap"><table><thead><tr>';
       cfg.columns.forEach(function(c){ html += '<th>' + c.label + '</th>'; });
       html += '<th></th></tr></thead><tbody>';
@@ -814,7 +1347,8 @@
           var numClass = (c.format === 'ha' || c.format === 'brl' || c.format === 'num') ? ' class="num"' : '';
           html += '<td' + numClass + '>' + formatColumn(c, val) + '</td>';
         });
-        html += '<td><button class="btn-del" data-action="del-generic" data-entity="' + entityKey + '" data-id="' + item.id + '">Remover</button></td>';
+        html += '<td><button class="btn-edit" data-action="edit-generic" data-entity="' + entityKey + '" data-id="' + item.id + '">Editar</button>';
+        html += '<button class="btn-del" data-action="del-generic" data-entity="' + entityKey + '" data-id="' + item.id + '">Remover</button></td>';
         html += '</tr>';
       });
       html += '</tbody></table></div>';
@@ -825,6 +1359,19 @@
 
   function renderGenericTab(entityKey){
     document.getElementById('tab-' + entityKey).innerHTML = buildGenericFormHtml(entityKey) + buildGenericTableHtml(entityKey);
+  }
+
+  function renderPatrimonio(){
+    var totalCompra = state.patrimonio.reduce(function(s,p){ return s + (Number(p.valor)||0); }, 0);
+    var totalAtual = state.patrimonio.reduce(function(s,p){ return s + calcDepreciacao(p); }, 0);
+    var html = '<div class="stat-row">';
+    html += statCard('Itens cadastrados', state.patrimonio.length);
+    html += statCard('Valor total de compra', fmtBRL(totalCompra));
+    html += statCard('Valor total atual (depreciado)', fmtBRL(totalAtual), 'growth');
+    html += '</div>';
+    html += buildGenericFormHtml('patrimonio');
+    html += buildGenericTableHtml('patrimonio');
+    document.getElementById('tab-patrimonio').innerHTML = html;
   }
 
   /* ---------------- Propriedades (com talhões aninhados) ---------------- */
@@ -878,29 +1425,40 @@
   /* ---------------- Talhões ---------------- */
   function renderTalhoes(){
     var el = document.getElementById('tab-talhoes');
+    var editingRecord = (editState && editState.scope === 'talhoes') ? state.talhoes.find(function(x){ return x.id === editState.id; }) : null;
     var html = '';
-    html += '<div class="paper form-card"><h3>Novo talhão</h3>';
-    html += '<form class="entry-form" id="form-talhao">';
-    html += field('text', 'nome', 'Nome do talhão', true, 'Ex: Talhão 3 — Fundo');
-    html += field('number', 'area', 'Área (hectares)', true, '0', {step:'0.01', min:'0'});
-    html += selectField('propriedadeId', 'Propriedade (opcional)', [{value:'', label:'—'}].concat(state.propriedades.map(function(p){ return {value:p.id, label:p.nome}; })));
-    html += '<button type="submit" class="btn">Adicionar talhão</button>';
+    html += '<div class="paper form-card"><h3>' + (editingRecord ? 'Editar talhão' : 'Novo talhão') + '</h3>';
+    html += '<form class="entry-form" id="form-talhao"' + (editingRecord ? ' data-editing-id="' + editingRecord.id + '"' : '') + '>';
+    html += field('text', 'nome', 'Nome do talhão', true, 'Ex: Talhão 3 — Fundo', {}, editingRecord ? editingRecord.nome : undefined);
+    html += field('number', 'area', 'Área (hectares)', true, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.area : undefined);
+    html += selectField('propriedadeId', 'Propriedade (opcional)', [{value:'', label:'—'}].concat(state.propriedades.map(function(p){ return {value:p.id, label:p.nome}; })), editingRecord ? editingRecord.propriedadeId : undefined);
+    html += field('text', 'tipoSolo', 'Tipo de solo (opcional)', false, 'Ex: Argiloso, Arenoso', {}, editingRecord ? editingRecord.tipoSolo : undefined);
+    html += selectField('culturaAnteriorId', 'Cultura anterior (opcional)', [{value:'', label:'—'}].concat(state.culturas.map(function(c){ return {value:c.id, label:c.nome}; })), editingRecord ? editingRecord.culturaAnteriorId : undefined);
+    if(!editingRecord){
+      html += selectField('culturaAtualId', 'Safra atual — cultura (opcional)', [{value:'', label:'—'}].concat(state.culturas.map(function(c){ return {value:c.id, label:c.nome}; })));
+      html += selectField('statusSafraAtual', 'Safra atual — status', [{value:'planejada', label:'Planejada'}, {value:'andamento', label:'Em andamento'}, {value:'colhida', label:'Colhida'}], 'andamento');
+    }
+    html += '<button type="submit" class="btn">' + (editingRecord ? 'Salvar alterações' : 'Adicionar talhão') + '</button>';
+    if(editingRecord) html += '<button type="button" class="btn-cancel" data-action="cancel-edit">Cancelar</button>';
     html += '</form></div>';
 
     html += '<div class="paper">';
     if(!state.talhoes.length){
       html += '<div class="empty-state">Nenhum talhão cadastrado ainda.</div>';
     } else {
-      html += '<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Área</th><th>Propriedade</th><th>Safra atual</th><th>Status</th><th></th></tr></thead><tbody>';
+      html += '<div style="padding:14px 18px 0;"><input type="text" id="search-talhoes" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+      html += '<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Área</th><th>Propriedade</th><th>Solo</th><th>Cultura anterior</th><th>Safra atual</th><th>Status</th><th></th></tr></thead><tbody>';
       state.talhoes.forEach(function(t){
         var safra = safraAtualDoTalhao(t.id);
         html += '<tr>';
         html += '<td>' + escapeHtml(t.nome) + '</td>';
         html += '<td class="num">' + fmtHa(t.area) + '</td>';
         html += '<td>' + (t.propriedadeId ? escapeHtml(propriedadeNome(t.propriedadeId)) : '—') + '</td>';
+        html += '<td>' + (t.tipoSolo ? escapeHtml(t.tipoSolo) : '—') + '</td>';
+        html += '<td>' + (t.culturaAnteriorId ? escapeHtml(culturaNome(t.culturaAnteriorId)) : '—') + '</td>';
         html += '<td>' + (safra ? escapeHtml(culturaNome(safra.culturaId)) : '—') + '</td>';
         html += '<td>' + (safra ? '<span class="badge status-' + safra.status + '">' + STATUS_LABEL[safra.status] + '</span>' : '—') + '</td>';
-        html += '<td><button class="btn-del" data-action="del-talhao" data-id="' + t.id + '">Remover</button></td>';
+        html += '<td><button class="btn-edit" data-action="edit-talhao" data-id="' + t.id + '">Editar</button><button class="btn-del" data-action="del-talhao" data-id="' + t.id + '">Remover</button></td>';
         html += '</tr>';
       });
       html += '</tbody></table></div>';
@@ -912,20 +1470,22 @@
   /* ---------------- Safras ---------------- */
   function renderSafras(){
     var el = document.getElementById('tab-safras');
+    var editingRecord = (editState && editState.scope === 'safras') ? state.safras.find(function(x){ return x.id === editState.id; }) : null;
     var html = '';
-    html += '<div class="paper form-card"><h3>Nova safra</h3>';
+    html += '<div class="paper form-card"><h3>' + (editingRecord ? 'Editar safra' : 'Nova safra') + '</h3>';
     if(!state.talhoes.length){
       html += '<div class="empty-state">Cadastre um talhão antes de lançar uma safra.</div>';
     } else if(!state.culturas.length){
       html += '<div class="empty-state">Cadastre uma cultura antes de lançar uma safra.</div>';
     } else {
-      html += '<form class="entry-form" id="form-safra">';
-      html += selectField('talhaoId', 'Talhão', state.talhoes.map(function(t){ return {value:t.id, label:t.nome}; }));
-      html += selectField('culturaId', 'Cultura', state.culturas.map(function(c){ return {value:c.id, label:c.nome}; }));
-      html += field('date', 'dataPlantio', 'Data de plantio', false);
-      html += field('date', 'previsaoColheita', 'Previsão de colheita', false);
-      html += selectField('status', 'Status', [{value:'planejada', label:'Planejada'}, {value:'andamento', label:'Em andamento'}, {value:'colhida', label:'Colhida'}]);
-      html += '<button type="submit" class="btn">Adicionar safra</button>';
+      html += '<form class="entry-form" id="form-safra"' + (editingRecord ? ' data-editing-id="' + editingRecord.id + '"' : '') + '>';
+      html += selectField('talhaoId', 'Talhão', state.talhoes.map(function(t){ return {value:t.id, label:t.nome}; }), editingRecord ? editingRecord.talhaoId : undefined);
+      html += selectField('culturaId', 'Cultura', state.culturas.map(function(c){ return {value:c.id, label:c.nome}; }), editingRecord ? editingRecord.culturaId : undefined);
+      html += field('date', 'dataPlantio', 'Data de plantio', false, '', {}, editingRecord ? editingRecord.dataPlantio : undefined);
+      html += field('text', 'anoAgricola', 'Ano agrícola', false, 'Ex: 2026/2027', {}, editingRecord ? editingRecord.anoAgricola : undefined);
+      html += selectField('status', 'Status', [{value:'planejada', label:'Planejada'}, {value:'andamento', label:'Em andamento'}, {value:'colhida', label:'Colhida'}], editingRecord ? editingRecord.status : undefined);
+      html += '<button type="submit" class="btn">' + (editingRecord ? 'Salvar alterações' : 'Adicionar safra') + '</button>';
+      if(editingRecord) html += '<button type="button" class="btn-cancel" data-action="cancel-edit">Cancelar</button>';
       html += '</form>';
     }
     html += '</div>';
@@ -934,15 +1494,16 @@
     if(!state.safras.length){
       html += '<div class="empty-state">Nenhuma safra lançada ainda.</div>';
     } else {
-      html += '<div class="table-wrap"><table><thead><tr><th>Talhão</th><th>Cultura</th><th>Plantio</th><th>Prev. colheita</th><th>Status</th><th></th></tr></thead><tbody>';
+      html += '<div style="padding:14px 18px 0;"><input type="text" id="search-safras" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+      html += '<div class="table-wrap"><table><thead><tr><th>Talhão</th><th>Cultura</th><th>Plantio</th><th>Ano agrícola</th><th>Status</th><th></th></tr></thead><tbody>';
       state.safras.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(s){
         html += '<tr>';
         html += '<td>' + escapeHtml(talhaoNome(s.talhaoId)) + '</td>';
         html += '<td>' + escapeHtml(culturaNome(s.culturaId)) + '</td>';
         html += '<td>' + fmtDate(s.dataPlantio) + '</td>';
-        html += '<td>' + fmtDate(s.previsaoColheita) + '</td>';
+        html += '<td>' + (s.anoAgricola ? escapeHtml(s.anoAgricola) : '—') + '</td>';
         html += '<td><span class="badge status-' + s.status + '">' + STATUS_LABEL[s.status] + '</span></td>';
-        html += '<td><button class="btn-del" data-action="del-safra" data-id="' + s.id + '">Remover</button></td>';
+        html += '<td><button class="btn-edit" data-action="edit-safra" data-id="' + s.id + '">Editar</button><button class="btn-del" data-action="del-safra" data-id="' + s.id + '">Remover</button></td>';
         html += '</tr>';
       });
       html += '</tbody></table></div>';
@@ -951,10 +1512,12 @@
     el.innerHTML = html;
   }
 
-  /* ---------------- Estoque de Colheita (Produção) ---------------- */
+  /* ---------------- Colheita (entrada em estoque + venda) ---------------- */
   function renderProducao(){
     var el = document.getElementById('tab-producao');
     var estoque = estoqueResumo();
+    var editingEntrada = (editState && editState.scope === 'producao-entrada') ? state.producao.find(function(x){ return x.id === editState.id; }) : null;
+    var editingVenda = (editState && editState.scope === 'producao-saida') ? state.producao.find(function(x){ return x.id === editState.id; }) : null;
 
     var html = '';
     html += '<div class="stat-row">';
@@ -962,23 +1525,42 @@
     html += statCard('Lotes de safra com estoque', estoque.itens.filter(function(i){ return i.qtd > 0; }).length);
     html += '</div>';
 
-    html += '<div class="paper form-card"><h3>Novo registro de estoque</h3>';
     if(!state.safras.length){
-      html += '<div class="empty-state">Cadastre uma safra antes de registrar produção.</div>';
+      html += '<div class="paper empty-state">Cadastre uma safra antes de registrar colheita.</div>';
     } else {
-      html += '<form class="entry-form" id="form-producao">';
-      html += selectField('tipo', 'Movimento', [{value:'entrada', label:'Entrada (colheita)'}, {value:'saida', label:'Saída (venda/consumo)'}]);
-      html += selectField('safraId', 'Safra', state.safras.map(function(s){ return {value:s.id, label:safraLabel(s.id)}; }));
-      html += field('number', 'quantidade', 'Quantidade', true, '0', {step:'0.01', min:'0'});
-      html += field('text', 'unidade', 'Unidade', false, 'Ex: sc, kg, ton');
-      html += field('number', 'precoUnitario', 'Preço estimado (R$/unid.)', false, '0,00', {step:'0.01', min:'0'});
-      html += field('date', 'data', 'Data', false);
-      html += field('text', 'observacao', 'Observação', false, '');
-      html += '<button type="submit" class="btn">Registrar</button></form>';
-    }
-    html += '</div>';
+      html += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:16px;">';
 
-    html += '<div class="section-title" style="margin-top:0;">Estoque atual por safra</div>';
+      html += '<div class="paper form-card"><h3>' + (editingEntrada ? 'Editar colheita' : 'Registrar colheita (entrada em estoque)') + '</h3>';
+      html += '<form class="entry-form" id="form-colheita-entrada"' + (editingEntrada ? ' data-editing-id="' + editingEntrada.id + '"' : '') + '>';
+      html += selectField('safraId', 'Safra', state.safras.map(function(s){ return {value:s.id, label:safraLabel(s.id)}; }), editingEntrada ? editingEntrada.safraId : undefined);
+      html += field('number', 'quantidade', 'Quantidade colhida', true, '0', {step:'0.01', min:'0'}, editingEntrada ? editingEntrada.quantidade : undefined);
+      html += field('text', 'unidade', 'Unidade', false, 'Ex: sc, kg, ton', {}, editingEntrada ? editingEntrada.unidade : undefined);
+      html += field('number', 'precoUnitario', 'Preço estimado (R$/unid.)', false, '0,00', {step:'0.01', min:'0'}, editingEntrada ? editingEntrada.precoUnitario : undefined);
+      html += selectField('responsavelId', 'Responsável (opcional)', [{value:'', label:'—'}].concat(state.equipe.map(function(m){ return {value:m.id, label:m.nome}; })), editingEntrada ? editingEntrada.responsavelId : undefined);
+      html += field('date', 'data', 'Data', false, '', {}, editingEntrada ? editingEntrada.data : undefined);
+      html += field('text', 'observacao', 'Observação', false, '', {}, editingEntrada ? editingEntrada.observacao : undefined);
+      html += '<button type="submit" class="btn">' + (editingEntrada ? 'Salvar alterações' : 'Registrar colheita') + '</button>';
+      if(editingEntrada) html += '<button type="button" class="btn-cancel" data-action="cancel-edit">Cancelar</button>';
+      html += '</form></div>';
+
+      html += '<div class="paper form-card"><h3>' + (editingVenda ? 'Editar venda' : 'Registrar venda (saída do estoque)') + '</h3>';
+      html += '<form class="entry-form" id="form-colheita-venda"' + (editingVenda ? ' data-editing-id="' + editingVenda.id + '"' : '') + '>';
+      html += selectField('safraId', 'Safra', state.safras.map(function(s){ return {value:s.id, label:safraLabel(s.id)}; }), editingVenda ? editingVenda.safraId : undefined);
+      html += field('number', 'quantidade', 'Quantidade vendida', true, '0', {step:'0.01', min:'0'}, editingVenda ? editingVenda.quantidade : undefined);
+      html += field('text', 'unidade', 'Unidade', false, 'Ex: sc, kg, ton', {}, editingVenda ? editingVenda.unidade : undefined);
+      html += field('number', 'precoUnitario', 'Preço de venda (R$/unid.)', false, '0,00', {step:'0.01', min:'0'}, editingVenda ? editingVenda.precoUnitario : undefined);
+      html += selectField('parceiroId', 'Comprador (opcional)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })), editingVenda ? editingVenda.parceiroId : undefined);
+      html += field('date', 'data', 'Data', false, '', {}, editingVenda ? editingVenda.data : undefined);
+      html += field('text', 'observacao', 'Observação', false, '', {}, editingVenda ? editingVenda.observacao : undefined);
+      html += '<button type="submit" class="btn">' + (editingVenda ? 'Salvar alterações' : 'Registrar venda') + '</button>';
+      if(editingVenda) html += '<button type="button" class="btn-cancel" data-action="cancel-edit">Cancelar</button>';
+      html += '</form></div>';
+
+      html += '</div>';
+      html += '<div class="paper note-box">Toda venda registrada aqui gera automaticamente um lançamento de receita em Financeiro (categoria "Venda de colheita"), então não é preciso lançar de novo lá.</div>';
+    }
+
+    html += '<div class="section-title">Estoque atual por safra</div>';
     if(!estoque.itens.length){
       html += '<div class="paper empty-state">Nenhuma movimentação de estoque registrada ainda.</div>';
     } else {
@@ -997,12 +1579,12 @@
       state.producao.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(p){
         html += '<tr>';
         html += '<td>' + fmtDate(p.data) + '</td>';
-        html += '<td><span class="badge" style="background:' + (p.tipo==='entrada' ? '#7FA36D' : '#DFA84E') + '; color:#1B1508">' + (p.tipo==='entrada' ? 'Entrada' : 'Saída') + '</span></td>';
+        html += '<td><span class="badge" style="background:' + (p.tipo==='entrada' ? '#7FA36D' : '#DFA84E') + '; color:#1B1508">' + (p.tipo==='entrada' ? 'Colheita' : 'Venda') + '</span></td>';
         html += '<td>' + escapeHtml(safraLabel(p.safraId)) + '</td>';
         html += '<td class="num">' + fmtNum(p.quantidade) + (p.unidade ? ' ' + escapeHtml(p.unidade) : '') + '</td>';
         html += '<td class="num">' + (p.precoUnitario ? fmtBRL(p.precoUnitario) : '—') + '</td>';
         html += '<td>' + escapeHtml(p.observacao || '—') + '</td>';
-        html += '<td><button class="btn-del" data-action="del-producao" data-id="' + p.id + '">Remover</button></td>';
+        html += '<td><button class="btn-edit" data-action="edit-producao" data-tipo="' + p.tipo + '" data-id="' + p.id + '">Editar</button><button class="btn-del" data-action="del-producao" data-id="' + p.id + '">Remover</button></td>';
         html += '</tr>';
       });
       html += '</tbody></table></div>';
@@ -1013,38 +1595,49 @@
   /* ---------------- Diário de Campo (Operações) ---------------- */
   function renderOperacoes(){
     var el = document.getElementById('tab-operacoes');
+    var tiposDisponiveis = state.tiposAtividade.filter(function(t){ return t.nome !== 'Colheita' && t.nome !== 'Venda'; });
+    var editingRecord = (editState && editState.scope === 'operacoes') ? state.operacoes.find(function(x){ return x.id === editState.id; }) : null;
+
     var html = '';
-    html += '<div class="paper form-card"><h3>Nova atividade</h3>';
-    html += '<form class="entry-form" id="form-operacao">';
-    html += selectField('tipo', 'Tipo', OPERACAO_TIPOS.map(function(t){ return {value:t, label:t}; }));
-    html += selectField('talhaoId', 'Talhão (opcional)', [{value:'', label:'—'}].concat(state.talhoes.map(function(t){ return {value:t.id, label:t.nome}; })));
-    html += selectField('safraId', 'Safra (opcional)', [{value:'', label:'—'}].concat(state.safras.map(function(s){ return {value:s.id, label:safraLabel(s.id)}; })));
-    html += selectField('produtoId', 'Produto (opcional)', [{value:'', label:'—'}].concat(state.produtos.map(function(p){ return {value:p.id, label:p.nome}; })));
-    html += field('number', 'quantidade', 'Quantidade', false, '0', {step:'0.01', min:'0'});
-    html += field('text', 'unidade', 'Unidade', false, 'Ex: kg, L, sc');
-    html += selectField('parceiroId', 'Parceiro (opcional)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })));
-    html += selectField('responsavelId', 'Responsável (opcional)', [{value:'', label:'—'}].concat(state.equipe.map(function(m){ return {value:m.id, label:m.nome}; })));
-    html += field('date', 'data', 'Data', false);
-    html += field('text', 'observacao', 'Observação', false, 'Ex: Aplicação pós-chuva');
-    html += '<button type="submit" class="btn">Registrar atividade</button>';
-    html += '</form></div>';
+    html += '<div class="paper note-box" style="margin-top:0;">Colheita e venda de produção agora têm controle próprio na aba <strong>Colheita</strong>, com vínculo automático ao estoque e ao financeiro.</div>';
+    html += '<div class="paper form-card"><h3>' + (editingRecord ? 'Editar atividade' : 'Nova atividade') + '</h3>';
+    if(!tiposDisponiveis.length){
+      html += '<div class="empty-state">Cadastre um tipo de atividade (aba Tipos de Atividade) antes de registrar.</div>';
+    } else {
+      html += '<form class="entry-form" id="form-operacao"' + (editingRecord ? ' data-editing-id="' + editingRecord.id + '"' : '') + '>';
+      html += selectField('tipo', 'Tipo', tiposDisponiveis.map(function(t){ return {value:t.nome, label:t.nome}; }), editingRecord ? editingRecord.tipo : undefined);
+      html += selectField('talhaoId', 'Talhão (opcional)', [{value:'', label:'—'}].concat(state.talhoes.map(function(t){ return {value:t.id, label:t.nome}; })), editingRecord ? editingRecord.talhaoId : undefined);
+      html += selectField('safraId', 'Safra (opcional)', [{value:'', label:'—'}].concat(state.safras.map(function(s){ return {value:s.id, label:safraLabel(s.id)}; })), editingRecord ? editingRecord.safraId : undefined);
+      html += selectField('produtoId', 'Produto (opcional)', [{value:'', label:'—'}].concat(state.produtos.map(function(p){ return {value:p.id, label:p.nome}; })), editingRecord ? editingRecord.produtoId : undefined);
+      html += field('number', 'quantidade', 'Quantidade', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.quantidade : undefined);
+      html += field('text', 'unidade', 'Unidade', false, 'Ex: kg, L, sc', {}, editingRecord ? editingRecord.unidade : undefined);
+      html += selectField('parceiroId', 'Parceiro (opcional)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })), editingRecord ? editingRecord.parceiroId : undefined);
+      html += selectField('responsavelId', 'Responsável (opcional)', [{value:'', label:'—'}].concat(state.equipe.map(function(m){ return {value:m.id, label:m.nome}; })), editingRecord ? editingRecord.responsavelId : undefined);
+      html += field('date', 'data', 'Data', false, '', {}, editingRecord ? editingRecord.data : undefined);
+      html += field('text', 'observacao', 'Observação', false, 'Ex: Aplicação pós-chuva', {}, editingRecord ? editingRecord.observacao : undefined);
+      html += '<button type="submit" class="btn">' + (editingRecord ? 'Salvar alterações' : 'Registrar atividade') + '</button>';
+      if(editingRecord) html += '<button type="button" class="btn-cancel" data-action="cancel-edit">Cancelar</button>';
+      html += '</form>';
+    }
+    html += '</div>';
 
     html += '<div class="paper">';
     if(!state.operacoes.length){
       html += '<div class="empty-state">Nenhuma atividade registrada ainda.</div>';
     } else {
+      html += '<div style="padding:14px 18px 0;"><input type="text" id="search-operacoes" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
       html += '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Talhão</th><th>Produto</th><th>Qtd.</th><th>Parceiro</th><th>Responsável</th><th>Obs.</th><th></th></tr></thead><tbody>';
       state.operacoes.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(o){
         html += '<tr>';
         html += '<td>' + fmtDate(o.data) + '</td>';
-        html += '<td><span class="badge" style="background:' + (OPERACAO_COLORS[o.tipo] || '#C9C3A4') + '; color:#1B1508">' + escapeHtml(o.tipo) + '</span></td>';
+        html += '<td><span class="badge" style="background:' + tipoAtividadeCor(o.tipo) + '; color:#1B1508">' + escapeHtml(o.tipo) + '</span></td>';
         html += '<td>' + (o.talhaoId ? escapeHtml(talhaoNome(o.talhaoId)) : '—') + '</td>';
         html += '<td>' + (o.produtoId ? escapeHtml(produtoNome(o.produtoId)) : '—') + '</td>';
         html += '<td class="num">' + (o.quantidade ? o.quantidade + (o.unidade ? ' ' + escapeHtml(o.unidade) : '') : '—') + '</td>';
         html += '<td>' + (o.parceiroId ? escapeHtml(parceiroNome(o.parceiroId)) : '—') + '</td>';
         html += '<td>' + (o.responsavelId ? escapeHtml(membroNome(o.responsavelId)) : '—') + '</td>';
         html += '<td>' + escapeHtml(o.observacao || '—') + '</td>';
-        html += '<td><button class="btn-del" data-action="del-operacao" data-id="' + o.id + '">Remover</button></td>';
+        html += '<td><button class="btn-edit" data-action="edit-operacao" data-id="' + o.id + '">Editar</button><button class="btn-del" data-action="del-operacao" data-id="' + o.id + '">Remover</button></td>';
         html += '</tr>';
       });
       html += '</tbody></table></div>';
@@ -1056,74 +1649,76 @@
   /* ---------------- Financeiro ---------------- */
   function renderFinanceiro(){
     var el = document.getElementById('tab-financeiro');
-    var totalCustos = state.financeiro.filter(function(f){ return f.tipo === 'custo'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
-    var totalReceitas = state.financeiro.filter(function(f){ return f.tipo === 'receita'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+    var totalCustos = state.financeiro.filter(function(f){ return f.tipo === 'custo' && (f.status||'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+    var totalReceitas = state.financeiro.filter(function(f){ return f.tipo === 'receita' && (f.status||'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+    var totalPendente = state.financeiro.filter(function(f){ return f.status === 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
     var saldo = totalReceitas - totalCustos;
     var estoque = estoqueResumo();
     var saldoProjetado = saldo + estoque.total;
+    var editingRecord = (editState && editState.scope === 'financeiro') ? state.financeiro.find(function(x){ return x.id === editState.id; }) : null;
 
     var html = '';
     html += '<div class="stat-row">';
     html += statCard('Total de custos', fmtBRL(totalCustos), 'cost');
     html += statCard('Total de receitas', fmtBRL(totalReceitas), 'growth');
+    html += statCard('Pendente (a pagar/receber)', fmtBRL(totalPendente));
     html += statCard('Saldo atual', fmtBRL(saldo), saldo >= 0 ? 'growth' : 'cost');
     html += statCard('Valor projetado (estoque)', fmtBRL(estoque.total), 'growth');
     html += statCard('Saldo projetado', fmtBRL(saldoProjetado), saldoProjetado >= 0 ? 'growth' : 'cost');
     html += '</div>';
 
-    html += '<div class="paper form-card"><h3>Novo lançamento</h3>';
-    html += '<form class="entry-form" id="form-financeiro">';
-    html += selectField('tipo', 'Tipo', [{value:'custo', label:'Custo'}, {value:'receita', label:'Receita'}]);
-    html += selectField('categoria', 'Categoria', CATEGORIAS_CUSTO.concat(CATEGORIAS_RECEITA).filter(function(v,i,a){ return a.indexOf(v)===i; }).map(function(c){ return {value:c, label:c}; }));
-    html += field('number', 'valor', 'Valor (R$)', true, '0,00', {step:'0.01', min:'0'});
-    html += field('date', 'data', 'Data', false);
-    html += selectField('talhaoId', 'Talhão (opcional)', [{value:'', label:'—'}].concat(state.talhoes.map(function(t){ return {value:t.id, label:t.nome}; })));
-    html += selectField('parceiroId', 'Parceiro (opcional)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })));
-    html += selectField('membroId', 'Lançado por (opcional)', [{value:'', label:'—'}].concat(state.equipe.map(function(m){ return {value:m.id, label:m.nome}; })));
-    html += field('text', 'descricao', 'Descrição', false, 'Ex: Compra de adubo');
-    html += '<button type="submit" class="btn">Adicionar lançamento</button>';
-    html += '</form></div>';
+    html += '<div class="paper form-card"><h3>' + (editingRecord ? 'Editar lançamento' : 'Novo lançamento') + '</h3>';
+    if(!state.contasFinanceiro.length){
+      html += '<div class="empty-state">Cadastre ao menos uma conta financeira (aba Plano de Contas → Contas) antes de lançar.</div>';
+    } else {
+      html += '<form class="entry-form" id="form-financeiro"' + (editingRecord ? ' data-editing-id="' + editingRecord.id + '"' : '') + '>';
+      html += selectField('contaId', 'Conta', state.contasFinanceiro.map(function(c){ return {value:c.id, label: contaLabel(c.id)}; }), editingRecord ? editingRecord.contaId : undefined);
+      html += field('number', 'valor', 'Valor (R$)', true, '0,00', {step:'0.01', min:'0'}, editingRecord ? editingRecord.valor : undefined);
+      html += field('number', 'quantidade', 'Qtd. (opcional)', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.quantidade : undefined);
+      html += field('number', 'peso', 'Peso (opcional)', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.peso : undefined);
+      html += field('text', 'unidade', 'Medida (opcional)', false, 'Ex: SC, kg, L', {}, editingRecord ? editingRecord.unidade : undefined);
+      html += selectField('status', 'Status', [{value:'Pago', label:'Pago / recebido'}, {value:'Pendente', label:'Pendente (a pagar ou a receber)'}], editingRecord ? (editingRecord.status || 'Pago') : 'Pago');
+      html += field('date', 'data', 'Data (se já pago/recebido)', false, '', {}, editingRecord ? editingRecord.data : undefined);
+      html += field('date', 'vencimento', 'Vencimento (se pendente)', false, '', {}, editingRecord ? editingRecord.vencimento : undefined);
+      html += selectField('talhaoId', 'Talhão (opcional)', [{value:'', label:'—'}].concat(state.talhoes.map(function(t){ return {value:t.id, label:t.nome}; })), editingRecord ? editingRecord.talhaoId : undefined);
+      html += selectField('parceiroId', 'Parceiro / prestador (opcional)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })), editingRecord ? editingRecord.parceiroId : undefined);
+      html += selectField('membroId', 'Funcionário (opcional)', [{value:'', label:'—'}].concat(state.equipe.map(function(m){ return {value:m.id, label:m.nome}; })), editingRecord ? editingRecord.membroId : undefined);
+      html += field('text', 'descricao', 'Descrição / Documento', false, 'Ex: DOC 137832 - Cooperativa', {}, editingRecord ? editingRecord.descricao : undefined);
+      html += '<button type="submit" class="btn">' + (editingRecord ? 'Salvar alterações' : 'Adicionar lançamento') + '</button>';
+      if(editingRecord) html += '<button type="button" class="btn-cancel" data-action="cancel-edit">Cancelar</button>';
+      html += '</form>';
+    }
+    html += '</div>';
 
     html += '<div class="paper">';
     if(!state.financeiro.length){
       html += '<div class="empty-state">Nenhum lançamento financeiro ainda.</div>';
     } else {
-      html += '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Talhão</th><th>Descrição</th><th>Por</th><th>Valor</th><th></th></tr></thead><tbody>';
+      html += '<div style="padding:14px 18px 0;"><input type="text" id="search-financeiro" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+      html += '<div class="table-wrap"><table><thead><tr><th>Data/Venc.</th><th>Tipo</th><th>Status</th><th>Conta</th><th>Qtd./Peso</th><th>Talhão</th><th>Descrição</th><th>Funcionário</th><th>Valor</th><th></th></tr></thead><tbody>';
       state.financeiro.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(f){
+        var status = f.status || 'Pago';
         html += '<tr>';
-        html += '<td>' + fmtDate(f.data) + '</td>';
+        html += '<td>' + fmtDate(status === 'Pendente' ? f.vencimento : f.data) + '</td>';
         html += '<td><span class="badge tipo-' + f.tipo + '">' + (f.tipo === 'custo' ? 'Custo' : 'Receita') + '</span></td>';
-        html += '<td>' + escapeHtml(f.categoria) + '</td>';
+        html += '<td><span class="badge" style="background:' + (status === 'Pendente' ? '#DFA84E' : '#7FA36D') + '; color:#1B1508">' + status + '</span></td>';
+        html += '<td>' + (f.contaId ? escapeHtml(contaLabel(f.contaId)) : escapeHtml(f.categoria || '—')) + '</td>';
+        html += '<td class="num">' + (f.quantidade ? fmtNum(f.quantidade) : '—') + (f.peso ? ' / ' + fmtNum(f.peso) : '') + (f.unidade ? ' ' + escapeHtml(f.unidade) : '') + '</td>';
         html += '<td>' + (f.talhaoId ? escapeHtml(talhaoNome(f.talhaoId)) : '—') + '</td>';
         html += '<td>' + escapeHtml(f.descricao || '—') + '</td>';
         html += '<td>' + (f.membroId ? escapeHtml(membroNome(f.membroId)) : '—') + '</td>';
         html += '<td class="num ' + (f.tipo === 'custo' ? 'cost' : 'growth') + '">' + (f.tipo === 'custo' ? '−' : '+') + ' ' + fmtBRL(f.valor) + '</td>';
-        html += '<td><button class="btn-del" data-action="del-financeiro" data-id="' + f.id + '">Remover</button></td>';
+        html += '<td><button class="btn-edit" data-action="edit-financeiro" data-id="' + f.id + '">Editar</button><button class="btn-del" data-action="del-financeiro" data-id="' + f.id + '">Remover</button></td>';
         html += '</tr>';
       });
       html += '</tbody></table></div>';
     }
     html += '</div>';
-    html += '<div class="paper note-box">O valor projetado considera a produção em estoque (aba Estoque de Colheita) ao preço estimado informado em cada movimentação.</div>';
+    html += '<div class="paper note-box">O valor projetado considera a produção em estoque (aba Colheita) ao preço estimado informado em cada movimentação. Vendas registradas na aba Colheita já entram automaticamente aqui como receita. Lançamentos "Pendentes" (salários, contas a pagar de fornecedores etc.) só entram no Saldo atual e na Rentabilidade depois de marcados como "Pago".</div>';
     el.innerHTML = html;
   }
 
-  /* ---------------- Pagamentos / Contas a Pagar / Contas a Receber ---------------- */
-  function renderPagamentos(){
-    var el = document.getElementById('tab-pagamentos');
-    var pendente = state.pagamentos.filter(function(p){ return p.status === 'Pendente'; }).reduce(function(s,p){ return s + Number(p.valor||0); }, 0);
-    var pago = state.pagamentos.filter(function(p){ return p.status === 'Pago'; }).reduce(function(s,p){ return s + Number(p.valor||0); }, 0);
-
-    var html = '<div class="stat-row">';
-    html += statCard('Total pendente', fmtBRL(pendente), 'cost');
-    html += statCard('Total pago', fmtBRL(pago), 'growth');
-    html += '</div>';
-    html += buildGenericFormHtml('pagamentos');
-    html += buildGenericTableHtml('pagamentos');
-    html += '<div class="paper note-box">Pagamentos marcados como "Pago" e vinculados a um talhão entram automaticamente no cálculo de custos da aba Rentabilidade e no Fluxo de Caixa.</div>';
-    el.innerHTML = html;
-  }
-
+  /* ---------------- Contas a Pagar / Contas a Receber ---------------- */
   function renderContasPagar(){
     var el = document.getElementById('tab-contasPagar');
     var pendente = state.contasPagar.filter(function(c){ return c.status === 'Pendente'; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0);
@@ -1150,46 +1745,27 @@
     html += '</div>';
     html += buildGenericFormHtml('contasReceber');
     html += buildGenericTableHtml('contasReceber');
-    html += '<div class="paper note-box">Estes lançamentos alimentam o Fluxo de Caixa. Eles são independentes do Estoque de Colheita — se a venda já foi registrada lá, evite lançar aqui em duplicidade.</div>';
+    html += '<div class="paper note-box">Contas marcadas como "Recebido" e vinculadas a um talhão entram automaticamente na Rentabilidade. Estes lançamentos também alimentam o Fluxo de Caixa. Vendas de colheita registradas na aba Colheita geram receita automaticamente em Financeiro — não use Contas a Receber para a mesma venda, a menos que seja um valor futuro ainda sem colheita associada.</div>';
     el.innerHTML = html;
   }
 
-  /* ---------------- Equipe ---------------- */
-  function renderEquipe(){
-    var el = document.getElementById('tab-equipe');
-    var html = '';
-    html += '<div class="paper form-card"><h3>Novo membro</h3>';
-    html += '<form class="entry-form" id="form-equipe">';
-    html += field('text', 'nome', 'Nome', true, 'Ex: João');
-    html += field('text', 'papel', 'Função', false, 'Ex: Encarregado de campo');
-    html += '<button type="submit" class="btn">Adicionar membro</button>';
-    html += '</form></div>';
-
-    html += '<div class="paper">';
-    if(!state.equipe.length){
-      html += '<div class="empty-state">Nenhum membro cadastrado ainda.</div>';
-    } else {
-      html += '<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Função</th><th></th></tr></thead><tbody>';
-      state.equipe.forEach(function(m){
-        html += '<tr><td>' + escapeHtml(m.nome) + '</td><td>' + escapeHtml(m.papel || '—') + '</td>';
-        html += '<td><button class="btn-del" data-action="del-equipe" data-id="' + m.id + '">Remover</button></td></tr>';
-      });
-      html += '</tbody></table></div>';
-    }
-    html += '</div>';
-    el.innerHTML = html;
-  }
+  /* ---------------- Funcionários (equipe) ---------------- */
 
   /* ---------------- Rentabilidade ---------------- */
   function custosFinanceiroPorTalhao(talhaoId){
-    return state.financeiro.filter(function(f){ return f.tipo === 'custo' && f.talhaoId === talhaoId; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+    return state.financeiro.filter(function(f){ return f.tipo === 'custo' && f.talhaoId === talhaoId && (f.status || 'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
   }
   function receitasFinanceiroPorTalhao(talhaoId){
-    return state.financeiro.filter(function(f){ return f.tipo === 'receita' && f.talhaoId === talhaoId; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+    return state.financeiro.filter(function(f){ return f.tipo === 'receita' && f.talhaoId === talhaoId && (f.status || 'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
   }
-  function pagamentosPagosPorTalhao(talhaoId){
-    return state.pagamentos.filter(function(p){ return p.status === 'Pago' && p.talhaoId === talhaoId; }).reduce(function(s,p){ return s + Number(p.valor||0); }, 0);
+  function contasPagarPagasPorTalhao(talhaoId){
+    return state.contasPagar.filter(function(c){ return c.status === 'Pago' && c.talhaoId === talhaoId; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0);
   }
+  function contasReceberRecebidasPorTalhao(talhaoId){
+    return state.contasReceber.filter(function(c){ return c.status === 'Recebido' && c.talhaoId === talhaoId; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0);
+  }
+  function custosTotaisPorTalhao(talhaoId){ return custosFinanceiroPorTalhao(talhaoId) + contasPagarPagasPorTalhao(talhaoId); }
+  function receitasTotaisPorTalhao(talhaoId){ return receitasFinanceiroPorTalhao(talhaoId) + contasReceberRecebidasPorTalhao(talhaoId); }
 
   function renderRentabilidade(){
     var el = document.getElementById('tab-rentabilidade');
@@ -1202,8 +1778,8 @@
       html += '<div class="paper table-wrap"><table><thead><tr><th>Talhão</th><th>Cultura atual</th><th>Custos</th><th>Receitas</th><th>Estoque projetado</th><th>Resultado</th><th>Retorno s/ custo</th></tr></thead><tbody>';
       state.talhoes.forEach(function(t){
         var safraIdsDoTalhao = state.safras.filter(function(s){ return s.talhaoId === t.id; }).map(function(s){ return s.id; });
-        var custos = custosFinanceiroPorTalhao(t.id) + pagamentosPagosPorTalhao(t.id);
-        var receitas = receitasFinanceiroPorTalhao(t.id);
+        var custos = custosTotaisPorTalhao(t.id);
+        var receitas = receitasTotaisPorTalhao(t.id);
         var estoqueValor = estoqueValorPorSafraIds(safraIdsDoTalhao);
         var resultado = receitas + estoqueValor - custos;
         var retorno = custos > 0 ? (resultado / custos * 100) : null;
@@ -1230,8 +1806,8 @@
         var safrasDaCultura = state.safras.filter(function(s){ return s.culturaId === c.id; });
         var talhaoIds = safrasDaCultura.map(function(s){ return s.talhaoId; }).filter(function(v,i,a){ return a.indexOf(v)===i; });
         var safraIds = safrasDaCultura.map(function(s){ return s.id; });
-        var custos = talhaoIds.reduce(function(sum,tid){ return sum + custosFinanceiroPorTalhao(tid) + pagamentosPagosPorTalhao(tid); }, 0);
-        var receitas = talhaoIds.reduce(function(sum,tid){ return sum + receitasFinanceiroPorTalhao(tid); }, 0);
+        var custos = talhaoIds.reduce(function(sum,tid){ return sum + custosTotaisPorTalhao(tid); }, 0);
+        var receitas = talhaoIds.reduce(function(sum,tid){ return sum + receitasTotaisPorTalhao(tid); }, 0);
         var estoqueValor = estoqueValorPorSafraIds(safraIds);
         var resultado = receitas + estoqueValor - custos;
         var retorno = custos > 0 ? (resultado / custos * 100) : null;
@@ -1247,7 +1823,7 @@
       html += '</tbody></table></div>';
     }
 
-    html += '<div class="paper note-box">Custos somam os lançamentos do Financeiro e os Pagamentos com status "Pago", ambos vinculados ao talhão. Como um talhão pode ter mais de uma cultura ao longo do tempo, o agrupamento por cultura soma os talhões onde ela já foi ou está sendo cultivada — evite lançar o mesmo custo em Financeiro e em Pagamentos para não contar em duplicidade.</div>';
+    html += '<div class="paper note-box">Custos somam os lançamentos "Pago" do Financeiro e as Contas a Pagar "Pago", ambos vinculados ao talhão. Receitas somam o Financeiro "Pago" e as Contas a Receber "Recebido". Como um talhão pode ter mais de uma cultura ao longo do tempo, o agrupamento por cultura soma os talhões onde ela já foi ou está sendo cultivada — evite lançar o mesmo valor em mais de um lugar para não contar em duplicidade.</div>';
 
     el.innerHTML = html;
   }
@@ -1269,9 +1845,10 @@
     var months = Object.keys(buckets).sort();
 
     var saldoRealizado = events.filter(function(e){ return e.realizado; }).reduce(function(s,e){ return s + (e.tipo==='entrada' ? e.valor : -e.valor); }, 0);
-    var totalPendenteReceber = state.contasReceber.filter(function(c){ return c.status === 'Pendente'; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0);
+    var totalPendenteReceber = state.contasReceber.filter(function(c){ return c.status === 'Pendente'; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0)
+      + state.financeiro.filter(function(f){ return f.status === 'Pendente' && f.tipo === 'receita'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
     var totalPendentePagar = state.contasPagar.filter(function(c){ return c.status === 'Pendente'; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0)
-      + state.pagamentos.filter(function(p){ return p.status === 'Pendente'; }).reduce(function(s,p){ return s + Number(p.valor||0); }, 0);
+      + state.financeiro.filter(function(f){ return f.status === 'Pendente' && f.tipo === 'custo'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
     var saldoProjetadoFinal = saldoRealizado + totalPendenteReceber - totalPendentePagar;
     var estoque = estoqueResumo();
 
@@ -1308,6 +1885,103 @@
     el.innerHTML = html;
   }
 
+  /* ---------------- Relatórios (DRE por Subgrupo/Conta) ---------------- */
+  function relatoriosContaStats(contaId){
+    var entries = state.financeiro.filter(function(f){ return f.contaId === contaId && (f.status || 'Pago') !== 'Pendente'; });
+    var valor = 0, qtd = 0, peso = 0;
+    entries.forEach(function(f){ valor += Number(f.valor||0); qtd += Number(f.quantidade||0); peso += Number(f.peso||0); });
+    return {valor:valor, qtd:qtd, peso:peso, entries:entries, precoMedio: qtd ? valor/qtd : 0, pesoMedio: qtd ? peso/qtd : 0};
+  }
+  function fmtPct(n){ return (Number(n)||0).toLocaleString('pt-BR', {maximumFractionDigits:2}) + '%'; }
+
+  function renderRelatorios(){
+    var el = document.getElementById('tab-relatorios');
+    var totalReceitas = state.financeiro.filter(function(f){ return contaTipo(f.contaId) === 'receita' && (f.status||'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+    var totalCustos = state.financeiro.filter(function(f){ return contaTipo(f.contaId) === 'custo' && (f.status||'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+
+    function renderSecao(tipoSecao, totalSecao, label){
+      var subgrupos = state.subgruposFinanceiro.filter(function(s){ return s.tipo === tipoSecao; }).sort(function(a,b){ return (a.criadoEm||0)-(b.criadoEm||0); });
+      var corTitulo = tipoSecao === 'receita' ? 'var(--growth-dark)' : 'var(--cost-dark)';
+      var html = '<div class="paper" style="padding:16px 18px; margin-bottom:16px;">';
+      html += '<div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:10px; margin-bottom:12px;">';
+      html += '<div style="font-family:\'Zilla Slab\',serif; font-size:18px; font-weight:700; color:' + corTitulo + ';">' + label + '</div>';
+      html += '<div style="display:flex; gap:18px; font-size:12.5px; color:var(--ink-soft);">';
+      html += '<span>Total: <strong class="num" style="color:var(--ink);">' + fmtBRL(totalSecao) + '</strong></span>';
+      html += '<span>% Custo: <strong class="num">' + (tipoSecao === 'receita' ? (totalCustos ? fmtPct(totalReceitas/totalCustos*100) : '0,00%') : '100,00%') + '</strong></span>';
+      html += '<span>% Receita: <strong class="num">' + (tipoSecao === 'receita' ? '100,00%' : (totalReceitas ? fmtPct(totalCustos/totalReceitas*100) : '0,00%')) + '</strong></span>';
+      html += '</div></div>';
+
+      var corpo = '';
+      subgrupos.forEach(function(sg){
+        var contas = state.contasFinanceiro.filter(function(c){ return c.subgrupoId === sg.id; }).sort(function(a,b){ return (a.criadoEm||0)-(b.criadoEm||0); });
+        var sgValor = 0, sgQtd = 0;
+        var linhasContas = '';
+        contas.forEach(function(c){
+          var st = relatoriosContaStats(c.id);
+          if(!st.entries.length) return;
+          sgValor += st.valor; sgQtd += st.qtd;
+          var percC = totalCustos ? st.valor/totalCustos*100 : 0;
+          var percR = totalReceitas ? st.valor/totalReceitas*100 : 0;
+          linhasContas += '<tr style="font-weight:600;">';
+          linhasContas += '<td style="padding-left:24px;">' + escapeHtml(c.nome) + '</td>';
+          linhasContas += '<td class="num">' + (st.qtd ? fmtNum(st.qtd) : '—') + '</td>';
+          linhasContas += '<td class="num">' + (st.pesoMedio ? fmtNum(st.pesoMedio) : '—') + '</td>';
+          linhasContas += '<td class="num">' + (st.precoMedio ? fmtBRL(st.precoMedio) : '—') + '</td>';
+          linhasContas += '<td class="num ' + (tipoSecao === 'custo' ? 'cost' : 'growth') + '">' + fmtBRL(st.valor) + '</td>';
+          linhasContas += '<td class="num">' + fmtPct(percC) + '</td>';
+          linhasContas += '<td class="num">' + fmtPct(percR) + '</td>';
+          linhasContas += '</tr>';
+          st.entries.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(f){
+            var docLabel = f.descricao || (f.parceiroId ? parceiroNome(f.parceiroId) : 'Lançamento');
+            linhasContas += '<tr style="font-size:12px; color:var(--ink-soft);">';
+            linhasContas += '<td style="padding-left:40px;">' + escapeHtml(docLabel) + (f.parceiroId ? ' — ' + escapeHtml(parceiroNome(f.parceiroId)) : '') + '</td>';
+            linhasContas += '<td class="num">' + (f.quantidade ? fmtNum(f.quantidade) : '—') + '</td>';
+            linhasContas += '<td class="num">—</td><td class="num">—</td>';
+            linhasContas += '<td class="num">' + fmtBRL(f.valor) + '</td>';
+            linhasContas += '<td class="num">—</td><td class="num">—</td>';
+            linhasContas += '</tr>';
+          });
+        });
+        if(!linhasContas) return;
+        var percSgC = totalCustos ? sgValor/totalCustos*100 : 0;
+        var percSgR = totalReceitas ? sgValor/totalReceitas*100 : 0;
+        corpo += '<tr style="font-weight:700; background:var(--paper-2);">';
+        corpo += '<td>' + escapeHtml(sg.nome) + '</td>';
+        corpo += '<td class="num">' + (sgQtd ? fmtNum(sgQtd) : '—') + '</td>';
+        corpo += '<td class="num">—</td><td class="num">—</td>';
+        corpo += '<td class="num ' + (tipoSecao === 'custo' ? 'cost' : 'growth') + '">' + fmtBRL(sgValor) + '</td>';
+        corpo += '<td class="num">' + fmtPct(percSgC) + '</td>';
+        corpo += '<td class="num">' + fmtPct(percSgR) + '</td>';
+        corpo += '</tr>';
+        corpo += linhasContas;
+      });
+
+      if(!corpo){
+        html += '<div class="empty-state">Nenhum lançamento "Pago" nesta seção ainda.</div>';
+      } else {
+        html += '<div class="table-wrap"><table><thead><tr><th>Subgrupo · Conta · Documento</th><th>Qtd.</th><th>Peso méd.</th><th>Preço méd.</th><th>Valor</th><th>%custo</th><th>%receita</th></tr></thead><tbody>';
+        html += corpo;
+        html += '<tr style="font-weight:700; border-top:2px solid var(--paper-line);"><td>TOTAL</td><td></td><td></td><td></td>';
+        html += '<td class="num">' + fmtBRL(totalSecao) + '</td>';
+        html += '<td class="num">' + (totalCustos ? fmtPct(totalSecao/totalCustos*100) : '0,00%') + '</td>';
+        html += '<td class="num">' + (totalReceitas ? fmtPct(totalSecao/totalReceitas*100) : '0,00%') + '</td></tr>';
+        html += '</tbody></table></div>';
+      }
+      html += '</div>';
+      return html;
+    }
+
+    var html = '<div class="stat-row">';
+    html += statCard('Total de receitas', fmtBRL(totalReceitas), 'growth');
+    html += statCard('Total de despesas', fmtBRL(totalCustos), 'cost');
+    html += statCard('Resultado', fmtBRL(totalReceitas - totalCustos), (totalReceitas - totalCustos) >= 0 ? 'growth' : 'cost');
+    html += '</div>';
+    html += renderSecao('receita', totalReceitas, 'RECEITAS');
+    html += renderSecao('custo', totalCustos, 'DESPESAS');
+    html += '<div class="paper note-box">Este relatório considera apenas lançamentos do Financeiro marcados como "Pago" e vinculados a uma Conta (aba Plano de Contas). Contas a Pagar/Receber ainda pendentes não entram aqui — acompanhe-as nas abas próprias.</div>';
+    el.innerHTML = html;
+  }
+
   /* ---------------- Indicadores (gráficos e exportação) ---------------- */
   function financeiroPorMes(){
     var map = {};
@@ -1336,8 +2010,8 @@
     var labels = [], valores = [], cores = [];
     state.talhoes.forEach(function(t){
       var safraIdsDoTalhao = state.safras.filter(function(s){ return s.talhaoId === t.id; }).map(function(s){ return s.id; });
-      var custos = custosFinanceiroPorTalhao(t.id) + pagamentosPagosPorTalhao(t.id);
-      var receitas = receitasFinanceiroPorTalhao(t.id);
+      var custos = custosTotaisPorTalhao(t.id);
+      var receitas = receitasTotaisPorTalhao(t.id);
       var estoqueValor = estoqueValorPorSafraIds(safraIdsDoTalhao);
       var resultado = receitas + estoqueValor - custos;
       labels.push(t.nome); valores.push(Math.round(resultado * 100) / 100); cores.push(resultado >= 0 ? '#4F7942' : '#A23E2E');
@@ -1368,30 +2042,62 @@
     chartInstances[canvasId] = new Chart(canvas.getContext('2d'), {type:type, data:data, options:options});
   }
 
+  function exportarBackupJSON(){
+    var backup = {geradoEm: new Date().toISOString()};
+    ALL_KEYS.forEach(function(k){ backup[k] = state[k]; });
+    var blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'fazenda-backup-' + new Date().toISOString().slice(0,10) + '.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function importarBackupJSON(file){
+    var reader = new FileReader();
+    reader.onload = function(e){
+      try{
+        var data = JSON.parse(e.target.result);
+        var algumaChave = false;
+        ALL_KEYS.forEach(function(k){
+          if(Array.isArray(data[k])){ state[k] = data[k]; saveKey(k, state[k]); algumaChave = true; }
+        });
+        if(!algumaChave){ alert('Esse arquivo não parece ser um backup válido deste app.'); return; }
+        editState = null;
+        renderAll();
+        alert('Backup importado com sucesso.');
+      }catch(err){
+        alert('Não foi possível ler esse arquivo. Verifique se é um .json exportado por este app.');
+      }
+    };
+    reader.readAsText(file);
+  }
+
   function exportarExcel(){
     if(!window.XLSX){ alert('A biblioteca de exportação ainda está carregando (ou não pôde ser carregada). Tente novamente em instantes.'); return; }
     var wb = XLSX.utils.book_new();
     function addSheet(name, rows){ var ws = XLSX.utils.json_to_sheet(rows); XLSX.utils.book_append_sheet(wb, ws, name.slice(0,31)); }
 
     addSheet('Propriedades', state.propriedades.map(function(p){ return {Nome:p.nome, 'Area total (ha)':p.areaTotal, Cidade:p.cidade, UF:p.estado}; }));
-    addSheet('Talhoes', state.talhoes.map(function(t){ return {Nome:t.nome, 'Area (ha)':t.area, Propriedade: t.propriedadeId ? propriedadeNome(t.propriedadeId) : ''}; }));
-    addSheet('Safras', state.safras.map(function(s){ return {Talhao:talhaoNome(s.talhaoId), Cultura:culturaNome(s.culturaId), Plantio:s.dataPlantio, PrevisaoColheita:s.previsaoColheita, Status:STATUS_LABEL[s.status]}; }));
-    addSheet('Culturas', state.culturas.map(function(c){ return {Nome:c.nome, 'Ciclo (dias)':c.cicloDias}; }));
+    addSheet('Talhoes', state.talhoes.map(function(t){ return {Nome:t.nome, 'Area (ha)':t.area, Propriedade: t.propriedadeId ? propriedadeNome(t.propriedadeId) : '', TipoSolo: t.tipoSolo || '', CulturaAnterior: t.culturaAnteriorId ? culturaNome(t.culturaAnteriorId) : ''}; }));
+    addSheet('Safras', state.safras.map(function(s){ return {Talhao:talhaoNome(s.talhaoId), Cultura:culturaNome(s.culturaId), Plantio:s.dataPlantio, AnoAgricola:s.anoAgricola, Status:STATUS_LABEL[s.status]}; }));
+    addSheet('Culturas', state.culturas.map(function(c){ return {Nome:c.nome}; }));
     addSheet('Produtos', state.produtos.map(function(p){ return {Nome:p.nome, Categoria:p.categoria, Unidade:p.unidade, Estoque:p.estoqueAtual, EstoqueMinimo:p.estoqueMinimo}; }));
     addSheet('Parceiros', state.parceiros.map(function(p){ return {Nome:p.nome, Tipo:p.tipo, Contato:p.contato}; }));
     addSheet('Equipe', state.equipe.map(function(m){ return {Nome:m.nome, Funcao:m.papel}; }));
     addSheet('Patrimonio', state.patrimonio.map(function(p){ return {Nome:p.nome, Categoria:p.categoria, Status:p.status, ValorCompra:p.valor, ValorAtual: Math.round(calcDepreciacao(p)*100)/100}; }));
     addSheet('EstoqueColheita', state.producao.map(function(p){ return {Movimento:p.tipo, Safra:safraLabel(p.safraId), Quantidade:p.quantidade, Unidade:p.unidade, PrecoUnitario:p.precoUnitario, Data:p.data}; }));
     addSheet('DiarioDeCampo', state.operacoes.map(function(o){ return {Data:o.data, Tipo:o.tipo, Talhao: o.talhaoId?talhaoNome(o.talhaoId):'', Produto: o.produtoId?produtoNome(o.produtoId):'', Quantidade:o.quantidade, Unidade:o.unidade, Parceiro: o.parceiroId?parceiroNome(o.parceiroId):'', Responsavel: o.responsavelId?membroNome(o.responsavelId):''}; }));
-    addSheet('Financeiro', state.financeiro.map(function(f){ return {Data:f.data, Tipo:f.tipo, Categoria:f.categoria, Talhao: f.talhaoId?talhaoNome(f.talhaoId):'', Descricao:f.descricao, Valor:f.valor}; }));
-    addSheet('Pagamentos', state.pagamentos.map(function(p){ return {Beneficiario:p.beneficiario, Tipo:p.tipo, Categoria:p.categoria, Valor:p.valor, Vencimento:p.vencimento, Status:p.status}; }));
+    addSheet('Subgrupos', state.subgruposFinanceiro.map(function(s){ return {Nome:s.nome, Tipo: s.tipo==='custo'?'Despesa':'Receita'}; }));
+    addSheet('ContasFinanceiro', state.contasFinanceiro.map(function(c){ return {Conta:c.nome, Subgrupo: subgrupoNome(c.subgrupoId)}; }));
+    addSheet('Financeiro', state.financeiro.map(function(f){ return {Data:f.data, Vencimento:f.vencimento, Status:f.status||'Pago', Tipo:f.tipo, Subgrupo: f.contaId?subgrupoNome((state.contasFinanceiro.find(function(c){return c.id===f.contaId;})||{}).subgrupoId):'', Conta: f.contaId?contaNome(f.contaId):f.categoria, Quantidade:f.quantidade, Peso:f.peso, Unidade:f.unidade, Talhao: f.talhaoId?talhaoNome(f.talhaoId):'', Descricao:f.descricao, Valor:f.valor}; }));
     addSheet('ContasAPagar', state.contasPagar.map(function(c){ return {Descricao:c.descricao, Categoria:c.categoria, Valor:c.valor, Vencimento:c.vencimento, Status:c.status}; }));
     addSheet('ContasAReceber', state.contasReceber.map(function(c){ return {Descricao:c.descricao, Categoria:c.categoria, Valor:c.valor, Vencimento:c.vencimento, Status:c.status}; }));
 
     var rentTalhao = state.talhoes.map(function(t){
       var safraIdsDoTalhao = state.safras.filter(function(s){ return s.talhaoId === t.id; }).map(function(s){ return s.id; });
-      var custos = custosFinanceiroPorTalhao(t.id) + pagamentosPagosPorTalhao(t.id);
-      var receitas = receitasFinanceiroPorTalhao(t.id);
+      var custos = custosTotaisPorTalhao(t.id);
+      var receitas = receitasTotaisPorTalhao(t.id);
       var estoqueValor = estoqueValorPorSafraIds(safraIdsDoTalhao);
       return {Talhao:t.nome, Custos:custos, Receitas:receitas, EstoqueProjetado:estoqueValor, Resultado: receitas + estoqueValor - custos};
     });
@@ -1403,10 +2109,16 @@
   function renderIndicadores(){
     var el = document.getElementById('tab-indicadores');
     var html = '';
-    html += '<div class="no-print" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px;">';
+    html += '<div class="no-print" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px;">';
     html += '<button class="btn" type="button" data-action="export-excel">Exportar para Excel</button>';
     html += '<button class="btn" type="button" data-action="export-pdf" style="background:var(--panel); color:var(--paper);">Imprimir / Salvar como PDF</button>';
     html += '</div>';
+    html += '<div class="no-print" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:20px;">';
+    html += '<button class="btn" type="button" data-action="export-backup" style="background:var(--growth-dark); color:#fff;">Baixar backup completo (.json)</button>';
+    html += '<button class="btn" type="button" data-action="import-backup" style="background:transparent; border:1px solid var(--panel); color:var(--panel);">Restaurar backup (.json)</button>';
+    html += '<input type="file" id="backup-file-input" accept="application/json" style="display:none">';
+    html += '</div>';
+    html += '<div class="paper note-box" style="margin-top:0; margin-bottom:20px;">Os dados deste app ficam salvos só neste navegador/computador. Baixe um backup periodicamente — restaurar substitui os dados atuais pelos do arquivo.</div>';
 
     html += '<div class="section-title" style="margin-top:0;">Custos vs. receitas por mês</div>';
     html += '<div class="paper" style="padding:16px;"><canvas id="chart-mes" height="90"></canvas></div>';
@@ -1456,18 +2168,23 @@
   }
 
   /* ---------------- Form field helpers ---------------- */
-  function field(type, name, label, required, placeholder, extra){
+  function field(type, name, label, required, placeholder, extra, currentValue){
     extra = extra || {};
     var attrs = '';
     Object.keys(extra).forEach(function(k){ attrs += ' ' + k + '="' + extra[k] + '"'; });
     return '<div class="field"><label for="f-' + name + '">' + label + '</label>' +
       '<input type="' + type + '" id="f-' + name + '" name="' + name + '"' +
       (required ? ' required' : '') +
-      (placeholder ? ' placeholder="' + placeholder + '"' : '') + attrs + '></div>';
+      (placeholder ? ' placeholder="' + placeholder + '"' : '') +
+      (currentValue !== undefined && currentValue !== null && currentValue !== '' ? ' value="' + escapeHtml(currentValue) + '"' : '') +
+      attrs + '></div>';
   }
-  function selectField(name, label, options){
+  function selectField(name, label, options, currentValue){
     var html = '<div class="field"><label for="f-' + name + '">' + label + '</label><select id="f-' + name + '" name="' + name + '">';
-    options.forEach(function(o){ html += '<option value="' + escapeHtml(o.value) + '">' + escapeHtml(o.label) + '</option>'; });
+    options.forEach(function(o){
+      var sel = (currentValue !== undefined && currentValue !== null && String(currentValue) === String(o.value)) ? ' selected' : '';
+      html += '<option value="' + escapeHtml(o.value) + '"' + sel + '>' + escapeHtml(o.label) + '</option>';
+    });
     html += '</select></div>';
     return html;
   }
@@ -1479,84 +2196,271 @@
     switchTab(btn.dataset.tab);
   });
 
+  document.addEventListener('change', function(e){
+    if(e.target && e.target.id === 'backup-file-input'){
+      var file = e.target.files && e.target.files[0];
+      if(file) importarBackupJSON(file);
+      e.target.value = '';
+    }
+  });
+
+  document.addEventListener('input', function(e){
+    if(e.target && e.target.id && e.target.id.indexOf('search-') === 0){
+      var entityKey = e.target.id.slice(7);
+      var query = e.target.value.toLowerCase();
+      var rows = document.querySelectorAll('#tab-' + entityKey + ' table tbody tr');
+      rows.forEach(function(tr){
+        tr.style.display = tr.textContent.toLowerCase().indexOf(query) !== -1 ? '' : 'none';
+      });
+    }
+  });
+
   document.addEventListener('submit', function(e){
     var form = e.target;
     e.preventDefault();
     var data = new FormData(form);
 
+    if(form.id === 'form-gate'){
+      if(form.dataset.mode === 'setup'){
+        var p1 = data.get('pass1'), p2 = data.get('pass2');
+        if(!p1){ showGateScreen('Digite uma senha.'); return; }
+        if(p1 !== p2){ showGateScreen('As senhas não coincidem.'); return; }
+        saveGlobal(PASS_KEY, p1).then(function(){ unlockSession(); });
+      } else {
+        var attempt = data.get('pass');
+        loadGlobal(PASS_KEY).then(function(pwd){
+          if(attempt === pwd){ unlockSession(); } else { showGateScreen('Senha incorreta.'); }
+        });
+      }
+      return;
+    }
+
+    if(form.id === 'form-workspace'){
+      var nome = (data.get('nome') || '').trim();
+      if(!nome) return;
+      loadWorkspaces().then(function(list){
+        var ws = {id:'ws-' + Date.now(), nome:nome, criadoEm:Date.now()};
+        list.push(ws);
+        saveWorkspaces(list).then(function(){ selectWorkspace(ws.id); });
+      });
+      return;
+    }
+
     if(form.dataset.form === 'generic'){
       var entityKey = form.dataset.entity;
       var cfg = ENTITY_CONFIGS[entityKey];
-      var record = {id: uid(), criadoEm: Date.now()};
+      var editingId = form.dataset.editingId;
+      var fieldsData = {};
       cfg.fields.forEach(function(f){
         var raw = data.get(f.name);
-        record[f.name] = f.type === 'number' ? (parseFloat(raw) || 0) : (raw || '').trim();
+        fieldsData[f.name] = f.type === 'number' ? (parseFloat(raw) || 0) : (raw || '').trim();
       });
-      state[entityKey].push(record);
+      if(editingId){
+        var idx = state[entityKey].findIndex(function(x){ return x.id === editingId; });
+        if(idx !== -1){ Object.keys(fieldsData).forEach(function(k){ state[entityKey][idx][k] = fieldsData[k]; }); }
+      } else {
+        fieldsData.id = uid();
+        fieldsData.criadoEm = Date.now();
+        state[entityKey].push(fieldsData);
+      }
       saveKey(entityKey, state[entityKey]);
+      editState = null;
       form.reset();
       renderAll();
       return;
     }
 
     if(form.id === 'form-talhao'){
-      state.talhoes.push({ id: uid(), nome: data.get('nome').trim(), area: parseFloat(data.get('area')) || 0, propriedadeId: data.get('propriedadeId') || '', criadoEm: Date.now() });
+      var tEditingId = form.dataset.editingId;
+      var tFields = { nome: data.get('nome').trim(), area: parseFloat(data.get('area')) || 0, propriedadeId: data.get('propriedadeId') || '', tipoSolo: (data.get('tipoSolo')||'').trim(), culturaAnteriorId: data.get('culturaAnteriorId') || '' };
+      if(tEditingId){
+        var tIdx = state.talhoes.findIndex(function(t){ return t.id === tEditingId; });
+        if(tIdx !== -1){ Object.keys(tFields).forEach(function(k){ state.talhoes[tIdx][k] = tFields[k]; }); }
+      } else {
+        tFields.id = uid(); tFields.criadoEm = Date.now();
+        state.talhoes.push(tFields);
+        var novaCulturaAtualId = data.get('culturaAtualId');
+        if(novaCulturaAtualId){
+          state.safras.push({
+            id: uid(), talhaoId: tFields.id, culturaId: novaCulturaAtualId,
+            dataPlantio: '', anoAgricola: '', status: data.get('statusSafraAtual') || 'andamento',
+            criadoEm: Date.now() + 1
+          });
+          saveKey('safras', state.safras);
+        }
+      }
       saveKey('talhoes', state.talhoes);
+      editState = null;
       form.reset(); renderAll(); return;
     }
 
     if(form.id === 'form-safra'){
-      state.safras.push({ id: uid(), talhaoId: data.get('talhaoId'), culturaId: data.get('culturaId'), dataPlantio: data.get('dataPlantio') || '', previsaoColheita: data.get('previsaoColheita') || '', status: data.get('status'), criadoEm: Date.now() });
+      var sEditingId = form.dataset.editingId;
+      var sFields = { talhaoId: data.get('talhaoId'), culturaId: data.get('culturaId'), dataPlantio: data.get('dataPlantio') || '', anoAgricola: (data.get('anoAgricola')||'').trim(), status: data.get('status') };
+      if(sEditingId){
+        var sIdx = state.safras.findIndex(function(s){ return s.id === sEditingId; });
+        if(sIdx !== -1){ Object.keys(sFields).forEach(function(k){ state.safras[sIdx][k] = sFields[k]; }); }
+      } else {
+        sFields.id = uid(); sFields.criadoEm = Date.now();
+        state.safras.push(sFields);
+      }
       saveKey('safras', state.safras);
+      editState = null;
       form.reset(); renderAll(); return;
     }
 
-    if(form.id === 'form-producao'){
-      state.producao.push({
-        id: uid(), tipo: data.get('tipo'), safraId: data.get('safraId'), quantidade: parseFloat(data.get('quantidade')) || 0,
+    if(form.id === 'form-colheita-entrada'){
+      var ceEditingId = form.dataset.editingId;
+      var ceFields = {
+        tipo: 'entrada', safraId: data.get('safraId'), quantidade: parseFloat(data.get('quantidade')) || 0,
         unidade: (data.get('unidade')||'').trim(), precoUnitario: parseFloat(data.get('precoUnitario')) || 0,
-        data: data.get('data') || '', observacao: (data.get('observacao')||'').trim(), criadoEm: Date.now()
-      });
+        responsavelId: data.get('responsavelId') || '', data: data.get('data') || '', observacao: (data.get('observacao')||'').trim()
+      };
+      if(ceEditingId){
+        var ceIdx = state.producao.findIndex(function(p){ return p.id === ceEditingId; });
+        if(ceIdx !== -1){ Object.keys(ceFields).forEach(function(k){ state.producao[ceIdx][k] = ceFields[k]; }); }
+      } else {
+        ceFields.id = uid(); ceFields.criadoEm = Date.now();
+        state.producao.push(ceFields);
+      }
       saveKey('producao', state.producao);
+      editState = null;
+      form.reset(); renderAll(); return;
+    }
+
+    if(form.id === 'form-colheita-venda'){
+      var cvEditingId = form.dataset.editingId;
+      var cvSafraId = data.get('safraId');
+      var cvSafra = state.safras.find(function(s){ return s.id === cvSafraId; });
+      var cvQtd = parseFloat(data.get('quantidade')) || 0;
+      var cvPreco = parseFloat(data.get('precoUnitario')) || 0;
+      var cvData = data.get('data') || '';
+      var cvParceiroId = data.get('parceiroId') || '';
+      var cvObs = (data.get('observacao')||'').trim();
+      var cvFields = {
+        tipo: 'saida', safraId: cvSafraId, quantidade: cvQtd, unidade: (data.get('unidade')||'').trim(),
+        precoUnitario: cvPreco, parceiroId: cvParceiroId, data: cvData, observacao: cvObs
+      };
+      if(cvEditingId){
+        var cvIdx = state.producao.findIndex(function(p){ return p.id === cvEditingId; });
+        if(cvIdx !== -1){ Object.keys(cvFields).forEach(function(k){ state.producao[cvIdx][k] = cvFields[k]; }); }
+      } else {
+        cvFields.id = uid(); cvFields.criadoEm = Date.now();
+        state.producao.push(cvFields);
+        state.financeiro.push({
+          id: uid(), contaId:'ct-venda-colheita', tipo:'receita', categoria:'Venda de Colheita', valor: cvQtd * cvPreco, data: cvData,
+          quantidade: cvQtd, peso:0, unidade: data.get('unidade') || '', status:'Pago',
+          talhaoId: cvSafra ? cvSafra.talhaoId : '', parceiroId: cvParceiroId, membroId:'',
+          descricao: 'Venda de ' + cvQtd + (data.get('unidade') ? ' ' + data.get('unidade') : '') + ' — ' + safraLabel(cvSafraId),
+          criadoEm: Date.now()
+        });
+        saveKey('financeiro', state.financeiro);
+      }
+      saveKey('producao', state.producao);
+      editState = null;
       form.reset(); renderAll(); return;
     }
 
     if(form.id === 'form-operacao'){
-      state.operacoes.push({
-        id: uid(), tipo: data.get('tipo'), talhaoId: data.get('talhaoId') || '', safraId: data.get('safraId') || '',
+      var opEditingId = form.dataset.editingId;
+      var opFields = {
+        tipo: data.get('tipo'), talhaoId: data.get('talhaoId') || '', safraId: data.get('safraId') || '',
         produtoId: data.get('produtoId') || '', quantidade: parseFloat(data.get('quantidade')) || 0, unidade: (data.get('unidade')||'').trim(),
         parceiroId: data.get('parceiroId') || '', responsavelId: data.get('responsavelId') || '', data: data.get('data') || '',
-        observacao: (data.get('observacao')||'').trim(), criadoEm: Date.now()
-      });
+        observacao: (data.get('observacao')||'').trim()
+      };
+      if(opEditingId){
+        var opIdx = state.operacoes.findIndex(function(o){ return o.id === opEditingId; });
+        if(opIdx !== -1){ Object.keys(opFields).forEach(function(k){ state.operacoes[opIdx][k] = opFields[k]; }); }
+      } else {
+        opFields.id = uid(); opFields.criadoEm = Date.now();
+        state.operacoes.push(opFields);
+      }
       saveKey('operacoes', state.operacoes);
+      editState = null;
       form.reset(); renderAll(); return;
     }
 
     if(form.id === 'form-financeiro'){
-      state.financeiro.push({
-        id: uid(), tipo: data.get('tipo'), categoria: data.get('categoria'), valor: parseFloat(data.get('valor')) || 0,
-        data: data.get('data') || '', talhaoId: data.get('talhaoId') || '', parceiroId: data.get('parceiroId') || '',
-        membroId: data.get('membroId') || '', descricao: (data.get('descricao') || '').trim(), criadoEm: Date.now()
-      });
+      var finEditingId = form.dataset.editingId;
+      var finContaId = data.get('contaId');
+      var finConta = state.contasFinanceiro.find(function(c){ return c.id === finContaId; });
+      var finFields = {
+        contaId: finContaId, tipo: contaTipo(finContaId), categoria: finConta ? finConta.nome : '',
+        valor: parseFloat(data.get('valor')) || 0,
+        quantidade: parseFloat(data.get('quantidade')) || 0, peso: parseFloat(data.get('peso')) || 0,
+        unidade: (data.get('unidade') || '').trim(),
+        status: data.get('status') || 'Pago', data: data.get('data') || '', vencimento: data.get('vencimento') || '',
+        talhaoId: data.get('talhaoId') || '', parceiroId: data.get('parceiroId') || '',
+        membroId: data.get('membroId') || '', descricao: (data.get('descricao') || '').trim()
+      };
+      if(finEditingId){
+        var finIdx = state.financeiro.findIndex(function(f){ return f.id === finEditingId; });
+        if(finIdx !== -1){ Object.keys(finFields).forEach(function(k){ state.financeiro[finIdx][k] = finFields[k]; }); }
+      } else {
+        finFields.id = uid(); finFields.criadoEm = Date.now();
+        state.financeiro.push(finFields);
+      }
       saveKey('financeiro', state.financeiro);
-      form.reset(); renderAll(); return;
-    }
-
-    if(form.id === 'form-equipe'){
-      state.equipe.push({ id: uid(), nome: data.get('nome').trim(), papel: (data.get('papel') || '').trim(), criadoEm: Date.now() });
-      saveKey('equipe', state.equipe);
+      editState = null;
       form.reset(); renderAll(); return;
     }
   });
 
   document.addEventListener('click', function(e){
+    var plotBtn = e.target.closest('.plot[data-talhao-id]');
+    if(plotBtn){
+      var talhaoId = plotBtn.dataset.talhaoId;
+      switchTab('operacoes');
+      var sel = document.getElementById('f-talhaoId');
+      if(sel) sel.value = talhaoId;
+      var formEl = document.getElementById('form-operacao');
+      if(formEl) formEl.scrollIntoView({behavior:'smooth', block:'start'});
+      return;
+    }
+
     var btn = e.target.closest('[data-action]');
     if(!btn) return;
     var action = btn.dataset.action;
     var id = btn.dataset.id;
 
+    if(action === 'reset-password'){
+      if(window.confirm('Isso remove a senha atual (definida apenas neste dispositivo/ambiente). Você poderá definir uma nova em seguida. Continuar?')){
+        saveGlobal(PASS_KEY, null).then(function(){ showGateScreen(); });
+      }
+      return;
+    }
+    if(action === 'select-workspace'){ selectWorkspace(id); return; }
+    if(action === 'switch-workspace'){
+      currentWorkspaceId = null;
+      document.getElementById('app').style.display = 'none';
+      loadWorkspaces().then(function(list){ showWorkspaceScreen(list); });
+      return;
+    }
+    if(action === 'lock-app'){
+      currentWorkspaceId = null;
+      try{ window.sessionStorage.removeItem(UNLOCK_FLAG); }catch(e){}
+      document.getElementById('app').style.display = 'none';
+      showGateScreen();
+      return;
+    }
+
+    if(action.indexOf('del-') === 0){
+      if(!window.confirm('Tem certeza que deseja remover este item? Essa ação não pode ser desfeita.')) return;
+    }
+
     if(action === 'export-excel'){ exportarExcel(); return; }
     if(action === 'export-pdf'){ window.print(); return; }
+    if(action === 'export-backup'){ exportarBackupJSON(); return; }
+    if(action === 'import-backup'){ var fileInput = document.getElementById('backup-file-input'); if(fileInput) fileInput.click(); return; }
+    if(action === 'cancel-edit'){ editState = null; renderAll(); return; }
+    if(action === 'edit-generic'){
+      editState = {scope:'generic', entityKey: btn.dataset.entity, id: id};
+      renderAll();
+      var formCard = document.querySelector('#tab-' + btn.dataset.entity + ' .form-card');
+      if(formCard) formCard.scrollIntoView({behavior:'smooth', block:'start'});
+      return;
+    }
     if(action === 'del-generic'){
       var entityKey = btn.dataset.entity;
       state[entityKey] = state[entityKey].filter(function(x){ return x.id !== id; });
@@ -1564,14 +2468,24 @@
       renderAll(); return;
     }
     if(action === 'del-talhao'){ state.talhoes = state.talhoes.filter(function(t){ return t.id !== id; }); saveKey('talhoes', state.talhoes); renderAll(); return; }
+    if(action === 'edit-talhao'){ editState = {scope:'talhoes', id: id}; renderAll(); var f2 = document.getElementById('form-talhao'); if(f2) f2.scrollIntoView({behavior:'smooth', block:'start'}); return; }
     if(action === 'del-safra'){ state.safras = state.safras.filter(function(s){ return s.id !== id; }); saveKey('safras', state.safras); renderAll(); return; }
+    if(action === 'edit-safra'){ editState = {scope:'safras', id: id}; renderAll(); var f3 = document.getElementById('form-safra'); if(f3) f3.scrollIntoView({behavior:'smooth', block:'start'}); return; }
     if(action === 'del-producao'){ state.producao = state.producao.filter(function(p){ return p.id !== id; }); saveKey('producao', state.producao); renderAll(); return; }
+    if(action === 'edit-producao'){
+      editState = {scope: btn.dataset.tipo === 'entrada' ? 'producao-entrada' : 'producao-saida', id: id};
+      renderAll();
+      var f4 = document.getElementById(btn.dataset.tipo === 'entrada' ? 'form-colheita-entrada' : 'form-colheita-venda');
+      if(f4) f4.scrollIntoView({behavior:'smooth', block:'start'});
+      return;
+    }
     if(action === 'del-operacao'){ state.operacoes = state.operacoes.filter(function(o){ return o.id !== id; }); saveKey('operacoes', state.operacoes); renderAll(); return; }
+    if(action === 'edit-operacao'){ editState = {scope:'operacoes', id: id}; renderAll(); var f1 = document.getElementById('form-operacao'); if(f1) f1.scrollIntoView({behavior:'smooth', block:'start'}); return; }
     if(action === 'del-financeiro'){ state.financeiro = state.financeiro.filter(function(f){ return f.id !== id; }); saveKey('financeiro', state.financeiro); renderAll(); return; }
-    if(action === 'del-equipe'){ state.equipe = state.equipe.filter(function(m){ return m.id !== id; }); saveKey('equipe', state.equipe); renderAll(); return; }
+    if(action === 'edit-financeiro'){ editState = {scope:'financeiro', id: id}; renderAll(); var f5 = document.getElementById('form-financeiro'); if(f5) f5.scrollIntoView({behavior:'smooth', block:'start'}); return; }
   });
 
-  init();
+  boot();
 })();
 </script>
 </body>
