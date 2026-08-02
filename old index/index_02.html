@@ -67,22 +67,14 @@
 
   nav{display:flex; flex-direction:column; gap:2px;}
   .nav-group-label{
-    font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em;
-    color:#9FAE93; font-weight:700; padding:14px 10px 6px;
-    display:flex; align-items:center; justify-content:space-between;
-    cursor:pointer; user-select:none; border-radius:4px;
-    transition:color .15s ease;
+    font-size:10px; text-transform:uppercase; letter-spacing:0.08em;
+    color:#7C8A70; font-weight:700; padding:12px 12px 2px;
   }
-  .nav-group-label:hover{color:var(--paper);}
-  .nav-group-label::after{
-    content:'▾'; font-size:9px; color:#7C8A70; transition:transform .15s ease;
-  }
-  .nav-group-label.collapsed::after{transform:rotate(-90deg);}
   .nav-btn{
     display:flex; align-items:center; gap:10px;
     background:transparent; border:1px solid transparent;
-    color:#C7D0BC; text-align:left; padding:8px 12px 8px 16px;
-    border-radius:var(--radius); font-size:13px; font-weight:500;
+    color:#C7D0BC; text-align:left; padding:9px 12px;
+    border-radius:var(--radius); font-size:13.5px; font-weight:500;
     transition:background .15s ease, color .15s ease;
   }
   .nav-btn:hover{background:rgba(255,255,255,0.05); color:var(--paper);}
@@ -195,7 +187,6 @@
     .brand-text span{display:none;}
     nav{flex-direction:row;}
     .nav-group-label{display:none;}
-    .nav-btn{display:flex !important;}
     .sidebar-footer{display:none;}
     main{padding:20px 16px 50px;}
   }
@@ -244,7 +235,7 @@
     </div>
     <nav id="nav">
       <button class="nav-btn active" data-tab="painel">Dashboard</button>
-      <div class="nav-group-label" data-group="cadastros">Cadastros</div>
+      <div class="nav-group-label">Cadastros</div>
       <button class="nav-btn" data-tab="propriedades">Propriedades</button>
       <button class="nav-btn" data-tab="talhoes">Talhões</button>
       <button class="nav-btn" data-tab="safras">Safras</button>
@@ -254,20 +245,23 @@
       <button class="nav-btn" data-tab="parceiros">Parceiros</button>
       <button class="nav-btn" data-tab="equipe">Funcionários</button>
       <button class="nav-btn" data-tab="patrimonio">Patrimônio</button>
-      <div class="nav-group-label" data-group="campo">Campo</div>
+      <div class="nav-group-label">Produção</div>
       <button class="nav-btn" data-tab="producao">Colheita</button>
+      <div class="nav-group-label">Operações</div>
       <button class="nav-btn" data-tab="tiposAtividade">Tipos de Atividade</button>
       <button class="nav-btn" data-tab="operacoes">Diário de Campo</button>
-      <div class="nav-group-label" data-group="financeiro">Financeiro</div>
+      <div class="nav-group-label">Plano de Contas</div>
       <button class="nav-btn" data-tab="subgruposFinanceiro">Subgrupos</button>
       <button class="nav-btn" data-tab="contasFinanceiro">Contas</button>
+      <div class="nav-group-label">Financeiro</div>
       <button class="nav-btn" data-tab="financeiro">Lançamentos</button>
       <button class="nav-btn" data-tab="contasPagar">Contas a Pagar</button>
       <button class="nav-btn" data-tab="contasReceber">Contas a Receber</button>
-      <div class="nav-group-label" data-group="analise">Análise</div>
+      <div class="nav-group-label">Análise</div>
       <button class="nav-btn" data-tab="rentabilidade">Rentabilidade</button>
       <button class="nav-btn" data-tab="fluxoCaixa">Fluxo de Caixa</button>
       <button class="nav-btn" data-tab="relatorios">Relatórios</button>
+      <div class="nav-group-label">Inteligência</div>
       <button class="nav-btn" data-tab="indicadores">Indicadores</button>
     </nav>
     <div class="sidebar-footer">
@@ -1117,7 +1111,6 @@
     document.querySelectorAll('.tab-content').forEach(function(sec){ sec.classList.toggle('hidden', sec.id !== 'tab-' + tab); });
     document.getElementById('page-title').textContent = pageMeta[tab].title;
     document.getElementById('page-subtitle').textContent = pageMeta[tab].subtitle;
-    expandGroupFor(tab);
   }
 
   function renderAll(){
@@ -2197,50 +2190,7 @@
   }
 
   /* ---------------- Event delegation ---------------- */
-  var NAV_COLLAPSE_KEY = 'fazenda-nav-collapsed';
-  function getCollapsedGroups(){
-    try{ var raw = window.localStorage.getItem(NAV_COLLAPSE_KEY); return raw ? JSON.parse(raw) : []; }catch(e){ return []; }
-  }
-  function saveCollapsedGroups(list){
-    try{ window.localStorage.setItem(NAV_COLLAPSE_KEY, JSON.stringify(list)); }catch(e){}
-  }
-  function setGroupCollapsed(label, collapsed){
-    label.classList.toggle('collapsed', collapsed);
-    var el = label.nextElementSibling;
-    while(el && !el.classList.contains('nav-group-label')){
-      el.style.display = collapsed ? 'none' : '';
-      el = el.nextElementSibling;
-    }
-  }
-  function initNavGroups(){
-    var collapsed = getCollapsedGroups();
-    document.querySelectorAll('.nav-group-label').forEach(function(label){
-      setGroupCollapsed(label, collapsed.indexOf(label.dataset.group) !== -1);
-    });
-  }
-  function expandGroupFor(tab){
-    var btn = document.querySelector('.nav-btn[data-tab="' + tab + '"]');
-    if(!btn) return;
-    var prev = btn.previousElementSibling;
-    while(prev && !prev.classList.contains('nav-group-label')) prev = prev.previousElementSibling;
-    if(prev && prev.classList.contains('collapsed')){
-      setGroupCollapsed(prev, false);
-      var collapsed = getCollapsedGroups().filter(function(g){ return g !== prev.dataset.group; });
-      saveCollapsedGroups(collapsed);
-    }
-  }
-  initNavGroups();
-
   document.getElementById('nav').addEventListener('click', function(e){
-    var label = e.target.closest('.nav-group-label');
-    if(label){
-      var isCollapsed = !label.classList.contains('collapsed');
-      setGroupCollapsed(label, isCollapsed);
-      var collapsed = getCollapsedGroups().filter(function(g){ return g !== label.dataset.group; });
-      if(isCollapsed) collapsed.push(label.dataset.group);
-      saveCollapsedGroups(collapsed);
-      return;
-    }
     var btn = e.target.closest('.nav-btn');
     if(!btn) return;
     switchTab(btn.dataset.tab);
