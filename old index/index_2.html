@@ -1120,40 +1120,29 @@
     expandGroupFor(tab);
   }
 
-  function safeRender(nomeAba, fn){
-    try{ fn(); }
-    catch(err){
-      console.error('Erro ao renderizar "' + nomeAba + '":', err);
-      var el = document.getElementById('tab-' + nomeAba);
-      if(el){
-        el.innerHTML = '<div class="paper note-box">Não foi possível carregar esta aba (erro técnico: ' + escapeHtml(String(err && err.message || err)) + '). As demais abas continuam funcionando normalmente.</div>';
-      }
-    }
-  }
-
   function renderAll(){
-    safeRender('painel', renderPainel);
-    safeRender('propriedades', renderPropriedades);
-    safeRender('talhoes', renderTalhoes);
-    safeRender('safras', renderSafras);
-    safeRender('culturas', function(){ renderGenericTab('culturas'); });
-    safeRender('categoriasProduto', function(){ renderGenericTab('categoriasProduto'); });
-    safeRender('produtos', function(){ renderGenericTab('produtos'); });
-    safeRender('parceiros', function(){ renderGenericTab('parceiros'); });
-    safeRender('equipe', function(){ renderGenericTab('equipe'); });
-    safeRender('patrimonio', renderPatrimonio);
-    safeRender('producao', renderProducao);
-    safeRender('tiposAtividade', function(){ renderGenericTab('tiposAtividade'); });
-    safeRender('operacoes', renderOperacoes);
-    safeRender('subgruposFinanceiro', function(){ renderGenericTab('subgruposFinanceiro'); });
-    safeRender('contasFinanceiro', function(){ renderGenericTab('contasFinanceiro'); });
-    safeRender('financeiro', renderFinanceiro);
-    safeRender('contasPagar', renderContasPagar);
-    safeRender('contasReceber', renderContasReceber);
-    safeRender('rentabilidade', renderRentabilidade);
-    safeRender('fluxoCaixa', renderFluxoCaixa);
-    safeRender('relatorios', renderRelatorios);
-    safeRender('indicadores', renderIndicadores);
+    renderPainel();
+    renderPropriedades();
+    renderTalhoes();
+    renderSafras();
+    renderGenericTab('culturas');
+    renderGenericTab('categoriasProduto');
+    renderGenericTab('produtos');
+    renderGenericTab('parceiros');
+    renderGenericTab('equipe');
+    renderPatrimonio();
+    renderProducao();
+    renderGenericTab('tiposAtividade');
+    renderOperacoes();
+    renderGenericTab('subgruposFinanceiro');
+    renderGenericTab('contasFinanceiro');
+    renderFinanceiro();
+    renderContasPagar();
+    renderContasReceber();
+    renderRentabilidade();
+    renderFluxoCaixa();
+    renderRelatorios();
+    renderIndicadores();
   }
 
   function statCard(label, value, valueClass){
@@ -2055,7 +2044,7 @@
     var canvas = document.getElementById(canvasId);
     if(!canvas || !window.Chart) return;
     if(chartInstances[canvasId]) chartInstances[canvasId].destroy();
-    var options = {responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:'#2A2016'}}}, scales:{x:{ticks:{color:'#6B5D46'}}, y:{ticks:{color:'#6B5D46'}}}};
+    var options = {responsive:true, plugins:{legend:{labels:{color:'#2A2016'}}}, scales:{x:{ticks:{color:'#6B5D46'}}, y:{ticks:{color:'#6B5D46'}}}};
     if(extraOptions){ Object.keys(extraOptions).forEach(function(k){ options[k] = extraOptions[k]; }); }
     chartInstances[canvasId] = new Chart(canvas.getContext('2d'), {type:type, data:data, options:options});
   }
@@ -2138,77 +2127,51 @@
     html += '</div>';
     html += '<div class="paper note-box" style="margin-top:0; margin-bottom:20px;">Os dados deste app ficam salvos só neste navegador/computador. Baixe um backup periodicamente — restaurar substitui os dados atuais pelos do arquivo.</div>';
 
-    var semDadosFinanceiro = !state.financeiro || !state.financeiro.length;
+    html += '<div class="section-title" style="margin-top:0;">Custos vs. receitas por mês</div>';
+    html += '<div class="paper" style="padding:16px;"><canvas id="chart-mes" height="90"></canvas></div>';
+
+    html += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; margin-top:20px;">';
+    html += '<div><div class="section-title" style="margin-top:0;">Custos por categoria</div><div class="paper" style="padding:16px;"><canvas id="chart-categoria" height="220"></canvas></div></div>';
+    html += '<div><div class="section-title" style="margin-top:0;">Resultado por talhão</div><div class="paper" style="padding:16px;"><canvas id="chart-talhao" height="220"></canvas></div></div>';
+    html += '</div>';
+
+    html += '<div class="section-title">Saldo acumulado projetado</div>';
+    html += '<div class="paper" style="padding:16px;"><canvas id="chart-saldo" height="90"></canvas></div>';
 
     if(!window.Chart){
-      html += '<div class="paper note-box">Não foi possível carregar a biblioteca de gráficos (conexão bloqueada, ad-blocker ou firewall?). Os dados continuam disponíveis nas demais abas e na exportação para Excel.</div>';
-    } else if(semDadosFinanceiro){
-      html += '<div class="paper empty-state">Ainda não há lançamentos no Financeiro — os gráficos aparecem aqui assim que houver dados. Enquanto isso, dá pra usar a exportação para Excel e o backup acima normalmente.</div>';
-    } else {
-      html += '<div class="section-title" style="margin-top:0;">Custos vs. receitas por mês</div>';
-      html += '<div class="paper" style="padding:16px; height:300px;"><canvas id="chart-mes"></canvas></div>';
-
-      html += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; margin-top:20px;">';
-      html += '<div><div class="section-title" style="margin-top:0;">Custos por categoria</div><div class="paper" style="padding:16px; height:280px;"><canvas id="chart-categoria"></canvas></div></div>';
-      html += '<div><div class="section-title" style="margin-top:0;">Resultado por talhão</div><div class="paper" style="padding:16px; height:280px;"><canvas id="chart-talhao"></canvas></div></div>';
-      html += '</div>';
-
-      html += '<div class="section-title">Saldo acumulado projetado</div>';
-      html += '<div class="paper" style="padding:16px; height:300px;"><canvas id="chart-saldo"></canvas></div>';
-      html += '<div id="indicadores-erro"></div>';
+      html += '<div class="paper note-box" style="margin-top:16px;">Não foi possível carregar a biblioteca de gráficos (conexão bloqueada?). Os dados continuam disponíveis nas demais abas e na exportação para Excel.</div>';
     }
 
     el.innerHTML = html;
-    if(!window.Chart || semDadosFinanceiro) return;
+    if(!window.Chart) return;
 
-    try{
-      var mesData = financeiroPorMes();
-      drawChart('chart-mes', 'bar', {
-        labels: mesData.labels,
-        datasets: [
-          {label:'Custos', data:mesData.custos, backgroundColor:'#A23E2E'},
-          {label:'Receitas', data:mesData.receitas, backgroundColor:'#4F7942'}
-        ]
-      });
+    var mesData = financeiroPorMes();
+    drawChart('chart-mes', 'bar', {
+      labels: mesData.labels,
+      datasets: [
+        {label:'Custos', data:mesData.custos, backgroundColor:'#A23E2E'},
+        {label:'Receitas', data:mesData.receitas, backgroundColor:'#4F7942'}
+      ]
+    });
 
-      var catData = custosPorCategoria();
-      var palette = ['#C98A2B','#4F7942','#A23E2E','#8B8368','#7FA36D','#DFA84E','#9C6A1E','#3B5B32'];
-      if(catData.labels.length){
-        drawChart('chart-categoria', 'doughnut', {
-          labels: catData.labels,
-          datasets: [{data: catData.valores, backgroundColor: catData.labels.map(function(_, i){ return palette[i % palette.length]; })}]
-        });
-      } else {
-        var elCat = document.getElementById('chart-categoria');
-        if(elCat && elCat.parentNode) elCat.parentNode.innerHTML = '<div style="padding:10px; font-size:13px; color:var(--ink-soft);">Nenhum custo "Pago" registrado ainda.</div>';
-      }
+    var catData = custosPorCategoria();
+    var palette = ['#C98A2B','#4F7942','#A23E2E','#8B8368','#7FA36D','#DFA84E','#9C6A1E','#3B5B32'];
+    drawChart('chart-categoria', 'doughnut', {
+      labels: catData.labels,
+      datasets: [{data: catData.valores, backgroundColor: catData.labels.map(function(_, i){ return palette[i % palette.length]; })}]
+    });
 
-      var talhaoData = resultadoPorTalhaoChart();
-      if(talhaoData.labels.length){
-        drawChart('chart-talhao', 'bar', {
-          labels: talhaoData.labels,
-          datasets: [{label:'Resultado (R$)', data: talhaoData.valores, backgroundColor: talhaoData.cores}]
-        }, {indexAxis:'y'});
-      } else {
-        var elTal = document.getElementById('chart-talhao');
-        if(elTal && elTal.parentNode) elTal.parentNode.innerHTML = '<div style="padding:10px; font-size:13px; color:var(--ink-soft);">Cadastre talhões para ver o resultado por área.</div>';
-      }
+    var talhaoData = resultadoPorTalhaoChart();
+    drawChart('chart-talhao', 'bar', {
+      labels: talhaoData.labels,
+      datasets: [{label:'Resultado (R$)', data: talhaoData.valores, backgroundColor: talhaoData.cores}]
+    }, {indexAxis:'y'});
 
-      var saldoData = saldoAcumuladoMensal();
-      if(saldoData.labels.length){
-        drawChart('chart-saldo', 'line', {
-          labels: saldoData.labels,
-          datasets: [{label:'Saldo acumulado (R$)', data: saldoData.valores, borderColor:'#C98A2B', backgroundColor:'rgba(201,138,43,0.15)', fill:true, tension:0.25}]
-        });
-      } else {
-        var elSaldo = document.getElementById('chart-saldo');
-        if(elSaldo && elSaldo.parentNode) elSaldo.parentNode.innerHTML = '<div style="padding:10px; font-size:13px; color:var(--ink-soft);">Sem lançamentos com data suficiente para projetar o saldo.</div>';
-      }
-    }catch(err){
-      console.error('Erro ao desenhar os gráficos de Indicadores:', err);
-      var elErro = document.getElementById('indicadores-erro');
-      if(elErro) elErro.innerHTML = '<div class="paper note-box" style="margin-top:16px;">Não foi possível desenhar um dos gráficos (erro técnico: ' + escapeHtml(String(err && err.message || err)) + '). O resto do app continua funcionando normalmente — se isso persistir, esse texto ajuda a identificar a causa.</div>';
-    }
+    var saldoData = saldoAcumuladoMensal();
+    drawChart('chart-saldo', 'line', {
+      labels: saldoData.labels,
+      datasets: [{label:'Saldo acumulado (R$)', data: saldoData.valores, borderColor:'#C98A2B', backgroundColor:'rgba(201,138,43,0.15)', fill:true, tension:0.25}]
+    });
   }
 
   /* ---------------- Form field helpers ---------------- */
