@@ -220,6 +220,25 @@
     background:#FBF7EC; cursor:pointer; font-size:14px; font-weight:600;
   }
   .workspace-item:hover{border-color:var(--accent);}
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(20,26,16,0.6); z-index:100;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-box{width:100%; max-width:360px; padding:22px;}
+  .modal-cat-row{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:6px 0; border-bottom:1px solid var(--paper-2); font-size:13.5px;
+  }
+  .modal-cat-row:last-child{border-bottom:none;}
+  .field-with-add{display:flex; align-items:flex-end; gap:6px;}
+  .field-with-add .field{flex:1;}
+  .btn-add-inline{
+    background:var(--accent); color:#241704; border:none; border-radius:4px;
+    width:34px; height:34px; font-size:18px; font-weight:700; line-height:1; cursor:pointer; flex:none;
+  }
+  .btn-add-inline:hover{background:var(--accent-dark); color:var(--paper);}
+
   @media print{
     .sidebar, #loading-indicator, .form-card, .btn-del, .no-print{display:none !important;}
     #app{display:block !important;}
@@ -236,6 +255,17 @@
 <div id="workspace-screen" class="auth-screen" style="display:none;">
   <div class="auth-card paper"></div>
 </div>
+<div id="cat-modal-overlay" class="modal-overlay" style="display:none;">
+  <div class="modal-box paper">
+    <h3 style="margin:0 0 12px; font-family:'Zilla Slab',serif; font-size:16px; border-bottom:1px dashed var(--paper-line); padding-bottom:8px;">Categorias de Produto</h3>
+    <div id="cat-modal-list" style="margin-bottom:14px;"></div>
+    <form id="form-cat-modal" style="display:flex; gap:8px;">
+      <input type="text" id="cat-modal-input" name="nome" placeholder="Nova categoria" required style="flex:1; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">
+      <button type="submit" class="btn">Adicionar</button>
+    </form>
+    <button type="button" class="btn-cancel" data-action="close-cat-modal" style="margin-top:14px; width:100%;">Fechar</button>
+  </div>
+</div>
 <div id="app" style="display:none;">
   <aside class="sidebar">
     <div class="brand">
@@ -249,7 +279,6 @@
       <button class="nav-btn" data-tab="talhoes">Talhões</button>
       <button class="nav-btn" data-tab="safras">Safras</button>
       <button class="nav-btn" data-tab="culturas">Culturas</button>
-      <button class="nav-btn" data-tab="categoriasProduto">Categorias de Produto</button>
       <button class="nav-btn" data-tab="produtos">Produtos</button>
       <button class="nav-btn" data-tab="parceiros">Parceiros</button>
       <button class="nav-btn" data-tab="equipe">Funcionários</button>
@@ -291,7 +320,6 @@
     <section id="tab-talhoes" class="tab-content hidden"></section>
     <section id="tab-safras" class="tab-content hidden"></section>
     <section id="tab-culturas" class="tab-content hidden"></section>
-    <section id="tab-categoriasProduto" class="tab-content hidden"></section>
     <section id="tab-produtos" class="tab-content hidden"></section>
     <section id="tab-parceiros" class="tab-content hidden"></section>
     <section id="tab-equipe" class="tab-content hidden"></section>
@@ -328,7 +356,6 @@
     talhoes: {title:'Talhões', subtitle:'Áreas cadastradas na propriedade'},
     safras: {title:'Safras', subtitle:'Ciclos de plantio e colheita'},
     culturas: {title:'Culturas', subtitle:'Tipos de cultura cultivados'},
-    categoriasProduto: {title:'Categorias de Produto', subtitle:'Categorias usadas no cadastro de produtos'},
     produtos: {title:'Produtos', subtitle:'Insumos, defensivos e controle de estoque'},
     parceiros: {title:'Parceiros', subtitle:'Fornecedores e clientes'},
     equipe: {title:'Funcionários', subtitle:'Funcionários e colaboradores da propriedade'},
@@ -1137,8 +1164,7 @@
     safeRender('talhoes', renderTalhoes);
     safeRender('safras', renderSafras);
     safeRender('culturas', function(){ renderGenericTab('culturas'); });
-    safeRender('categoriasProduto', function(){ renderGenericTab('categoriasProduto'); });
-    safeRender('produtos', function(){ renderGenericTab('produtos'); });
+    safeRender('produtos', renderProdutos);
     safeRender('parceiros', function(){ renderGenericTab('parceiros'); });
     safeRender('equipe', function(){ renderGenericTab('equipe'); });
     safeRender('patrimonio', renderPatrimonio);
@@ -1390,6 +1416,60 @@
     html += buildGenericFormHtml('patrimonio');
     html += buildGenericTableHtml('patrimonio');
     document.getElementById('tab-patrimonio').innerHTML = html;
+  }
+
+  function renderProdutos(){
+    var editingRecord = (editState && editState.scope === 'produtos') ? state.produtos.find(function(x){ return x.id === editState.id; }) : null;
+    var html = '';
+    html += '<div class="paper form-card"><h3>' + (editingRecord ? 'Editar produto' : 'Novo produto') + '</h3>';
+    html += '<form class="entry-form" id="form-produto"' + (editingRecord ? ' data-editing-id="' + editingRecord.id + '"' : '') + '>';
+    html += field('text', 'nome', 'Nome', true, 'Ex: Adubo NPK', {}, editingRecord ? editingRecord.nome : undefined);
+    html += '<div class="field-with-add">';
+    html += '<div style="flex:1;">' + selectField('categoria', 'Categoria', state.categoriasProduto.map(function(c){ return {value:c.nome, label:c.nome}; }), editingRecord ? editingRecord.categoria : undefined) + '</div>';
+    html += '<button type="button" class="btn-add-inline" data-action="open-cat-modal" title="Nova categoria">+</button>';
+    html += '</div>';
+    html += field('text', 'unidade', 'Unidade', false, 'Ex: kg, L, sc', {}, editingRecord ? editingRecord.unidade : undefined);
+    html += field('number', 'estoqueAtual', 'Estoque atual', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.estoqueAtual : undefined);
+    html += field('number', 'estoqueMinimo', 'Estoque mínimo', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.estoqueMinimo : undefined);
+    html += '<button type="submit" class="btn">' + (editingRecord ? 'Salvar alterações' : 'Adicionar') + '</button>';
+    if(editingRecord) html += '<button type="button" class="btn-cancel" data-action="cancel-edit">Cancelar</button>';
+    html += '</form></div>';
+
+    html += '<div class="paper">';
+    if(!state.produtos.length){
+      html += '<div class="empty-state">Nenhum produto cadastrado ainda.</div>';
+    } else {
+      if(state.produtos.length > 4){
+        html += '<div style="padding:14px 18px 0;"><input type="text" id="search-produtos" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+      }
+      html += '<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Categoria</th><th>Unidade</th><th>Estoque</th><th>Mínimo</th><th></th></tr></thead><tbody>';
+      state.produtos.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(p){
+        html += '<tr>';
+        html += '<td>' + escapeHtml(p.nome) + '</td>';
+        html += '<td>' + escapeHtml(p.categoria || '—') + '</td>';
+        html += '<td>' + escapeHtml(p.unidade || '—') + '</td>';
+        html += '<td class="num">' + fmtNum(p.estoqueAtual) + '</td>';
+        html += '<td class="num">' + fmtNum(p.estoqueMinimo) + '</td>';
+        html += '<td><button class="btn-edit" data-action="edit-produto" data-id="' + p.id + '">Editar</button><button class="btn-del" data-action="del-produto" data-id="' + p.id + '">Remover</button></td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+    html += '</div>';
+    document.getElementById('tab-produtos').innerHTML = html;
+  }
+
+  function renderCatModalList(){
+    var el = document.getElementById('cat-modal-list');
+    if(!state.categoriasProduto.length){
+      el.innerHTML = '<div style="font-size:12.5px; color:var(--ink-soft);">Nenhuma categoria cadastrada ainda.</div>';
+      return;
+    }
+    var html = '';
+    state.categoriasProduto.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(c){
+      html += '<div class="modal-cat-row"><span>' + escapeHtml(c.nome) + '</span><button type="button" class="btn-del" data-action="del-categoria-modal" data-id="' + c.id + '">Remover</button></div>';
+    });
+    el.innerHTML = html;
   }
 
   /* ---------------- Propriedades (com talhões aninhados) ---------------- */
@@ -2333,6 +2413,36 @@
       return;
     }
 
+    if(form.id === 'form-produto'){
+      var prodEditingId = form.dataset.editingId;
+      var prodFields = {
+        nome: data.get('nome').trim(), categoria: data.get('categoria') || '',
+        unidade: (data.get('unidade')||'').trim(),
+        estoqueAtual: parseFloat(data.get('estoqueAtual')) || 0, estoqueMinimo: parseFloat(data.get('estoqueMinimo')) || 0
+      };
+      if(prodEditingId){
+        var prodIdx = state.produtos.findIndex(function(p){ return p.id === prodEditingId; });
+        if(prodIdx !== -1){ Object.keys(prodFields).forEach(function(k){ state.produtos[prodIdx][k] = prodFields[k]; }); }
+      } else {
+        prodFields.id = uid(); prodFields.criadoEm = Date.now();
+        state.produtos.push(prodFields);
+      }
+      saveKey('produtos', state.produtos);
+      editState = null;
+      form.reset(); renderAll(); return;
+    }
+
+    if(form.id === 'form-cat-modal'){
+      var novaCatNome = (data.get('nome') || '').trim();
+      if(!novaCatNome) return;
+      state.categoriasProduto.push({id: uid(), nome: novaCatNome, criadoEm: Date.now()});
+      saveKey('categoriasProduto', state.categoriasProduto);
+      form.reset();
+      renderCatModalList();
+      renderProdutos();
+      return;
+    }
+
     if(form.dataset.form === 'generic'){
       var entityKey = form.dataset.entity;
       var cfg = ENTITY_CONFIGS[entityKey];
@@ -2518,6 +2628,24 @@
       return;
     }
     if(action === 'select-workspace'){ selectWorkspace(id); return; }
+    if(action === 'open-cat-modal'){ renderCatModalList(); document.getElementById('cat-modal-overlay').style.display = 'flex'; var catInput = document.getElementById('cat-modal-input'); if(catInput) catInput.focus(); return; }
+    if(action === 'close-cat-modal'){ document.getElementById('cat-modal-overlay').style.display = 'none'; return; }
+    if(action === 'del-categoria-modal'){
+      if(!window.confirm('Remover esta categoria? Produtos que já usam ela mantêm o nome salvo, só some da lista de opções.')) return;
+      state.categoriasProduto = state.categoriasProduto.filter(function(c){ return c.id !== id; });
+      saveKey('categoriasProduto', state.categoriasProduto);
+      renderCatModalList();
+      renderProdutos();
+      return;
+    }
+    if(action === 'edit-produto'){ editState = {scope:'produtos', id: id}; renderProdutos(); var fP = document.getElementById('form-produto'); if(fP) fP.scrollIntoView({behavior:'smooth', block:'start'}); return; }
+    if(action === 'del-produto'){
+      if(!window.confirm('Tem certeza que deseja remover este item? Essa ação não pode ser desfeita.')) return;
+      state.produtos = state.produtos.filter(function(p){ return p.id !== id; });
+      saveKey('produtos', state.produtos);
+      renderProdutos();
+      return;
+    }
     if(action === 'switch-workspace'){
       currentWorkspaceId = null;
       document.getElementById('app').style.display = 'none';
