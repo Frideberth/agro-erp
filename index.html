@@ -158,9 +158,9 @@
   .form-card{padding:16px 18px; margin-bottom:20px;}
   .form-card h3{font-family:'Zilla Slab', serif; margin:0 0 12px; font-size:15px; color:var(--ink); border-bottom:1px dashed var(--paper-line); padding-bottom:8px;}
   form.entry-form{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:12px; align-items:end;}
-  .field{display:flex; flex-direction:column; gap:4px;}
+  .field{display:flex; flex-direction:column; gap:4px; min-width:0;}
   .field label{font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em;}
-  .field input, .field select{padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; color:var(--ink); font-size:13px;}
+  .field input, .field select{padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; color:var(--ink); font-size:13px; width:100%; min-width:0; box-sizing:border-box;}
   .field input:focus, .field select:focus{border-color:var(--accent);}
   .btn{padding:9px 16px; border-radius:4px; border:none; font-size:13px; font-weight:600; background:var(--accent); color:#241704; transition:background .15s ease;}
   .btn:hover{background:var(--accent-dark); color:var(--paper);}
@@ -231,8 +231,8 @@
     padding:6px 0; border-bottom:1px solid var(--paper-2); font-size:13.5px;
   }
   .modal-cat-row:last-child{border-bottom:none;}
-  .field-with-add{display:flex; align-items:flex-end; gap:6px;}
-  .field-with-add .field{flex:1;}
+  .field-with-add{display:flex; align-items:flex-end; gap:6px; min-width:0;}
+  .field-with-add .field{flex:1; min-width:0;}
   .btn-add-inline{
     background:var(--accent); color:#241704; border:none; border-radius:4px;
     width:34px; height:34px; font-size:18px; font-weight:700; line-height:1; cursor:pointer; flex:none;
@@ -266,6 +266,48 @@
     <button type="button" class="btn-cancel" data-action="close-cat-modal" style="margin-top:14px; width:100%;">Fechar</button>
   </div>
 </div>
+<div id="tipo-modal-overlay" class="modal-overlay" style="display:none;">
+  <div class="modal-box paper">
+    <h3 style="margin:0 0 12px; font-family:'Zilla Slab',serif; font-size:16px; border-bottom:1px dashed var(--paper-line); padding-bottom:8px;">Tipos de Atividade</h3>
+    <div id="tipo-modal-list" style="margin-bottom:14px;"></div>
+    <form id="form-tipo-modal" style="display:flex; flex-direction:column; gap:8px;">
+      <input type="text" id="tipo-modal-input" name="nome" placeholder="Nova atividade (ex: Irrigação)" required style="padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">
+      <select id="tipo-modal-cor" name="cor" style="padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></select>
+      <button type="submit" class="btn">Adicionar</button>
+    </form>
+    <button type="button" class="btn-cancel" data-action="close-tipo-modal" style="margin-top:14px; width:100%;">Fechar</button>
+  </div>
+</div>
+<div id="conta-modal-overlay" class="modal-overlay" style="display:none;">
+  <div class="modal-box paper">
+    <h3 style="margin:0 0 12px; font-family:'Zilla Slab',serif; font-size:16px; border-bottom:1px dashed var(--paper-line); padding-bottom:8px;">Contas Financeiras</h3>
+    <div id="conta-modal-list" style="margin-bottom:14px; max-height:220px; overflow-y:auto;"></div>
+    <form id="form-conta-modal" style="display:flex; flex-direction:column; gap:8px;">
+      <input type="text" id="conta-modal-input" name="nome" placeholder="Nome da conta (ex: Fertilizante)" required style="padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">
+      <div class="field-with-add">
+        <select id="conta-modal-subgrupo" name="subgrupoId" style="flex:1; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></select>
+        <button type="button" class="btn-add-inline" data-action="open-subgrupo-modal" title="Novo subgrupo">+</button>
+      </div>
+      <button type="submit" class="btn">Adicionar</button>
+    </form>
+    <button type="button" class="btn-cancel" data-action="close-conta-modal" style="margin-top:14px; width:100%;">Fechar</button>
+  </div>
+</div>
+<div id="subgrupo-modal-overlay" class="modal-overlay" style="display:none; z-index:110;">
+  <div class="modal-box paper">
+    <h3 style="margin:0 0 12px; font-family:'Zilla Slab',serif; font-size:16px; border-bottom:1px dashed var(--paper-line); padding-bottom:8px;">Subgrupos Financeiros</h3>
+    <div id="subgrupo-modal-list" style="margin-bottom:14px; max-height:220px; overflow-y:auto;"></div>
+    <form id="form-subgrupo-modal" style="display:flex; flex-direction:column; gap:8px;">
+      <input type="text" id="subgrupo-modal-input" name="nome" placeholder="Nome do subgrupo (ex: Custo Insumos Agrícolas)" required style="padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">
+      <select id="subgrupo-modal-tipo" name="tipo" style="padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">
+        <option value="custo">Despesa</option>
+        <option value="receita">Receita</option>
+      </select>
+      <button type="submit" class="btn">Adicionar</button>
+    </form>
+    <button type="button" class="btn-cancel" data-action="close-subgrupo-modal" style="margin-top:14px; width:100%;">Fechar</button>
+  </div>
+</div>
 <div id="app" style="display:none;">
   <aside class="sidebar">
     <div class="brand">
@@ -280,22 +322,27 @@
       <button class="nav-btn" data-tab="safras">Safras</button>
       <button class="nav-btn" data-tab="culturas">Culturas</button>
       <button class="nav-btn" data-tab="produtos">Produtos</button>
+      <button class="nav-btn" data-tab="compras">Compras</button>
       <button class="nav-btn" data-tab="parceiros">Parceiros</button>
       <button class="nav-btn" data-tab="equipe">Funcionários</button>
       <button class="nav-btn" data-tab="patrimonio">Patrimônio</button>
       <div class="nav-group-label" data-group="campo">Campo</div>
       <button class="nav-btn" data-tab="producao">Colheita</button>
-      <button class="nav-btn" data-tab="tiposAtividade">Tipos de Atividade</button>
+      <button class="nav-btn" data-tab="vendasAntecipadas">Venda Antecipada</button>
       <button class="nav-btn" data-tab="operacoes">Diário de Campo</button>
       <div class="nav-group-label" data-group="financeiro">Financeiro</div>
-      <button class="nav-btn" data-tab="subgruposFinanceiro">Subgrupos</button>
-      <button class="nav-btn" data-tab="contasFinanceiro">Contas</button>
       <button class="nav-btn" data-tab="financeiro">Lançamentos</button>
       <button class="nav-btn" data-tab="contasPagar">Contas a Pagar</button>
       <button class="nav-btn" data-tab="contasReceber">Contas a Receber</button>
+      <div class="nav-group-label" data-group="contratos">Contratos e Serviços</div>
+      <button class="nav-btn" data-tab="arrendamentos">Arrendamentos</button>
+      <button class="nav-btn" data-tab="financiamentos">Financiamentos</button>
+      <button class="nav-btn" data-tab="servicosPrestados">Serviços Prestados</button>
       <div class="nav-group-label" data-group="analise">Análise</div>
       <button class="nav-btn" data-tab="rentabilidade">Rentabilidade</button>
       <button class="nav-btn" data-tab="fluxoCaixa">Fluxo de Caixa</button>
+      <button class="nav-btn" data-tab="contaCorrente">Conta-Corrente</button>
+      <button class="nav-btn" data-tab="orcamento">Orçado x Realizado</button>
       <button class="nav-btn" data-tab="relatorios">Relatórios</button>
       <button class="nav-btn" data-tab="indicadores">Indicadores</button>
     </nav>
@@ -321,19 +368,23 @@
     <section id="tab-safras" class="tab-content hidden"></section>
     <section id="tab-culturas" class="tab-content hidden"></section>
     <section id="tab-produtos" class="tab-content hidden"></section>
+    <section id="tab-compras" class="tab-content hidden"></section>
     <section id="tab-parceiros" class="tab-content hidden"></section>
     <section id="tab-equipe" class="tab-content hidden"></section>
     <section id="tab-patrimonio" class="tab-content hidden"></section>
     <section id="tab-producao" class="tab-content hidden"></section>
-    <section id="tab-tiposAtividade" class="tab-content hidden"></section>
+    <section id="tab-vendasAntecipadas" class="tab-content hidden"></section>
     <section id="tab-operacoes" class="tab-content hidden"></section>
-    <section id="tab-subgruposFinanceiro" class="tab-content hidden"></section>
-    <section id="tab-contasFinanceiro" class="tab-content hidden"></section>
     <section id="tab-financeiro" class="tab-content hidden"></section>
     <section id="tab-contasPagar" class="tab-content hidden"></section>
     <section id="tab-contasReceber" class="tab-content hidden"></section>
+    <section id="tab-arrendamentos" class="tab-content hidden"></section>
+    <section id="tab-financiamentos" class="tab-content hidden"></section>
+    <section id="tab-servicosPrestados" class="tab-content hidden"></section>
     <section id="tab-rentabilidade" class="tab-content hidden"></section>
     <section id="tab-fluxoCaixa" class="tab-content hidden"></section>
+    <section id="tab-contaCorrente" class="tab-content hidden"></section>
+    <section id="tab-orcamento" class="tab-content hidden"></section>
     <section id="tab-relatorios" class="tab-content hidden"></section>
     <section id="tab-indicadores" class="tab-content hidden"></section>
   </main>
@@ -345,7 +396,7 @@
 (function(){
   "use strict";
 
-  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro'];
+  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras'];
   var state = {};
   var editState = null; // {scope:'generic', entityKey, id} ou {scope:'talhoes'|'safras'|'operacoes'|'financeiro'|'producao', id}
   ALL_KEYS.forEach(function(k){ state[k] = []; });
@@ -357,19 +408,23 @@
     safras: {title:'Safras', subtitle:'Ciclos de plantio e colheita'},
     culturas: {title:'Culturas', subtitle:'Tipos de cultura cultivados'},
     produtos: {title:'Produtos', subtitle:'Insumos, defensivos e controle de estoque'},
+    compras: {title:'Compras', subtitle:'Registro de compras de insumos, com entrada automática em estoque'},
     parceiros: {title:'Parceiros', subtitle:'Fornecedores e clientes'},
     equipe: {title:'Funcionários', subtitle:'Funcionários e colaboradores da propriedade'},
     patrimonio: {title:'Patrimônio', subtitle:'Máquinas, veículos e benfeitorias, com valor depreciado'},
     producao: {title:'Colheita', subtitle:'Registro de colheita e vendas, com controle de estoque e financeiro'},
-    tiposAtividade: {title:'Tipos de Atividade', subtitle:'Categorias usadas no Diário de Campo'},
+    vendasAntecipadas: {title:'Venda Antecipada', subtitle:'Contratos de venda a termo, fixados antes da colheita'},
     operacoes: {title:'Diário de Campo', subtitle:'Atividades registradas na propriedade'},
-    subgruposFinanceiro: {title:'Subgrupos', subtitle:'Grandes grupos de receitas e despesas (plano de contas)'},
-    contasFinanceiro: {title:'Contas', subtitle:'Contas financeiras, organizadas dentro de cada subgrupo'},
     financeiro: {title:'Financeiro', subtitle:'Lançamentos, pagamentos e valor projetado em estoque'},
     contasPagar: {title:'Contas a Pagar', subtitle:'Obrigações futuras com fornecedores e outros'},
     contasReceber: {title:'Contas a Receber', subtitle:'Valores a receber de clientes e parceiros'},
+    arrendamentos: {title:'Arrendamentos', subtitle:'Contratos de arrendamento de terra, pagos ou recebidos'},
+    financiamentos: {title:'Financiamentos', subtitle:'Custeios, investimentos e aquisições feitos com bancos'},
+    servicosPrestados: {title:'Serviços Prestados', subtitle:'Colheita, frete e outros serviços contratados de terceiros'},
     rentabilidade: {title:'Rentabilidade', subtitle:'Gastos, receitas e potencial de geração de caixa por talhão e cultura'},
     fluxoCaixa: {title:'Fluxo de Caixa', subtitle:'Projeção mensal de entradas e saídas'},
+    contaCorrente: {title:'Conta-Corrente', subtitle:'Extrato de pagamentos e recebimentos por parceiro'},
+    orcamento: {title:'Orçado x Realizado', subtitle:'Compare o planejado com o que realmente foi gasto/recebido, por conta e por ano'},
     relatorios: {title:'Relatórios', subtitle:'Resultado de receitas e despesas por subgrupo e conta'},
     indicadores: {title:'Indicadores', subtitle:'Gráficos, dashboards e exportação para Excel e PDF'}
   };
@@ -377,6 +432,11 @@
   var STATUS_LABEL = {andamento:'Em andamento', planejada:'Planejada', colhida:'Colhida'};
   var COLOR_PALETTE = {'Verde':'#7FA36D', 'Ocre':'#C98A2B', 'Marrom':'#8B8368', 'Verde escuro':'#4F7942', 'Azul-acinzentado':'#A9B7C6', 'Amarelo':'#DFA84E', 'Vermelho':'#D08370'};
   var MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+  function nomePatrimonio(id){ var p = state.patrimonio.find(function(x){ return x.id === id; }); return p ? p.nome : '—'; }
+  function horasUsoTotais(patrimonioId){
+    return state.producao.filter(function(p){ return p.maquinaId === patrimonioId; }).reduce(function(s,p){ return s + (Number(p.horasUso)||0); }, 0);
+  }
 
   function calcDepreciacao(item){
     var valor = Number(item.valor) || 0;
@@ -394,11 +454,135 @@
     var atual = valor - (depreciavel * fracao);
     return Math.max(atual, valorResidual);
   }
+  function calcValorFinanciamentoComJuros(item){
+    var principal = Number(item.valorTotal) || 0;
+    var taxa = Number(item.taxaJuros) || 0;
+    if(!item.dataContratacao || !item.dataFinal || !taxa) return null;
+    var inicio = new Date(item.dataContratacao);
+    var fim = new Date(item.dataFinal);
+    if(isNaN(inicio.getTime()) || isNaN(fim.getTime()) || fim <= inicio) return null;
+    var anos = (fim - inicio) / (365.25 * 24 * 3600 * 1000);
+    return principal * Math.pow(1 + (taxa / 100), anos);
+  }
+  function financiamentoValorBase(item){
+    var comJuros = calcValorFinanciamentoComJuros(item);
+    return comJuros !== null ? comJuros : (Number(item.valorTotal) || 0);
+  }
+  function financiamentoSaldoDevedor(item){
+    var base = financiamentoValorBase(item);
+    var pago = (Number(item.parcelasPagas) || 0) * (Number(item.valorParcela) || 0);
+    return Math.max(base - pago, 0);
+  }
 
   function talhaoOptionsFn(){ return [{value:'', label:'—'}].concat(state.talhoes.map(function(t){ return {value:t.id, label:t.nome}; })); }
   function parceiroOptionsFn(){ return [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })); }
+  function safraOptionsFn(){ return state.safras.map(function(s){ return {value:s.id, label:safraLabel(s.id)}; }); }
 
   var ENTITY_CONFIGS = {
+    arrendamentos: {
+      label: 'arrendamento',
+      fields: [
+        {name:'nome', type:'text', label:'Identificação', required:true, placeholder:'Ex: Arrendamento Talhão Pivô'},
+        {name:'tipo', type:'select', label:'Tipo', options:[{value:'Pago', label:'Pago (terra de terceiro)'}, {value:'Recebido', label:'Recebido (terra própria)'}]},
+        {name:'parceiroId', type:'select', label:'Arrendador / Arrendatário', optionsFn: parceiroOptionsFn},
+        {name:'talhaoId', type:'select', label:'Talhão (opcional)', optionsFn: talhaoOptionsFn},
+        {name:'areaHa', type:'number', label:'Área (ha)', extra:{step:'0.01', min:'0'}, placeholder:'0'},
+        {name:'valor', type:'number', label:'Valor (R$)', required:true, extra:{step:'0.01', min:'0'}, placeholder:'0,00'},
+        {name:'periodicidade', type:'select', label:'Periodicidade', options:[{value:'Anual', label:'Anual'}, {value:'Mensal', label:'Mensal'}, {value:'Por Safra', label:'Por Safra'}]},
+        {name:'dataInicio', type:'date', label:'Início do contrato'},
+        {name:'dataFim', type:'date', label:'Fim do contrato (opcional)'},
+        {name:'status', type:'select', label:'Status', options:[{value:'Ativo', label:'Ativo'}, {value:'Encerrado', label:'Encerrado'}]},
+        {name:'observacao', type:'text', label:'Observação', placeholder:''}
+      ],
+      columns: [
+        {key:'nome', label:'Identificação'},
+        {key:'tipo', label:'Tipo', format:'badge', colors:{'Pago':'#D08370', 'Recebido':'#7FA36D'}},
+        {key:'parceiroId', label:'Parceiro', compute: function(item){ return item.parceiroId ? parceiroNome(item.parceiroId) : '—'; }},
+        {key:'areaHa', label:'Área', format:'ha'},
+        {key:'valor', label:'Valor', format:'brl'},
+        {key:'periodicidade', label:'Periodicidade'},
+        {key:'status', label:'Status', format:'badge', colors:{'Ativo':'#DFA84E', 'Encerrado':'#C9C3A4'}}
+      ]
+    },
+    financiamentos: {
+      label: 'financiamento',
+      fields: [
+        {name:'banco', type:'text', label:'Banco / Instituição', required:true, placeholder:'Ex: Banco do Brasil'},
+        {name:'tipo', type:'select', label:'Tipo', options:[{value:'Custeio', label:'Custeio'}, {value:'Investimento', label:'Investimento'}, {value:'Aquisição', label:'Aquisição'}, {value:'Outro', label:'Outro'}]},
+        {name:'numeroContrato', type:'text', label:'Nº do contrato', placeholder:''},
+        {name:'valorTotal', type:'number', label:'Valor total (R$)', required:true, extra:{step:'0.01', min:'0'}, placeholder:'0,00'},
+        {name:'dataContratacao', type:'date', label:'Data de contratação'},
+        {name:'dataFinal', type:'date', label:'Data final do contrato (opcional)'},
+        {name:'numeroParcelas', type:'number', label:'Nº de parcelas', extra:{step:'1', min:'1'}, placeholder:'12'},
+        {name:'valorParcela', type:'number', label:'Valor da parcela (R$)', extra:{step:'0.01', min:'0'}, placeholder:'0,00'},
+        {name:'parcelasPagas', type:'number', label:'Parcelas já pagas', extra:{step:'1', min:'0'}, placeholder:'0'},
+        {name:'taxaJuros', type:'number', label:'Taxa de juros (% a.a., opcional)', extra:{step:'0.01', min:'0'}, placeholder:'0'},
+        {name:'talhaoId', type:'select', label:'Talhão vinculado (opcional)', optionsFn: talhaoOptionsFn},
+        {name:'contaId', type:'select', label:'Conta (para lançar as parcelas pagas)', optionsFn: function(){ return state.contasFinanceiro.map(function(c){ return {value:c.id, label: contaLabel(c.id)}; }); }},
+        {name:'status', type:'select', label:'Status', options:[{value:'Ativo', label:'Ativo'}, {value:'Quitado', label:'Quitado'}]},
+        {name:'observacao', type:'text', label:'Observação', placeholder:''}
+      ],
+      columns: [
+        {key:'banco', label:'Banco'},
+        {key:'tipo', label:'Tipo', format:'badge', colors:{'Custeio':'#C98A2B', 'Investimento':'#4F7942', 'Aquisição':'#A9B7C6', 'Outro':'#8B8368'}},
+        {key:'numeroContrato', label:'Contrato'},
+        {key:'valorTotal', label:'Valor financiado', format:'brl'},
+        {key:'valorComJuros', label:'Valor total c/ juros', format:'brl', compute: function(item){ var v = calcValorFinanciamentoComJuros(item); return v === null ? '' : v; }},
+        {key:'parcelas', label:'Parcelas', compute: function(item){ return (Number(item.parcelasPagas)||0) + ' / ' + (Number(item.numeroParcelas)||0); }},
+        {key:'saldoDevedor', label:'Saldo devedor', format:'brl', compute: financiamentoSaldoDevedor},
+        {key:'status', label:'Status', format:'badge', colors:{'Ativo':'#DFA84E', 'Quitado':'#7FA36D'}}
+      ],
+      extraRowAction: function(item){
+        var pagas = Number(item.parcelasPagas) || 0, total = Number(item.numeroParcelas) || 0;
+        if(item.status !== 'Ativo' || (total && pagas >= total)) return '';
+        return '<button class="btn-edit" data-action="pagar-parcela-financiamento" data-id="' + item.id + '">Pagar parcela</button>';
+      }
+    },
+    servicosPrestados: {
+      label: 'serviço',
+      fields: [
+        {name:'tipo', type:'select', label:'Tipo de serviço', options:[{value:'Colheita', label:'Colheita'}, {value:'Frete', label:'Frete'}, {value:'Plantio', label:'Plantio'}, {value:'Pulverização', label:'Pulverização'}, {value:'Diversos', label:'Diversos'}]},
+        {name:'prestadorId', type:'select', label:'Prestador', optionsFn: parceiroOptionsFn},
+        {name:'talhaoId', type:'select', label:'Talhão (opcional)', optionsFn: talhaoOptionsFn},
+        {name:'data', type:'date', label:'Data'},
+        {name:'descricao', type:'text', label:'Descrição', placeholder:'Ex: Colheita da safra de soja'},
+        {name:'quantidade', type:'number', label:'Quantidade (opcional)', extra:{step:'0.01', min:'0'}, placeholder:'0'},
+        {name:'unidade', type:'text', label:'Unidade (opcional)', placeholder:'Ex: ha, sc, km'},
+        {name:'valor', type:'number', label:'Valor (R$)', required:true, extra:{step:'0.01', min:'0'}, placeholder:'0,00'},
+        {name:'status', type:'select', label:'Status', options:[{value:'Pendente', label:'Pendente'}, {value:'Pago', label:'Pago'}]}
+      ],
+      columns: [
+        {key:'data', label:'Data', format:'date'},
+        {key:'tipo', label:'Tipo', format:'badge', colors:{'Colheita':'#4F7942', 'Frete':'#A9B7C6', 'Plantio':'#7FA36D', 'Pulverização':'#C98A2B', 'Diversos':'#8B8368'}},
+        {key:'prestadorId', label:'Prestador', compute: function(item){ return item.prestadorId ? parceiroNome(item.prestadorId) : '—'; }},
+        {key:'talhaoId', label:'Talhão', compute: function(item){ return item.talhaoId ? talhaoNome(item.talhaoId) : '—'; }},
+        {key:'descricao', label:'Descrição'},
+        {key:'valor', label:'Valor', format:'brl'},
+        {key:'status', label:'Status', format:'badge', colors:{'Pendente':'#DFA84E', 'Pago':'#7FA36D'}}
+      ]
+    },
+    vendasAntecipadas: {
+      label: 'venda antecipada',
+      fields: [
+        {name:'safraId', type:'select', label:'Safra', optionsFn: safraOptionsFn},
+        {name:'quantidade', type:'number', label:'Quantidade contratada', required:true, extra:{step:'0.01', min:'0'}, placeholder:'0'},
+        {name:'unidade', type:'text', label:'Unidade', placeholder:'Ex: sc, kg, ton'},
+        {name:'precoFixado', type:'number', label:'Preço fixado (R$/unid.)', required:true, extra:{step:'0.01', min:'0'}, placeholder:'0,00'},
+        {name:'compradorId', type:'select', label:'Comprador', optionsFn: parceiroOptionsFn},
+        {name:'dataContrato', type:'date', label:'Data do contrato'},
+        {name:'dataEntregaPrevista', type:'date', label:'Entrega prevista'},
+        {name:'status', type:'select', label:'Status', options:[{value:'Aberto', label:'Aberto'}, {value:'Entregue', label:'Entregue'}, {value:'Cancelado', label:'Cancelado'}]},
+        {name:'observacao', type:'text', label:'Observação', placeholder:''}
+      ],
+      columns: [
+        {key:'safraId', label:'Safra', compute: function(item){ return safraLabel(item.safraId); }},
+        {key:'quantidade', label:'Quantidade', compute: function(item){ return fmtNum(item.quantidade) + (item.unidade ? ' ' + item.unidade : ''); }},
+        {key:'precoFixado', label:'Preço fixado', format:'brl'},
+        {key:'compradorId', label:'Comprador', compute: function(item){ return item.compradorId ? parceiroNome(item.compradorId) : '—'; }},
+        {key:'dataEntregaPrevista', label:'Entrega prevista', format:'date'},
+        {key:'status', label:'Status', format:'badge', colors:{'Aberto':'#DFA84E', 'Entregue':'#7FA36D', 'Cancelado':'#C9C3A4'}}
+      ]
+    },
     subgruposFinanceiro: {
       label: 'subgrupo financeiro',
       fields: [
@@ -523,7 +707,8 @@
         {key:'status', label:'Status', format:'badge', colors:{'Operando':'#7FA36D','Em manutenção':'#DFA84E','Parado':'#D79A8A'}},
         {key:'valor', label:'Valor de compra', format:'brl'},
         {key:'percentualResidual', label:'% Residual', format:'num'},
-        {key:'valorAtual', label:'Valor atual (depreciado)', format:'brl', compute: calcDepreciacao}
+        {key:'valorAtual', label:'Valor atual (depreciado)', format:'brl', compute: calcDepreciacao},
+        {key:'horasUso', label:'Horas de uso (colheita)', compute: function(item){ var h = horasUsoTotais(item.id); return h ? fmtNum(h) + 'h' : '—'; }}
       ]
     },
 
@@ -1013,6 +1198,27 @@
           });
           if(mudouFin) saveKey('financeiro', state.financeiro);
         })();
+        (function(){
+          var contratosBB = ['65208197', '65594153', '65208149'];
+          var jaTem = state.financiamentos.some(function(f){ return contratosBB.indexOf(f.numeroContrato) !== -1; });
+          if(!jaTem){
+            state.financiamentos.push(
+              {id:'import-fin-bb-01', banco:'Banco do Brasil S.A.', tipo:'Investimento', numeroContrato:'65208197', valorTotal:545524.42, dataContratacao:'2026-03-15', dataFinal:'2033-03-15', numeroParcelas:0, valorParcela:0, parcelasPagas:0, taxaJuros:0, talhaoId:'', contaId:'', status:'Ativo', observacao:'Aquisição de bens — importado do outro sistema em 15/04/2026 (data de liberação)', criadoEm:1},
+              {id:'import-fin-bb-02', banco:'Banco do Brasil S.A.', tipo:'Custeio', numeroContrato:'65594153', valorTotal:287594.26, dataContratacao:'2026-01-15', dataFinal:'2026-12-28', numeroParcelas:0, valorParcela:0, parcelasPagas:0, taxaJuros:0, talhaoId:'', contaId:'', status:'Ativo', observacao:'Custeio produção / capital de giro — importado do outro sistema', criadoEm:2},
+              {id:'import-fin-bb-03', banco:'Banco do Brasil S.A.', tipo:'Custeio', numeroContrato:'65208149', valorTotal:166234.65, dataContratacao:'2026-01-08', dataFinal:'2027-01-28', numeroParcelas:0, valorParcela:0, parcelasPagas:0, taxaJuros:0, talhaoId:'', contaId:'', status:'Ativo', observacao:'Custeio produção / capital de giro — importado do outro sistema', criadoEm:3}
+            );
+            saveKey('financiamentos', state.financiamentos);
+          }
+        })();
+        (function(){
+          var jaTemMarega = state.financiamentos.some(function(f){ return f.numeroContrato === '65208162'; });
+          if(!jaTemMarega){
+            state.financiamentos.push(
+              {id:'import-fin-marega-01', banco:'Marega Comércio de Implementos', tipo:'Investimento', numeroContrato:'65208162', valorTotal:291387.46, dataContratacao:'2026-01-15', dataFinal:'2033-01-15', numeroParcelas:0, valorParcela:0, parcelasPagas:0, taxaJuros:0, talhaoId:'', contaId:'', status:'Quitado', observacao:'Aquisição de bens — importado do outro sistema (nome do financiador vinha cortado no print original, confira/complete)', criadoEm:4}
+            );
+            saveKey('financiamentos', state.financiamentos);
+          }
+        })();
         if(hasCloudStorage || hasLocalStorage || hasNetlifyBlobs) loading.classList.add('hidden');
         renderAll();
       })
@@ -1058,10 +1264,11 @@
   function estoquePorSafra(){
     var map = {};
     state.producao.forEach(function(p){
-      if(!map[p.safraId]) map[p.safraId] = {entrada:0, saida:0, precoSoma:0, precoCount:0};
+      if(!map[p.safraId]) map[p.safraId] = {entrada:0, saida:0, precoSoma:0, precoCount:0, unidade:''};
       if(p.tipo === 'entrada'){
         map[p.safraId].entrada += Number(p.quantidade) || 0;
         if(Number(p.precoUnitario) > 0){ map[p.safraId].precoSoma += Number(p.precoUnitario); map[p.safraId].precoCount++; }
+        if(p.unidade) map[p.safraId].unidade = p.unidade;
       } else {
         map[p.safraId].saida += Number(p.quantidade) || 0;
       }
@@ -1077,9 +1284,39 @@
       var preco = e.precoCount ? (e.precoSoma / e.precoCount) : 0;
       var valor = Math.max(qtd, 0) * preco;
       total += valor;
-      return {safraId: sid, qtd: qtd, preco: preco, valor: valor};
+      return {safraId: sid, qtd: qtd, preco: preco, valor: valor, unidade: e.unidade};
     });
     return {total: total, itens: itens};
+  }
+  var KG_POR_SACA = 60;
+  function converterKgSc(qtd, unidade){
+    var u = String(unidade || '').trim().toLowerCase();
+    if(u === 'kg'){ return {kg: qtd, sc: qtd / KG_POR_SACA}; }
+    if(u === 'sc' || u === 'saca' || u === 'sacas'){ return {kg: qtd * KG_POR_SACA, sc: qtd}; }
+    return {kg: null, sc: null};
+  }
+  function estoquePorCultura(){
+    var porSafra = estoquePorSafra();
+    var porCultura = {};
+    Object.keys(porSafra).forEach(function(sid){
+      var safra = state.safras.find(function(s){ return s.id === sid; });
+      if(!safra) return;
+      var culturaId = safra.culturaId;
+      var e = porSafra[sid];
+      var qtd = e.entrada - e.saida;
+      if(qtd <= 0) return;
+      var preco = e.precoCount ? (e.precoSoma / e.precoCount) : 0;
+      var valor = qtd * preco;
+      if(!porCultura[culturaId]) porCultura[culturaId] = {qtd: 0, valor: 0, unidade: e.unidade};
+      porCultura[culturaId].qtd += qtd;
+      porCultura[culturaId].valor += valor;
+      if(!porCultura[culturaId].unidade && e.unidade) porCultura[culturaId].unidade = e.unidade;
+    });
+    return Object.keys(porCultura).map(function(cid){
+      var c = porCultura[cid];
+      var conv = converterKgSc(c.qtd, c.unidade);
+      return {culturaId: cid, qtd: c.qtd, unidade: c.unidade, valor: c.valor, kg: conv.kg, sc: conv.sc};
+    }).sort(function(a,b){ return b.valor - a.valor; });
   }
   function estoqueValorPorSafraIds(safraIds){
     var estoque = estoquePorSafra();
@@ -1165,19 +1402,23 @@
     safeRender('safras', renderSafras);
     safeRender('culturas', function(){ renderGenericTab('culturas'); });
     safeRender('produtos', renderProdutos);
+    safeRender('compras', renderCompras);
     safeRender('parceiros', function(){ renderGenericTab('parceiros'); });
     safeRender('equipe', function(){ renderGenericTab('equipe'); });
     safeRender('patrimonio', renderPatrimonio);
     safeRender('producao', renderProducao);
-    safeRender('tiposAtividade', function(){ renderGenericTab('tiposAtividade'); });
+    safeRender('vendasAntecipadas', function(){ renderGenericTab('vendasAntecipadas'); });
     safeRender('operacoes', renderOperacoes);
-    safeRender('subgruposFinanceiro', function(){ renderGenericTab('subgruposFinanceiro'); });
-    safeRender('contasFinanceiro', function(){ renderGenericTab('contasFinanceiro'); });
     safeRender('financeiro', renderFinanceiro);
     safeRender('contasPagar', renderContasPagar);
     safeRender('contasReceber', renderContasReceber);
+    safeRender('arrendamentos', renderArrendamentos);
+    safeRender('financiamentos', renderFinanciamentos);
+    safeRender('servicosPrestados', renderServicosPrestados);
     safeRender('rentabilidade', renderRentabilidade);
     safeRender('fluxoCaixa', renderFluxoCaixa);
+    safeRender('contaCorrente', renderContaCorrente);
+    safeRender('orcamento', renderOrcamento);
     safeRender('relatorios', renderRelatorios);
     safeRender('indicadores', renderIndicadores);
   }
@@ -1198,7 +1439,6 @@
 
     var html = '';
     html += '<div class="stat-row">';
-    html += '<div class="paper stat-card" id="weather-widget"><div class="label">Clima agora</div><div style="font-size:12px; color:var(--ink-soft); margin-top:6px;">Carregando…</div></div>';
     html += statCard('Área total', fmtHa(areaTotal));
     html += statCard('Propriedades', state.propriedades.length);
     html += statCard('Talhões', state.talhoes.length);
@@ -1209,13 +1449,26 @@
 
     var estoqueBaixo = state.produtos.filter(function(p){ return Number(p.estoqueMinimo) > 0 && Number(p.estoqueAtual) < Number(p.estoqueMinimo); });
     var manutencao = state.patrimonio.filter(function(p){ return p.status === 'Em manutenção'; });
-    if(estoqueBaixo.length || manutencao.length){
+    var hojeMs = Date.now();
+    var colheitasProximas = state.safras.filter(function(s){
+      if(s.status !== 'andamento' || !s.previsaoColheita) return false;
+      var dias = Math.ceil((new Date(s.previsaoColheita + 'T00:00:00').getTime() - hojeMs) / 86400000);
+      return dias <= 15;
+    });
+    if(estoqueBaixo.length || manutencao.length || colheitasProximas.length){
       html += '<div class="paper alert-box">';
       if(estoqueBaixo.length){
         html += '<div><strong style="color:var(--cost-dark);">Estoque abaixo do mínimo:</strong> ' + estoqueBaixo.map(function(p){ return escapeHtml(p.nome); }).join(', ') + '</div>';
       }
       if(manutencao.length){
         html += '<div><strong style="color:var(--accent-dark);">Patrimônio em manutenção:</strong> ' + manutencao.map(function(p){ return escapeHtml(p.nome); }).join(', ') + '</div>';
+      }
+      if(colheitasProximas.length){
+        html += '<div><strong style="color:var(--accent-dark);">Colheita se aproximando:</strong> ' + colheitasProximas.map(function(s){
+          var dias = Math.ceil((new Date(s.previsaoColheita + 'T00:00:00').getTime() - hojeMs) / 86400000);
+          var txt = dias < 0 ? (Math.abs(dias) + ' dia(s) atrasada') : (dias === 0 ? 'hoje' : 'em ' + dias + ' dia(s)');
+          return escapeHtml(safraLabel(s.id)) + ' (' + txt + ')';
+        }).join(', ') + '</div>';
       }
       html += '</div>';
     }
@@ -1264,21 +1517,51 @@
     }
     html += '</div>';
 
-    html += '<div><div class="section-title" style="margin-top:0;">Produção em estoque</div>';
-    var topEstoque = estoque.itens.filter(function(i){ return i.qtd > 0; }).sort(function(a,b){ return b.valor - a.valor; }).slice(0,5);
-    if(!topEstoque.length){
+    html += '<div><div class="section-title" style="margin-top:0;">Grãos em estoque</div>';
+    var topEstoqueCultura = estoquePorCultura().slice(0, 5);
+    if(!topEstoqueCultura.length){
       html += '<div class="paper empty-state">Nenhuma produção em estoque no momento.</div>';
     } else {
       html += '<div class="paper list-card">';
-      topEstoque.forEach(function(i){
-        html += '<div class="list-row"><span>' + escapeHtml(safraLabel(i.safraId)) + '</span><span class="num growth">' + fmtBRL(i.valor) + '</span></div>';
+      topEstoqueCultura.forEach(function(i){
+        var nome = culturaNome(i.culturaId).toUpperCase();
+        var linhaQtd;
+        if(i.kg !== null){
+          linhaQtd = nome + ' - ' + i.kg.toLocaleString('pt-BR', {maximumFractionDigits:0}) + 'KG - ' + i.sc.toLocaleString('pt-BR', {maximumFractionDigits:0}) + 'SC';
+        } else {
+          linhaQtd = nome + ' - ' + fmtNum(i.qtd) + (i.unidade ? ' ' + escapeHtml(i.unidade).toUpperCase() : '');
+        }
+        html += '<div class="list-row" style="flex-direction:column; align-items:flex-start; gap:3px;">';
+        html += '<span style="font-weight:600;">' + linhaQtd + '</span>';
+        html += '<span class="num growth">' + fmtBRL(i.valor) + '</span>';
+        html += '</div>';
       });
       html += '</div>';
     }
     html += '</div>';
 
-    html += '<div><div class="section-title" style="margin-top:0;">Últimos lançamentos</div>';
+    html += '<div><div class="section-title" style="margin-top:0;">Cotações de referência</div>';
+    if(!state.culturas.length){
+      html += '<div class="paper empty-state">Cadastre culturas para anotar cotações.</div>';
+    } else {
+      html += '<div class="paper" style="padding:10px 16px;">';
+      state.culturas.forEach(function(c){
+        var cot = state.cotacoes.find(function(x){ return x.culturaId === c.id; });
+        html += '<div class="list-row" style="align-items:center;">';
+        html += '<span>' + escapeHtml(c.nome) + (cot ? ' <span style="font-size:11px; color:var(--ink-soft);">(atualizado ' + fmtDate(cot.dataAtualizacao) + ')</span>' : '') + '</span>';
+        html += '<span style="display:flex; align-items:center; gap:6px;">';
+        html += '<input type="number" step="0.01" min="0" class="cotacao-input" data-cultura-id="' + c.id + '" placeholder="0,00" value="' + (cot ? cot.preco : '') + '" style="width:90px; padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12.5px;">';
+        html += '<button type="button" class="btn-edit" data-action="salvar-cotacao" data-id="' + c.id + '">Salvar</button>';
+        html += '<a href="https://www.google.com/search?q=' + encodeURIComponent('cotação ' + c.nome + ' cepea hoje') + '" target="_blank" rel="noopener" class="btn-edit" style="text-decoration:none;">Ver preço</a>';
+        html += '</span></div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+
+
     var recentFin = state.financeiro.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).slice(0,5);
+    html += '<div><div class="section-title" style="margin-top:0;">Últimos lançamentos</div>';
     if(!recentFin.length){
       html += '<div class="paper empty-state">Nenhum lançamento ainda.</div>';
     } else {
@@ -1292,45 +1575,6 @@
 
     html += '</div>';
     el.innerHTML = html;
-    loadWeather();
-  }
-
-  var WEATHER_LABELS = {0:'Céu limpo', 1:'Poucas nuvens', 2:'Parcialmente nublado', 3:'Nublado', 45:'Neblina', 48:'Neblina', 51:'Garoa leve', 53:'Garoa', 55:'Garoa forte', 61:'Chuva leve', 63:'Chuva', 65:'Chuva forte', 71:'Neve leve', 73:'Neve', 75:'Neve forte', 80:'Pancadas de chuva', 81:'Pancadas de chuva', 82:'Pancadas fortes', 95:'Tempestade', 96:'Tempestade com granizo', 99:'Tempestade com granizo'};
-
-  var weatherCache = null;
-
-  function loadWeather(){
-    var el = document.getElementById('weather-widget');
-    if(!el) return;
-    if(weatherCache){ el.innerHTML = weatherCache; return; }
-    if(!navigator.geolocation){
-      el.innerHTML = '<div class="label">Clima agora</div><div style="font-size:12px; color:var(--ink-soft); margin-top:6px;">Geolocalização não disponível neste navegador.</div>';
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(function(pos){
-      var lat = pos.coords.latitude, lon = pos.coords.longitude;
-      fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current=temperature_2m,weather_code&timezone=auto')
-        .then(function(r){ return r.json(); })
-        .then(function(data){
-          if(data && data.current){
-            var temp = Math.round(data.current.temperature_2m);
-            var label = WEATHER_LABELS[data.current.weather_code] || '';
-            weatherCache = '<div class="label">Clima agora</div><div class="value">' + temp + '°C</div><div style="font-size:12px; color:var(--ink-soft); margin-top:2px;">' + escapeHtml(label) + '</div>';
-          } else {
-            weatherCache = '<div class="label">Clima agora</div><div style="font-size:12px; color:var(--ink-soft); margin-top:6px;">Não foi possível carregar.</div>';
-          }
-          var wEl = document.getElementById('weather-widget');
-          if(wEl) wEl.innerHTML = weatherCache;
-        })
-        .catch(function(){
-          weatherCache = '<div class="label">Clima agora</div><div style="font-size:12px; color:var(--ink-soft); margin-top:6px;">Não foi possível carregar.</div>';
-          var wEl2 = document.getElementById('weather-widget');
-          if(wEl2) wEl2.innerHTML = weatherCache;
-        });
-    }, function(){
-      var wEl3 = document.getElementById('weather-widget');
-      if(wEl3) wEl3.innerHTML = '<div class="label">Clima agora</div><div style="font-size:12px; color:var(--ink-soft); margin-top:6px;">Permita a localização para ver o clima.</div>';
-    }, {timeout:8000});
   }
 
   /* ---------------- Generic cadastro helpers ---------------- */
@@ -1392,7 +1636,9 @@
           html += '<td' + numClass + '>' + formatColumn(c, val) + '</td>';
         });
         html += '<td><button class="btn-edit" data-action="edit-generic" data-entity="' + entityKey + '" data-id="' + item.id + '">Editar</button>';
-        html += '<button class="btn-del" data-action="del-generic" data-entity="' + entityKey + '" data-id="' + item.id + '">Remover</button></td>';
+        html += '<button class="btn-del" data-action="del-generic" data-entity="' + entityKey + '" data-id="' + item.id + '">Remover</button>';
+        if(cfg.extraRowAction) html += cfg.extraRowAction(item);
+        html += '</td>';
         html += '</tr>';
       });
       html += '</tbody></table></div>';
@@ -1459,6 +1705,172 @@
     document.getElementById('tab-produtos').innerHTML = html;
   }
 
+  /* ---------------- Compras (entrada de estoque + despesa automática) ---------------- */
+  function renderCompras(){
+    var el = document.getElementById('tab-compras');
+    var editingRecord = (editState && editState.scope === 'compras') ? state.compras.find(function(x){ return x.id === editState.id; }) : null;
+    var totalComprado = state.compras.reduce(function(s,c){ return s + (Number(c.valorTotal)||0); }, 0);
+    var comprasPendentes = state.compras.filter(function(c){ return c.status === 'Pendente'; }).length;
+
+    var html = '<div class="stat-row">';
+    html += statCard('Compras registradas', state.compras.length);
+    html += statCard('Total comprado', fmtBRL(totalComprado), 'cost');
+    html += statCard('Aguardando recebimento', comprasPendentes);
+    html += '</div>';
+
+    html += '<div class="paper form-card"><h3>' + (editingRecord ? 'Editar compra' : 'Nova compra') + '</h3>';
+    if(!state.produtos.length){
+      html += '<div class="empty-state">Cadastre um produto (aba Produtos) antes de registrar uma compra.</div>';
+    } else {
+      html += '<form class="entry-form" id="form-compra"' + (editingRecord ? ' data-editing-id="' + editingRecord.id + '"' : '') + '>';
+      html += selectField('produtoId', 'Produto', state.produtos.map(function(p){ return {value:p.id, label:p.nome}; }), editingRecord ? editingRecord.produtoId : undefined);
+      html += selectField('fornecedorId', 'Fornecedor (opcional)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })), editingRecord ? editingRecord.fornecedorId : undefined);
+      html += field('number', 'quantidade', 'Quantidade', true, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.quantidade : undefined);
+      html += field('number', 'valorUnitario', 'Valor unitário (R$)', true, '0,00', {step:'0.01', min:'0'}, editingRecord ? editingRecord.valorUnitario : undefined);
+      if(state.contasFinanceiro.length){
+        html += selectField('contaId', 'Conta (p/ lançar a despesa)', state.contasFinanceiro.map(function(c){ return {value:c.id, label: contaLabel(c.id)}; }), editingRecord ? editingRecord.contaId : undefined);
+      }
+      html += field('text', 'notaFiscal', 'Nota fiscal (opcional)', false, '', {}, editingRecord ? editingRecord.notaFiscal : undefined);
+      html += field('date', 'data', 'Data', false, '', {}, editingRecord ? editingRecord.data : undefined);
+      html += selectField('status', 'Status', [{value:'Recebido', label:'Recebido (já entra no estoque e no financeiro)'}, {value:'Pendente', label:'Pendente (encomendado, ainda não chegou)'}], editingRecord ? editingRecord.status : 'Recebido');
+      html += field('text', 'observacao', 'Observação (opcional)', false, '', {}, editingRecord ? editingRecord.observacao : undefined);
+      html += '<button type="submit" class="btn">' + (editingRecord ? 'Salvar alterações' : 'Registrar compra') + '</button>';
+      if(editingRecord) html += '<button type="button" class="btn-cancel" data-action="cancel-edit">Cancelar</button>';
+      html += '</form>';
+      if(!editingRecord) html += '<p style="font-size:11px; color:var(--ink-soft); margin:10px 0 0;">Marcando "Recebido", a quantidade já soma no estoque do produto e uma despesa é criada automaticamente no Financeiro.</p>';
+    }
+    html += '</div>';
+
+    html += '<div class="paper form-card"><h3>Importar Nota Fiscal Eletrônica (XML)</h3>';
+    html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 12px;">Sobe o arquivo XML da nota (o mesmo que você recebe do fornecedor ou baixa no portal da SEFAZ). O app lê os itens e você escolhe quais quer trazer pro sistema — cada um vira uma Compra, com estoque e despesa criados automaticamente.</p>';
+    html += '<div class="entry-form">';
+    html += '<div class="field"><label>Arquivo XML da NF-e</label><input type="file" id="nfe-file-input" accept=".xml"></div>';
+    html += '<button type="button" class="btn" data-action="ler-nfe" style="align-self:end;">Ler nota</button>';
+    html += '</div>';
+    if(nfeImportada){
+      html += '<div style="margin-top:16px; padding-top:14px; border-top:1px dashed var(--paper-line);">';
+      html += '<p style="font-size:13px; margin:0 0 10px;"><strong>Fornecedor:</strong> ' + escapeHtml(nfeImportada.fornecedorNome || '—') + ' &nbsp; <strong>Nota nº:</strong> ' + escapeHtml(nfeImportada.numero || '—') + ' &nbsp; <strong>Emissão:</strong> ' + (nfeImportada.dataEmissao ? fmtDate(nfeImportada.dataEmissao) : '—') + '</p>';
+      if(state.contasFinanceiro.length){
+        html += selectField('nfe-import-conta', 'Conta (para todos os itens importados)', state.contasFinanceiro.map(function(c){ return {value:c.id, label: contaLabel(c.id)}; }));
+      } else {
+        html += '<p style="font-size:12px; color:var(--ink-soft);">Sem uma Conta financeira cadastrada, os itens vão entrar no estoque, mas não vão gerar despesa no Financeiro.</p>';
+      }
+      html += '<div class="table-wrap"><table><thead><tr><th></th><th>Item da nota</th><th>Qtd</th><th>Valor unit.</th><th>Produto no sistema</th></tr></thead><tbody>';
+      nfeImportada.itens.forEach(function(item, idx){
+        html += '<tr>';
+        html += '<td><input type="checkbox" id="nfe-item-incluir-' + idx + '"' + (item.incluir ? ' checked' : '') + '></td>';
+        html += '<td>' + escapeHtml(item.xProd) + '</td>';
+        html += '<td class="num">' + fmtNum(item.qCom) + (item.uCom ? ' ' + escapeHtml(item.uCom) : '') + '</td>';
+        html += '<td class="num">' + fmtBRL(item.vUnCom) + '</td>';
+        html += '<td><select id="nfe-item-produto-' + idx + '" style="padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12.5px;">';
+        html += '<option value="">+ Criar novo produto "' + escapeHtml(item.xProd) + '"</option>';
+        state.produtos.forEach(function(p){
+          html += '<option value="' + p.id + '"' + (item.produtoId === p.id ? ' selected' : '') + '>' + escapeHtml(p.nome) + '</option>';
+        });
+        html += '</select></td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+      html += '<button type="button" class="btn" data-action="importar-itens-nfe" style="margin-top:12px;">Importar itens selecionados</button> ';
+      html += '<button type="button" class="btn-cancel" data-action="cancelar-nfe" style="margin-top:12px;">Cancelar</button>';
+      html += '</div>';
+    }
+    html += '</div>';
+
+    html += '<div class="paper form-card"><h3>Certificado Digital (A1) — armazenamento seguro</h3>';
+    html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 12px;">Isso guarda seu certificado de forma criptografada, preparando o terreno pra busca automática de notas na SEFAZ (etapa que ainda vamos construir). Por enquanto, o certificado fica guardado com segurança, mas a busca automática ainda não está ativa.</p>';
+    html += '<div id="certificado-status" style="font-size:13px; margin-bottom:10px;">Verificando…</div>';
+    html += '<div id="certificado-form-area"></div>';
+    html += '</div>';
+
+    html += '<div class="paper">';
+    if(!state.compras.length){
+      html += '<div class="empty-state">Nenhuma compra registrada ainda.</div>';
+    } else {
+      html += '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Produto</th><th>Fornecedor</th><th>Quantidade</th><th>Valor unit.</th><th>Valor total</th><th>Status</th><th></th></tr></thead><tbody>';
+      state.compras.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(c){
+        var produto = state.produtos.find(function(p){ return p.id === c.produtoId; });
+        html += '<tr>';
+        html += '<td>' + fmtDate(c.data) + '</td>';
+        html += '<td>' + (produto ? escapeHtml(produto.nome) : '—') + '</td>';
+        html += '<td>' + (c.fornecedorId ? escapeHtml(parceiroNome(c.fornecedorId)) : '—') + '</td>';
+        html += '<td class="num">' + fmtNum(c.quantidade) + (produto && produto.unidade ? ' ' + escapeHtml(produto.unidade) : '') + '</td>';
+        html += '<td class="num">' + fmtBRL(c.valorUnitario) + '</td>';
+        html += '<td class="num cost">' + fmtBRL(c.valorTotal) + '</td>';
+        html += '<td><span class="badge" style="background:' + (c.status === 'Recebido' ? '#7FA36D' : '#DFA84E') + '; color:#1B1508">' + c.status + '</span></td>';
+        html += '<td><button class="btn-edit" data-action="edit-compra" data-id="' + c.id + '">Editar</button><button class="btn-del" data-action="del-compra" data-id="' + c.id + '">Remover</button></td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+    html += '</div>';
+    html += '<div class="paper note-box">Compras marcadas como "Recebido" somam automaticamente no estoque (aba Produtos) e criam uma despesa "Pago" no Financeiro no momento em que são criadas. Editar ou remover uma compra depois não desfaz esses efeitos automaticamente — ajuste o estoque e o lançamento financeiro manualmente se precisar corrigir algo.</div>';
+    el.innerHTML = html;
+    verificarStatusCertificado();
+  }
+
+  function verificarStatusCertificado(){
+    var elStatus = document.getElementById('certificado-status');
+    var elForm = document.getElementById('certificado-form-area');
+    if(!elStatus || !elForm) return;
+    fetch('/.netlify/functions/certificado')
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if(data.configurado){
+          elStatus.innerHTML = '✅ Certificado configurado: <strong>' + escapeHtml(data.nomeArquivo || 'certificado') + '</strong>' + (data.atualizadoEm ? ' (enviado em ' + fmtDate(data.atualizadoEm.slice(0,10)) + ')' : '');
+          elForm.innerHTML = '<button type="button" class="btn-del" data-action="remover-certificado">Remover certificado</button>';
+        } else {
+          elStatus.innerHTML = data.erro ? ('⚠️ ' + escapeHtml(data.erro)) : 'Nenhum certificado configurado ainda.';
+          elForm.innerHTML = '<div class="entry-form">'
+            + '<div class="field"><label>Arquivo do certificado (.pfx ou .p12)</label><input type="file" id="cert-file-input" accept=".pfx,.p12"></div>'
+            + '<div class="field"><label>Senha do certificado</label><input type="password" id="cert-senha-input" placeholder="Senha"></div>'
+            + '<button type="button" class="btn" data-action="enviar-certificado" style="align-self:end;">Enviar com segurança</button>'
+            + '</div>';
+        }
+      })
+      .catch(function(){
+        elStatus.textContent = 'Não foi possível verificar agora — normal se você ainda não publicou a function ou não configurou CERT_ENCRYPTION_KEY no Netlify.';
+        elForm.innerHTML = '';
+      });
+  }
+
+  function enviarCertificado(){
+    var fileInput = document.getElementById('cert-file-input');
+    var senhaInput = document.getElementById('cert-senha-input');
+    var file = fileInput && fileInput.files && fileInput.files[0];
+    var senha = senhaInput ? senhaInput.value : '';
+    if(!file){ alert('Selecione o arquivo do certificado (.pfx ou .p12).'); return; }
+    if(!senha){ alert('Digite a senha do certificado.'); return; }
+    if(!window.confirm('Confirma o envio? O certificado é guardado de forma criptografada — a senha não fica visível pra ninguém depois de enviada.')) return;
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var base64 = String(e.target.result).split(',')[1] || '';
+      fetch('/.netlify/functions/certificado', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({certBase64: base64, senha: senha, nomeArquivo: file.name})
+      })
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          if(data.ok){
+            alert('Certificado enviado e guardado com segurança.');
+            if(senhaInput) senhaInput.value = '';
+            verificarStatusCertificado();
+          } else {
+            alert('Não foi possível enviar: ' + (data.error || 'erro desconhecido. Confira se a variável CERT_ENCRYPTION_KEY está configurada no Netlify.'));
+          }
+        })
+        .catch(function(){ alert('Não foi possível enviar o certificado. Confira sua conexão e tente de novo.'); });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removerCertificado(){
+    if(!window.confirm('Remover o certificado guardado?')) return;
+    fetch('/.netlify/functions/certificado', {method: 'DELETE'})
+      .then(function(){ verificarStatusCertificado(); })
+      .catch(function(){ alert('Não foi possível remover agora.'); });
+  }
+
   function renderCatModalList(){
     var el = document.getElementById('cat-modal-list');
     if(!state.categoriasProduto.length){
@@ -1468,6 +1880,63 @@
     var html = '';
     state.categoriasProduto.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(c){
       html += '<div class="modal-cat-row"><span>' + escapeHtml(c.nome) + '</span><button type="button" class="btn-del" data-action="del-categoria-modal" data-id="' + c.id + '">Remover</button></div>';
+    });
+    el.innerHTML = html;
+  }
+
+  function renderTipoModalList(){
+    var el = document.getElementById('tipo-modal-list');
+    var selectCor = document.getElementById('tipo-modal-cor');
+    if(selectCor){
+      selectCor.innerHTML = Object.keys(COLOR_PALETTE).map(function(c){ return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join('');
+    }
+    if(!state.tiposAtividade.length){
+      el.innerHTML = '<div style="font-size:12.5px; color:var(--ink-soft);">Nenhum tipo cadastrado ainda.</div>';
+      return;
+    }
+    var html = '';
+    state.tiposAtividade.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(t){
+      var bloqueado = (t.nome === 'Colheita' || t.nome === 'Venda');
+      html += '<div class="modal-cat-row"><span><span class="badge" style="background:' + tipoAtividadeCor(t.nome) + '; color:#1B1508; margin-right:6px;">' + escapeHtml(t.nome) + '</span></span>';
+      html += bloqueado ? '<span style="font-size:11px; color:var(--ink-soft);">usado na Colheita</span>' : '<button type="button" class="btn-del" data-action="del-tipo-modal" data-id="' + t.id + '">Remover</button>';
+      html += '</div>';
+    });
+    el.innerHTML = html;
+  }
+
+  function renderSubgrupoModalList(){
+    var el = document.getElementById('subgrupo-modal-list');
+    if(!state.subgruposFinanceiro.length){
+      el.innerHTML = '<div style="font-size:12.5px; color:var(--ink-soft);">Nenhum subgrupo cadastrado ainda.</div>';
+      return;
+    }
+    var html = '';
+    state.subgruposFinanceiro.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(s){
+      html += '<div class="modal-cat-row"><span>' + escapeHtml(s.nome) + ' <span style="font-size:11px; color:var(--ink-soft);">(' + (s.tipo === 'custo' ? 'Despesa' : 'Receita') + ')</span></span>';
+      html += '<button type="button" class="btn-del" data-action="del-subgrupo-modal" data-id="' + s.id + '">Remover</button></div>';
+    });
+    el.innerHTML = html;
+  }
+
+  function renderContaModalList(){
+    var el = document.getElementById('conta-modal-list');
+    var selectSub = document.getElementById('conta-modal-subgrupo');
+    if(selectSub){
+      if(!state.subgruposFinanceiro.length){
+        selectSub.innerHTML = '<option value="">Cadastre um subgrupo primeiro</option>';
+      } else {
+        selectSub.innerHTML = state.subgruposFinanceiro.map(function(s){
+          return '<option value="' + escapeHtml(s.id) + '">' + escapeHtml(s.nome) + ' (' + (s.tipo === 'custo' ? 'Despesa' : 'Receita') + ')</option>';
+        }).join('');
+      }
+    }
+    if(!state.contasFinanceiro.length){
+      el.innerHTML = '<div style="font-size:12.5px; color:var(--ink-soft);">Nenhuma conta cadastrada ainda.</div>';
+      return;
+    }
+    var html = '';
+    state.contasFinanceiro.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(c){
+      html += '<div class="modal-cat-row"><span>' + escapeHtml(contaLabel(c.id)) + '</span><button type="button" class="btn-del" data-action="del-conta-modal" data-id="' + c.id + '">Remover</button></div>';
     });
     el.innerHTML = html;
   }
@@ -1582,6 +2051,8 @@
       html += field('date', 'dataPlantio', 'Data de plantio', false, '', {}, editingRecord ? editingRecord.dataPlantio : undefined);
       html += field('text', 'anoAgricola', 'Ano agrícola', false, 'Ex: 2026/2027', {}, editingRecord ? editingRecord.anoAgricola : undefined);
       html += selectField('status', 'Status', [{value:'planejada', label:'Planejada'}, {value:'andamento', label:'Em andamento'}, {value:'colhida', label:'Colhida'}], editingRecord ? editingRecord.status : undefined);
+      html += field('number', 'produtividadeEsperada', 'Produtividade esperada (sc/ha, opcional)', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.produtividadeEsperada : undefined);
+      html += field('date', 'previsaoColheita', 'Previsão de colheita (opcional)', false, '', {}, editingRecord ? editingRecord.previsaoColheita : undefined);
       html += '<button type="submit" class="btn">' + (editingRecord ? 'Salvar alterações' : 'Adicionar safra') + '</button>';
       if(editingRecord) html += '<button type="button" class="btn-cancel" data-action="cancel-edit">Cancelar</button>';
       html += '</form>';
@@ -1593,13 +2064,15 @@
       html += '<div class="empty-state">Nenhuma safra lançada ainda.</div>';
     } else {
       html += '<div style="padding:14px 18px 0;"><input type="text" id="search-safras" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
-      html += '<div class="table-wrap"><table><thead><tr><th>Talhão</th><th>Cultura</th><th>Plantio</th><th>Ano agrícola</th><th>Status</th><th></th></tr></thead><tbody>';
+      html += '<div class="table-wrap"><table><thead><tr><th>Talhão</th><th>Cultura</th><th>Plantio</th><th>Ano agrícola</th><th>Produtiv. esperada</th><th>Previsão colheita</th><th>Status</th><th></th></tr></thead><tbody>';
       state.safras.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(s){
         html += '<tr>';
         html += '<td>' + escapeHtml(talhaoNome(s.talhaoId)) + '</td>';
         html += '<td>' + escapeHtml(culturaNome(s.culturaId)) + '</td>';
         html += '<td>' + fmtDate(s.dataPlantio) + '</td>';
         html += '<td>' + (s.anoAgricola ? escapeHtml(s.anoAgricola) : '—') + '</td>';
+        html += '<td class="num">' + (s.produtividadeEsperada ? fmtNum(s.produtividadeEsperada) + ' sc/ha' : '—') + '</td>';
+        html += '<td>' + (s.previsaoColheita ? fmtDate(s.previsaoColheita) : '—') + '</td>';
         html += '<td><span class="badge status-' + s.status + '">' + STATUS_LABEL[s.status] + '</span></td>';
         html += '<td><button class="btn-edit" data-action="edit-safra" data-id="' + s.id + '">Editar</button><button class="btn-del" data-action="del-safra" data-id="' + s.id + '">Remover</button></td>';
         html += '</tr>';
@@ -1634,7 +2107,13 @@
       html += field('number', 'quantidade', 'Quantidade colhida', true, '0', {step:'0.01', min:'0'}, editingEntrada ? editingEntrada.quantidade : undefined);
       html += field('text', 'unidade', 'Unidade', false, 'Ex: sc, kg, ton', {}, editingEntrada ? editingEntrada.unidade : undefined);
       html += field('number', 'precoUnitario', 'Preço estimado (R$/unid.)', false, '0,00', {step:'0.01', min:'0'}, editingEntrada ? editingEntrada.precoUnitario : undefined);
+      html += '<span id="cotacao-hint" style="grid-column: 1 / -1; font-size:11px; color:var(--ink-soft);"></span>';
       html += selectField('responsavelId', 'Responsável (opcional)', [{value:'', label:'—'}].concat(state.equipe.map(function(m){ return {value:m.id, label:m.nome}; })), editingEntrada ? editingEntrada.responsavelId : undefined);
+      html += field('number', 'umidade', 'Umidade do grão (%, opcional)', false, '0', {step:'0.1', min:'0', max:'100'}, editingEntrada ? editingEntrada.umidade : undefined);
+      html += field('text', 'qualidade', 'Classificação / Qualidade (opcional)', false, 'Ex: Tipo 1', {}, editingEntrada ? editingEntrada.qualidade : undefined);
+      html += selectField('maquinaId', 'Máquina utilizada (opcional)', [{value:'', label:'—'}].concat(state.patrimonio.map(function(p){ return {value:p.id, label:p.nome}; })), editingEntrada ? editingEntrada.maquinaId : undefined);
+      html += field('number', 'horasUso', 'Horas de uso da máquina nesta colheita (opcional)', false, '0', {step:'0.5', min:'0'}, editingEntrada ? editingEntrada.horasUso : undefined);
+      html += selectField('localArmazenagem', 'Local de armazenagem (opcional)', [{value:'', label:'—'}, {value:'Silo próprio', label:'Silo próprio'}, {value:'Armazém terceirizado', label:'Armazém terceirizado'}, {value:'Cooperativa', label:'Cooperativa'}, {value:'Outro', label:'Outro'}], editingEntrada ? editingEntrada.localArmazenagem : undefined);
       html += field('date', 'data', 'Data', false, '', {}, editingEntrada ? editingEntrada.data : undefined);
       html += field('text', 'observacao', 'Observação', false, '', {}, editingEntrada ? editingEntrada.observacao : undefined);
       html += '<button type="submit" class="btn">' + (editingEntrada ? 'Salvar alterações' : 'Registrar colheita') + '</button>';
@@ -1669,6 +2148,34 @@
       html += '</tbody></table></div>';
     }
 
+    html += '<div class="section-title">Produtividade por talhão</div>';
+    var safrasComColheita = state.safras.filter(function(s){
+      return state.producao.some(function(p){ return p.safraId === s.id && p.tipo === 'entrada'; });
+    });
+    if(!safrasComColheita.length){
+      html += '<div class="paper empty-state">Registre uma colheita pra ver a produtividade por talhão aqui.</div>';
+    } else {
+      html += '<div class="paper table-wrap"><table><thead><tr><th>Talhão / Safra</th><th>Área (ha)</th><th>Total colhido</th><th>Produtiv. real (sc/ha)</th><th>Produtiv. esperada (sc/ha)</th><th>% do esperado</th></tr></thead><tbody>';
+      safrasComColheita.forEach(function(s){
+        var talhao = state.talhoes.find(function(t){ return t.id === s.talhaoId; });
+        var area = talhao ? Number(talhao.area) || 0 : 0;
+        var totalColhido = state.producao.filter(function(p){ return p.safraId === s.id && p.tipo === 'entrada'; }).reduce(function(sum,p){ return sum + (Number(p.quantidade)||0); }, 0);
+        var produtividadeReal = area > 0 ? totalColhido / area : null;
+        var esperada = Number(s.produtividadeEsperada) || 0;
+        var pct = esperada > 0 && produtividadeReal !== null ? (produtividadeReal / esperada * 100) : null;
+        html += '<tr>';
+        html += '<td>' + escapeHtml(safraLabel(s.id)) + '</td>';
+        html += '<td class="num">' + (area ? fmtHa(area) : '—') + '</td>';
+        html += '<td class="num">' + fmtNum(totalColhido) + '</td>';
+        html += '<td class="num">' + (produtividadeReal !== null ? fmtNum(produtividadeReal) : '—') + '</td>';
+        html += '<td class="num">' + (esperada ? fmtNum(esperada) : '—') + '</td>';
+        html += '<td class="num">' + (pct !== null ? '<span class="badge" style="background:' + (pct >= 100 ? '#7FA36D' : (pct >= 80 ? '#DFA84E' : '#A23E2E')) + '; color:#fff;">' + pct.toFixed(0) + '%</span>' : '—') + '</td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+      html += '<div class="paper note-box">"Produtividade esperada" é definida no cadastro da Safra. Sem ela, dá pra ver a produtividade real, mas não a comparação em %.</div>';
+    }
+
     html += '<div class="section-title">Movimentações</div>';
     if(!state.producao.length){
       html += '<div class="paper empty-state">Nenhuma movimentação registrada ainda.</div>';
@@ -1681,7 +2188,12 @@
         html += '<td>' + escapeHtml(safraLabel(p.safraId)) + '</td>';
         html += '<td class="num">' + fmtNum(p.quantidade) + (p.unidade ? ' ' + escapeHtml(p.unidade) : '') + '</td>';
         html += '<td class="num">' + (p.precoUnitario ? fmtBRL(p.precoUnitario) : '—') + '</td>';
-        html += '<td>' + escapeHtml(p.observacao || '—') + '</td>';
+        html += '<td>' + escapeHtml(p.observacao || '—')
+          + (p.localArmazenagem ? ' <span style="font-size:11px; color:var(--ink-soft);">(' + escapeHtml(p.localArmazenagem) + ')</span>' : '')
+          + (p.umidade ? ' <span style="font-size:11px; color:var(--ink-soft);">· Umid. ' + fmtNum(p.umidade) + '%</span>' : '')
+          + (p.qualidade ? ' <span style="font-size:11px; color:var(--ink-soft);">· ' + escapeHtml(p.qualidade) + '</span>' : '')
+          + (p.maquinaId ? ' <span style="font-size:11px; color:var(--ink-soft);">· ' + escapeHtml(nomePatrimonio(p.maquinaId)) + '</span>' : '')
+          + '</td>';
         html += '<td><button class="btn-edit" data-action="edit-producao" data-tipo="' + p.tipo + '" data-id="' + p.id + '">Editar</button><button class="btn-del" data-action="del-producao" data-id="' + p.id + '">Remover</button></td>';
         html += '</tr>';
       });
@@ -1700,10 +2212,13 @@
     html += '<div class="paper note-box" style="margin-top:0;">Colheita e venda de produção agora têm controle próprio na aba <strong>Colheita</strong>, com vínculo automático ao estoque e ao financeiro.</div>';
     html += '<div class="paper form-card"><h3>' + (editingRecord ? 'Editar atividade' : 'Nova atividade') + '</h3>';
     if(!tiposDisponiveis.length){
-      html += '<div class="empty-state">Cadastre um tipo de atividade (aba Tipos de Atividade) antes de registrar.</div>';
+      html += '<div class="empty-state">Nenhum tipo de atividade cadastrado ainda. <button type="button" class="btn" data-action="open-tipo-modal" style="margin-top:10px;">+ Cadastrar tipo de atividade</button></div>';
     } else {
       html += '<form class="entry-form" id="form-operacao"' + (editingRecord ? ' data-editing-id="' + editingRecord.id + '"' : '') + '>';
-      html += selectField('tipo', 'Tipo', tiposDisponiveis.map(function(t){ return {value:t.nome, label:t.nome}; }), editingRecord ? editingRecord.tipo : undefined);
+      html += '<div class="field-with-add">';
+      html += '<div style="flex:1;">' + selectField('tipo', 'Tipo', tiposDisponiveis.map(function(t){ return {value:t.nome, label:t.nome}; }), editingRecord ? editingRecord.tipo : undefined) + '</div>';
+      html += '<button type="button" class="btn-add-inline" data-action="open-tipo-modal" title="Novo tipo de atividade">+</button>';
+      html += '</div>';
       html += selectField('talhaoId', 'Talhão (opcional)', [{value:'', label:'—'}].concat(state.talhoes.map(function(t){ return {value:t.id, label:t.nome}; })), editingRecord ? editingRecord.talhaoId : undefined);
       html += selectField('safraId', 'Safra (opcional)', [{value:'', label:'—'}].concat(state.safras.map(function(s){ return {value:s.id, label:safraLabel(s.id)}; })), editingRecord ? editingRecord.safraId : undefined);
       html += selectField('produtoId', 'Produto (opcional)', [{value:'', label:'—'}].concat(state.produtos.map(function(p){ return {value:p.id, label:p.nome}; })), editingRecord ? editingRecord.produtoId : undefined);
@@ -1767,21 +2282,76 @@
 
     html += '<div class="paper form-card"><h3>' + (editingRecord ? 'Editar lançamento' : 'Novo lançamento') + '</h3>';
     if(!state.contasFinanceiro.length){
-      html += '<div class="empty-state">Cadastre ao menos uma conta financeira (aba Plano de Contas → Contas) antes de lançar.</div>';
+      html += '<div class="empty-state">Nenhuma conta financeira cadastrada ainda. <button type="button" class="btn" data-action="open-conta-modal" style="margin-top:10px;">+ Cadastrar conta</button></div>';
     } else {
       html += '<form class="entry-form" id="form-financeiro"' + (editingRecord ? ' data-editing-id="' + editingRecord.id + '"' : '') + '>';
-      html += selectField('contaId', 'Conta', state.contasFinanceiro.map(function(c){ return {value:c.id, label: contaLabel(c.id)}; }), editingRecord ? editingRecord.contaId : undefined);
-      html += field('number', 'valor', 'Valor (R$)', true, '0,00', {step:'0.01', min:'0'}, editingRecord ? editingRecord.valor : undefined);
+      html += '<div class="field-with-add">';
+      html += '<div style="flex:1;">' + selectField('contaId', 'Conta', state.contasFinanceiro.map(function(c){ return {value:c.id, label: contaLabel(c.id)}; }), editingRecord ? editingRecord.contaId : undefined) + '</div>';
+      html += '<button type="button" class="btn-add-inline" data-action="open-conta-modal" title="Nova conta">+</button>';
+      html += '</div>';
+      var mostrarDiariaJaAqui = editingRecord && editingRecord.contaId && contaNome(editingRecord.contaId) === 'Diária';
+      html += field('number', 'valor', 'Valor (R$)', true, '0,00', mostrarDiariaJaAqui ? {step:'0.01', min:'0', readonly:'readonly', style:'background:#E8DCB9;'} : {step:'0.01', min:'0'}, editingRecord ? editingRecord.valor : undefined);
+
+      html += '<div id="campos-padrao-financeiro" style="display:' + (mostrarDiariaJaAqui ? 'none' : 'contents') + ';">';
       html += field('number', 'quantidade', 'Qtd. (opcional)', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.quantidade : undefined);
-      html += field('number', 'peso', 'Peso (opcional)', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.peso : undefined);
-      html += field('text', 'unidade', 'Medida (opcional)', false, 'Ex: SC, kg, L', {}, editingRecord ? editingRecord.unidade : undefined);
+      html += field('number', 'peso', 'Quantidade (Opcional)', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.peso : undefined);
+      html += field('text', 'unidade', 'Tipo (Opcional)', false, 'Ex: SC, kg, L', {}, editingRecord ? (mostrarDiariaJaAqui ? 'diárias' : editingRecord.unidade) : undefined);
+      html += '</div>';
+
       html += selectField('status', 'Status', [{value:'Pago', label:'Pago / recebido'}, {value:'Pendente', label:'Pendente (a pagar ou a receber)'}], editingRecord ? (editingRecord.status || 'Pago') : 'Pago');
       html += field('date', 'data', 'Data (se já pago/recebido)', false, '', {}, editingRecord ? editingRecord.data : undefined);
-      html += field('date', 'vencimento', 'Vencimento (se pendente)', false, '', {}, editingRecord ? editingRecord.vencimento : undefined);
-      html += selectField('talhaoId', 'Talhão (opcional)', [{value:'', label:'—'}].concat(state.talhoes.map(function(t){ return {value:t.id, label:t.nome}; })), editingRecord ? editingRecord.talhaoId : undefined);
+      html += field('date', 'vencimento', 'Vencimento (se pendente/parcelado)', false, '', {}, editingRecord ? editingRecord.vencimento : undefined);
+      if(!editingRecord){
+        html += field('number', 'parcelas', 'Parcelar em quantas vezes? (opcional)', false, '1', {step:'1', min:'1'});
+        html += '<div class="field"><label>Repetir automaticamente? (opcional)</label>';
+        html += '<div style="display:flex; gap:6px;">';
+        html += '<select name="recorrenciaFrequencia" style="flex:1; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"><option value="Mensal">Mensal</option><option value="Anual">Anual</option></select>';
+        html += '<input type="number" name="recorrenciaRepeticoes" placeholder="Nº de vezes" min="1" step="1" style="width:110px; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">';
+        html += '</div></div>';
+      }
+      html += '<div id="campo-parceiro" style="display:' + (mostrarDiariaJaAqui ? 'none' : 'contents') + ';">';
       html += selectField('parceiroId', 'Parceiro / prestador (opcional)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })), editingRecord ? editingRecord.parceiroId : undefined);
+      html += '</div>';
       html += selectField('membroId', 'Funcionário (opcional)', [{value:'', label:'—'}].concat(state.equipe.map(function(m){ return {value:m.id, label:m.nome}; })), editingRecord ? editingRecord.membroId : undefined);
+
+      var mostrarHoraExtra = editingRecord && editingRecord.contaId && contaNome(editingRecord.contaId) === 'Salário';
+      html += '<div id="campos-hora-extra" style="grid-column: 1 / -1; display:' + (mostrarHoraExtra ? 'grid' : 'none') + '; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:12px; padding-top:4px; border-top:1px dashed var(--paper-line); margin-top:4px;">';
+      html += field('number', 'horasExtras', 'Horas extras (opcional)', false, '0', {step:'0.5', min:'0'}, editingRecord ? editingRecord.horasExtras : undefined);
+      html += field('number', 'valorHoraExtra', 'Valor da hora extra (R$)', false, '0,00', {step:'0.01', min:'0'}, editingRecord ? editingRecord.valorHoraExtra : undefined);
+      html += '<span id="hora-extra-hint" style="grid-column: 1 / -1; font-size:11.5px; color:var(--ink-soft);">Some este valor ao "Valor (R$)" acima, se quiser incluir a hora extra no total pago.</span>';
+      html += '</div>';
+
+      var mostrarDiaria = mostrarDiariaJaAqui;
+      html += '<div id="campos-diaria" style="grid-column: 1 / -1; display:' + (mostrarDiaria ? 'grid' : 'none') + '; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:12px; padding-top:4px; border-top:1px dashed var(--paper-line); margin-top:4px;">';
+      html += field('number', 'qtdDiarias', 'Nº de diárias', false, '0', {step:'0.5', min:'0'}, editingRecord ? editingRecord.qtdDiarias : undefined);
+      html += field('number', 'valorDiaria', 'Valor por diária (R$)', false, '0,00', {step:'0.01', min:'0'}, editingRecord ? editingRecord.valorDiaria : undefined);
+      html += '<span id="diaria-hint" style="grid-column: 1 / -1; font-size:11.5px; color:var(--ink-soft);">O "Valor (R$)" acima é calculado automaticamente (Nº de diárias × Valor por diária).</span>';
+      html += '</div>';
+
       html += field('text', 'descricao', 'Descrição / Documento', false, 'Ex: DOC 137832 - Cooperativa', {}, editingRecord ? editingRecord.descricao : undefined);
+
+      html += '<div class="field"><label>Comprovante (opcional, imagem ou PDF)</label><input type="file" id="f-anexo-input" accept="image/*,application/pdf"></div>';
+      if(editingRecord && editingRecord.temAnexo){
+        html += '<div class="field" style="justify-content:flex-end;"><button type="button" class="btn-edit" data-action="ver-anexo" data-id="' + editingRecord.id + '" style="width:100%;">Ver comprovante atual</button></div>';
+      }
+      html += '<div style="grid-column: 1 / -1; display:flex; flex-direction:column; gap:6px; padding-top:4px; border-top:1px dashed var(--paper-line); margin-top:4px;">';
+      html += '<label style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em;">Talhão(ões) — rateio (opcional)</label>';
+      if(!state.talhoes.length){
+        html += '<span style="font-size:12px; color:var(--ink-soft);">Nenhum talhão cadastrado.</span>';
+      } else {
+        var talhoesMarcados = editingRecord ? (editingRecord.talhoesIds || (editingRecord.talhaoId ? [editingRecord.talhaoId] : [])) : [];
+        html += '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
+        state.talhoes.forEach(function(t){
+          var marcado = talhoesMarcados.indexOf(t.id) !== -1;
+          html += '<label style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; padding:6px 12px; border:1px solid ' + (marcado ? 'var(--accent)' : 'var(--paper-line)') + '; border-radius:20px; background:' + (marcado ? '#F1E0BC' : '#FBF7EC') + '; cursor:pointer;">';
+          html += '<input type="checkbox" name="talhaoIds" value="' + t.id + '"' + (marcado ? ' checked' : '') + '> ' + escapeHtml(t.nome);
+          html += '</label>';
+        });
+        html += '</div>';
+      }
+      html += '<span style="font-size:11px; color:var(--ink-soft);">Marcando mais de um, o valor é dividido igualmente entre eles.</span>';
+      html += '</div>';
+
       html += '<button type="submit" class="btn">' + (editingRecord ? 'Salvar alterações' : 'Adicionar lançamento') + '</button>';
       if(editingRecord) html += '<button type="button" class="btn-cancel" data-action="cancel-edit">Cancelar</button>';
       html += '</form>';
@@ -1802,17 +2372,51 @@
         html += '<td><span class="badge" style="background:' + (status === 'Pendente' ? '#DFA84E' : '#7FA36D') + '; color:#1B1508">' + status + '</span></td>';
         html += '<td>' + (f.contaId ? escapeHtml(contaLabel(f.contaId)) : escapeHtml(f.categoria || '—')) + '</td>';
         html += '<td class="num">' + (f.quantidade ? fmtNum(f.quantidade) : '—') + (f.peso ? ' / ' + fmtNum(f.peso) : '') + (f.unidade ? ' ' + escapeHtml(f.unidade) : '') + '</td>';
-        html += '<td>' + (f.talhaoId ? escapeHtml(talhaoNome(f.talhaoId)) : '—') + '</td>';
-        html += '<td>' + escapeHtml(f.descricao || '—') + '</td>';
-        html += '<td>' + (f.membroId ? escapeHtml(membroNome(f.membroId)) : '—') + '</td>';
+        html += '<td>' + (f.talhoesIds && f.talhoesIds.length ? escapeHtml(f.talhoesIds.map(talhaoNome).join(', ')) : (f.talhaoId ? escapeHtml(talhaoNome(f.talhaoId)) : '—')) + '</td>';
+        html += '<td>' + escapeHtml(f.descricao || '—')
+          + (f.horasExtras ? ' <span style="font-size:11px; color:var(--ink-soft);">(+' + fmtNum(f.horasExtras) + 'h extra = ' + fmtBRL((Number(f.horasExtras)||0)*(Number(f.valorHoraExtra)||0)) + ')</span>' : '')
+          + (f.qtdDiarias ? ' <span style="font-size:11px; color:var(--ink-soft);">(' + fmtNum(f.qtdDiarias) + ' diária(s) = ' + fmtBRL((Number(f.qtdDiarias)||0)*(Number(f.valorDiaria)||0)) + ')</span>' : '')
+          + '</td>';
+        html += '<td>' + (f.membroId ? escapeHtml(membroNome(f.membroId)) : '—') + (f.temAnexo ? ' <button type="button" class="btn-edit" data-action="ver-anexo" data-id="' + f.id + '" title="Ver comprovante" style="padding:2px 7px; font-size:11px;">📎</button>' : '') + '</td>';
         html += '<td class="num ' + (f.tipo === 'custo' ? 'cost' : 'growth') + '">' + (f.tipo === 'custo' ? '−' : '+') + ' ' + fmtBRL(f.valor) + '</td>';
-        html += '<td><button class="btn-edit" data-action="edit-financeiro" data-id="' + f.id + '">Editar</button><button class="btn-del" data-action="del-financeiro" data-id="' + f.id + '">Remover</button></td>';
+        if(lancamentoEstaFechado(f)){
+          html += '<td><span class="badge" style="background:#8B8368; color:#fff;" title="Período fechado">🔒 Fechado</span></td>';
+        } else {
+          html += '<td><button class="btn-edit" data-action="edit-financeiro" data-id="' + f.id + '">Editar</button><button class="btn-del" data-action="del-financeiro" data-id="' + f.id + '">Remover</button></td>';
+        }
         html += '</tr>';
       });
       html += '</tbody></table></div>';
     }
     html += '</div>';
-    html += '<div class="paper note-box">O valor projetado considera a produção em estoque (aba Colheita) ao preço estimado informado em cada movimentação. Vendas registradas na aba Colheita já entram automaticamente aqui como receita. Lançamentos "Pendentes" (salários, contas a pagar de fornecedores etc.) só entram no Saldo atual e na Rentabilidade depois de marcados como "Pago".</div>';
+    html += '<div class="paper note-box">O valor projetado considera a produção em estoque (aba Colheita) ao preço estimado informado em cada movimentação. Vendas registradas na aba Colheita já entram automaticamente aqui como receita. Lançamentos "Pendentes" (salários, contas a pagar de fornecedores etc.) só entram no Saldo atual e na Rentabilidade depois de marcados como "Pago". Ao parcelar, o "Valor" digitado é o total da compra — o app divide pelo número de parcelas. Ao usar "Repetir automaticamente", o "Valor" digitado se repete integralmente em cada ocorrência (ex: aluguel mensal de R$500 repetido 12x gera 12 lançamentos de R$500). Em ambos os casos, os lançamentos gerados nascem como "Pendente" e vencem mensal ou anualmente a partir da data de "Vencimento" informada.</div>';
+
+    if(state.contasFinanceiro.length){
+      html += '<div class="paper form-card" style="margin-top:20px;"><h3>Importar lançamentos (Excel/CSV)</h3>';
+      html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 12px;">Colunas esperadas, nesta ordem: Fornecedor/Beneficiário, Data Emissão, Data Vencimento, Documento Nº, Valor. A primeira linha (cabeçalho) é ignorada.</p>';
+      html += '<div class="entry-form">';
+      html += selectField('import-conta', 'Conta para todos os lançamentos', state.contasFinanceiro.map(function(c){ return {value:c.id, label: contaLabel(c.id)}; }));
+      html += selectField('import-status', 'Status para todos', [{value:'Pendente', label:'Pendente'}, {value:'Pago', label:'Pago / recebido'}]);
+      html += '<div class="field"><label>Arquivo (.xlsx ou .csv)</label><input type="file" id="import-file-input" accept=".xlsx,.xls,.csv"></div>';
+      html += '<button type="button" class="btn" data-action="import-financeiro" style="align-self:end;">Importar</button>';
+      html += '</div></div>';
+    }
+
+    html += '<div class="paper form-card" style="margin-top:20px;"><h3>Fechamento de período</h3>';
+    html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 12px;">Fechar um período trava os lançamentos daquele mês contra criação, edição ou exclusão, até você reabrir de novo.</p>';
+    html += '<div class="entry-form">';
+    html += '<div class="field"><label>Mês a fechar</label><input type="month" id="fechamento-mes-input"></div>';
+    html += '<button type="button" class="btn" data-action="fechar-periodo" style="align-self:end;">Fechar período</button>';
+    html += '</div>';
+    if(state.periodosFechados && state.periodosFechados.length){
+      html += '<div style="margin-top:14px;">';
+      state.periodosFechados.slice().sort().reverse().forEach(function(ym){
+        html += '<div class="list-row"><span>' + escapeHtml(ym) + ' — fechado</span><button type="button" class="btn-del" data-action="reabrir-periodo" data-id="' + ym + '">Reabrir</button></div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+
     el.innerHTML = html;
   }
 
@@ -1847,14 +2451,86 @@
     el.innerHTML = html;
   }
 
+  /* ---------------- Arrendamentos, Financiamentos, Serviços Prestados ---------------- */
+  function renderArrendamentos(){
+    var el = document.getElementById('tab-arrendamentos');
+    var ativos = state.arrendamentos.filter(function(a){ return a.status === 'Ativo'; });
+    var areaTotal = ativos.reduce(function(s,a){ return s + (Number(a.areaHa)||0); }, 0);
+    var totalPago = ativos.filter(function(a){ return a.tipo === 'Pago'; }).reduce(function(s,a){ return s + (Number(a.valor)||0); }, 0);
+    var totalRecebido = ativos.filter(function(a){ return a.tipo === 'Recebido'; }).reduce(function(s,a){ return s + (Number(a.valor)||0); }, 0);
+
+    var html = '<div class="stat-row">';
+    html += statCard('Contratos ativos', ativos.length);
+    html += statCard('Área arrendada', fmtHa(areaTotal));
+    html += statCard('Valor pago (ativos)', fmtBRL(totalPago), 'cost');
+    html += statCard('Valor recebido (ativos)', fmtBRL(totalRecebido), 'growth');
+    html += '</div>';
+    html += buildGenericFormHtml('arrendamentos');
+    html += buildGenericTableHtml('arrendamentos');
+    html += '<div class="paper note-box">Este módulo controla os contratos de arrendamento. Para lançar os pagamentos ou recebimentos efetivos, use a aba Lançamentos com a conta "Arrendamento", referenciando este contrato na descrição.</div>';
+    el.innerHTML = html;
+  }
+
+  function renderFinanciamentos(){
+    var el = document.getElementById('tab-financiamentos');
+    var ativos = state.financiamentos.filter(function(f){ return f.status === 'Ativo'; });
+    var totalFinanciado = ativos.reduce(function(s,f){ return s + (Number(f.valorTotal)||0); }, 0);
+    var totalPago = ativos.reduce(function(s,f){ return s + (Number(f.parcelasPagas)||0) * (Number(f.valorParcela)||0); }, 0);
+    var saldoDevedor = ativos.reduce(function(s,f){ return s + financiamentoSaldoDevedor(f); }, 0);
+    var totalComJuros = ativos.reduce(function(s,f){ return s + financiamentoValorBase(f); }, 0);
+    var totalJurosPrevisto = totalComJuros - totalFinanciado;
+
+    var html = '<div class="stat-row">';
+    html += statCard('Contratos ativos', ativos.length);
+    html += statCard('Total financiado', fmtBRL(totalFinanciado));
+    html += statCard('Total já pago', fmtBRL(totalPago), 'growth');
+    html += statCard('Saldo devedor', fmtBRL(saldoDevedor), 'cost');
+    html += statCard('Total com juros (previsto)', fmtBRL(totalComJuros), 'cost');
+    html += statCard('Juros previstos', fmtBRL(Math.max(totalJurosPrevisto,0)), 'cost');
+    html += '</div>';
+    html += buildGenericFormHtml('financiamentos');
+    html += buildGenericTableHtml('financiamentos');
+    html += '<div class="paper note-box">Use o botão "Pagar parcela" (ao lado de Editar/Remover) pra dar baixa numa parcela — isso já soma em "Parcelas já pagas" e lança a despesa automaticamente no Financeiro. Pra isso funcionar, o financiamento precisa ter uma "Conta" escolhida (edite o financiamento pra definir). "Valor total c/ juros" é calculado a partir da Data de contratação, Data final e Taxa de juros (% a.a.) — preencha os três pra esse número aparecer (juros compostos sobre o prazo do contrato, uma estimativa; o valor real pode variar conforme o sistema de amortização do banco). O "Saldo devedor" usa esse valor com juros como base (quando disponível); sem data final/taxa preenchidas, ele usa o valor financiado puro.</div>';
+    el.innerHTML = html;
+  }
+
+  function renderServicosPrestados(){
+    var el = document.getElementById('tab-servicosPrestados');
+    var totalPago = state.servicosPrestados.filter(function(s){ return s.status === 'Pago'; }).reduce(function(s,x){ return s + (Number(x.valor)||0); }, 0);
+    var totalPendente = state.servicosPrestados.filter(function(s){ return s.status === 'Pendente'; }).reduce(function(s,x){ return s + (Number(x.valor)||0); }, 0);
+
+    var html = '<div class="stat-row">';
+    html += statCard('Serviços registrados', state.servicosPrestados.length);
+    html += statCard('Total pago', fmtBRL(totalPago), 'growth');
+    html += statCard('Total pendente', fmtBRL(totalPendente), 'cost');
+    html += '</div>';
+    html += buildGenericFormHtml('servicosPrestados');
+    html += buildGenericTableHtml('servicosPrestados');
+    html += '<div class="paper note-box">Este módulo controla os serviços contratados de terceiros. Para lançar o pagamento no financeiro, use a aba Lançamentos com a conta correspondente (ex: "Colheita" ou "Frete", em Despesas com Serviços).</div>';
+    el.innerHTML = html;
+  }
+
   /* ---------------- Funcionários (equipe) ---------------- */
 
   /* ---------------- Rentabilidade ---------------- */
+  function talhoesDoLancamento(f){
+    if(f.talhoesIds && f.talhoesIds.length) return f.talhoesIds;
+    if(f.talhaoId) return [f.talhaoId];
+    return [];
+  }
   function custosFinanceiroPorTalhao(talhaoId){
-    return state.financeiro.filter(function(f){ return f.tipo === 'custo' && f.talhaoId === talhaoId && (f.status || 'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+    return state.financeiro.filter(function(f){ return f.tipo === 'custo' && (f.status || 'Pago') !== 'Pendente'; }).reduce(function(s,f){
+      var talhoes = talhoesDoLancamento(f);
+      if(talhoes.indexOf(talhaoId) === -1) return s;
+      return s + (Number(f.valor||0) / talhoes.length);
+    }, 0);
   }
   function receitasFinanceiroPorTalhao(talhaoId){
-    return state.financeiro.filter(function(f){ return f.tipo === 'receita' && f.talhaoId === talhaoId && (f.status || 'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+    return state.financeiro.filter(function(f){ return f.tipo === 'receita' && (f.status || 'Pago') !== 'Pendente'; }).reduce(function(s,f){
+      var talhoes = talhoesDoLancamento(f);
+      if(talhoes.indexOf(talhaoId) === -1) return s;
+      return s + (Number(f.valor||0) / talhoes.length);
+    }, 0);
   }
   function contasPagarPagasPorTalhao(talhaoId){
     return state.contasPagar.filter(function(c){ return c.status === 'Pago' && c.talhaoId === talhaoId; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0);
@@ -1864,6 +2540,15 @@
   }
   function custosTotaisPorTalhao(talhaoId){ return custosFinanceiroPorTalhao(talhaoId) + contasPagarPagasPorTalhao(talhaoId); }
   function receitasTotaisPorTalhao(talhaoId){ return receitasFinanceiroPorTalhao(talhaoId) + contasReceberRecebidasPorTalhao(talhaoId); }
+  function producaoTotalEmSacas(safraIds){
+    var totalSc = 0;
+    state.producao.forEach(function(p){
+      if(p.tipo !== 'entrada' || safraIds.indexOf(p.safraId) === -1) return;
+      var conv = converterKgSc(Number(p.quantidade) || 0, p.unidade);
+      totalSc += (conv.sc !== null) ? conv.sc : (Number(p.quantidade) || 0);
+    });
+    return totalSc;
+  }
 
   function renderRentabilidade(){
     var el = document.getElementById('tab-rentabilidade');
@@ -1873,7 +2558,7 @@
     if(!state.talhoes.length){
       html += '<div class="paper empty-state">Cadastre talhões para ver a rentabilidade.</div>';
     } else {
-      html += '<div class="paper table-wrap"><table><thead><tr><th>Talhão</th><th>Cultura atual</th><th>Custos</th><th>Receitas</th><th>Estoque projetado</th><th>Resultado</th><th>Retorno s/ custo</th></tr></thead><tbody>';
+      html += '<div class="paper table-wrap"><table><thead><tr><th>Talhão</th><th>Cultura atual</th><th>Custos</th><th>Custo/ha</th><th>Custo/saca</th><th>Receitas</th><th>Estoque projetado</th><th>Resultado</th><th>Retorno s/ custo</th></tr></thead><tbody>';
       state.talhoes.forEach(function(t){
         var safraIdsDoTalhao = state.safras.filter(function(s){ return s.talhaoId === t.id; }).map(function(s){ return s.id; });
         var custos = custosTotaisPorTalhao(t.id);
@@ -1882,10 +2567,16 @@
         var resultado = receitas + estoqueValor - custos;
         var retorno = custos > 0 ? (resultado / custos * 100) : null;
         var safra = safraAtualDoTalhao(t.id);
+        var area = Number(t.area) || 0;
+        var custoPorHa = area > 0 ? (custos / area) : null;
+        var totalSacas = producaoTotalEmSacas(safraIdsDoTalhao);
+        var custoPorSaca = totalSacas > 0 ? (custos / totalSacas) : null;
         html += '<tr>';
         html += '<td>' + escapeHtml(t.nome) + '</td>';
         html += '<td>' + (safra ? escapeHtml(culturaNome(safra.culturaId)) : '—') + '</td>';
         html += '<td class="num cost">' + fmtBRL(custos) + '</td>';
+        html += '<td class="num">' + (custoPorHa === null ? '—' : fmtBRL(custoPorHa)) + '</td>';
+        html += '<td class="num">' + (custoPorSaca === null ? '—' : fmtBRL(custoPorSaca)) + '</td>';
         html += '<td class="num growth">' + fmtBRL(receitas) + '</td>';
         html += '<td class="num growth">' + fmtBRL(estoqueValor) + '</td>';
         html += '<td class="num ' + (resultado >= 0 ? 'growth' : 'cost') + '">' + fmtBRL(resultado) + '</td>';
@@ -1899,7 +2590,7 @@
     if(!state.culturas.length){
       html += '<div class="paper empty-state">Cadastre culturas para ver a rentabilidade agrupada.</div>';
     } else {
-      html += '<div class="paper table-wrap"><table><thead><tr><th>Cultura</th><th>Custos</th><th>Receitas</th><th>Estoque projetado</th><th>Resultado</th><th>Retorno s/ custo</th></tr></thead><tbody>';
+      html += '<div class="paper table-wrap"><table><thead><tr><th>Cultura</th><th>Custos</th><th>Custo/ha</th><th>Custo/saca</th><th>Receitas</th><th>Estoque projetado</th><th>Resultado</th><th>Retorno s/ custo</th></tr></thead><tbody>';
       state.culturas.forEach(function(c){
         var safrasDaCultura = state.safras.filter(function(s){ return s.culturaId === c.id; });
         var talhaoIds = safrasDaCultura.map(function(s){ return s.talhaoId; }).filter(function(v,i,a){ return a.indexOf(v)===i; });
@@ -1909,9 +2600,15 @@
         var estoqueValor = estoqueValorPorSafraIds(safraIds);
         var resultado = receitas + estoqueValor - custos;
         var retorno = custos > 0 ? (resultado / custos * 100) : null;
+        var areaTotal = talhaoIds.reduce(function(sum,tid){ var t = state.talhoes.find(function(x){ return x.id === tid; }); return sum + (t ? Number(t.area)||0 : 0); }, 0);
+        var custoPorHa = areaTotal > 0 ? (custos / areaTotal) : null;
+        var totalSacas = producaoTotalEmSacas(safraIds);
+        var custoPorSaca = totalSacas > 0 ? (custos / totalSacas) : null;
         html += '<tr>';
         html += '<td>' + escapeHtml(c.nome) + '</td>';
         html += '<td class="num cost">' + fmtBRL(custos) + '</td>';
+        html += '<td class="num">' + (custoPorHa === null ? '—' : fmtBRL(custoPorHa)) + '</td>';
+        html += '<td class="num">' + (custoPorSaca === null ? '—' : fmtBRL(custoPorSaca)) + '</td>';
         html += '<td class="num growth">' + fmtBRL(receitas) + '</td>';
         html += '<td class="num growth">' + fmtBRL(estoqueValor) + '</td>';
         html += '<td class="num ' + (resultado >= 0 ? 'growth' : 'cost') + '">' + fmtBRL(resultado) + '</td>';
@@ -1921,7 +2618,7 @@
       html += '</tbody></table></div>';
     }
 
-    html += '<div class="paper note-box">Custos somam os lançamentos "Pago" do Financeiro e as Contas a Pagar "Pago", ambos vinculados ao talhão. Receitas somam o Financeiro "Pago" e as Contas a Receber "Recebido". Como um talhão pode ter mais de uma cultura ao longo do tempo, o agrupamento por cultura soma os talhões onde ela já foi ou está sendo cultivada — evite lançar o mesmo valor em mais de um lugar para não contar em duplicidade.</div>';
+    html += '<div class="paper note-box">Custos somam os lançamentos "Pago" do Financeiro e as Contas a Pagar "Pago", ambos vinculados ao talhão. Receitas somam o Financeiro "Pago" e as Contas a Receber "Recebido". "Custo/ha" divide o custo total pela área do talhão (ou soma das áreas, na visão por cultura). "Custo/saca" divide o custo total pela quantidade total colhida (aba Colheita), convertendo kg para sacas (60kg = 1sc) quando aplicável. Como um talhão pode ter mais de uma cultura ao longo do tempo, o agrupamento por cultura soma os talhões onde ela já foi ou está sendo cultivada — evite lançar o mesmo valor em mais de um lugar para não contar em duplicidade.</div>';
 
     el.innerHTML = html;
   }
@@ -1980,6 +2677,167 @@
       });
       html += '</tbody></table></div>';
     }
+    el.innerHTML = html;
+  }
+
+  /* ---------------- Conta-Corrente por Parceiro ---------------- */
+  var contaCorrenteParceiroId = '';
+
+  function renderContaCorrente(){
+    var el = document.getElementById('tab-contaCorrente');
+    var html = '';
+
+    html += '<div class="paper form-card"><h3>Selecionar parceiro</h3>';
+    html += '<div class="entry-form">';
+    html += selectField('cc-parceiro', 'Parceiro', [{value:'', label:'Todos os parceiros (resumo)'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })), contaCorrenteParceiroId);
+    html += '</div></div>';
+
+    if(!state.parceiros.length){
+      html += '<div class="paper empty-state">Nenhum parceiro cadastrado ainda.</div>';
+      el.innerHTML = html;
+      return;
+    }
+
+    if(!contaCorrenteParceiroId){
+      var resumo = {};
+      state.financeiro.forEach(function(f){
+        if(!f.parceiroId) return;
+        if(!resumo[f.parceiroId]) resumo[f.parceiroId] = {pago:0, recebido:0, pendenteAPagar:0, pendenteAReceber:0};
+        var st = f.status || 'Pago';
+        var valor = Number(f.valor) || 0;
+        if(f.tipo === 'custo'){
+          if(st === 'Pago') resumo[f.parceiroId].pago += valor; else resumo[f.parceiroId].pendenteAPagar += valor;
+        } else {
+          if(st === 'Pago') resumo[f.parceiroId].recebido += valor; else resumo[f.parceiroId].pendenteAReceber += valor;
+        }
+      });
+      var idsComMovimento = Object.keys(resumo);
+      if(!idsComMovimento.length){
+        html += '<div class="paper empty-state">Nenhum lançamento vinculado a um parceiro ainda. Vincule parceiros nos Lançamentos para ver o extrato aqui.</div>';
+      } else {
+        html += '<div class="paper table-wrap"><table><thead><tr><th>Parceiro</th><th>Total pago</th><th>Total recebido</th><th>Saldo</th><th>A pagar (pendente)</th><th>A receber (pendente)</th></tr></thead><tbody>';
+        idsComMovimento
+          .sort(function(a,b){ return parceiroNome(a).localeCompare(parceiroNome(b)); })
+          .forEach(function(pid){
+            var r = resumo[pid];
+            var saldo = r.recebido - r.pago;
+            html += '<tr>';
+            html += '<td>' + escapeHtml(parceiroNome(pid)) + '</td>';
+            html += '<td class="num cost">' + fmtBRL(r.pago) + '</td>';
+            html += '<td class="num growth">' + fmtBRL(r.recebido) + '</td>';
+            html += '<td class="num ' + (saldo >= 0 ? 'growth' : 'cost') + '">' + fmtBRL(saldo) + '</td>';
+            html += '<td class="num">' + fmtBRL(r.pendenteAPagar) + '</td>';
+            html += '<td class="num">' + fmtBRL(r.pendenteAReceber) + '</td>';
+            html += '</tr>';
+          });
+        html += '</tbody></table></div>';
+      }
+    } else {
+      var lancamentos = state.financeiro.filter(function(f){ return f.parceiroId === contaCorrenteParceiroId; });
+      var totalPago = lancamentos.filter(function(f){ return f.tipo === 'custo' && (f.status||'Pago') === 'Pago'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+      var totalRecebido = lancamentos.filter(function(f){ return f.tipo === 'receita' && (f.status||'Pago') === 'Pago'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+      var pendAPagar = lancamentos.filter(function(f){ return f.tipo === 'custo' && f.status === 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+      var pendAReceber = lancamentos.filter(function(f){ return f.tipo === 'receita' && f.status === 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+      var saldoParc = totalRecebido - totalPago;
+
+      html += '<div class="stat-row">';
+      html += statCard('Total pago a este parceiro', fmtBRL(totalPago), 'cost');
+      html += statCard('Total recebido dele', fmtBRL(totalRecebido), 'growth');
+      html += statCard('Saldo', fmtBRL(saldoParc), saldoParc >= 0 ? 'growth' : 'cost');
+      html += statCard('Pendente a pagar', fmtBRL(pendAPagar));
+      html += statCard('Pendente a receber', fmtBRL(pendAReceber));
+      html += '</div>';
+
+      if(!lancamentos.length){
+        html += '<div class="paper empty-state">Nenhum lançamento vinculado a este parceiro ainda.</div>';
+      } else {
+        html += '<div class="paper table-wrap"><table><thead><tr><th>Data/Venc.</th><th>Tipo</th><th>Conta</th><th>Descrição</th><th>Status</th><th>Valor</th></tr></thead><tbody>';
+        lancamentos.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(f){
+          var st = f.status || 'Pago';
+          html += '<tr>';
+          html += '<td>' + fmtDate(st === 'Pendente' ? f.vencimento : f.data) + '</td>';
+          html += '<td><span class="badge tipo-' + f.tipo + '">' + (f.tipo === 'custo' ? 'Custo' : 'Receita') + '</span></td>';
+          html += '<td>' + (f.contaId ? escapeHtml(contaLabel(f.contaId)) : escapeHtml(f.categoria || '—')) + '</td>';
+          html += '<td>' + escapeHtml(f.descricao || '—') + '</td>';
+          html += '<td><span class="badge" style="background:' + (st === 'Pendente' ? '#DFA84E' : '#7FA36D') + '; color:#1B1508">' + st + '</span></td>';
+          html += '<td class="num ' + (f.tipo === 'custo' ? 'cost' : 'growth') + '">' + (f.tipo === 'custo' ? '−' : '+') + ' ' + fmtBRL(f.valor) + '</td>';
+          html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+      }
+    }
+
+    html += '<div class="paper note-box">Este extrato considera os lançamentos da aba Financeiro vinculados a um Parceiro. Contas a Pagar/Receber, Arrendamentos, Financiamentos e Serviços Prestados têm seus próprios controles e ainda não entram nesta soma.</div>';
+    el.innerHTML = html;
+  }
+
+  /* ---------------- Orçado x Realizado ---------------- */
+  var orcamentoAnoSelecionado = new Date().getFullYear();
+
+  function renderOrcamento(){
+    var el = document.getElementById('tab-orcamento');
+    var html = '';
+
+    var anosDisponiveis = [];
+    for(var ay = new Date().getFullYear() - 2; ay <= new Date().getFullYear() + 2; ay++) anosDisponiveis.push(ay);
+
+    html += '<div class="paper form-card"><h3>Definir orçamento</h3>';
+    html += '<div class="entry-form">';
+    html += selectField('orc-ano-view', 'Ano em análise', anosDisponiveis.map(function(a){ return {value:String(a), label:String(a)}; }), String(orcamentoAnoSelecionado));
+    if(state.contasFinanceiro.length){
+      html += selectField('orc-conta', 'Conta', state.contasFinanceiro.map(function(c){ return {value:c.id, label: contaLabel(c.id)}; }));
+      html += field('number', 'orc-valor', 'Valor orçado para o ano (R$)', false, '0,00', {step:'0.01', min:'0'});
+      html += '<button type="button" class="btn" data-action="salvar-orcamento" style="align-self:end;">Salvar orçamento</button>';
+    }
+    html += '</div></div>';
+
+    if(!state.contasFinanceiro.length){
+      html += '<div class="paper empty-state">Cadastre contas financeiras (aba Lançamentos → botão "+" ao lado de Conta) antes de definir orçamentos.</div>';
+      el.innerHTML = html;
+      return;
+    }
+
+    var orcamentosDoAno = state.orcamentos.filter(function(o){ return o.ano === orcamentoAnoSelecionado; });
+    var contasComMovimento = {};
+    state.financeiro.forEach(function(f){
+      if((f.status || 'Pago') !== 'Pago') return;
+      var ano = parseInt((f.data || '').slice(0, 4), 10);
+      if(ano !== orcamentoAnoSelecionado) return;
+      if(!contasComMovimento[f.contaId]) contasComMovimento[f.contaId] = 0;
+      contasComMovimento[f.contaId] += Number(f.valor) || 0;
+    });
+
+    var idsRelevantes = {};
+    orcamentosDoAno.forEach(function(o){ idsRelevantes[o.contaId] = true; });
+    Object.keys(contasComMovimento).forEach(function(cid){ idsRelevantes[cid] = true; });
+
+    var linhas = Object.keys(idsRelevantes).map(function(cid){
+      var orc = orcamentosDoAno.find(function(o){ return o.contaId === cid; });
+      var orcado = orc ? orc.valorOrcado : 0;
+      var realizado = contasComMovimento[cid] || 0;
+      var diferenca = orcado - realizado;
+      var pctUsado = orcado ? (realizado / orcado * 100) : null;
+      return {contaId: cid, orcado: orcado, realizado: realizado, diferenca: diferenca, pctUsado: pctUsado, tipo: contaTipo(cid)};
+    }).sort(function(a,b){ return contaLabel(a.contaId).localeCompare(contaLabel(b.contaId)); });
+
+    if(!linhas.length){
+      html += '<div class="paper empty-state">Nenhum orçamento definido nem movimento em ' + orcamentoAnoSelecionado + ' ainda.</div>';
+    } else {
+      html += '<div class="paper table-wrap"><table><thead><tr><th>Conta</th><th>Orçado (ano)</th><th>Realizado</th><th>Diferença</th><th>% usado</th></tr></thead><tbody>';
+      linhas.forEach(function(l){
+        var estourou = l.tipo === 'custo' && l.orcado > 0 && l.realizado > l.orcado;
+        html += '<tr>';
+        html += '<td>' + escapeHtml(contaLabel(l.contaId)) + '</td>';
+        html += '<td class="num">' + (l.orcado ? fmtBRL(l.orcado) : '—') + '</td>';
+        html += '<td class="num">' + fmtBRL(l.realizado) + '</td>';
+        html += '<td class="num ' + (l.diferenca >= 0 ? 'growth' : 'cost') + '">' + fmtBRL(l.diferenca) + '</td>';
+        html += '<td class="num">' + (l.pctUsado !== null ? '<span class="badge" style="background:' + (estourou ? '#A23E2E' : '#7FA36D') + '; color:#fff;">' + l.pctUsado.toFixed(0) + '%</span>' : '—') + '</td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+
+    html += '<div class="paper note-box">"Realizado" considera só lançamentos com status "Pago" e data dentro do ano selecionado. Para despesas (custo), passar de 100% significa que já foi gasto mais do que o orçado.</div>';
     el.innerHTML = html;
   }
 
@@ -2076,7 +2934,7 @@
     html += '</div>';
     html += renderSecao('receita', totalReceitas, 'RECEITAS');
     html += renderSecao('custo', totalCustos, 'DESPESAS');
-    html += '<div class="paper note-box">Este relatório considera apenas lançamentos do Financeiro marcados como "Pago" e vinculados a uma Conta (aba Plano de Contas). Contas a Pagar/Receber ainda pendentes não entram aqui — acompanhe-as nas abas próprias.</div>';
+    html += '<div class="paper note-box">Este relatório considera apenas lançamentos do Financeiro marcados como "Pago" e vinculados a uma Conta (cadastrada pelo botão "+" no formulário de Lançamentos). Contas a Pagar/Receber ainda pendentes não entram aqui — acompanhe-as nas abas próprias.</div>';
     el.innerHTML = html;
   }
 
@@ -2140,6 +2998,134 @@
     chartInstances[canvasId] = new Chart(canvas.getContext('2d'), {type:type, data:data, options:options});
   }
 
+  function periodoFechado(dataISO){
+    if(!dataISO || !state.periodosFechados) return false;
+    return state.periodosFechados.indexOf(dataISO.slice(0, 7)) !== -1;
+  }
+  function lancamentoEstaFechado(f){
+    return periodoFechado(f.data || f.vencimento || '');
+  }
+  function addMesesISO(dataISO, meses){
+    if(!dataISO) return '';
+    var partes = dataISO.split('-');
+    var d = new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
+    d.setMonth(d.getMonth() + meses);
+    var y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), dia = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + dia;
+  }
+  function parseNFeXML(xmlText){
+    try{
+      var parser = new DOMParser();
+      var xml = parser.parseFromString(xmlText, 'text/xml');
+      if(xml.getElementsByTagName('parsererror').length) return null;
+      function tagText(parent, tag){ var els = parent.getElementsByTagName(tag); return els.length ? (els[0].textContent || '').trim() : ''; }
+      var infNFe = xml.getElementsByTagName('infNFe')[0];
+      if(!infNFe) return null;
+      var ideEl = infNFe.getElementsByTagName('ide')[0];
+      var emitEl = infNFe.getElementsByTagName('emit')[0];
+      var numero = ideEl ? tagText(ideEl, 'nNF') : '';
+      var dataEmissaoRaw = ideEl ? (tagText(ideEl, 'dhEmi') || tagText(ideEl, 'dEmi')) : '';
+      var dataEmissao = dataEmissaoRaw ? dataEmissaoRaw.slice(0, 10) : '';
+      var fornecedorNome = emitEl ? tagText(emitEl, 'xNome') : '';
+      var dets = infNFe.getElementsByTagName('det');
+      var itens = [];
+      for(var i = 0; i < dets.length; i++){
+        var prodEl = dets[i].getElementsByTagName('prod')[0];
+        if(!prodEl) continue;
+        var xProd = tagText(prodEl, 'xProd');
+        if(!xProd) continue;
+        itens.push({
+          cProd: tagText(prodEl, 'cProd'), xProd: xProd, uCom: tagText(prodEl, 'uCom'),
+          qCom: parseFloat(tagText(prodEl, 'qCom')) || 0, vUnCom: parseFloat(tagText(prodEl, 'vUnCom')) || 0,
+          vProd: parseFloat(tagText(prodEl, 'vProd')) || 0
+        });
+      }
+      if(!itens.length) return null;
+      return {numero: numero, dataEmissao: dataEmissao, fornecedorNome: fornecedorNome, itens: itens};
+    }catch(err){
+      console.error('Erro ao ler XML da NF-e:', err);
+      return null;
+    }
+  }
+  var nfeImportada = null;
+
+  function toISOImport(val){
+    if(!val) return '';
+    if(val instanceof Date){
+      if(isNaN(val.getTime())) return '';
+      var y = val.getFullYear(), m = String(val.getMonth()+1).padStart(2,'0'), d = String(val.getDate()).padStart(2,'0');
+      return y + '-' + m + '-' + d;
+    }
+    var s = String(val).trim();
+    if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    var m2 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if(m2) return m2[3] + '-' + m2[2].padStart(2,'0') + '-' + m2[1].padStart(2,'0');
+    return '';
+  }
+  function parseValorImport(v){
+    if(typeof v === 'number') return v;
+    if(v == null) return 0;
+    var s = String(v).trim().replace(/[^\d.,-]/g, '');
+    if(s.indexOf(',') !== -1 && s.indexOf('.') !== -1){ s = s.replace(/\./g, '').replace(',', '.'); }
+    else if(s.indexOf(',') !== -1){ s = s.replace(',', '.'); }
+    return parseFloat(s) || 0;
+  }
+  function importarFinanceiroDeArquivo(){
+    var contaSel = document.getElementById('f-import-conta');
+    var statusSel = document.getElementById('f-import-status');
+    var fileInput = document.getElementById('import-file-input');
+    if(!contaSel || !statusSel || !fileInput) return;
+    var contaId = contaSel.value;
+    var statusPadrao = statusSel.value;
+    var file = fileInput.files && fileInput.files[0];
+    if(!file){ alert('Selecione um arquivo primeiro.'); return; }
+    if(!contaId){ alert('Selecione uma conta para os lançamentos.'); return; }
+    if(!window.XLSX){ alert('A biblioteca de leitura de planilhas ainda está carregando (ou não pôde ser carregada). Tente novamente em instantes.'); return; }
+
+    var reader = new FileReader();
+    reader.onload = function(e){
+      try{
+        var data = new Uint8Array(e.target.result);
+        var wb = XLSX.read(data, {type:'array', cellDates:true});
+        var sheet = wb.Sheets[wb.SheetNames[0]];
+        var rows = XLSX.utils.sheet_to_json(sheet, {header:1, raw:true});
+
+        var novos = [];
+        for(var i = 1; i < rows.length; i++){
+          var r = rows[i];
+          if(!r || r.length === 0) continue;
+          var nome = r[0] != null ? String(r[0]).trim() : '';
+          if(!nome || nome.toUpperCase() === 'TOTAL') continue;
+          var dataEmissao = toISOImport(r[1]);
+          var vencimento = toISOImport(r[2]);
+          var doc = r[3] != null ? String(r[3]).trim() : '';
+          var valor = parseValorImport(r[4]);
+          if(!valor) continue;
+          novos.push({
+            id: uid(), contaId: contaId, tipo: contaTipo(contaId), categoria: contaNome(contaId),
+            valor: valor, quantidade: 0, peso: 0, unidade: '',
+            status: statusPadrao, data: statusPadrao === 'Pago' ? (dataEmissao || vencimento) : '', vencimento: vencimento,
+            talhoesIds: [], talhaoId: '', parceiroId: '', membroId: '',
+            descricao: nome + (doc ? ' - Doc ' + doc : ''), criadoEm: Date.now()
+          });
+        }
+
+        if(!novos.length){ alert('Nenhuma linha válida encontrada no arquivo.'); return; }
+        if(!window.confirm('Serão criados ' + novos.length + ' lançamentos, todos na conta "' + contaLabel(contaId) + '" com status "' + statusPadrao + '". Confirma a importação?')) return;
+
+        novos.forEach(function(n){ state.financeiro.push(n); });
+        saveKey('financeiro', state.financeiro);
+        fileInput.value = '';
+        renderAll();
+        alert(novos.length + ' lançamentos importados com sucesso.');
+      }catch(err){
+        console.error('Erro ao importar arquivo:', err);
+        alert('Não foi possível ler esse arquivo. Verifique se é um .xlsx ou .csv válido, com as colunas na ordem esperada.');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
   function exportarBackupJSON(){
     var backup = {geradoEm: new Date().toISOString()};
     ALL_KEYS.forEach(function(k){ backup[k] = state[k]; });
@@ -2188,7 +3174,7 @@
     addSheet('DiarioDeCampo', state.operacoes.map(function(o){ return {Data:o.data, Tipo:o.tipo, Talhao: o.talhaoId?talhaoNome(o.talhaoId):'', Produto: o.produtoId?produtoNome(o.produtoId):'', Quantidade:o.quantidade, Unidade:o.unidade, Parceiro: o.parceiroId?parceiroNome(o.parceiroId):'', Responsavel: o.responsavelId?membroNome(o.responsavelId):''}; }));
     addSheet('Subgrupos', state.subgruposFinanceiro.map(function(s){ return {Nome:s.nome, Tipo: s.tipo==='custo'?'Despesa':'Receita'}; }));
     addSheet('ContasFinanceiro', state.contasFinanceiro.map(function(c){ return {Conta:c.nome, Subgrupo: subgrupoNome(c.subgrupoId)}; }));
-    addSheet('Financeiro', state.financeiro.map(function(f){ return {Data:f.data, Vencimento:f.vencimento, Status:f.status||'Pago', Tipo:f.tipo, Subgrupo: f.contaId?subgrupoNome((state.contasFinanceiro.find(function(c){return c.id===f.contaId;})||{}).subgrupoId):'', Conta: f.contaId?contaNome(f.contaId):f.categoria, Quantidade:f.quantidade, Peso:f.peso, Unidade:f.unidade, Talhao: f.talhaoId?talhaoNome(f.talhaoId):'', Descricao:f.descricao, Valor:f.valor}; }));
+    addSheet('Financeiro', state.financeiro.map(function(f){ return {Data:f.data, Vencimento:f.vencimento, Status:f.status||'Pago', Tipo:f.tipo, Subgrupo: f.contaId?subgrupoNome((state.contasFinanceiro.find(function(c){return c.id===f.contaId;})||{}).subgrupoId):'', Conta: f.contaId?contaNome(f.contaId):f.categoria, Quantidade:f.quantidade, Peso:f.peso, Unidade:f.unidade, Talhoes: talhoesDoLancamento(f).map(talhaoNome).join(', '), Descricao:f.descricao, Valor:f.valor}; }));
     addSheet('ContasAPagar', state.contasPagar.map(function(c){ return {Descricao:c.descricao, Categoria:c.categoria, Valor:c.valor, Vencimento:c.vencimento, Status:c.status}; }));
     addSheet('ContasAReceber', state.contasReceber.map(function(c){ return {Descricao:c.descricao, Categoria:c.categoria, Valor:c.valor, Vencimento:c.vencimento, Status:c.status}; }));
 
@@ -2369,9 +3355,107 @@
       if(file) importarBackupJSON(file);
       e.target.value = '';
     }
+    if(e.target && (e.target.id === 'f-qtdDiarias' || e.target.id === 'f-valorDiaria')){
+      recalcularValorDiaria();
+    }
+    if(e.target && e.target.id === 'f-safraId' && e.target.closest && e.target.closest('#form-colheita-entrada')){
+      var safraEsc = state.safras.find(function(s){ return s.id === e.target.value; });
+      var precoInputCot = document.getElementById('f-precoUnitario');
+      var hintCot = document.getElementById('cotacao-hint');
+      if(safraEsc){
+        var cotSalva = state.cotacoes.find(function(c){ return c.culturaId === safraEsc.culturaId; });
+        if(cotSalva && precoInputCot && (!precoInputCot.value || parseFloat(precoInputCot.value) === 0)){
+          precoInputCot.value = cotSalva.preco;
+        }
+        if(hintCot) hintCot.textContent = cotSalva
+          ? ('Última cotação salva para ' + culturaNome(safraEsc.culturaId) + ': ' + fmtBRL(cotSalva.preco) + ' (em ' + fmtDate(cotSalva.dataAtualizacao) + ')')
+          : ('Nenhuma cotação salva ainda para ' + culturaNome(safraEsc.culturaId) + ' — anote uma no Dashboard.');
+      }
+    }
+    if(e.target && e.target.id && e.target.id.indexOf('nfe-item-incluir-') === 0){
+      var idxIncl = parseInt(e.target.id.replace('nfe-item-incluir-', ''), 10);
+      if(nfeImportada && nfeImportada.itens[idxIncl]) nfeImportada.itens[idxIncl].incluir = e.target.checked;
+      return;
+    }
+    if(e.target && e.target.id && e.target.id.indexOf('nfe-item-produto-') === 0){
+      var idxProd = parseInt(e.target.id.replace('nfe-item-produto-', ''), 10);
+      if(nfeImportada && nfeImportada.itens[idxProd]) nfeImportada.itens[idxProd].produtoId = e.target.value;
+      return;
+    }
+    if(e.target && e.target.id === 'f-cc-parceiro'){
+      contaCorrenteParceiroId = e.target.value;
+      renderContaCorrente();
+      return;
+    }
+    if(e.target && e.target.id === 'f-orc-ano-view'){
+      orcamentoAnoSelecionado = parseInt(e.target.value, 10) || new Date().getFullYear();
+      renderOrcamento();
+      return;
+    }
+    if(e.target && e.target.id === 'f-contaId'){
+      var campos = document.getElementById('campos-hora-extra');
+      if(campos){
+        var ehSalario = contaNome(e.target.value) === 'Salário';
+        campos.style.display = ehSalario ? 'grid' : 'none';
+        if(!ehSalario){
+          var hIn = document.getElementById('f-horasExtras'); if(hIn) hIn.value = '';
+          var vIn = document.getElementById('f-valorHoraExtra'); if(vIn) vIn.value = '';
+        }
+      }
+      var camposD = document.getElementById('campos-diaria');
+      if(camposD){
+        var ehDiaria = contaNome(e.target.value) === 'Diária';
+        camposD.style.display = ehDiaria ? 'grid' : 'none';
+        if(!ehDiaria){
+          var qIn = document.getElementById('f-qtdDiarias'); if(qIn) qIn.value = '';
+          var dIn = document.getElementById('f-valorDiaria'); if(dIn) dIn.value = '';
+        }
+
+        var camposPadrao = document.getElementById('campos-padrao-financeiro');
+        var campoParc = document.getElementById('campo-parceiro');
+        var valorIn = document.getElementById('f-valor');
+        var tipoIn = document.getElementById('f-unidade');
+        if(camposPadrao) camposPadrao.style.display = ehDiaria ? 'none' : 'contents';
+        if(campoParc) campoParc.style.display = ehDiaria ? 'none' : 'contents';
+        if(valorIn){
+          if(ehDiaria){ valorIn.setAttribute('readonly', 'readonly'); valorIn.style.background = '#E8DCB9'; valorIn.value = '0.00'; }
+          else { valorIn.removeAttribute('readonly'); valorIn.style.background = ''; }
+        }
+        if(tipoIn && ehDiaria) tipoIn.value = 'diárias';
+      }
+    }
   });
 
+  function recalcularValorDiaria(){
+    var qtdEl = document.getElementById('f-qtdDiarias');
+    var valorDEl = document.getElementById('f-valorDiaria');
+    var valorInDiaria = document.getElementById('f-valor');
+    var hintD = document.getElementById('diaria-hint');
+    if(!qtdEl || !valorDEl) return;
+    var qtd = parseFloat(qtdEl.value) || 0;
+    var valorD = parseFloat(valorDEl.value) || 0;
+    var totalDiaria = qtd * valorD;
+    if(valorInDiaria) valorInDiaria.value = totalDiaria.toFixed(2);
+    if(hintD){
+      hintD.textContent = 'O "Valor (R$)" acima é calculado automaticamente (Nº de diárias × Valor por diária)' + (totalDiaria > 0 ? ' = ' + fmtBRL(totalDiaria) + '.' : '.');
+    }
+  }
+
   document.addEventListener('input', function(e){
+    if(e.target && (e.target.id === 'f-horasExtras' || e.target.id === 'f-valorHoraExtra')){
+      var hint = document.getElementById('hora-extra-hint');
+      if(hint){
+        var horas = parseFloat(document.getElementById('f-horasExtras').value) || 0;
+        var valorH = parseFloat(document.getElementById('f-valorHoraExtra').value) || 0;
+        var totalExtra = horas * valorH;
+        hint.textContent = totalExtra > 0
+          ? 'Hora extra: ' + fmtBRL(totalExtra) + ' — some ao "Valor (R$)" acima, se quiser incluir no total pago.'
+          : 'Some este valor ao "Valor (R$)" acima, se quiser incluir a hora extra no total pago.';
+      }
+    }
+    if(e.target && (e.target.id === 'f-qtdDiarias' || e.target.id === 'f-valorDiaria')){
+      recalcularValorDiaria();
+    }
     if(e.target && e.target.id && e.target.id.indexOf('search-') === 0){
       var entityKey = e.target.id.slice(7);
       var query = e.target.value.toLowerCase();
@@ -2432,6 +3516,47 @@
       form.reset(); renderAll(); return;
     }
 
+    if(form.id === 'form-compra'){
+      var comEditingId = form.dataset.editingId;
+      var comQtd = parseFloat(data.get('quantidade')) || 0;
+      var comValorUnit = parseFloat(data.get('valorUnitario')) || 0;
+      var comFields = {
+        produtoId: data.get('produtoId'), fornecedorId: data.get('fornecedorId') || '',
+        quantidade: comQtd, valorUnitario: comValorUnit, valorTotal: Math.round(comQtd * comValorUnit * 100) / 100,
+        contaId: data.get('contaId') || '', notaFiscal: (data.get('notaFiscal')||'').trim(),
+        data: data.get('data') || '', status: data.get('status') || 'Recebido', observacao: (data.get('observacao')||'').trim()
+      };
+      if(comEditingId){
+        var comIdx = state.compras.findIndex(function(c){ return c.id === comEditingId; });
+        if(comIdx !== -1){ Object.keys(comFields).forEach(function(k){ state.compras[comIdx][k] = comFields[k]; }); }
+      } else {
+        comFields.id = uid(); comFields.criadoEm = Date.now();
+        state.compras.push(comFields);
+        if(comFields.status === 'Recebido'){
+          var comProdIdx = state.produtos.findIndex(function(p){ return p.id === comFields.produtoId; });
+          if(comProdIdx !== -1){
+            state.produtos[comProdIdx].estoqueAtual = (Number(state.produtos[comProdIdx].estoqueAtual)||0) + comQtd;
+            saveKey('produtos', state.produtos);
+          }
+          if(comFields.contaId){
+            var comConta = state.contasFinanceiro.find(function(c){ return c.id === comFields.contaId; });
+            state.financeiro.push({
+              id: uid(), contaId: comFields.contaId, tipo: contaTipo(comFields.contaId), categoria: comConta ? comConta.nome : '',
+              valor: comFields.valorTotal, quantidade: 0, peso: 0, unidade: '', status: 'Pago',
+              data: comFields.data || new Date().toISOString().slice(0,10), vencimento: '',
+              talhoesIds: [], talhaoId: '', parceiroId: comFields.fornecedorId, membroId: '',
+              descricao: 'Compra de ' + (state.produtos.find(function(p){ return p.id === comFields.produtoId; })||{}).nome + (comFields.notaFiscal ? ' - NF ' + comFields.notaFiscal : ''),
+              criadoEm: Date.now()
+            });
+            saveKey('financeiro', state.financeiro);
+          }
+        }
+      }
+      saveKey('compras', state.compras);
+      editState = null;
+      form.reset(); renderAll(); return;
+    }
+
     if(form.id === 'form-cat-modal'){
       var novaCatNome = (data.get('nome') || '').trim();
       if(!novaCatNome) return;
@@ -2440,6 +3565,40 @@
       form.reset();
       renderCatModalList();
       renderProdutos();
+      return;
+    }
+
+    if(form.id === 'form-tipo-modal'){
+      var novoTipoNome = (data.get('nome') || '').trim();
+      if(!novoTipoNome) return;
+      state.tiposAtividade.push({id: uid(), nome: novoTipoNome, cor: data.get('cor') || 'Verde', criadoEm: Date.now()});
+      saveKey('tiposAtividade', state.tiposAtividade);
+      form.reset();
+      renderTipoModalList();
+      renderOperacoes();
+      return;
+    }
+
+    if(form.id === 'form-subgrupo-modal'){
+      var novoSubgrupoNome = (data.get('nome') || '').trim();
+      if(!novoSubgrupoNome) return;
+      state.subgruposFinanceiro.push({id: uid(), nome: novoSubgrupoNome, tipo: data.get('tipo') || 'custo', criadoEm: Date.now()});
+      saveKey('subgruposFinanceiro', state.subgruposFinanceiro);
+      form.reset();
+      renderSubgrupoModalList();
+      renderContaModalList();
+      return;
+    }
+
+    if(form.id === 'form-conta-modal'){
+      var novaContaNome = (data.get('nome') || '').trim();
+      var novaContaSubgrupoId = data.get('subgrupoId');
+      if(!novaContaNome || !novaContaSubgrupoId) return;
+      state.contasFinanceiro.push({id: uid(), nome: novaContaNome, subgrupoId: novaContaSubgrupoId, criadoEm: Date.now()});
+      saveKey('contasFinanceiro', state.contasFinanceiro);
+      form.reset();
+      renderContaModalList();
+      renderFinanceiro();
       return;
     }
 
@@ -2493,7 +3652,7 @@
 
     if(form.id === 'form-safra'){
       var sEditingId = form.dataset.editingId;
-      var sFields = { talhaoId: data.get('talhaoId'), culturaId: data.get('culturaId'), dataPlantio: data.get('dataPlantio') || '', anoAgricola: (data.get('anoAgricola')||'').trim(), status: data.get('status') };
+      var sFields = { talhaoId: data.get('talhaoId'), culturaId: data.get('culturaId'), dataPlantio: data.get('dataPlantio') || '', anoAgricola: (data.get('anoAgricola')||'').trim(), status: data.get('status'), produtividadeEsperada: parseFloat(data.get('produtividadeEsperada')) || 0, previsaoColheita: data.get('previsaoColheita') || '' };
       if(sEditingId){
         var sIdx = state.safras.findIndex(function(s){ return s.id === sEditingId; });
         if(sIdx !== -1){ Object.keys(sFields).forEach(function(k){ state.safras[sIdx][k] = sFields[k]; }); }
@@ -2511,7 +3670,9 @@
       var ceFields = {
         tipo: 'entrada', safraId: data.get('safraId'), quantidade: parseFloat(data.get('quantidade')) || 0,
         unidade: (data.get('unidade')||'').trim(), precoUnitario: parseFloat(data.get('precoUnitario')) || 0,
-        responsavelId: data.get('responsavelId') || '', data: data.get('data') || '', observacao: (data.get('observacao')||'').trim()
+        responsavelId: data.get('responsavelId') || '', localArmazenagem: data.get('localArmazenagem') || '', data: data.get('data') || '', observacao: (data.get('observacao')||'').trim(),
+        umidade: parseFloat(data.get('umidade')) || 0, qualidade: (data.get('qualidade')||'').trim(),
+        maquinaId: data.get('maquinaId') || '', horasUso: parseFloat(data.get('horasUso')) || 0
       };
       if(ceEditingId){
         var ceIdx = state.producao.findIndex(function(p){ return p.id === ceEditingId; });
@@ -2582,25 +3743,115 @@
       var finEditingId = form.dataset.editingId;
       var finContaId = data.get('contaId');
       var finConta = state.contasFinanceiro.find(function(c){ return c.id === finContaId; });
+      var finTalhoesIds = data.getAll('talhaoIds');
+      var finEhDiaria = contaNome(finContaId) === 'Diária';
+      var finQtdDiarias = parseFloat(data.get('qtdDiarias')) || 0;
+      var finValorDiaria = parseFloat(data.get('valorDiaria')) || 0;
       var finFields = {
         contaId: finContaId, tipo: contaTipo(finContaId), categoria: finConta ? finConta.nome : '',
-        valor: parseFloat(data.get('valor')) || 0,
-        quantidade: parseFloat(data.get('quantidade')) || 0, peso: parseFloat(data.get('peso')) || 0,
-        unidade: (data.get('unidade') || '').trim(),
+        valor: finEhDiaria ? (finQtdDiarias * finValorDiaria) : (parseFloat(data.get('valor')) || 0),
+        quantidade: finEhDiaria ? 0 : (parseFloat(data.get('quantidade')) || 0), peso: finEhDiaria ? 0 : (parseFloat(data.get('peso')) || 0),
+        unidade: finEhDiaria ? 'diárias' : (data.get('unidade') || '').trim(),
         status: data.get('status') || 'Pago', data: data.get('data') || '', vencimento: data.get('vencimento') || '',
-        talhaoId: data.get('talhaoId') || '', parceiroId: data.get('parceiroId') || '',
-        membroId: data.get('membroId') || '', descricao: (data.get('descricao') || '').trim()
+        talhoesIds: finTalhoesIds, talhaoId: finTalhoesIds.length === 1 ? finTalhoesIds[0] : '', parceiroId: finEhDiaria ? '' : (data.get('parceiroId') || ''),
+        membroId: data.get('membroId') || '', descricao: (data.get('descricao') || '').trim(),
+        horasExtras: parseFloat(data.get('horasExtras')) || 0, valorHoraExtra: parseFloat(data.get('valorHoraExtra')) || 0,
+        qtdDiarias: finQtdDiarias, valorDiaria: finValorDiaria
       };
+
+      var finDataChave = finFields.data || finFields.vencimento || '';
+      if(periodoFechado(finDataChave)){
+        alert('O período ' + finDataChave.slice(0,7) + ' está fechado. Reabra-o na aba Financeiro antes de lançar ou alterar algo nessa data.');
+        return;
+      }
+
+      var finIdParaAnexo = null;
       if(finEditingId){
         var finIdx = state.financeiro.findIndex(function(f){ return f.id === finEditingId; });
         if(finIdx !== -1){ Object.keys(finFields).forEach(function(k){ state.financeiro[finIdx][k] = finFields[k]; }); }
+        finIdParaAnexo = finEditingId;
       } else {
-        finFields.id = uid(); finFields.criadoEm = Date.now();
-        state.financeiro.push(finFields);
+        var finParcelas = parseInt(data.get('parcelas'), 10) || 1;
+        if(finParcelas > 1){
+          var finGrupoParcelamento = uid();
+          var valorPorParcela = Math.round((finFields.valor / finParcelas) * 100) / 100;
+          var vencimentoBase = finFields.vencimento || finFields.data || '';
+          for(var pi = 0; pi < finParcelas; pi++){
+            var parcelaFields = {};
+            Object.keys(finFields).forEach(function(k){ parcelaFields[k] = finFields[k]; });
+            parcelaFields.id = uid();
+            parcelaFields.criadoEm = Date.now() + pi;
+            parcelaFields.valor = (pi === finParcelas - 1)
+              ? Math.round((finFields.valor - valorPorParcela * (finParcelas - 1)) * 100) / 100
+              : valorPorParcela;
+            parcelaFields.status = 'Pendente';
+            parcelaFields.data = '';
+            parcelaFields.vencimento = addMesesISO(vencimentoBase, pi);
+            parcelaFields.descricao = (finFields.descricao ? finFields.descricao + ' ' : '') + '(Parcela ' + (pi + 1) + '/' + finParcelas + ')';
+            parcelaFields.parcelamentoId = finGrupoParcelamento;
+            parcelaFields.parcelaNum = pi + 1;
+            parcelaFields.parcelaTotal = finParcelas;
+            if(pi === 0) finIdParaAnexo = parcelaFields.id;
+            state.financeiro.push(parcelaFields);
+          }
+        } else {
+          var finRepeticoes = parseInt(data.get('recorrenciaRepeticoes'), 10) || 0;
+          if(finRepeticoes > 1){
+            var finGrupoRecorrencia = uid();
+            var finFreqMeses = (data.get('recorrenciaFrequencia') === 'Anual') ? 12 : 1;
+            var vencimentoBaseRec = finFields.vencimento || finFields.data || '';
+            for(var ri = 0; ri < finRepeticoes; ri++){
+              var recFields = {};
+              Object.keys(finFields).forEach(function(k){ recFields[k] = finFields[k]; });
+              recFields.id = uid();
+              recFields.criadoEm = Date.now() + ri;
+              recFields.status = 'Pendente';
+              recFields.data = '';
+              recFields.vencimento = addMesesISO(vencimentoBaseRec, ri * finFreqMeses);
+              recFields.descricao = (finFields.descricao ? finFields.descricao + ' ' : '') + '(Recorrência ' + (ri + 1) + '/' + finRepeticoes + ')';
+              recFields.recorrenciaId = finGrupoRecorrencia;
+              recFields.recorrenciaNum = ri + 1;
+              recFields.recorrenciaTotal = finRepeticoes;
+              recFields.recorrenciaFrequencia = data.get('recorrenciaFrequencia') || 'Mensal';
+              if(ri === 0) finIdParaAnexo = recFields.id;
+              state.financeiro.push(recFields);
+            }
+          } else {
+            finFields.id = uid(); finFields.criadoEm = Date.now();
+            state.financeiro.push(finFields);
+            finIdParaAnexo = finFields.id;
+          }
+        }
       }
-      saveKey('financeiro', state.financeiro);
-      editState = null;
-      form.reset(); renderAll(); return;
+
+      var finFinalizar = function(){
+        saveKey('financeiro', state.financeiro);
+        editState = null;
+        form.reset(); renderAll();
+      };
+
+      var finAnexoInput = document.getElementById('f-anexo-input');
+      var finAnexoFile = finAnexoInput && finAnexoInput.files && finAnexoInput.files[0];
+      if(finAnexoFile && finIdParaAnexo){
+        if(finAnexoFile.size > 5 * 1024 * 1024){
+          alert('O comprovante precisa ter até 5MB. O lançamento foi salvo, mas o arquivo não foi anexado — tente novamente com um arquivo menor.');
+          finFinalizar();
+          return;
+        }
+        var finReader = new FileReader();
+        finReader.onload = function(e){
+          rawSet('anexo::' + finIdParaAnexo, {nome: finAnexoFile.name, tipo: finAnexoFile.type, dados: e.target.result}).then(function(){
+            var idxAnexo = state.financeiro.findIndex(function(f){ return f.id === finIdParaAnexo; });
+            if(idxAnexo !== -1) state.financeiro[idxAnexo].temAnexo = true;
+            finFinalizar();
+          });
+        };
+        finReader.onerror = function(){ finFinalizar(); };
+        finReader.readAsDataURL(finAnexoFile);
+        return;
+      }
+      finFinalizar();
+      return;
     }
   });
 
@@ -2638,12 +3889,147 @@
       renderProdutos();
       return;
     }
+    if(action === 'open-tipo-modal'){ renderTipoModalList(); document.getElementById('tipo-modal-overlay').style.display = 'flex'; var tipoInput = document.getElementById('tipo-modal-input'); if(tipoInput) tipoInput.focus(); return; }
+    if(action === 'close-tipo-modal'){ document.getElementById('tipo-modal-overlay').style.display = 'none'; return; }
+    if(action === 'salvar-cotacao'){
+      var inputCot = document.querySelector('.cotacao-input[data-cultura-id="' + id + '"]');
+      var precoCot = inputCot ? (parseFloat(inputCot.value) || 0) : 0;
+      if(precoCot <= 0){ alert('Digite um preço maior que zero antes de salvar.'); return; }
+      var idxCot = state.cotacoes.findIndex(function(c){ return c.culturaId === id; });
+      var hojeISO = new Date().toISOString().slice(0, 10);
+      if(idxCot !== -1){
+        state.cotacoes[idxCot].preco = precoCot;
+        state.cotacoes[idxCot].dataAtualizacao = hojeISO;
+      } else {
+        state.cotacoes.push({id: uid(), culturaId: id, preco: precoCot, dataAtualizacao: hojeISO});
+      }
+      saveKey('cotacoes', state.cotacoes);
+      renderPainel();
+      return;
+    }
+    if(action === 'del-tipo-modal'){
+      if(!window.confirm('Remover este tipo de atividade? Atividades já registradas com ele mantêm o nome salvo, só some da lista de opções.')) return;
+      state.tiposAtividade = state.tiposAtividade.filter(function(t){ return t.id !== id; });
+      saveKey('tiposAtividade', state.tiposAtividade);
+      renderTipoModalList();
+      renderOperacoes();
+      return;
+    }
+    if(action === 'open-conta-modal'){ renderContaModalList(); document.getElementById('conta-modal-overlay').style.display = 'flex'; var contaInput = document.getElementById('conta-modal-input'); if(contaInput) contaInput.focus(); return; }
+    if(action === 'close-conta-modal'){ document.getElementById('conta-modal-overlay').style.display = 'none'; return; }
+    if(action === 'del-conta-modal'){
+      if(!window.confirm('Remover esta conta? Lançamentos que já usam ela mantêm o vínculo salvo, mas ela some da lista de opções.')) return;
+      state.contasFinanceiro = state.contasFinanceiro.filter(function(c){ return c.id !== id; });
+      saveKey('contasFinanceiro', state.contasFinanceiro);
+      renderContaModalList();
+      renderFinanceiro();
+      return;
+    }
+    if(action === 'open-subgrupo-modal'){ renderSubgrupoModalList(); document.getElementById('subgrupo-modal-overlay').style.display = 'flex'; var subInput = document.getElementById('subgrupo-modal-input'); if(subInput) subInput.focus(); return; }
+    if(action === 'close-subgrupo-modal'){ document.getElementById('subgrupo-modal-overlay').style.display = 'none'; return; }
+    if(action === 'del-subgrupo-modal'){
+      if(!window.confirm('Remover este subgrupo? Contas que já usam ele continuam existindo, mas ficam sem subgrupo definido.')) return;
+      state.subgruposFinanceiro = state.subgruposFinanceiro.filter(function(s){ return s.id !== id; });
+      saveKey('subgruposFinanceiro', state.subgruposFinanceiro);
+      renderSubgrupoModalList();
+      renderContaModalList();
+      return;
+    }
     if(action === 'edit-produto'){ editState = {scope:'produtos', id: id}; renderProdutos(); var fP = document.getElementById('form-produto'); if(fP) fP.scrollIntoView({behavior:'smooth', block:'start'}); return; }
     if(action === 'del-produto'){
       if(!window.confirm('Tem certeza que deseja remover este item? Essa ação não pode ser desfeita.')) return;
       state.produtos = state.produtos.filter(function(p){ return p.id !== id; });
       saveKey('produtos', state.produtos);
       renderProdutos();
+      return;
+    }
+    if(action === 'edit-compra'){ editState = {scope:'compras', id: id}; renderCompras(); var fC = document.getElementById('form-compra'); if(fC) fC.scrollIntoView({behavior:'smooth', block:'start'}); return; }
+    if(action === 'del-compra'){
+      if(!window.confirm('Remover esta compra? Isso não desfaz automaticamente o estoque somado nem o lançamento financeiro criado — ajuste-os manualmente se precisar.')) return;
+      state.compras = state.compras.filter(function(c){ return c.id !== id; });
+      saveKey('compras', state.compras);
+      renderCompras();
+      return;
+    }
+    if(action === 'enviar-certificado'){ enviarCertificado(); return; }
+    if(action === 'remover-certificado'){ removerCertificado(); return; }
+    if(action === 'ler-nfe'){
+      var nfeInput = document.getElementById('nfe-file-input');
+      var nfeFile = nfeInput && nfeInput.files && nfeInput.files[0];
+      if(!nfeFile){ alert('Selecione o arquivo XML da nota primeiro.'); return; }
+      var nfeReader = new FileReader();
+      nfeReader.onload = function(e){
+        var parsed = parseNFeXML(e.target.result);
+        if(!parsed){ alert('Não foi possível ler esse arquivo. Confira se é mesmo o XML de uma NF-e (não o DANFE em PDF).'); return; }
+        parsed.itens = parsed.itens.map(function(item){
+          var match = state.produtos.find(function(p){ return p.nome.trim().toLowerCase() === item.xProd.trim().toLowerCase(); });
+          item.incluir = true;
+          item.produtoId = match ? match.id : '';
+          return item;
+        });
+        nfeImportada = parsed;
+        renderCompras();
+      };
+      nfeReader.onerror = function(){ alert('Não foi possível ler esse arquivo.'); };
+      nfeReader.readAsText(nfeFile);
+      return;
+    }
+    if(action === 'cancelar-nfe'){ nfeImportada = null; renderCompras(); return; }
+    if(action === 'importar-itens-nfe'){
+      if(!nfeImportada) return;
+      var selecionados = nfeImportada.itens.filter(function(item){ return item.incluir; });
+      if(!selecionados.length){ alert('Marque ao menos um item para importar.'); return; }
+      if(!window.confirm('Importar ' + selecionados.length + ' item(ns) da nota? Isso cria compras, soma no estoque e lança as despesas no Financeiro.')) return;
+
+      var contaSelInput = document.getElementById('nfe-import-conta');
+      var contaEscolhida = contaSelInput ? contaSelInput.value : '';
+
+      var fornecedorId = '';
+      if(nfeImportada.fornecedorNome){
+        var fornecedorExistente = state.parceiros.find(function(p){ return p.nome.trim().toLowerCase() === nfeImportada.fornecedorNome.trim().toLowerCase(); });
+        if(fornecedorExistente){
+          fornecedorId = fornecedorExistente.id;
+        } else {
+          var novoFornecedor = {id: uid(), nome: nfeImportada.fornecedorNome, tipo: 'Fornecedor', contato: '', criadoEm: Date.now()};
+          state.parceiros.push(novoFornecedor);
+          fornecedorId = novoFornecedor.id;
+        }
+      }
+
+      selecionados.forEach(function(item, idx){
+        var produtoId = item.produtoId;
+        if(!produtoId){
+          var novoProduto = {id: uid(), nome: item.xProd, categoria: '', unidade: item.uCom || '', estoqueAtual: 0, estoqueMinimo: 0, criadoEm: Date.now() + idx};
+          state.produtos.push(novoProduto);
+          produtoId = novoProduto.id;
+        }
+        var compraFields = {
+          id: uid(), produtoId: produtoId, fornecedorId: fornecedorId, quantidade: item.qCom, valorUnitario: item.vUnCom,
+          valorTotal: item.vProd, contaId: contaEscolhida, notaFiscal: nfeImportada.numero,
+          data: nfeImportada.dataEmissao, status: 'Recebido', observacao: 'Importado de NF-e', criadoEm: Date.now() + idx
+        };
+        state.compras.push(compraFields);
+        var prodIdx = state.produtos.findIndex(function(p){ return p.id === produtoId; });
+        if(prodIdx !== -1) state.produtos[prodIdx].estoqueAtual = (Number(state.produtos[prodIdx].estoqueAtual) || 0) + item.qCom;
+        if(contaEscolhida){
+          var contaNfe = state.contasFinanceiro.find(function(c){ return c.id === contaEscolhida; });
+          state.financeiro.push({
+            id: uid(), contaId: contaEscolhida, tipo: contaTipo(contaEscolhida), categoria: contaNfe ? contaNfe.nome : '',
+            valor: item.vProd, quantidade: 0, peso: 0, unidade: '', status: 'Pago',
+            data: nfeImportada.dataEmissao || new Date().toISOString().slice(0,10), vencimento: '',
+            talhoesIds: [], talhaoId: '', parceiroId: fornecedorId, membroId: '',
+            descricao: 'Compra de ' + item.xProd + (nfeImportada.numero ? ' - NF ' + nfeImportada.numero : ''),
+            criadoEm: Date.now() + idx
+          });
+        }
+      });
+
+      saveKey('produtos', state.produtos);
+      saveKey('compras', state.compras);
+      saveKey('parceiros', state.parceiros);
+      if(contaEscolhida) saveKey('financeiro', state.financeiro);
+      nfeImportada = null;
+      renderAll();
       return;
     }
     if(action === 'switch-workspace'){
@@ -2667,6 +4053,7 @@
     if(action === 'export-excel'){ exportarExcel(); return; }
     if(action === 'export-pdf'){ window.print(); return; }
     if(action === 'export-backup'){ exportarBackupJSON(); return; }
+    if(action === 'import-financeiro'){ importarFinanceiroDeArquivo(); return; }
     if(action === 'import-backup'){ var fileInput = document.getElementById('backup-file-input'); if(fileInput) fileInput.click(); return; }
     if(action === 'cancel-edit'){ editState = null; renderAll(); return; }
     if(action === 'edit-generic'){
@@ -2674,6 +4061,30 @@
       renderAll();
       var formCard = document.querySelector('#tab-' + btn.dataset.entity + ' .form-card');
       if(formCard) formCard.scrollIntoView({behavior:'smooth', block:'start'});
+      return;
+    }
+    if(action === 'pagar-parcela-financiamento'){
+      var fin = state.financiamentos.find(function(f){ return f.id === id; });
+      if(!fin) return;
+      if(!fin.contaId){ alert('Antes de pagar uma parcela por aqui, edite este financiamento e escolha uma "Conta" — é nela que a despesa vai ser lançada.'); return; }
+      var pagasAtual = Number(fin.parcelasPagas) || 0;
+      var novaPagas = pagasAtual + 1;
+      var valorParcelaFin = Number(fin.valorParcela) || 0;
+      if(!window.confirm('Confirma o pagamento da parcela ' + novaPagas + '/' + (fin.numeroParcelas || '?') + ', no valor de ' + fmtBRL(valorParcelaFin) + '? Isso cria uma despesa "Pago" no Financeiro.')) return;
+      fin.parcelasPagas = novaPagas;
+      if(fin.numeroParcelas && novaPagas >= Number(fin.numeroParcelas)) fin.status = 'Quitado';
+      saveKey('financiamentos', state.financiamentos);
+      var contaFin = state.contasFinanceiro.find(function(c){ return c.id === fin.contaId; });
+      state.financeiro.push({
+        id: uid(), contaId: fin.contaId, tipo: contaTipo(fin.contaId), categoria: contaFin ? contaFin.nome : '',
+        valor: valorParcelaFin, quantidade: 0, peso: 0, unidade: '', status: 'Pago',
+        data: new Date().toISOString().slice(0,10), vencimento: '',
+        talhoesIds: fin.talhaoId ? [fin.talhaoId] : [], talhaoId: fin.talhaoId || '', parceiroId: '', membroId: '',
+        descricao: 'Parcela ' + novaPagas + '/' + (fin.numeroParcelas || '?') + ' - ' + fin.banco + (fin.numeroContrato ? ' - Contrato ' + fin.numeroContrato : ''),
+        criadoEm: Date.now()
+      });
+      saveKey('financeiro', state.financeiro);
+      renderAll();
       return;
     }
     if(action === 'del-generic'){
@@ -2696,8 +4107,61 @@
     }
     if(action === 'del-operacao'){ state.operacoes = state.operacoes.filter(function(o){ return o.id !== id; }); saveKey('operacoes', state.operacoes); renderAll(); return; }
     if(action === 'edit-operacao'){ editState = {scope:'operacoes', id: id}; renderAll(); var f1 = document.getElementById('form-operacao'); if(f1) f1.scrollIntoView({behavior:'smooth', block:'start'}); return; }
-    if(action === 'del-financeiro'){ state.financeiro = state.financeiro.filter(function(f){ return f.id !== id; }); saveKey('financeiro', state.financeiro); renderAll(); return; }
-    if(action === 'edit-financeiro'){ editState = {scope:'financeiro', id: id}; renderAll(); var f5 = document.getElementById('form-financeiro'); if(f5) f5.scrollIntoView({behavior:'smooth', block:'start'}); return; }
+    if(action === 'del-financeiro'){
+      var finParaExcluir = state.financeiro.find(function(f){ return f.id === id; });
+      if(finParaExcluir && lancamentoEstaFechado(finParaExcluir)){ alert('Este lançamento está num período fechado. Reabra o período antes de excluir.'); return; }
+      state.financeiro = state.financeiro.filter(function(f){ return f.id !== id; }); saveKey('financeiro', state.financeiro); renderAll(); return;
+    }
+    if(action === 'edit-financeiro'){
+      var finParaEditar = state.financeiro.find(function(f){ return f.id === id; });
+      if(finParaEditar && lancamentoEstaFechado(finParaEditar)){ alert('Este lançamento está num período fechado. Reabra o período antes de editar.'); return; }
+      editState = {scope:'financeiro', id: id}; renderAll(); var f5 = document.getElementById('form-financeiro'); if(f5) f5.scrollIntoView({behavior:'smooth', block:'start'}); return;
+    }
+    if(action === 'ver-anexo'){
+      rawGet('anexo::' + id).then(function(anexo){
+        if(!anexo || !anexo.dados){ alert('Nenhum comprovante encontrado.'); return; }
+        var w = window.open();
+        if(w && w.document){
+          w.document.write('<title>' + escapeHtml(anexo.nome || 'Comprovante') + '</title>' + (anexo.tipo && anexo.tipo.indexOf('image') === 0 ? '<img src="' + anexo.dados + '" style="max-width:100%;">' : '<embed src="' + anexo.dados + '" style="width:100%; height:100vh;">'));
+        }
+      });
+      return;
+    }
+    if(action === 'fechar-periodo'){
+      var mesInput = document.getElementById('fechamento-mes-input');
+      var ym = mesInput ? mesInput.value : '';
+      if(!ym){ alert('Escolha um mês antes de fechar.'); return; }
+      if(!state.periodosFechados) state.periodosFechados = [];
+      if(state.periodosFechados.indexOf(ym) !== -1){ alert('Esse período já está fechado.'); return; }
+      if(!window.confirm('Fechar ' + ym + '? Nenhum lançamento com data ou vencimento nesse mês poderá ser criado, editado ou excluído até você reabrir.')) return;
+      state.periodosFechados.push(ym);
+      saveKey('periodosFechados', state.periodosFechados);
+      renderAll();
+      return;
+    }
+    if(action === 'reabrir-periodo'){
+      if(!window.confirm('Reabrir ' + id + '? Os lançamentos desse mês voltam a poder ser editados/excluídos.')) return;
+      state.periodosFechados = state.periodosFechados.filter(function(p){ return p !== id; });
+      saveKey('periodosFechados', state.periodosFechados);
+      renderAll();
+      return;
+    }
+    if(action === 'salvar-orcamento'){
+      var orcContaSel = document.getElementById('f-orc-conta');
+      var orcValorInput = document.getElementById('f-orc-valor');
+      var orcContaId = orcContaSel ? orcContaSel.value : '';
+      var orcValor = orcValorInput ? (parseFloat(orcValorInput.value) || 0) : 0;
+      if(!orcContaId || orcValor <= 0){ alert('Escolha uma conta e digite um valor maior que zero.'); return; }
+      var idxOrc = state.orcamentos.findIndex(function(o){ return o.contaId === orcContaId && o.ano === orcamentoAnoSelecionado; });
+      if(idxOrc !== -1){
+        state.orcamentos[idxOrc].valorOrcado = orcValor;
+      } else {
+        state.orcamentos.push({id: uid(), contaId: orcContaId, ano: orcamentoAnoSelecionado, valorOrcado: orcValor, criadoEm: Date.now()});
+      }
+      saveKey('orcamentos', state.orcamentos);
+      renderOrcamento();
+      return;
+    }
   });
 
   boot();
