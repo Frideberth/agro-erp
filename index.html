@@ -1783,6 +1783,18 @@
     html += '<div id="certificado-form-area"></div>';
     html += '</div>';
 
+    html += '<div class="paper form-card"><h3>Testar consulta na SEFAZ (homologação)</h3>';
+    html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 12px;">⚠️ Primeira versão, ainda não validada contra o servidor real — este teste mostra a resposta bruta da SEFAZ, útil pra gente descobrir juntos o que precisa ajustar. Sempre em <strong>homologação</strong> (ambiente de testes), nunca em produção, até termos certeza que está funcionando certinho.</p>';
+    html += '<div class="entry-form">';
+    var ufsOptions = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map(function(u){ return {value:u, label:u}; });
+    html += selectField('sefaz-uf', 'UF do certificado', ufsOptions);
+    html += field('text', 'sefaz-documento', 'CPF ou CNPJ (só números)', false, '', {}, undefined);
+    html += field('text', 'sefaz-ultnsu', 'Último NSU (deixe 0 na primeira vez)', false, '0', {}, undefined);
+    html += '<button type="button" class="btn" data-action="testar-sefaz" style="align-self:end;">Testar consulta</button>';
+    html += '</div>';
+    html += '<pre id="sefaz-resultado" style="white-space:pre-wrap; word-break:break-word; font-size:11.5px; background:#FBF7EC; border:1px solid var(--paper-line); border-radius:4px; padding:10px; margin-top:12px; max-height:400px; overflow-y:auto; display:none;"></pre>';
+    html += '</div>';
+
     html += '<div class="paper">';
     if(!state.compras.length){
       html += '<div class="empty-state">Nenhuma compra registrada ainda.</div>';
@@ -1869,6 +1881,30 @@
     fetch('/.netlify/functions/certificado', {method: 'DELETE'})
       .then(function(){ verificarStatusCertificado(); })
       .catch(function(){ alert('Não foi possível remover agora.'); });
+  }
+
+  function testarConsultaSefaz(){
+    var ufInput = document.getElementById('f-sefaz-uf');
+    var docInput = document.getElementById('f-sefaz-documento');
+    var nsuInput = document.getElementById('f-sefaz-ultnsu');
+    var resultadoEl = document.getElementById('sefaz-resultado');
+    var uf = ufInput ? ufInput.value : '';
+    var documento = docInput ? docInput.value.replace(/\D/g, '') : '';
+    var ultNSU = nsuInput ? nsuInput.value.replace(/\D/g, '') : '0';
+    if(!documento){ alert('Digite o CPF ou CNPJ (só números).'); return; }
+    if(!window.confirm('Isso vai consultar a SEFAZ em ambiente de HOMOLOGAÇÃO usando o certificado guardado. Confirma?')) return;
+    if(resultadoEl){ resultadoEl.style.display = 'block'; resultadoEl.textContent = 'Consultando a SEFAZ, aguarde…'; }
+    fetch('/.netlify/functions/sefaz-consulta', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ambiente: 'homologacao', uf: uf, documento: documento, ultNSU: ultNSU})
+    })
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if(resultadoEl) resultadoEl.textContent = JSON.stringify(data, null, 2);
+      })
+      .catch(function(err){
+        if(resultadoEl) resultadoEl.textContent = 'Erro ao chamar a function: ' + err;
+      });
   }
 
   function renderCatModalList(){
@@ -3953,6 +3989,7 @@
     }
     if(action === 'enviar-certificado'){ enviarCertificado(); return; }
     if(action === 'remover-certificado'){ removerCertificado(); return; }
+    if(action === 'testar-sefaz'){ testarConsultaSefaz(); return; }
     if(action === 'ler-nfe'){
       var nfeInput = document.getElementById('nfe-file-input');
       var nfeFile = nfeInput && nfeInput.files && nfeInput.files[0];
