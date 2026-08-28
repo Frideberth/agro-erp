@@ -1,5 +1,6 @@
 import { getStore } from "@netlify/blobs";
 import crypto from "node:crypto";
+import forge from "node-forge";
 
 // Netlify Function que guarda o certificado digital A1 (arquivo .pfx +
 // senha) de forma CRIPTOGRAFADA no Netlify Blobs — nunca em texto puro.
@@ -104,6 +105,15 @@ export default async (req) => {
       const { certBase64, senha, nomeArquivo } = body || {};
       if (!certBase64 || !senha) {
         return new Response(JSON.stringify({ error: "Certificado e senha são obrigatórios." }), {
+          status: 400, headers: { "content-type": "application/json", ...cors }
+        });
+      }
+      try {
+        const pfxBuffer = Buffer.from(certBase64, "base64");
+        const p12Asn1 = forge.asn1.fromDer(forge.util.createBuffer(pfxBuffer.toString("binary")));
+        forge.pkcs12.pkcs12FromAsn1(p12Asn1, senha); // só valida — se a senha estiver errada ou o arquivo corrompido, isso já lança erro aqui
+      } catch (errValidacao) {
+        return new Response(JSON.stringify({ error: "Não consegui abrir esse certificado com essa senha: " + String(errValidacao.message || errValidacao) + " — confira o arquivo e a senha e tente de novo." }), {
           status: 400, headers: { "content-type": "application/json", ...cors }
         });
       }

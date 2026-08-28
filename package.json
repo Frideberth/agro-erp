@@ -4,6 +4,7 @@
   "private": true,
   "description": "App de gestão agrícola com armazenamento em Netlify Blobs",
   "dependencies": {
-    "@netlify/blobs": "^8.1.0"
+    "@netlify/blobs": "^8.1.0",
+    "node-forge": "^1.4.0"
   }
 }
