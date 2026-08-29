@@ -1747,19 +1747,21 @@
     html += '<div class="field"><label>Arquivo XML da NF-e</label><input type="file" id="nfe-file-input" accept=".xml"></div>';
     html += '<button type="button" class="btn" data-action="ler-nfe" style="align-self:end;">Ler nota</button>';
     html += '</div>';
-    if(nfeImportada){
+    if(nfeImportada && nfeImportada.itens && nfeImportada.itens.length){
+      var notasUnicas = nfeImportada.itens.map(function(i){ return i.numeroNota; }).filter(function(v,i,a){ return a.indexOf(v)===i; });
       html += '<div style="margin-top:16px; padding-top:14px; border-top:1px dashed var(--paper-line);">';
-      html += '<p style="font-size:13px; margin:0 0 10px;"><strong>Fornecedor:</strong> ' + escapeHtml(nfeImportada.fornecedorNome || '—') + ' &nbsp; <strong>Nota nº:</strong> ' + escapeHtml(nfeImportada.numero || '—') + ' &nbsp; <strong>Emissão:</strong> ' + (nfeImportada.dataEmissao ? fmtDate(nfeImportada.dataEmissao) : '—') + '</p>';
+      html += '<p style="font-size:13px; margin:0 0 10px;"><strong>' + nfeImportada.itens.length + ' item(ns)</strong> de <strong>' + notasUnicas.length + ' nota(s)</strong> prontos pra revisar.</p>';
       if(state.contasFinanceiro.length){
         html += selectField('nfe-import-conta', 'Conta (para todos os itens importados)', state.contasFinanceiro.map(function(c){ return {value:c.id, label: contaLabel(c.id)}; }));
       } else {
         html += '<p style="font-size:12px; color:var(--ink-soft);">Sem uma Conta financeira cadastrada, os itens vão entrar no estoque, mas não vão gerar despesa no Financeiro.</p>';
       }
-      html += '<div class="table-wrap"><table><thead><tr><th></th><th>Item da nota</th><th>Qtd</th><th>Valor unit.</th><th>Produto no sistema</th></tr></thead><tbody>';
+      html += '<div class="table-wrap"><table><thead><tr><th></th><th>Item da nota</th><th>Nota / Fornecedor</th><th>Qtd</th><th>Valor unit.</th><th>Produto no sistema</th></tr></thead><tbody>';
       nfeImportada.itens.forEach(function(item, idx){
         html += '<tr>';
         html += '<td><input type="checkbox" id="nfe-item-incluir-' + idx + '"' + (item.incluir ? ' checked' : '') + '></td>';
         html += '<td>' + escapeHtml(item.xProd) + '</td>';
+        html += '<td style="font-size:11.5px; color:var(--ink-soft);">Nº ' + escapeHtml(item.numeroNota || '—') + '<br>' + escapeHtml(item.fornecedorNomeNota || '—') + '</td>';
         html += '<td class="num">' + fmtNum(item.qCom) + (item.uCom ? ' ' + escapeHtml(item.uCom) : '') + '</td>';
         html += '<td class="num">' + fmtBRL(item.vUnCom) + '</td>';
         html += '<td><select id="nfe-item-produto-' + idx + '" style="padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12.5px;">';
@@ -1793,6 +1795,8 @@
     html += field('text', 'sefaz-ultnsu', 'Último NSU (deixe 0 na primeira vez)', false, '0', {}, undefined);
     html += '<button type="button" class="btn" data-action="testar-sefaz" style="align-self:end;">Testar consulta</button>';
     html += '</div>';
+    html += '<button type="button" id="sefaz-trazer-notas-btn" class="btn" data-action="trazer-notas-sefaz" style="margin-top:12px; display:none;">Trazer notas completas pra revisão</button>';
+    html += '<p style="font-size:11px; color:var(--ink-soft); margin-top:6px;">Depois de trazer, se ainda tiver mais notas (maxNSU maior que o último NSU buscado), o campo "Último NSU" acima já vem atualizado — é só clicar em "Testar consulta" de novo pra buscar o próximo lote.</p>';
     html += '<pre id="sefaz-resultado" style="white-space:pre-wrap; word-break:break-word; font-size:11.5px; background:#FBF7EC; border:1px solid var(--paper-line); border-radius:4px; padding:10px; margin-top:12px; max-height:400px; overflow-y:auto; display:none;"></pre>';
     html += '</div>';
 
@@ -1904,11 +1908,53 @@
     })
       .then(function(r){ return r.json(); })
       .then(function(data){
+        sefazUltimaResposta = data;
         if(resultadoEl) resultadoEl.textContent = JSON.stringify(data, null, 2);
+        if(data.ultNSU && nsuInput) nsuInput.value = data.ultNSU.replace(/^0+(?=\d)/, '') || '0';
+        var completas = (data.documentos || []).filter(function(d){ return d.schema && d.schema.indexOf('procNFe') !== -1; });
+        var botaoEl = document.getElementById('sefaz-trazer-notas-btn');
+        if(botaoEl){
+          if(completas.length){
+            botaoEl.style.display = 'inline-block';
+            botaoEl.textContent = 'Trazer ' + completas.length + ' nota(s) completa(s) pra revisão';
+          } else {
+            botaoEl.style.display = 'none';
+          }
+        }
       })
       .catch(function(err){
         if(resultadoEl) resultadoEl.textContent = 'Erro ao chamar a function: ' + err;
       });
+  }
+
+  function trazerNotasSefaz(){
+    if(!sefazUltimaResposta || !sefazUltimaResposta.documentos) return;
+    var completas = sefazUltimaResposta.documentos.filter(function(d){ return d.schema && d.schema.indexOf('procNFe') !== -1; });
+    if(!completas.length){ alert('Nenhuma nota completa nesse lote — só resumos ou eventos.'); return; }
+
+    var novosItens = [];
+    var falhas = 0;
+    completas.forEach(function(doc){
+      var parsed = parseNFeXML(doc.xml);
+      if(!parsed){ falhas++; return; }
+      parsed.itens.forEach(function(item){
+        var match = state.produtos.find(function(p){ return p.nome.trim().toLowerCase() === item.xProd.trim().toLowerCase(); });
+        item.incluir = true;
+        item.produtoId = match ? match.id : '';
+        item.numeroNota = parsed.numero;
+        item.dataEmissaoNota = parsed.dataEmissao;
+        item.fornecedorNomeNota = parsed.fornecedorNome;
+        novosItens.push(item);
+      });
+    });
+
+    if(!novosItens.length){ alert('Não consegui extrair itens dessas notas.' + (falhas ? ' (' + falhas + ' com erro de leitura)' : '')); return; }
+
+    if(!nfeImportada) nfeImportada = { itens: [] };
+    nfeImportada.itens = nfeImportada.itens.concat(novosItens);
+    renderCompras();
+    var formCardEl = document.querySelector('#tab-compras .paper.form-card');
+    if(formCardEl) formCardEl.scrollIntoView({behavior: 'smooth', block: 'start'});
   }
 
   function renderCatModalList(){
@@ -3088,6 +3134,7 @@
     }
   }
   var nfeImportada = null;
+  var sefazUltimaResposta = null;
 
   function toISOImport(val){
     if(!val) return '';
@@ -3994,6 +4041,7 @@
     if(action === 'enviar-certificado'){ enviarCertificado(); return; }
     if(action === 'remover-certificado'){ removerCertificado(); return; }
     if(action === 'testar-sefaz'){ testarConsultaSefaz(); return; }
+    if(action === 'trazer-notas-sefaz'){ trazerNotasSefaz(); return; }
     if(action === 'ler-nfe'){
       var nfeInput = document.getElementById('nfe-file-input');
       var nfeFile = nfeInput && nfeInput.files && nfeInput.files[0];
@@ -4002,13 +4050,16 @@
       nfeReader.onload = function(e){
         var parsed = parseNFeXML(e.target.result);
         if(!parsed){ alert('Não foi possível ler esse arquivo. Confira se é mesmo o XML de uma NF-e (não o DANFE em PDF).'); return; }
-        parsed.itens = parsed.itens.map(function(item){
+        var itensProntos = parsed.itens.map(function(item){
           var match = state.produtos.find(function(p){ return p.nome.trim().toLowerCase() === item.xProd.trim().toLowerCase(); });
           item.incluir = true;
           item.produtoId = match ? match.id : '';
+          item.numeroNota = parsed.numero;
+          item.dataEmissaoNota = parsed.dataEmissao;
+          item.fornecedorNomeNota = parsed.fornecedorNome;
           return item;
         });
-        nfeImportada = parsed;
+        nfeImportada = { itens: itensProntos };
         renderCompras();
       };
       nfeReader.onerror = function(){ alert('Não foi possível ler esse arquivo.'); };
@@ -4020,24 +4071,31 @@
       if(!nfeImportada) return;
       var selecionados = nfeImportada.itens.filter(function(item){ return item.incluir; });
       if(!selecionados.length){ alert('Marque ao menos um item para importar.'); return; }
-      if(!window.confirm('Importar ' + selecionados.length + ' item(ns) da nota? Isso cria compras, soma no estoque e lança as despesas no Financeiro.')) return;
+      if(!window.confirm('Importar ' + selecionados.length + ' item(ns)? Isso cria compras, soma no estoque e lança as despesas no Financeiro.')) return;
 
       var contaSelInput = document.getElementById('nfe-import-conta');
       var contaEscolhida = contaSelInput ? contaSelInput.value : '';
+      var fornecedoresCache = {};
 
-      var fornecedorId = '';
-      if(nfeImportada.fornecedorNome){
-        var fornecedorExistente = state.parceiros.find(function(p){ return p.nome.trim().toLowerCase() === nfeImportada.fornecedorNome.trim().toLowerCase(); });
-        if(fornecedorExistente){
-          fornecedorId = fornecedorExistente.id;
+      function resolverFornecedor(nome){
+        if(!nome) return '';
+        var chave = nome.trim().toLowerCase();
+        if(fornecedoresCache[chave]) return fornecedoresCache[chave];
+        var existente = state.parceiros.find(function(p){ return p.nome.trim().toLowerCase() === chave; });
+        var id;
+        if(existente){
+          id = existente.id;
         } else {
-          var novoFornecedor = {id: uid(), nome: nfeImportada.fornecedorNome, tipo: 'Fornecedor', contato: '', criadoEm: Date.now()};
-          state.parceiros.push(novoFornecedor);
-          fornecedorId = novoFornecedor.id;
+          var novo = {id: uid(), nome: nome, tipo: 'Fornecedor', contato: '', criadoEm: Date.now()};
+          state.parceiros.push(novo);
+          id = novo.id;
         }
+        fornecedoresCache[chave] = id;
+        return id;
       }
 
       selecionados.forEach(function(item, idx){
+        var fornecedorId = resolverFornecedor(item.fornecedorNomeNota);
         var produtoId = item.produtoId;
         if(!produtoId){
           var novoProduto = {id: uid(), nome: item.xProd, categoria: '', unidade: item.uCom || '', estoqueAtual: 0, estoqueMinimo: 0, criadoEm: Date.now() + idx};
@@ -4046,8 +4104,8 @@
         }
         var compraFields = {
           id: uid(), produtoId: produtoId, fornecedorId: fornecedorId, quantidade: item.qCom, valorUnitario: item.vUnCom,
-          valorTotal: item.vProd, contaId: contaEscolhida, notaFiscal: nfeImportada.numero,
-          data: nfeImportada.dataEmissao, status: 'Recebido', observacao: 'Importado de NF-e', criadoEm: Date.now() + idx
+          valorTotal: item.vProd, contaId: contaEscolhida, notaFiscal: item.numeroNota,
+          data: item.dataEmissaoNota, status: 'Recebido', observacao: 'Importado de NF-e', criadoEm: Date.now() + idx
         };
         state.compras.push(compraFields);
         var prodIdx = state.produtos.findIndex(function(p){ return p.id === produtoId; });
@@ -4057,9 +4115,9 @@
           state.financeiro.push({
             id: uid(), contaId: contaEscolhida, tipo: contaTipo(contaEscolhida), categoria: contaNfe ? contaNfe.nome : '',
             valor: item.vProd, quantidade: 0, peso: 0, unidade: '', status: 'Pago',
-            data: nfeImportada.dataEmissao || new Date().toISOString().slice(0,10), vencimento: '',
+            data: item.dataEmissaoNota || new Date().toISOString().slice(0,10), vencimento: '',
             talhoesIds: [], talhaoId: '', parceiroId: fornecedorId, membroId: '',
-            descricao: 'Compra de ' + item.xProd + (nfeImportada.numero ? ' - NF ' + nfeImportada.numero : ''),
+            descricao: 'Compra de ' + item.xProd + (item.numeroNota ? ' - NF ' + item.numeroNota : ''),
             criadoEm: Date.now() + idx
           });
         }
