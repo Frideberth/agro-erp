@@ -31,7 +31,9 @@ const UF_CODIGO = {
 };
 
 const ENDPOINTS = {
-  homologacao: "hom.nfe.fazenda.gov.br",
+  // hom.nfe.fazenda.gov.br foi desativado em 23/05/2022 — o
+  // substituto (em uso desde então) é hom1.nfe.fazenda.gov.br
+  homologacao: "hom1.nfe.fazenda.gov.br",
   producao: "www1.nfe.fazenda.gov.br"
 };
 const PATH = "/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx";
