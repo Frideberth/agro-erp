@@ -396,7 +396,7 @@
 (function(){
   "use strict";
 
-  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras'];
+  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas'];
   var state = {};
   var editState = null; // {scope:'generic', entityKey, id} ou {scope:'talhoes'|'safras'|'operacoes'|'financeiro'|'producao', id}
   ALL_KEYS.forEach(function(k){ state[k] = []; });
@@ -1748,52 +1748,85 @@
     html += '<button type="button" class="btn" data-action="ler-nfe" style="align-self:end;">Ler nota</button>';
     html += '</div>';
     if(nfeImportada && nfeImportada.itens && nfeImportada.itens.length){
-      var notasUnicas = nfeImportada.itens.map(function(i){ return i.numeroNota; }).filter(function(v,i,a){ return a.indexOf(v)===i; });
+      var gruposMap = {};
+      var ordemChaves = [];
+      nfeImportada.itens.forEach(function(item, idx){
+        if(!item.destino) item.destino = 'compra';
+        var chaveGrupo = item.chaveNota || (item.numeroNota + '|' + item.fornecedorNomeNota);
+        if(!gruposMap[chaveGrupo]){
+          gruposMap[chaveGrupo] = {chave: item.chaveNota, numero: item.numeroNota, fornecedor: item.fornecedorNomeNota, data: item.dataEmissaoNota, indices: []};
+          ordemChaves.push(chaveGrupo);
+        }
+        gruposMap[chaveGrupo].indices.push(idx);
+      });
+
       html += '<div style="margin-top:16px; padding-top:14px; border-top:1px dashed var(--paper-line);">';
-      html += '<p style="font-size:13px; margin:0 0 10px;"><strong>' + nfeImportada.itens.length + ' item(ns)</strong> de <strong>' + notasUnicas.length + ' nota(s)</strong> prontos pra revisar.</p>';
+      html += '<p style="font-size:13px; margin:0 0 10px;"><strong>' + nfeImportada.itens.length + ' item(ns)</strong> de <strong>' + ordemChaves.length + ' nota(s)</strong> prontos pra revisar.</p>';
       if(state.contasFinanceiro.length){
-        html += selectField('nfe-import-conta', 'Conta (para todos os itens importados)', state.contasFinanceiro.map(function(c){ return {value:c.id, label: contaLabel(c.id)}; }));
+        html += selectField('nfe-import-conta', 'Conta (para itens marcados como Compra)', state.contasFinanceiro.map(function(c){ return {value:c.id, label: contaLabel(c.id)}; }));
       } else {
         html += '<p style="font-size:12px; color:var(--ink-soft);">Sem uma Conta financeira cadastrada, os itens vão entrar no estoque, mas não vão gerar despesa no Financeiro.</p>';
       }
-      html += '<p style="font-size:11px; color:var(--ink-soft); margin:0 0 10px;">Pra cada item, escolha o <strong>Destino</strong>: se for insumo comprado, vai virar um Produto/Compra normal; se for sua própria produção sendo depositada (ex: numa cooperativa), escolhe "Entrada de colheita" e a Safra correspondente.</p>';
-      html += '<div class="table-wrap"><table><thead><tr><th></th><th>Item da nota</th><th>Nota / Fornecedor</th><th>Qtd</th><th>Valor unit.</th><th>Destino</th><th>Produto / Safra</th></tr></thead><tbody>';
-      nfeImportada.itens.forEach(function(item, idx){
-        if(!item.destino) item.destino = 'compra';
-        html += '<tr>';
-        html += '<td><input type="checkbox" id="nfe-item-incluir-' + idx + '"' + (item.incluir ? ' checked' : '') + '></td>';
-        html += '<td>' + escapeHtml(item.xProd) + '</td>';
-        html += '<td style="font-size:11.5px; color:var(--ink-soft);">Nº ' + escapeHtml(item.numeroNota || '—') + '<br>' + escapeHtml(item.fornecedorNomeNota || '—') + '</td>';
-        html += '<td class="num">' + fmtNum(item.qCom) + (item.uCom ? ' ' + escapeHtml(item.uCom) : '') + '</td>';
-        html += '<td class="num">' + fmtBRL(item.vUnCom) + '</td>';
-        html += '<td><select id="nfe-item-destino-' + idx + '" style="padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12.5px;">';
-        html += '<option value="compra"' + (item.destino === 'compra' ? ' selected' : '') + '>Compra de insumo → Produtos</option>';
-        html += '<option value="colheita"' + (item.destino === 'colheita' ? ' selected' : '') + '>Entrada de colheita → Produção</option>';
-        html += '</select></td>';
-        html += '<td>';
-        html += '<span id="nfe-item-destino-produto-' + idx + '"' + (item.destino === 'colheita' ? ' style="display:none;"' : '') + '>';
-        html += '<select id="nfe-item-produto-' + idx + '" style="padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12.5px;">';
-        html += '<option value="">+ Criar novo produto "' + escapeHtml(item.xProd) + '"</option>';
-        state.produtos.forEach(function(p){
-          html += '<option value="' + p.id + '"' + (item.produtoId === p.id ? ' selected' : '') + '>' + escapeHtml(p.nome) + '</option>';
-        });
-        html += '</select></span>';
-        html += '<span id="nfe-item-destino-safra-' + idx + '"' + (item.destino === 'colheita' ? '' : ' style="display:none;"') + '>';
-        if(!state.safras.length){
-          html += '<span style="font-size:11px; color:var(--cost-dark);">Cadastre uma safra primeiro</span>';
-        } else {
-          html += '<select id="nfe-item-safra-' + idx + '" style="padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12.5px;">';
-          html += '<option value="">Escolha a safra…</option>';
-          state.safras.forEach(function(s){
-            html += '<option value="' + s.id + '"' + (item.safraId === s.id ? ' selected' : '') + '>' + escapeHtml(safraLabel(s.id)) + '</option>';
-          });
-          html += '</select>';
+      html += '<p style="font-size:11px; color:var(--ink-soft); margin:0 0 14px;">Pra cada item, escolha o <strong>Destino</strong>: se for insumo comprado, vai virar um Produto/Compra normal; se for sua própria produção sendo depositada (ex: numa cooperativa), escolhe "Entrada de colheita" e a Safra correspondente.</p>';
+
+      ordemChaves.forEach(function(chaveGrupo){
+        var grupo = gruposMap[chaveGrupo];
+        var infoImportada = grupo.chave ? state.notasFiscaisImportadas.find(function(n){ return n.chave === grupo.chave; }) : null;
+        html += '<details class="paper" style="margin-bottom:10px; padding:0;" open>';
+        html += '<summary style="cursor:pointer; padding:10px 14px; font-size:13px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">';
+        html += '<strong>Nota nº ' + escapeHtml(grupo.numero || '—') + '</strong>';
+        html += '<span>' + escapeHtml(grupo.fornecedor || '—') + '</span>';
+        html += '<span style="color:var(--ink-soft); font-size:11.5px;">' + (grupo.data ? fmtDate(grupo.data) : '') + '</span>';
+        html += '<span style="color:var(--ink-soft); font-size:11.5px;">(' + grupo.indices.length + ' item(ns))</span>';
+        if(infoImportada){
+          html += '<span class="badge" style="background:#A23E2E; color:#fff;">⚠️ Já importada em ' + fmtDate((infoImportada.dataImportacao||'').slice(0,10)) + '</span>';
         }
-        html += '</span>';
-        html += '</td>';
-        html += '</tr>';
+        html += '</summary>';
+        html += '<div style="padding:0 14px 14px;">';
+        if(infoImportada){
+          html += '<p style="font-size:11.5px; color:var(--cost-dark); margin:0 0 8px;">Essa nota já foi trazida pro sistema antes — os itens abaixo vêm <strong>desmarcados</strong> por padrão pra não duplicar. Só marque de propósito se quiser importar de novo (ex: corrigir algo).</p>';
+        }
+        html += '<p style="margin:0 0 8px;"><button type="button" data-action="marcar-todos-nota" data-chave="' + escapeHtml(chaveGrupo) + '" style="background:none; border:none; color:var(--accent-dark); text-decoration:underline; cursor:pointer; font-size:11.5px; padding:0;">Marcar todos</button> · <button type="button" data-action="desmarcar-todos-nota" data-chave="' + escapeHtml(chaveGrupo) + '" style="background:none; border:none; color:var(--accent-dark); text-decoration:underline; cursor:pointer; font-size:11.5px; padding:0;">Desmarcar todos</button></p>';
+        html += '<div class="table-wrap"><table><thead><tr><th></th><th>Item</th><th>Qtd</th><th>Valor unit.</th><th>Destino</th><th>Produto / Safra</th></tr></thead><tbody>';
+        grupo.indices.forEach(function(idx){
+          var item = nfeImportada.itens[idx];
+          html += '<tr>';
+          html += '<td><input type="checkbox" id="nfe-item-incluir-' + idx + '"' + (item.incluir ? ' checked' : '') + '></td>';
+          html += '<td>' + escapeHtml(item.xProd) + '</td>';
+          html += '<td class="num">' + fmtNum(item.qCom) + (item.uCom ? ' ' + escapeHtml(item.uCom) : '') + '</td>';
+          html += '<td class="num">' + fmtBRL(item.vUnCom) + '</td>';
+          html += '<td><select id="nfe-item-destino-' + idx + '" style="padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12.5px;">';
+          html += '<option value="compra"' + (item.destino === 'compra' ? ' selected' : '') + '>Compra de insumo → Produtos</option>';
+          html += '<option value="colheita"' + (item.destino === 'colheita' ? ' selected' : '') + '>Entrada de colheita → Produção</option>';
+          html += '</select></td>';
+          html += '<td>';
+          html += '<span id="nfe-item-destino-produto-' + idx + '"' + (item.destino === 'colheita' ? ' style="display:none;"' : '') + '>';
+          html += '<select id="nfe-item-produto-' + idx + '" style="padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12.5px;">';
+          html += '<option value="">+ Criar novo produto "' + escapeHtml(item.xProd) + '"</option>';
+          state.produtos.forEach(function(p){
+            html += '<option value="' + p.id + '"' + (item.produtoId === p.id ? ' selected' : '') + '>' + escapeHtml(p.nome) + '</option>';
+          });
+          html += '</select></span>';
+          html += '<span id="nfe-item-destino-safra-' + idx + '"' + (item.destino === 'colheita' ? '' : ' style="display:none;"') + '>';
+          if(!state.safras.length){
+            html += '<span style="font-size:11px; color:var(--cost-dark);">Cadastre uma safra primeiro</span>';
+          } else {
+            html += '<select id="nfe-item-safra-' + idx + '" style="padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12.5px;">';
+            html += '<option value="">Escolha a safra…</option>';
+            state.safras.forEach(function(s){
+              html += '<option value="' + s.id + '"' + (item.safraId === s.id ? ' selected' : '') + '>' + escapeHtml(safraLabel(s.id)) + '</option>';
+            });
+            html += '</select>';
+          }
+          html += '</span>';
+          html += '</td>';
+          html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+        html += '</div>';
+        html += '</details>';
       });
-      html += '</tbody></table></div>';
+
       html += '<p style="font-size:11px; color:var(--ink-soft); margin-top:8px;">Itens marcados como "Entrada de colheita" não geram despesa no Financeiro (não é uma compra) — só somam no estoque da safra escolhida.</p>';
       html += '<button type="button" class="btn" data-action="importar-itens-nfe" style="margin-top:12px;">Importar itens selecionados</button> ';
       html += '<button type="button" class="btn-cancel" data-action="cancelar-nfe" style="margin-top:12px;">Cancelar</button>';
@@ -1987,15 +2020,17 @@
     docsParaProcessar.forEach(function(doc){
       var parsed = parseNFeXML(doc.xml);
       if(!parsed){ falhas++; return; }
+      var jaImportada = parsed.chave && state.notasFiscaisImportadas.some(function(n){ return n.chave === parsed.chave; });
       parsed.itens.forEach(function(item){
         var match = state.produtos.find(function(p){ return p.nome.trim().toLowerCase() === item.xProd.trim().toLowerCase(); });
-        item.incluir = true;
+        item.incluir = !jaImportada;
         item.produtoId = match ? match.id : '';
         item.destino = 'compra';
         item.safraId = '';
         item.numeroNota = parsed.numero;
         item.dataEmissaoNota = parsed.dataEmissao;
         item.fornecedorNomeNota = parsed.fornecedorNome;
+        item.chaveNota = parsed.chave;
         novosItens.push(item);
       });
     });
@@ -3166,6 +3201,11 @@
       var dataEmissaoRaw = ideEl ? (tagText(ideEl, 'dhEmi') || tagText(ideEl, 'dEmi')) : '';
       var dataEmissao = dataEmissaoRaw ? dataEmissaoRaw.slice(0, 10) : '';
       var fornecedorNome = emitEl ? tagText(emitEl, 'xNome') : '';
+      var chave = tagText(xml, 'chNFe');
+      if(!chave){
+        var idAttr = infNFe.getAttribute ? (infNFe.getAttribute('Id') || '') : '';
+        chave = idAttr.replace(/^NFe/, '');
+      }
       var dets = infNFe.getElementsByTagName('det');
       var itens = [];
       for(var i = 0; i < dets.length; i++){
@@ -3180,7 +3220,7 @@
         });
       }
       if(!itens.length) return null;
-      return {numero: numero, dataEmissao: dataEmissao, fornecedorNome: fornecedorNome, itens: itens};
+      return {numero: numero, dataEmissao: dataEmissao, fornecedorNome: fornecedorNome, chave: chave, itens: itens};
     }catch(err){
       console.error('Erro ao ler XML da NF-e:', err);
       return null;
@@ -4115,6 +4155,18 @@
     if(action === 'remover-certificado'){ removerCertificado(); return; }
     if(action === 'testar-sefaz'){ testarConsultaSefaz(); return; }
     if(action === 'trazer-notas-sefaz'){ trazerNotasSefaz(); return; }
+    if(action === 'marcar-todos-nota' || action === 'desmarcar-todos-nota'){
+      var chaveAlvo = btn.dataset.chave;
+      var marcar = action === 'marcar-todos-nota';
+      if(nfeImportada){
+        nfeImportada.itens.forEach(function(item){
+          var chaveItem = item.chaveNota || (item.numeroNota + '|' + item.fornecedorNomeNota);
+          if(chaveItem === chaveAlvo) item.incluir = marcar;
+        });
+      }
+      renderCompras();
+      return;
+    }
     if(action === 'ler-nfe'){
       var nfeInput = document.getElementById('nfe-file-input');
       var nfeFile = nfeInput && nfeInput.files && nfeInput.files[0];
@@ -4123,15 +4175,17 @@
       nfeReader.onload = function(e){
         var parsed = parseNFeXML(e.target.result);
         if(!parsed){ alert('Não foi possível ler esse arquivo. Confira se é mesmo o XML de uma NF-e (não o DANFE em PDF).'); return; }
+        var jaImportada = parsed.chave && state.notasFiscaisImportadas.some(function(n){ return n.chave === parsed.chave; });
         var itensProntos = parsed.itens.map(function(item){
           var match = state.produtos.find(function(p){ return p.nome.trim().toLowerCase() === item.xProd.trim().toLowerCase(); });
-          item.incluir = true;
+          item.incluir = !jaImportada;
           item.produtoId = match ? match.id : '';
           item.destino = 'compra';
           item.safraId = '';
           item.numeroNota = parsed.numero;
           item.dataEmissaoNota = parsed.dataEmissao;
           item.fornecedorNomeNota = parsed.fornecedorNome;
+          item.chaveNota = parsed.chave;
           return item;
         });
         nfeImportada = { itens: itensProntos };
@@ -4218,6 +4272,17 @@
           mudouFinanceiro = true;
         }
       });
+
+      var chavesJaRegistradas = state.notasFiscaisImportadas.map(function(n){ return n.chave; });
+      selecionados.forEach(function(item){
+        if(!item.chaveNota || chavesJaRegistradas.indexOf(item.chaveNota) !== -1) return;
+        state.notasFiscaisImportadas.push({
+          chave: item.chaveNota, numero: item.numeroNota, fornecedorNome: item.fornecedorNomeNota,
+          dataEmissao: item.dataEmissaoNota, dataImportacao: new Date().toISOString()
+        });
+        chavesJaRegistradas.push(item.chaveNota);
+      });
+      saveKey('notasFiscaisImportadas', state.notasFiscaisImportadas);
 
       saveKey('produtos', state.produtos);
       saveKey('compras', state.compras);
