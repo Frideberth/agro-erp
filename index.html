@@ -1888,7 +1888,15 @@
       .catch(function(){ alert('Não foi possível remover agora.'); });
   }
 
+  var sefazProximoTesteLiberadoEm = 0;
+
   function testarConsultaSefaz(){
+    var agora = Date.now();
+    if(agora < sefazProximoTesteLiberadoEm){
+      var minutosFaltando = Math.ceil((sefazProximoTesteLiberadoEm - agora) / 60000);
+      alert('A SEFAZ pediu pra esperar antes de consultar de novo. Faltam aproximadamente ' + minutosFaltando + ' minuto(s).');
+      return;
+    }
     var ambienteInput = document.getElementById('f-sefaz-ambiente');
     var ufInput = document.getElementById('f-sefaz-uf');
     var docInput = document.getElementById('f-sefaz-documento');
@@ -1911,6 +1919,11 @@
         sefazUltimaResposta = data;
         if(resultadoEl) resultadoEl.textContent = JSON.stringify(data, null, 2);
         if(data.ultNSU && nsuInput) nsuInput.value = data.ultNSU.replace(/^0+(?=\d)/, '') || '0';
+        if(data.cStat === '656'){
+          sefazProximoTesteLiberadoEm = Date.now() + 60 * 60 * 1000;
+        } else {
+          sefazProximoTesteLiberadoEm = Date.now() + 2 * 60 * 1000;
+        }
         var completas = (data.documentos || []).filter(function(d){ return d.schema && d.schema.indexOf('procNFe') !== -1; });
         var botaoEl = document.getElementById('sefaz-trazer-notas-btn');
         if(botaoEl){
