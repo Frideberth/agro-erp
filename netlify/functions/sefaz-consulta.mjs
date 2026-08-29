@@ -1,13 +1,22 @@
 import https from "node:https";
 import zlib from "node:zlib";
+import forge from "node-forge";
 import { lerCertificadoDescriptografado } from "./certificado.mjs";
 
 // Function que consulta o webservice NFeDistribuicaoDFe da SEFAZ,
 // usando o certificado A1 guardado (via certificado.mjs).
 //
-// ATENÇÃO — primeira versão, não testada contra o servidor real:
-// o protocolo SOAP da SEFAZ é notoriamente sensível a detalhes (a
-// própria comunidade de desenvolvedores relata erros de "endpoint
+// Usa a biblioteca node-forge (implementação de PKCS12 em JavaScript
+// puro) pra abrir o certificado, em vez do suporte nativo do Node —
+// isso evita o erro "mac verify failure" que acontece com muitos
+// certificados brasileiros mais antigos, porque o OpenSSL 3.x (usado
+// pelo Node de fábrica) desativou por padrão os algoritmos de
+// criptografia que essas Autoridades Certificadoras costumavam usar.
+//
+// ATENÇÃO — ainda não testada contra o servidor real da SEFAZ (só o
+// carregamento do certificado foi validado de verdade): o protocolo
+// SOAP da SEFAZ é notoriamente sensível a detalhes (a própria
+// comunidade de desenvolvedores relata erros de "endpoint
 // não encontrado" mesmo com tudo aparentemente certo). Trate isso
 // como um ponto de partida pra debugar com o retorno real deles,
 // não como algo definitivo.
@@ -26,6 +35,27 @@ const ENDPOINTS = {
   producao: "www1.nfe.fazenda.gov.br"
 };
 const PATH = "/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx";
+
+function pfxParaPem(pfxBuffer, senha) {
+  const p12Asn1 = forge.asn1.fromDer(forge.util.createBuffer(pfxBuffer.toString("binary")));
+  const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, senha);
+
+  const certBags = p12.getBags({ bagType: forge.pki.oids.certBag });
+  const certBag = (certBags[forge.pki.oids.certBag] || [])[0];
+  if (!certBag || !certBag.cert) throw new Error("Não encontrei um certificado dentro do arquivo .pfx.");
+  const certPem = forge.pki.certificateToPem(certBag.cert);
+
+  let keyBags = p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag });
+  let keyBag = (keyBags[forge.pki.oids.pkcs8ShroudedKeyBag] || [])[0];
+  if (!keyBag) {
+    keyBags = p12.getBags({ bagType: forge.pki.oids.keyBag });
+    keyBag = (keyBags[forge.pki.oids.keyBag] || [])[0];
+  }
+  if (!keyBag || !keyBag.key) throw new Error("Não encontrei a chave privada dentro do arquivo .pfx.");
+  const keyPem = forge.pki.privateKeyToPem(keyBag.key);
+
+  return { certPem, keyPem };
+}
 
 function montarEnvelopeSoap({ tpAmb, cUFAutor, documento, ultNSU }) {
   const tagDoc = documento.length === 11 ? "CPF" : "CNPJ";
@@ -48,7 +78,7 @@ function montarEnvelopeSoap({ tpAmb, cUFAutor, documento, ultNSU }) {
 </soap12:Envelope>`;
 }
 
-function chamarSefaz({ host, pfx, passphrase, envelope }) {
+function chamarSefaz({ host, certPem, keyPem, envelope }) {
   return new Promise((resolve, reject) => {
     const dados = Buffer.from(envelope, "utf8");
     const req = https.request(
@@ -56,8 +86,8 @@ function chamarSefaz({ host, pfx, passphrase, envelope }) {
         host,
         path: PATH,
         method: "POST",
-        pfx,
-        passphrase,
+        cert: certPem,
+        key: keyPem,
         headers: {
           "Content-Type": "application/soap+xml; charset=utf-8",
           "Content-Length": dados.length
@@ -124,6 +154,16 @@ export default async (req) => {
       return new Response(JSON.stringify({ error: "Nenhum certificado configurado ainda. Suba o certificado primeiro." }), { status: 400, headers: { "content-type": "application/json", ...cors } });
     }
 
+    let certPem, keyPem;
+    try {
+      const pfxBuffer = Buffer.from(cert.certBase64, "base64");
+      const convertido = pfxParaPem(pfxBuffer, cert.senha);
+      certPem = convertido.certPem;
+      keyPem = convertido.keyPem;
+    } catch (err) {
+      return new Response(JSON.stringify({ error: "Não consegui abrir o certificado: " + String(err.message || err) + " — confira se a senha guardada está correta (remova e suba o certificado de novo, se precisar)." }), { status: 400, headers: { "content-type": "application/json", ...cors } });
+    }
+
     const tpAmb = ambiente === "producao" ? "1" : "2";
     const host = ambiente === "producao" ? ENDPOINTS.producao : ENDPOINTS.homologacao;
     const envelope = montarEnvelopeSoap({ tpAmb, cUFAutor: UF_CODIGO[uf], documento, ultNSU });
@@ -132,8 +172,8 @@ export default async (req) => {
     try {
       resposta = await chamarSefaz({
         host,
-        pfx: Buffer.from(cert.certBase64, "base64"),
-        passphrase: cert.senha,
+        certPem,
+        keyPem,
         envelope
       });
     } catch (err) {
