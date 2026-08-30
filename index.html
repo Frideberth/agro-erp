@@ -1289,6 +1289,7 @@
     return {total: total, itens: itens};
   }
   var KG_POR_SACA = 60;
+  var HA_POR_ALQUEIRE = 2.42;
   function converterKgSc(qtd, unidade){
     var u = String(unidade || '').trim().toLowerCase();
     if(u === 'kg'){ return {kg: qtd, sc: qtd / KG_POR_SACA}; }
@@ -2329,25 +2330,33 @@
     if(!safrasComColheita.length){
       html += '<div class="paper empty-state">Registre uma colheita pra ver a produtividade por talhão aqui.</div>';
     } else {
-      html += '<div class="paper table-wrap"><table><thead><tr><th>Talhão / Safra</th><th>Área (ha)</th><th>Total colhido</th><th>Produtiv. real (sc/ha)</th><th>Produtiv. esperada (sc/ha)</th><th>% do esperado</th></tr></thead><tbody>';
+      html += '<div class="paper table-wrap"><table><thead><tr><th>Talhão / Safra</th><th>Área (ha)</th><th>Área (alq)</th><th>Total colhido</th><th>Produtiv. real (sc/ha)</th><th>Produtiv. esperada (sc/ha)</th><th>% do esperado</th><th>Valor total</th><th>Umidade média</th></tr></thead><tbody>';
       safrasComColheita.forEach(function(s){
         var talhao = state.talhoes.find(function(t){ return t.id === s.talhaoId; });
         var area = talhao ? Number(talhao.area) || 0 : 0;
-        var totalColhido = state.producao.filter(function(p){ return p.safraId === s.id && p.tipo === 'entrada'; }).reduce(function(sum,p){ return sum + (Number(p.quantidade)||0); }, 0);
+        var areaAlqueires = area / HA_POR_ALQUEIRE;
+        var entradasSafra = state.producao.filter(function(p){ return p.safraId === s.id && p.tipo === 'entrada'; });
+        var totalColhido = entradasSafra.reduce(function(sum,p){ return sum + (Number(p.quantidade)||0); }, 0);
+        var valorTotal = entradasSafra.reduce(function(sum,p){ return sum + (Number(p.quantidade)||0) * (Number(p.precoUnitario)||0); }, 0);
+        var entradasComUmidade = entradasSafra.filter(function(p){ return Number(p.umidade) > 0; });
+        var umidadeMedia = entradasComUmidade.length ? entradasComUmidade.reduce(function(sum,p){ return sum + Number(p.umidade); }, 0) / entradasComUmidade.length : null;
         var produtividadeReal = area > 0 ? totalColhido / area : null;
         var esperada = Number(s.produtividadeEsperada) || 0;
         var pct = esperada > 0 && produtividadeReal !== null ? (produtividadeReal / esperada * 100) : null;
         html += '<tr>';
         html += '<td>' + escapeHtml(safraLabel(s.id)) + '</td>';
         html += '<td class="num">' + (area ? fmtHa(area) : '—') + '</td>';
+        html += '<td class="num">' + (area ? areaAlqueires.toLocaleString('pt-BR', {maximumFractionDigits:2}) + ' alq' : '—') + '</td>';
         html += '<td class="num">' + fmtNum(totalColhido) + '</td>';
         html += '<td class="num">' + (produtividadeReal !== null ? fmtNum(produtividadeReal) : '—') + '</td>';
         html += '<td class="num">' + (esperada ? fmtNum(esperada) : '—') + '</td>';
         html += '<td class="num">' + (pct !== null ? '<span class="badge" style="background:' + (pct >= 100 ? '#7FA36D' : (pct >= 80 ? '#DFA84E' : '#A23E2E')) + '; color:#fff;">' + pct.toFixed(0) + '%</span>' : '—') + '</td>';
+        html += '<td class="num growth">' + (valorTotal ? fmtBRL(valorTotal) : '—') + '</td>';
+        html += '<td class="num">' + (umidadeMedia !== null ? umidadeMedia.toLocaleString('pt-BR', {maximumFractionDigits:1}) + '%' : '—') + '</td>';
         html += '</tr>';
       });
       html += '</tbody></table></div>';
-      html += '<div class="paper note-box">"Produtividade esperada" é definida no cadastro da Safra. Sem ela, dá pra ver a produtividade real, mas não a comparação em %.</div>';
+      html += '<div class="paper note-box">"Produtividade esperada" é definida no cadastro da Safra. Sem ela, dá pra ver a produtividade real, mas não a comparação em %. "Valor total" soma quantidade × preço estimado de cada entrada de colheita. "Umidade média" considera só as entradas onde a umidade foi informada (1 alqueire = 2,42 ha).</div>';
     }
 
     html += '<div class="section-title">Movimentações</div>';
