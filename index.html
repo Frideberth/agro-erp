@@ -541,24 +541,26 @@
     servicosPrestados: {
       label: 'serviço',
       fields: [
+        {name:'direcao', type:'select', label:'Direção', options:[{value:'Contratado', label:'Contratado (eu pago)'}, {value:'Prestado', label:'Prestado (eu recebo)'}]},
         {name:'tipo', type:'select', label:'Tipo de serviço', options:[{value:'Colheita', label:'Colheita'}, {value:'Frete', label:'Frete'}, {value:'Plantio', label:'Plantio'}, {value:'Pulverização', label:'Pulverização'}, {value:'Diversos', label:'Diversos'}]},
-        {name:'prestadorId', type:'select', label:'Prestador', optionsFn: parceiroOptionsFn},
+        {name:'prestadorId', type:'select', label:'Prestador (se eu contratei) / Cliente (se eu prestei)', optionsFn: parceiroOptionsFn},
         {name:'talhaoId', type:'select', label:'Talhão (opcional)', optionsFn: talhaoOptionsFn},
         {name:'data', type:'date', label:'Data'},
         {name:'descricao', type:'text', label:'Descrição', placeholder:'Ex: Colheita da safra de soja'},
         {name:'quantidade', type:'number', label:'Quantidade (opcional)', extra:{step:'0.01', min:'0'}, placeholder:'0'},
         {name:'unidade', type:'text', label:'Unidade (opcional)', placeholder:'Ex: ha, sc, km'},
         {name:'valor', type:'number', label:'Valor (R$)', required:true, extra:{step:'0.01', min:'0'}, placeholder:'0,00'},
-        {name:'status', type:'select', label:'Status', options:[{value:'Pendente', label:'Pendente'}, {value:'Pago', label:'Pago'}]}
+        {name:'status', type:'select', label:'Status', options:[{value:'Pendente', label:'Pendente'}, {value:'Pago', label:'Pago / Recebido'}]}
       ],
       columns: [
         {key:'data', label:'Data', format:'date'},
+        {key:'direcao', label:'Direção', format:'badge', colors:{'Contratado':'#A23E2E', 'Prestado':'#7FA36D'}, compute: function(item){ return item.direcao || 'Contratado'; }},
         {key:'tipo', label:'Tipo', format:'badge', colors:{'Colheita':'#4F7942', 'Frete':'#A9B7C6', 'Plantio':'#7FA36D', 'Pulverização':'#C98A2B', 'Diversos':'#8B8368'}},
-        {key:'prestadorId', label:'Prestador', compute: function(item){ return item.prestadorId ? parceiroNome(item.prestadorId) : '—'; }},
+        {key:'prestadorId', label:'Prestador / Cliente', compute: function(item){ return item.prestadorId ? parceiroNome(item.prestadorId) : '—'; }},
         {key:'talhaoId', label:'Talhão', compute: function(item){ return item.talhaoId ? talhaoNome(item.talhaoId) : '—'; }},
         {key:'descricao', label:'Descrição'},
         {key:'valor', label:'Valor', format:'brl'},
-        {key:'status', label:'Status', format:'badge', colors:{'Pendente':'#DFA84E', 'Pago':'#7FA36D'}}
+        {key:'status', label:'Status', format:'badge', colors:{'Pendente':'#DFA84E', 'Pago':'#7FA36D', 'Recebido':'#7FA36D'}, compute: function(item){ if(item.status !== 'Pago') return item.status; return item.direcao === 'Prestado' ? 'Recebido' : 'Pago'; }}
       ]
     },
     vendasAntecipadas: {
@@ -1860,7 +1862,10 @@
     } else {
       html += '<button type="button" id="sefaz-trazer-notas-btn" class="btn" data-action="trazer-notas-sefaz" style="margin-top:12px; display:none;">Trazer notas completas pra revisão</button>';
     }
-    html += '<p style="font-size:11px; color:var(--ink-soft); margin-top:6px;">As notas completas encontradas ficam guardadas aqui mesmo que uma consulta seguinte dê erro (ex: bloqueio de "consumo indevido") — não somem. Se ainda tiver mais notas (maxNSU maior que o último NSU buscado), o campo "Último NSU" acima já vem atualizado — é só clicar em "Testar consulta" de novo pra buscar o próximo lote.</p>';
+    html += '<p style="font-size:11px; color:var(--ink-soft); margin-top:6px;">As notas completas encontradas ficam guardadas aqui mesmo que uma consulta seguinte dê erro (ex: bloqueio de "consumo indevido") — não somem. Notas que <strong>já foram trazidas pro sistema antes</strong> são ignoradas automaticamente nesta busca — não aparecem de novo. Se ainda tiver mais notas (maxNSU maior que o último NSU buscado), o campo "Último NSU" acima já vem atualizado — é só clicar em "Testar consulta" de novo pra buscar o próximo lote.</p>';
+    if(sefazIgnoradasNaUltimaConsulta > 0){
+      html += '<p style="font-size:11px; color:var(--ink-soft); margin-top:4px;">A última consulta encontrou ' + sefazIgnoradasNaUltimaConsulta + ' nota(s) que já tinham sido importadas antes — foram ignoradas automaticamente.</p>';
+    }
     html += '<pre id="sefaz-resultado" style="white-space:pre-wrap; word-break:break-word; font-size:11.5px; background:#FBF7EC; border:1px solid var(--paper-line); border-radius:4px; padding:10px; margin-top:12px; max-height:400px; overflow-y:auto;' + (sefazUltimaResposta ? '' : ' display:none;') + '">' + (sefazUltimaResposta ? escapeHtml(JSON.stringify(sefazUltimaResposta, null, 2)) : '') + '</pre>';
     html += '</div>';
 
@@ -1981,12 +1986,19 @@
       .then(function(r){ return r.json(); })
       .then(function(data){
         sefazUltimaResposta = data;
+        sefazIgnoradasNaUltimaConsulta = 0;
         if(data.documentos && data.documentos.length){
           var nsusJaTemos = sefazDocumentosAcumulados.map(function(d){ return d.nsu; });
+          var chavesJaImportadas = state.notasFiscaisImportadas.map(function(n){ return n.chave; });
           data.documentos.forEach(function(doc){
-            if(doc.schema && doc.schema.indexOf('procNFe') !== -1 && nsusJaTemos.indexOf(doc.nsu) === -1){
-              sefazDocumentosAcumulados.push(doc);
+            if(!doc.schema || doc.schema.indexOf('procNFe') === -1) return;
+            if(nsusJaTemos.indexOf(doc.nsu) !== -1) return;
+            var parsedRapido = parseNFeXML(doc.xml);
+            if(parsedRapido && parsedRapido.chave && chavesJaImportadas.indexOf(parsedRapido.chave) !== -1){
+              sefazIgnoradasNaUltimaConsulta++;
+              return;
             }
+            sefazDocumentosAcumulados.push(doc);
           });
         }
         if(data.cStat === '656'){
@@ -2210,6 +2222,8 @@
   }
 
   /* ---------------- Safras ---------------- */
+  var safrasAnoFiltro = '';
+
   function renderSafras(){
     var el = document.getElementById('tab-safras');
     var editingRecord = (editState && editState.scope === 'safras') ? state.safras.find(function(x){ return x.id === editState.id; }) : null;
@@ -2224,7 +2238,7 @@
       html += selectField('talhaoId', 'Talhão', state.talhoes.map(function(t){ return {value:t.id, label:t.nome}; }), editingRecord ? editingRecord.talhaoId : undefined);
       html += selectField('culturaId', 'Cultura', state.culturas.map(function(c){ return {value:c.id, label:c.nome}; }), editingRecord ? editingRecord.culturaId : undefined);
       html += field('date', 'dataPlantio', 'Data de plantio', false, '', {}, editingRecord ? editingRecord.dataPlantio : undefined);
-      html += field('text', 'anoAgricola', 'Ano agrícola', false, 'Ex: 2026/2027', {}, editingRecord ? editingRecord.anoAgricola : undefined);
+      html += field('text', 'anoAgricola', 'Ano agrícola', false, 'Ex: 2026/2027', {}, editingRecord ? editingRecord.anoAgricola : (safrasAnoFiltro || undefined));
       html += selectField('status', 'Status', [{value:'planejada', label:'Planejada'}, {value:'andamento', label:'Em andamento'}, {value:'colhida', label:'Colhida'}], editingRecord ? editingRecord.status : undefined);
       html += field('number', 'produtividadeEsperada', 'Produtividade esperada (sc/ha, opcional)', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.produtividadeEsperada : undefined);
       html += field('date', 'previsaoColheita', 'Previsão de colheita (opcional)', false, '', {}, editingRecord ? editingRecord.previsaoColheita : undefined);
@@ -2238,9 +2252,24 @@
     if(!state.safras.length){
       html += '<div class="empty-state">Nenhuma safra lançada ainda.</div>';
     } else {
-      html += '<div style="padding:14px 18px 0;"><input type="text" id="search-safras" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+      var anosDisponiveis = state.safras.map(function(s){ return s.anoAgricola; }).filter(function(v){ return v; }).filter(function(v,i,a){ return a.indexOf(v)===i; }).sort().reverse();
+      html += '<div style="padding:14px 18px 0; display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">';
+      if(anosDisponiveis.length){
+        html += '<div class="field" style="margin:0; max-width:220px;"><label>Ano agrícola</label><select id="filtro-ano-agricola" style="padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px; width:100%;">';
+        html += '<option value=""' + (safrasAnoFiltro === '' ? ' selected' : '') + '>Todos os anos</option>';
+        anosDisponiveis.forEach(function(ano){
+          html += '<option value="' + escapeHtml(ano) + '"' + (safrasAnoFiltro === ano ? ' selected' : '') + '>' + escapeHtml(ano) + '</option>';
+        });
+        html += '</select></div>';
+      }
+      html += '<input type="text" id="search-safras" placeholder="Buscar..." style="flex:1; min-width:180px; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">';
+      html += '</div>';
+      var safrasFiltradas = state.safras.filter(function(s){ return !safrasAnoFiltro || s.anoAgricola === safrasAnoFiltro; });
+      if(!safrasFiltradas.length){
+        html += '<div class="empty-state">Nenhuma safra no ano agrícola "' + escapeHtml(safrasAnoFiltro) + '".</div>';
+      } else {
       html += '<div class="table-wrap"><table><thead><tr><th>Talhão</th><th>Cultura</th><th>Plantio</th><th>Ano agrícola</th><th>Produtiv. esperada</th><th>Previsão colheita</th><th>Status</th><th></th></tr></thead><tbody>';
-      state.safras.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(s){
+      safrasFiltradas.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(s){
         html += '<tr>';
         html += '<td>' + escapeHtml(talhaoNome(s.talhaoId)) + '</td>';
         html += '<td>' + escapeHtml(culturaNome(s.culturaId)) + '</td>';
@@ -2253,6 +2282,7 @@
         html += '</tr>';
       });
       html += '</tbody></table></div>';
+      }
     }
     html += '</div>';
     el.innerHTML = html;
@@ -2679,17 +2709,23 @@
 
   function renderServicosPrestados(){
     var el = document.getElementById('tab-servicosPrestados');
-    var totalPago = state.servicosPrestados.filter(function(s){ return s.status === 'Pago'; }).reduce(function(s,x){ return s + (Number(x.valor)||0); }, 0);
-    var totalPendente = state.servicosPrestados.filter(function(s){ return s.status === 'Pendente'; }).reduce(function(s,x){ return s + (Number(x.valor)||0); }, 0);
+    var contratados = state.servicosPrestados.filter(function(s){ return (s.direcao || 'Contratado') === 'Contratado'; });
+    var prestados = state.servicosPrestados.filter(function(s){ return s.direcao === 'Prestado'; });
+    var totalPago = contratados.filter(function(s){ return s.status === 'Pago'; }).reduce(function(s,x){ return s + (Number(x.valor)||0); }, 0);
+    var totalPendentePagar = contratados.filter(function(s){ return s.status === 'Pendente'; }).reduce(function(s,x){ return s + (Number(x.valor)||0); }, 0);
+    var totalRecebido = prestados.filter(function(s){ return s.status === 'Pago'; }).reduce(function(s,x){ return s + (Number(x.valor)||0); }, 0);
+    var totalPendenteReceber = prestados.filter(function(s){ return s.status === 'Pendente'; }).reduce(function(s,x){ return s + (Number(x.valor)||0); }, 0);
 
     var html = '<div class="stat-row">';
     html += statCard('Serviços registrados', state.servicosPrestados.length);
-    html += statCard('Total pago', fmtBRL(totalPago), 'growth');
-    html += statCard('Total pendente', fmtBRL(totalPendente), 'cost');
+    html += statCard('Pago (contratados)', fmtBRL(totalPago), 'cost');
+    html += statCard('A pagar (contratados)', fmtBRL(totalPendentePagar), 'cost');
+    html += statCard('Recebido (prestados)', fmtBRL(totalRecebido), 'growth');
+    html += statCard('A receber (prestados)', fmtBRL(totalPendenteReceber), 'growth');
     html += '</div>';
     html += buildGenericFormHtml('servicosPrestados');
     html += buildGenericTableHtml('servicosPrestados');
-    html += '<div class="paper note-box">Este módulo controla os serviços contratados de terceiros. Para lançar o pagamento no financeiro, use a aba Lançamentos com a conta correspondente (ex: "Colheita" ou "Frete", em Despesas com Serviços).</div>';
+    html += '<div class="paper note-box">Use "Contratado" quando você paga um terceiro pra prestar o serviço pra você (ex: colheita ou frete que você contrata); use "Prestado" quando é você quem presta o serviço e recebe por isso (ex: você faz colheita pra outro produtor). Pra lançar o pagamento/recebimento no financeiro, use a aba Lançamentos com a conta correspondente.</div>';
     el.innerHTML = html;
   }
 
@@ -3238,6 +3274,7 @@
   var nfeImportada = null;
   var sefazUltimaResposta = null;
   var sefazDocumentosAcumulados = []; // notas completas (procNFe) já encontradas, mantidas mesmo se uma consulta seguinte falhar
+  var sefazIgnoradasNaUltimaConsulta = 0; // quantas notas a última consulta encontrou mas já eram conhecidas (não duplicadas)
 
   function toISOImport(val){
     if(!val) return '';
@@ -3599,6 +3636,11 @@
     if(e.target && e.target.id === 'f-orc-ano-view'){
       orcamentoAnoSelecionado = parseInt(e.target.value, 10) || new Date().getFullYear();
       renderOrcamento();
+      return;
+    }
+    if(e.target && e.target.id === 'filtro-ano-agricola'){
+      safrasAnoFiltro = e.target.value;
+      renderSafras();
       return;
     }
     if(e.target && e.target.id === 'f-contaId'){
