@@ -345,6 +345,7 @@
       <button class="nav-btn" data-tab="orcamento">Orçado x Realizado</button>
       <button class="nav-btn" data-tab="relatorios">Relatórios</button>
       <button class="nav-btn" data-tab="indicadores">Indicadores</button>
+      <button class="nav-btn" data-tab="agro50">AGRO5.0</button>
     </nav>
     <div class="sidebar-footer">
       Dados compartilhados com quem acessa este app.<br>
@@ -387,6 +388,7 @@
     <section id="tab-orcamento" class="tab-content hidden"></section>
     <section id="tab-relatorios" class="tab-content hidden"></section>
     <section id="tab-indicadores" class="tab-content hidden"></section>
+    <section id="tab-agro50" class="tab-content hidden"></section>
   </main>
 </div>
 
@@ -396,7 +398,7 @@
 (function(){
   "use strict";
 
-  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas'];
+  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas'];
   var state = {};
   var editState = null; // {scope:'generic', entityKey, id} ou {scope:'talhoes'|'safras'|'operacoes'|'financeiro'|'producao', id}
   ALL_KEYS.forEach(function(k){ state[k] = []; });
@@ -426,7 +428,8 @@
     contaCorrente: {title:'Conta-Corrente', subtitle:'Extrato de pagamentos e recebimentos por parceiro'},
     orcamento: {title:'Orçado x Realizado', subtitle:'Compare o planejado com o que realmente foi gasto/recebido, por conta e por ano'},
     relatorios: {title:'Relatórios', subtitle:'Resultado de receitas e despesas por subgrupo e conta'},
-    indicadores: {title:'Indicadores', subtitle:'Gráficos, dashboards e exportação para Excel e PDF'}
+    indicadores: {title:'Indicadores', subtitle:'Gráficos, dashboards e exportação para Excel e PDF'},
+    agro50: {title:'AGRO5.0', subtitle:'Espaço para incorporar novas tecnologias e indicadores ao sistema, conforme sua realidade'}
   };
 
   var STATUS_LABEL = {andamento:'Em andamento', planejada:'Planejada', colhida:'Colhida'};
@@ -475,6 +478,7 @@
   }
 
   function talhaoOptionsFn(){ return [{value:'', label:'—'}].concat(state.talhoes.map(function(t){ return {value:t.id, label:t.nome}; })); }
+  function propriedadeOptionsFn(){ return state.propriedades.map(function(p){ return {value:p.id, label:p.nome}; }); }
   function parceiroOptionsFn(){ return [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })); }
   function safraOptionsFn(){ return state.safras.map(function(s){ return {value:s.id, label:safraLabel(s.id)}; }); }
 
@@ -550,7 +554,8 @@
         {name:'quantidade', type:'number', label:'Quantidade (opcional)', extra:{step:'0.01', min:'0'}, placeholder:'0'},
         {name:'unidade', type:'text', label:'Unidade (opcional)', placeholder:'Ex: ha, sc, km'},
         {name:'valor', type:'number', label:'Valor (R$)', required:true, extra:{step:'0.01', min:'0'}, placeholder:'0,00'},
-        {name:'status', type:'select', label:'Status', options:[{value:'Pendente', label:'Pendente'}, {value:'Pago', label:'Pago / Recebido'}]}
+        {name:'status', type:'select', label:'Status', options:[{value:'Pendente', label:'Pendente'}, {value:'Pago', label:'Pago / Recebido'}]},
+        {name:'contaId', type:'select', label:'Conta (para lançar automaticamente no Financeiro)', optionsFn: function(){ return [{value:'', label:'— Não lançar no Financeiro —'}].concat(state.contasFinanceiro.map(function(c){ return {value:c.id, label: contaLabel(c.id)}; })); }}
       ],
       columns: [
         {key:'data', label:'Data', format:'date'},
@@ -561,6 +566,21 @@
         {key:'descricao', label:'Descrição'},
         {key:'valor', label:'Valor', format:'brl'},
         {key:'status', label:'Status', format:'badge', colors:{'Pendente':'#DFA84E', 'Pago':'#7FA36D', 'Recebido':'#7FA36D'}, compute: function(item){ if(item.status !== 'Pago') return item.status; return item.direcao === 'Prestado' ? 'Recebido' : 'Pago'; }}
+      ]
+    },
+    chuvas: {
+      label: 'registro de chuva',
+      fields: [
+        {name:'propriedadeId', type:'select', label:'Propriedade', optionsFn: propriedadeOptionsFn},
+        {name:'data', type:'date', label:'Data'},
+        {name:'mm', type:'number', label:'Chuva (mm)', required:true, extra:{step:'0.1', min:'0'}, placeholder:'0'},
+        {name:'observacao', type:'text', label:'Observação (opcional)', placeholder:''}
+      ],
+      columns: [
+        {key:'data', label:'Data', format:'date'},
+        {key:'propriedadeId', label:'Propriedade', compute: function(item){ return item.propriedadeId ? propriedadeNome(item.propriedadeId) : '—'; }},
+        {key:'mm', label:'Chuva (mm)', compute: function(item){ return fmtNum(item.mm) + ' mm'; }},
+        {key:'observacao', label:'Observação'}
       ]
     },
     vendasAntecipadas: {
@@ -1418,6 +1438,7 @@
     safeRender('arrendamentos', renderArrendamentos);
     safeRender('financiamentos', renderFinanciamentos);
     safeRender('servicosPrestados', renderServicosPrestados);
+    safeRender('agro50', renderAgro50);
     safeRender('rentabilidade', renderRentabilidade);
     safeRender('fluxoCaixa', renderFluxoCaixa);
     safeRender('contaCorrente', renderContaCorrente);
@@ -1757,47 +1778,62 @@
         if(!item.destino) item.destino = 'compra';
         var chaveGrupo = item.chaveNota || (item.numeroNota + '|' + item.fornecedorNomeNota);
         if(!gruposMap[chaveGrupo]){
-          gruposMap[chaveGrupo] = {chave: item.chaveNota, numero: item.numeroNota, fornecedor: item.fornecedorNomeNota, data: item.dataEmissaoNota, indices: []};
+          gruposMap[chaveGrupo] = {chave: item.chaveNota, numero: item.numeroNota, fornecedor: item.fornecedorNomeNota, data: item.dataEmissaoNota, natureza: item.naturezaNota, indices: []};
           ordemChaves.push(chaveGrupo);
         }
         gruposMap[chaveGrupo].indices.push(idx);
       });
+      ordemChaves.sort(function(a,b){ return (gruposMap[b].data || '').localeCompare(gruposMap[a].data || ''); }); // mais recentes primeiro
+
+      if(!notaEmDetalheChave || !gruposMap[notaEmDetalheChave]) notaEmDetalheChave = ordemChaves[0];
 
       html += '<div style="margin-top:16px; padding-top:14px; border-top:1px dashed var(--paper-line);">';
-      html += '<p style="font-size:13px; margin:0 0 10px;"><strong>' + nfeImportada.itens.length + ' item(ns)</strong> de <strong>' + ordemChaves.length + ' nota(s)</strong> prontos pra revisar.</p>';
+      html += '<p style="font-size:13px; margin:0 0 10px;"><strong>' + nfeImportada.itens.length + ' item(ns)</strong> de <strong>' + ordemChaves.length + ' nota(s)</strong> prontos pra revisar — clique numa nota da lista pra ver os itens dela.</p>';
       if(state.contasFinanceiro.length){
         html += selectField('nfe-import-conta', 'Conta (para itens marcados como Compra)', state.contasFinanceiro.map(function(c){ return {value:c.id, label: contaLabel(c.id)}; }));
       } else {
         html += '<p style="font-size:12px; color:var(--ink-soft);">Sem uma Conta financeira cadastrada, os itens vão entrar no estoque, mas não vão gerar despesa no Financeiro.</p>';
       }
-      html += '<p style="font-size:11px; color:var(--ink-soft); margin:0 0 14px;">Pra cada item, escolha o <strong>Destino</strong>: se for insumo comprado, vai virar um Produto/Compra normal; se for sua própria produção sendo depositada (ex: numa cooperativa), escolhe "Entrada de colheita" e a Safra correspondente.</p>';
 
+      html += '<div class="table-wrap" style="margin-top:10px;"><table><thead><tr><th></th><th>Fornecedor</th><th>Natureza</th><th>Emissão</th><th>Nº doc</th><th>Valor total</th><th>Itens</th><th></th></tr></thead><tbody>';
       ordemChaves.forEach(function(chaveGrupo){
         var grupo = gruposMap[chaveGrupo];
         var infoImportada = grupo.chave ? state.notasFiscaisImportadas.find(function(n){ return n.chave === grupo.chave; }) : null;
-        html += '<details class="paper" style="margin-bottom:10px; padding:0;" open>';
-        html += '<summary style="cursor:pointer; padding:10px 14px; font-size:13px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">';
-        html += '<strong>Nota nº ' + escapeHtml(grupo.numero || '—') + '</strong>';
-        html += '<span>' + escapeHtml(grupo.fornecedor || '—') + '</span>';
-        html += '<span style="color:var(--ink-soft); font-size:11.5px;">' + (grupo.data ? fmtDate(grupo.data) : '') + '</span>';
-        html += '<span style="color:var(--ink-soft); font-size:11.5px;">(' + grupo.indices.length + ' item(ns))</span>';
-        if(infoImportada){
-          html += '<span class="badge" style="background:#A23E2E; color:#fff;">⚠️ Já importada em ' + fmtDate((infoImportada.dataImportacao||'').slice(0,10)) + '</span>';
+        var valorTotalNota = grupo.indices.reduce(function(s,idx){ return s + (Number(nfeImportada.itens[idx].vProd)||0); }, 0);
+        var qtdMarcados = grupo.indices.filter(function(idx){ return nfeImportada.itens[idx].incluir; }).length;
+        var selecionada = chaveGrupo === notaEmDetalheChave;
+        html += '<tr class="linha-nota-clicavel" data-action="ver-nota-detalhe" data-chave="' + escapeHtml(chaveGrupo) + '" style="cursor:pointer;' + (selecionada ? ' background:#EFE6C8;' : '') + '">';
+        html += '<td>' + (qtdMarcados === grupo.indices.length ? '✅' : (qtdMarcados === 0 ? '⬜' : '🟡')) + '</td>';
+        html += '<td>' + escapeHtml(grupo.fornecedor || '—') + '</td>';
+        html += '<td style="font-size:11.5px;">' + escapeHtml(grupo.natureza || '—') + '</td>';
+        html += '<td>' + (grupo.data ? fmtDate(grupo.data) : '—') + '</td>';
+        html += '<td>' + escapeHtml(grupo.numero || '—') + '</td>';
+        html += '<td class="num">' + fmtBRL(valorTotalNota) + '</td>';
+        html += '<td class="num">' + grupo.indices.length + '</td>';
+        html += '<td>' + (infoImportada ? '<span class="badge" style="background:#A23E2E; color:#fff;">⚠️ Já importada</span>' : '') + '</td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+
+      var grupoDetalhe = gruposMap[notaEmDetalheChave];
+      if(grupoDetalhe){
+        var infoImportadaDetalhe = grupoDetalhe.chave ? state.notasFiscaisImportadas.find(function(n){ return n.chave === grupoDetalhe.chave; }) : null;
+        html += '<div class="paper" style="margin-top:14px; padding:14px;">';
+        html += '<p style="font-size:13px; margin:0 0 8px;"><strong>Itens da nota nº ' + escapeHtml(grupoDetalhe.numero || '—') + '</strong> — ' + escapeHtml(grupoDetalhe.fornecedor || '—') + (grupoDetalhe.data ? ' — ' + fmtDate(grupoDetalhe.data) : '') + '</p>';
+        if(infoImportadaDetalhe){
+          html += '<p style="font-size:11.5px; color:var(--cost-dark); margin:0 0 8px;">Essa nota já foi trazida pro sistema antes (em ' + fmtDate((infoImportadaDetalhe.dataImportacao||'').slice(0,10)) + ') — os itens abaixo vêm <strong>desmarcados</strong> por padrão pra não duplicar. Só marque de propósito se quiser importar de novo.</p>';
         }
-        html += '</summary>';
-        html += '<div style="padding:0 14px 14px;">';
-        if(infoImportada){
-          html += '<p style="font-size:11.5px; color:var(--cost-dark); margin:0 0 8px;">Essa nota já foi trazida pro sistema antes — os itens abaixo vêm <strong>desmarcados</strong> por padrão pra não duplicar. Só marque de propósito se quiser importar de novo (ex: corrigir algo).</p>';
-        }
-        html += '<p style="margin:0 0 8px;"><button type="button" data-action="marcar-todos-nota" data-chave="' + escapeHtml(chaveGrupo) + '" style="background:none; border:none; color:var(--accent-dark); text-decoration:underline; cursor:pointer; font-size:11.5px; padding:0;">Marcar todos</button> · <button type="button" data-action="desmarcar-todos-nota" data-chave="' + escapeHtml(chaveGrupo) + '" style="background:none; border:none; color:var(--accent-dark); text-decoration:underline; cursor:pointer; font-size:11.5px; padding:0;">Desmarcar todos</button></p>';
-        html += '<div class="table-wrap"><table><thead><tr><th></th><th>Item</th><th>Qtd</th><th>Valor unit.</th><th>Destino</th><th>Produto / Safra</th></tr></thead><tbody>';
-        grupo.indices.forEach(function(idx){
+        html += '<p style="margin:0 0 8px;"><button type="button" data-action="marcar-todos-nota" data-chave="' + escapeHtml(notaEmDetalheChave) + '" style="background:none; border:none; color:var(--accent-dark); text-decoration:underline; cursor:pointer; font-size:11.5px; padding:0;">Marcar todos</button> · <button type="button" data-action="desmarcar-todos-nota" data-chave="' + escapeHtml(notaEmDetalheChave) + '" style="background:none; border:none; color:var(--accent-dark); text-decoration:underline; cursor:pointer; font-size:11.5px; padding:0;">Desmarcar todos</button></p>';
+        html += '<div class="table-wrap"><table><thead><tr><th></th><th>Produto</th><th>CFOP</th><th>Qtd</th><th>Valor unit.</th><th>Valor total</th><th>Destino</th><th>Produto / Safra</th></tr></thead><tbody>';
+        grupoDetalhe.indices.forEach(function(idx){
           var item = nfeImportada.itens[idx];
           html += '<tr>';
           html += '<td><input type="checkbox" id="nfe-item-incluir-' + idx + '"' + (item.incluir ? ' checked' : '') + '></td>';
           html += '<td>' + escapeHtml(item.xProd) + '</td>';
+          html += '<td style="font-size:11.5px;">' + escapeHtml(item.cfop || '—') + '</td>';
           html += '<td class="num">' + fmtNum(item.qCom) + (item.uCom ? ' ' + escapeHtml(item.uCom) : '') + '</td>';
           html += '<td class="num">' + fmtBRL(item.vUnCom) + '</td>';
+          html += '<td class="num">' + fmtBRL(item.vProd) + '</td>';
           html += '<td><select id="nfe-item-destino-' + idx + '" style="padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12.5px;">';
           html += '<option value="compra"' + (item.destino === 'compra' ? ' selected' : '') + '>Compra de insumo → Produtos</option>';
           html += '<option value="colheita"' + (item.destino === 'colheita' ? ' selected' : '') + '>Entrada de colheita → Produção</option>';
@@ -1827,10 +1863,9 @@
         });
         html += '</tbody></table></div>';
         html += '</div>';
-        html += '</details>';
-      });
+      }
 
-      html += '<p style="font-size:11px; color:var(--ink-soft); margin-top:8px;">Itens marcados como "Entrada de colheita" não geram despesa no Financeiro (não é uma compra) — só somam no estoque da safra escolhida.</p>';
+      html += '<p style="font-size:11px; color:var(--ink-soft); margin-top:8px;">Itens marcados como "Entrada de colheita" não geram despesa no Financeiro (não é uma compra) — só somam no estoque da safra escolhida. O botão "Importar" abaixo processa todos os itens marcados em todas as notas, não só a que está aberta agora.</p>';
       html += '<button type="button" class="btn" data-action="importar-itens-nfe" style="margin-top:12px;">Importar itens selecionados</button> ';
       html += '<button type="button" class="btn-cancel" data-action="cancelar-nfe" style="margin-top:12px;">Cancelar</button>';
       html += '</div>';
@@ -2044,6 +2079,7 @@
         item.dataEmissaoNota = parsed.dataEmissao;
         item.fornecedorNomeNota = parsed.fornecedorNome;
         item.chaveNota = parsed.chave;
+        item.naturezaNota = parsed.natureza;
         novosItens.push(item);
       });
     });
@@ -2715,9 +2751,11 @@
     var totalPendentePagar = contratados.filter(function(s){ return s.status === 'Pendente'; }).reduce(function(s,x){ return s + (Number(x.valor)||0); }, 0);
     var totalRecebido = prestados.filter(function(s){ return s.status === 'Pago'; }).reduce(function(s,x){ return s + (Number(x.valor)||0); }, 0);
     var totalPendenteReceber = prestados.filter(function(s){ return s.status === 'Pendente'; }).reduce(function(s,x){ return s + (Number(x.valor)||0); }, 0);
+    var valorTotalGeral = state.servicosPrestados.reduce(function(s,x){ return s + (Number(x.valor)||0); }, 0);
 
     var html = '<div class="stat-row">';
     html += statCard('Serviços registrados', state.servicosPrestados.length);
+    html += statCard('Valor total (todos)', fmtBRL(valorTotalGeral));
     html += statCard('Pago (contratados)', fmtBRL(totalPago), 'cost');
     html += statCard('A pagar (contratados)', fmtBRL(totalPendentePagar), 'cost');
     html += statCard('Recebido (prestados)', fmtBRL(totalRecebido), 'growth');
@@ -2725,7 +2763,169 @@
     html += '</div>';
     html += buildGenericFormHtml('servicosPrestados');
     html += buildGenericTableHtml('servicosPrestados');
-    html += '<div class="paper note-box">Use "Contratado" quando você paga um terceiro pra prestar o serviço pra você (ex: colheita ou frete que você contrata); use "Prestado" quando é você quem presta o serviço e recebe por isso (ex: você faz colheita pra outro produtor). Pra lançar o pagamento/recebimento no financeiro, use a aba Lançamentos com a conta correspondente.</div>';
+    html += '<div class="paper note-box">Use "Contratado" quando você paga um terceiro pra prestar o serviço pra você (ex: colheita ou frete que você contrata); use "Prestado" quando é você quem presta o serviço e recebe por isso (ex: você faz colheita pra outro produtor). Escolhendo uma "Conta" e status "Pago/Recebido" logo na criação, o lançamento (despesa se Contratado, receita se Prestado) é criado automaticamente no Financeiro. Isso só acontece ao criar o registro — editar um serviço depois não ajusta o lançamento já criado, corrija manualmente na aba Lançamentos se precisar.</div>';
+    el.innerHTML = html;
+  }
+
+  /* ---------------- AGRO5.0 — espaço para novos indicadores/tecnologias ---------------- */
+  function renderAgro50(){
+    var el = document.getElementById('tab-agro50');
+    var html = '<div class="paper note-box">Esse espaço é pra ir incorporando, aos poucos, tecnologias e indicadores novos ao sistema — sempre focado no que faz sentido pra sua realidade, sem depender de comprar hardware. Primeiro tópico: <strong>Pluviometria</strong>. Próximos que podemos trabalhar juntos: rastreabilidade da cadeia produtiva e alertas/indicadores preditivos em cima dos dados que você já registra.</div>';
+
+    html += '<div class="section-title" style="margin-top:0;">Pluviometria</div>';
+
+    var hoje = new Date();
+    var mesAtual = hoje.toISOString().slice(0,7);
+    var anoAtual = String(hoje.getFullYear());
+    var totalMes = state.chuvas.filter(function(c){ return (c.data||'').slice(0,7) === mesAtual; }).reduce(function(s,c){ return s + (Number(c.mm)||0); }, 0);
+    var totalAno = state.chuvas.filter(function(c){ return (c.data||'').slice(0,4) === anoAtual; }).reduce(function(s,c){ return s + (Number(c.mm)||0); }, 0);
+    var totalGeral = state.chuvas.reduce(function(s,c){ return s + (Number(c.mm)||0); }, 0);
+    var ultimoRegistro = state.chuvas.slice().sort(function(a,b){ return (b.data||'').localeCompare(a.data||''); })[0];
+    var diasSemChuva = null;
+    if(ultimoRegistro && ultimoRegistro.data){
+      diasSemChuva = Math.floor((hoje.getTime() - new Date(ultimoRegistro.data + 'T00:00:00').getTime()) / 86400000);
+    }
+
+    html += '<div class="stat-row">';
+    html += statCard('Chuva no mês', totalMes.toLocaleString('pt-BR', {maximumFractionDigits:1}) + ' mm', 'growth');
+    html += statCard('Chuva no ano', totalAno.toLocaleString('pt-BR', {maximumFractionDigits:1}) + ' mm', 'growth');
+    html += statCard('Total registrado', totalGeral.toLocaleString('pt-BR', {maximumFractionDigits:1}) + ' mm');
+    html += statCard('Dias desde a última chuva', diasSemChuva !== null ? diasSemChuva : '—', diasSemChuva !== null && diasSemChuva > 15 ? 'cost' : '');
+    html += '</div>';
+
+    html += buildGenericFormHtml('chuvas');
+    html += buildGenericTableHtml('chuvas');
+
+    if(state.chuvas.length){
+      var porMes = {};
+      state.chuvas.forEach(function(c){
+        var chave = (c.data||'').slice(0,7);
+        if(!chave) return;
+        porMes[chave] = (porMes[chave]||0) + (Number(c.mm)||0);
+      });
+      var mesesOrdenados = Object.keys(porMes).sort().reverse();
+      if(mesesOrdenados.length){
+        html += '<div class="section-title">Total por mês</div>';
+        html += '<div class="paper table-wrap"><table><thead><tr><th>Mês</th><th>Total (mm)</th></tr></thead><tbody>';
+        mesesOrdenados.forEach(function(chave){
+          var partes = chave.split('-');
+          var label = MESES[parseInt(partes[1],10)-1] + '/' + partes[0];
+          html += '<tr><td>' + label + '</td><td class="num">' + porMes[chave].toLocaleString('pt-BR', {maximumFractionDigits:1}) + ' mm</td></tr>';
+        });
+        html += '</tbody></table></div>';
+      }
+    }
+
+    html += '<div class="paper note-box">Registre a leitura do pluviômetro sempre que chover — o total do mês e do ano são calculados automaticamente. "Dias desde a última chuva" ajuda a identificar períodos de estiagem.</div>';
+
+    html += '<div class="section-title">Alertas Inteligentes</div>';
+    var alertasInteligentes = [];
+    state.safras.forEach(function(s){
+      if(s.status !== 'andamento' && s.status !== 'colhida') return;
+      var prodReal = produtividadeRealSafra(s.id);
+      var hist = historicoTalhao(s.talhaoId, s.id);
+      if(prodReal !== null && hist.mediaProdutividade !== null && hist.qtdSafras >= 1 && prodReal < hist.mediaProdutividade * 0.85){
+        alertasInteligentes.push({
+          cor: '#A23E2E',
+          texto: 'Produtividade de <strong>' + escapeHtml(safraLabel(s.id)) + '</strong> está ' + Math.round((1 - prodReal / hist.mediaProdutividade) * 100) + '% abaixo da média histórica desse talhão (' + fmtNum(prodReal) + ' vs ' + fmtNum(hist.mediaProdutividade) + ' sc/ha).'
+        });
+      }
+      var talhaoAlerta = state.talhoes.find(function(t){ return t.id === s.talhaoId; });
+      var areaAlerta = talhaoAlerta ? Number(talhaoAlerta.area) || 0 : 0;
+      if(areaAlerta > 0 && hist.mediaCustoHa !== null && hist.qtdSafras >= 1){
+        var custoHaAtual = custosTotaisPorTalhao(s.talhaoId) / areaAlerta;
+        if(custoHaAtual > hist.mediaCustoHa * 1.15){
+          alertasInteligentes.push({
+            cor: '#C98A2B',
+            texto: 'Custo/ha de <strong>' + escapeHtml(safraLabel(s.id)) + '</strong> está ' + Math.round((custoHaAtual / hist.mediaCustoHa - 1) * 100) + '% acima da média histórica desse talhão (' + fmtBRL(custoHaAtual) + ' vs ' + fmtBRL(hist.mediaCustoHa) + ').'
+          });
+        }
+      }
+    });
+    state.producao.filter(function(p){ return p.tipo === 'saida' && Number(p.precoUnitario) > 0; }).forEach(function(p){
+      var safraVenda = state.safras.find(function(s){ return s.id === p.safraId; });
+      if(!safraVenda) return;
+      var cot = state.cotacoes.find(function(c){ return c.culturaId === safraVenda.culturaId; });
+      if(cot && cot.preco > 0 && Number(p.precoUnitario) < cot.preco * 0.9){
+        alertasInteligentes.push({
+          cor: '#8B8368',
+          texto: 'Venda de <strong>' + escapeHtml(safraLabel(safraVenda.id)) + '</strong> em ' + fmtDate(p.data) + ' foi feita a ' + fmtBRL(p.precoUnitario) + ', abaixo da última cotação registrada (' + fmtBRL(cot.preco) + ').'
+        });
+      }
+    });
+    if(!alertasInteligentes.length){
+      html += '<div class="paper empty-state">Nenhum alerta no momento — ou ainda não há histórico suficiente pra comparar (precisa de pelo menos 2 safras no mesmo talhão, ou uma cotação salva no Dashboard).</div>';
+    } else {
+      html += '<div class="paper" style="padding:4px 0;">';
+      alertasInteligentes.forEach(function(a){
+        html += '<div style="padding:10px 16px; border-bottom:1px solid var(--paper-line); font-size:13px;"><span class="badge" style="background:' + a.cor + '; color:#fff; margin-right:8px;">⚠️</span>' + a.texto + '</div>';
+      });
+      html += '</div>';
+    }
+    html += '<div class="paper note-box">Esses alertas comparam a safra atual com a média histórica do mesmo talhão (produtividade e custo/ha) e vendas contra a última cotação salva no Dashboard. Não é inteligência artificial de verdade — são regras simples em cima dos seus próprios dados, mas já ajudam a identificar desvios que passariam despercebidos.</div>';
+
+    html += '<div class="section-title">Rastreabilidade por Safra</div>';
+    if(!state.safras.length){
+      html += '<div class="paper empty-state">Cadastre uma safra pra usar a rastreabilidade.</div>';
+    } else {
+      html += '<div class="paper form-card">';
+      html += selectField('rastreabilidade-safra', 'Escolha a safra', [{value:'', label:'Selecione…'}].concat(state.safras.map(function(s){ return {value:s.id, label: safraLabel(s.id)}; })), rastreabilidadeSafraId || '');
+      html += '</div>';
+
+      var safraRastreio = rastreabilidadeSafraId ? state.safras.find(function(s){ return s.id === rastreabilidadeSafraId; }) : null;
+      if(safraRastreio){
+        html += '<div class="paper" style="padding:16px;">';
+        html += '<p style="font-size:13px; margin:0 0 12px;"><strong>' + escapeHtml(safraLabel(safraRastreio.id)) + '</strong> — Talhão ' + escapeHtml(talhaoNome(safraRastreio.talhaoId)) + ', Cultura ' + escapeHtml(culturaNome(safraRastreio.culturaId)) + (safraRastreio.dataPlantio ? ', plantada em ' + fmtDate(safraRastreio.dataPlantio) : '') + '</p>';
+
+        var insumosRastreio = state.operacoes.filter(function(o){ return o.safraId === safraRastreio.id && o.produtoId; });
+        html += '<p style="font-size:12.5px; font-weight:600; margin:14px 0 6px;">Insumos aplicados (' + insumosRastreio.length + ')</p>';
+        if(!insumosRastreio.length){
+          html += '<p style="font-size:12px; color:var(--ink-soft);">Nenhum insumo vinculado a essa safra no Diário de Campo.</p>';
+        } else {
+          html += '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Atividade</th><th>Produto</th><th>Quantidade</th></tr></thead><tbody>';
+          insumosRastreio.slice().sort(function(a,b){ return (a.data||'').localeCompare(b.data||''); }).forEach(function(o){
+            html += '<tr><td>' + fmtDate(o.data) + '</td><td>' + escapeHtml(o.tipo) + '</td><td>' + escapeHtml(produtoNome(o.produtoId)) + '</td><td class="num">' + (o.quantidade||0) + (o.unidade ? ' ' + escapeHtml(o.unidade) : '') + '</td></tr>';
+          });
+          html += '</tbody></table></div>';
+        }
+
+        var entradasRastreio = state.producao.filter(function(p){ return p.safraId === safraRastreio.id && p.tipo === 'entrada'; });
+        html += '<p style="font-size:12.5px; font-weight:600; margin:14px 0 6px;">Colheita (' + entradasRastreio.length + ' registro(s))</p>';
+        if(!entradasRastreio.length){
+          html += '<p style="font-size:12px; color:var(--ink-soft);">Nenhuma colheita registrada ainda pra essa safra.</p>';
+        } else {
+          html += '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Quantidade</th><th>Umidade</th><th>Local</th></tr></thead><tbody>';
+          entradasRastreio.slice().sort(function(a,b){ return (a.data||'').localeCompare(b.data||''); }).forEach(function(p){
+            html += '<tr><td>' + fmtDate(p.data) + '</td><td class="num">' + fmtNum(p.quantidade) + (p.unidade ? ' ' + escapeHtml(p.unidade) : '') + '</td><td class="num">' + (p.umidade ? fmtNum(p.umidade) + '%' : '—') + '</td><td>' + (p.localArmazenagem ? escapeHtml(p.localArmazenagem) : '—') + '</td></tr>';
+          });
+          html += '</tbody></table></div>';
+        }
+
+        var saidasRastreio = state.producao.filter(function(p){ return p.safraId === safraRastreio.id && p.tipo === 'saida'; });
+        html += '<p style="font-size:12.5px; font-weight:600; margin:14px 0 6px;">Vendas (' + saidasRastreio.length + ' registro(s))</p>';
+        if(!saidasRastreio.length){
+          html += '<p style="font-size:12px; color:var(--ink-soft);">Nenhuma venda registrada ainda pra essa safra.</p>';
+        } else {
+          html += '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Comprador</th><th>Quantidade</th><th>Preço unit.</th><th>Valor</th></tr></thead><tbody>';
+          saidasRastreio.slice().sort(function(a,b){ return (a.data||'').localeCompare(b.data||''); }).forEach(function(p){
+            html += '<tr><td>' + fmtDate(p.data) + '</td><td>' + (p.parceiroId ? escapeHtml(parceiroNome(p.parceiroId)) : '—') + '</td><td class="num">' + fmtNum(p.quantidade) + (p.unidade ? ' ' + escapeHtml(p.unidade) : '') + '</td><td class="num">' + fmtBRL(p.precoUnitario) + '</td><td class="num growth">' + fmtBRL((Number(p.quantidade)||0) * (Number(p.precoUnitario)||0)) + '</td></tr>';
+          });
+          html += '</tbody></table></div>';
+        }
+
+        var custoTalhaoRastreio = custosTotaisPorTalhao(safraRastreio.talhaoId);
+        var receitaTalhaoRastreio = receitasTotaisPorTalhao(safraRastreio.talhaoId);
+        html += '<p style="font-size:12.5px; font-weight:600; margin:14px 0 6px;">Resumo financeiro do talhão</p>';
+        html += '<div class="stat-row" style="margin:0;">';
+        html += statCard('Custos', fmtBRL(custoTalhaoRastreio), 'cost');
+        html += statCard('Receitas', fmtBRL(receitaTalhaoRastreio), 'growth');
+        html += '</div>';
+        html += '<p style="font-size:11px; color:var(--ink-soft); margin-top:8px;">Esse resumo é do talhão inteiro (não só dessa safra) porque o rateio no Financeiro é feito por talhão. Se o talhão teve mais de uma safra, os valores incluem todas elas.</p>';
+        html += '</div>';
+      }
+      html += '<div class="paper note-box">A rastreabilidade junta, numa visão só, tudo que já está espalhado pelo sistema: o que foi aplicado (Diário de Campo), o que foi colhido (Colheita) e pra quem foi vendido (Colheita → Venda) — útil pra comprovar a cadeia produtiva pra compradores ou certificações.</div>';
+    }
+
     el.innerHTML = html;
   }
 
@@ -2767,6 +2967,35 @@
       totalSc += (conv.sc !== null) ? conv.sc : (Number(p.quantidade) || 0);
     });
     return totalSc;
+  }
+
+  function produtividadeRealSafra(safraId){
+    var safra = state.safras.find(function(s){ return s.id === safraId; });
+    if(!safra) return null;
+    var talhao = state.talhoes.find(function(t){ return t.id === safra.talhaoId; });
+    var area = talhao ? Number(talhao.area) || 0 : 0;
+    if(area <= 0) return null;
+    var totalSc = producaoTotalEmSacas([safraId]);
+    return totalSc > 0 ? totalSc / area : null;
+  }
+
+  function historicoTalhao(talhaoId, safraIdExcluir){
+    var safrasDoTalhao = state.safras.filter(function(s){ return s.talhaoId === talhaoId && s.id !== safraIdExcluir; });
+    var produtividades = [];
+    var custosHa = [];
+    safrasDoTalhao.forEach(function(s){
+      var prod = produtividadeRealSafra(s.id);
+      if(prod !== null) produtividades.push(prod);
+      var talhao = state.talhoes.find(function(t){ return t.id === s.talhaoId; });
+      var area = talhao ? Number(talhao.area) || 0 : 0;
+      if(area > 0){
+        var custo = custosTotaisPorTalhao(s.talhaoId);
+        custosHa.push(custo / area);
+      }
+    });
+    var mediaProdutividade = produtividades.length ? produtividades.reduce(function(a,b){ return a+b; },0) / produtividades.length : null;
+    var mediaCustoHa = custosHa.length ? custosHa.reduce(function(a,b){ return a+b; },0) / custosHa.length : null;
+    return {mediaProdutividade: mediaProdutividade, mediaCustoHa: mediaCustoHa, qtdSafras: safrasDoTalhao.length};
   }
 
   function renderRentabilidade(){
@@ -3259,19 +3488,22 @@
         var xProd = tagText(prodEl, 'xProd');
         if(!xProd) continue;
         itens.push({
-          cProd: tagText(prodEl, 'cProd'), xProd: xProd, uCom: tagText(prodEl, 'uCom'),
+          cProd: tagText(prodEl, 'cProd'), xProd: xProd, uCom: tagText(prodEl, 'uCom'), cfop: tagText(prodEl, 'CFOP'),
           qCom: parseFloat(tagText(prodEl, 'qCom')) || 0, vUnCom: parseFloat(tagText(prodEl, 'vUnCom')) || 0,
           vProd: parseFloat(tagText(prodEl, 'vProd')) || 0
         });
       }
       if(!itens.length) return null;
-      return {numero: numero, dataEmissao: dataEmissao, fornecedorNome: fornecedorNome, chave: chave, itens: itens};
+      var natureza = ideEl ? tagText(ideEl, 'natOp') : '';
+      return {numero: numero, dataEmissao: dataEmissao, fornecedorNome: fornecedorNome, chave: chave, natureza: natureza, itens: itens};
     }catch(err){
       console.error('Erro ao ler XML da NF-e:', err);
       return null;
     }
   }
   var nfeImportada = null;
+  var rastreabilidadeSafraId = null;
+  var notaEmDetalheChave = null; // qual nota está aberta no painel de detalhe (mestre-detalhe)
   var sefazUltimaResposta = null;
   var sefazDocumentosAcumulados = []; // notas completas (procNFe) já encontradas, mantidas mesmo se uma consulta seguinte falhar
   var sefazIgnoradasNaUltimaConsulta = 0; // quantas notas a última consulta encontrou mas já eram conhecidas (não duplicadas)
@@ -3643,6 +3875,11 @@
       renderSafras();
       return;
     }
+    if(e.target && e.target.id === 'f-rastreabilidade-safra'){
+      rastreabilidadeSafraId = e.target.value || null;
+      renderAgro50();
+      return;
+    }
     if(e.target && e.target.id === 'f-contaId'){
       var campos = document.getElementById('campos-hora-extra');
       if(campos){
@@ -3862,13 +4099,72 @@
         var raw = data.get(f.name);
         fieldsData[f.name] = f.type === 'number' ? (parseFloat(raw) || 0) : (raw || '').trim();
       });
+
+      function descricaoServicoFinanceiro(s){
+        return (s.direcao === 'Prestado' ? 'Serviço prestado' : 'Serviço contratado') + ' - ' + s.tipo + (s.descricao ? ' - ' + s.descricao : '');
+      }
+
       if(editingId){
         var idx = state[entityKey].findIndex(function(x){ return x.id === editingId; });
+        var financeiroIdAnterior = idx !== -1 ? state[entityKey][idx].financeiroId : '';
         if(idx !== -1){ Object.keys(fieldsData).forEach(function(k){ state[entityKey][idx][k] = fieldsData[k]; }); }
+
+        if(entityKey === 'servicosPrestados' && idx !== -1){
+          var registroAtual = state[entityKey][idx];
+          var finIdx = financeiroIdAnterior ? state.financeiro.findIndex(function(f){ return f.id === financeiroIdAnterior; }) : -1;
+
+          if(registroAtual.status === 'Pago' && registroAtual.contaId){
+            var contaAtual = state.contasFinanceiro.find(function(c){ return c.id === registroAtual.contaId; });
+            if(finIdx !== -1){
+              state.financeiro[finIdx].contaId = registroAtual.contaId;
+              state.financeiro[finIdx].tipo = contaTipo(registroAtual.contaId);
+              state.financeiro[finIdx].categoria = contaAtual ? contaAtual.nome : '';
+              state.financeiro[finIdx].valor = registroAtual.valor;
+              state.financeiro[finIdx].quantidade = registroAtual.quantidade || 0;
+              state.financeiro[finIdx].unidade = registroAtual.unidade || '';
+              state.financeiro[finIdx].data = registroAtual.data || state.financeiro[finIdx].data;
+              state.financeiro[finIdx].parceiroId = registroAtual.prestadorId || '';
+              state.financeiro[finIdx].talhaoId = registroAtual.talhaoId || '';
+              state.financeiro[finIdx].talhoesIds = registroAtual.talhaoId ? [registroAtual.talhaoId] : [];
+              state.financeiro[finIdx].descricao = descricaoServicoFinanceiro(registroAtual);
+            } else {
+              var novoFin = {
+                id: uid(), contaId: registroAtual.contaId, tipo: contaTipo(registroAtual.contaId), categoria: contaAtual ? contaAtual.nome : '',
+                valor: registroAtual.valor, quantidade: registroAtual.quantidade || 0, peso: 0, unidade: registroAtual.unidade || '',
+                status: 'Pago', data: registroAtual.data || new Date().toISOString().slice(0,10), vencimento: '',
+                talhoesIds: registroAtual.talhaoId ? [registroAtual.talhaoId] : [], talhaoId: registroAtual.talhaoId || '',
+                parceiroId: registroAtual.prestadorId || '', membroId: '',
+                descricao: descricaoServicoFinanceiro(registroAtual), criadoEm: Date.now()
+              };
+              state.financeiro.push(novoFin);
+              registroAtual.financeiroId = novoFin.id;
+            }
+          } else if(finIdx !== -1){
+            state.financeiro.splice(finIdx, 1);
+            registroAtual.financeiroId = '';
+          }
+          saveKey('financeiro', state.financeiro);
+        }
       } else {
         fieldsData.id = uid();
         fieldsData.criadoEm = Date.now();
         state[entityKey].push(fieldsData);
+
+        if(entityKey === 'servicosPrestados' && fieldsData.status === 'Pago' && fieldsData.contaId){
+          var contaServico = state.contasFinanceiro.find(function(c){ return c.id === fieldsData.contaId; });
+          var novoFinCriacao = {
+            id: uid(), contaId: fieldsData.contaId, tipo: contaTipo(fieldsData.contaId), categoria: contaServico ? contaServico.nome : '',
+            valor: fieldsData.valor, quantidade: fieldsData.quantidade || 0, peso: 0, unidade: fieldsData.unidade || '',
+            status: 'Pago', data: fieldsData.data || new Date().toISOString().slice(0,10), vencimento: '',
+            talhoesIds: fieldsData.talhaoId ? [fieldsData.talhaoId] : [], talhaoId: fieldsData.talhaoId || '',
+            parceiroId: fieldsData.prestadorId || '', membroId: '',
+            descricao: descricaoServicoFinanceiro(fieldsData),
+            criadoEm: Date.now()
+          };
+          state.financeiro.push(novoFinCriacao);
+          fieldsData.financeiroId = novoFinCriacao.id;
+          saveKey('financeiro', state.financeiro);
+        }
       }
       saveKey(entityKey, state[entityKey]);
       editState = null;
@@ -4206,6 +4502,11 @@
     if(action === 'remover-certificado'){ removerCertificado(); return; }
     if(action === 'testar-sefaz'){ testarConsultaSefaz(); return; }
     if(action === 'trazer-notas-sefaz'){ trazerNotasSefaz(); return; }
+    if(action === 'ver-nota-detalhe'){
+      notaEmDetalheChave = btn.dataset.chave;
+      renderCompras();
+      return;
+    }
     if(action === 'marcar-todos-nota' || action === 'desmarcar-todos-nota'){
       var chaveAlvo = btn.dataset.chave;
       var marcar = action === 'marcar-todos-nota';
@@ -4237,6 +4538,7 @@
           item.dataEmissaoNota = parsed.dataEmissao;
           item.fornecedorNomeNota = parsed.fornecedorNome;
           item.chaveNota = parsed.chave;
+          item.naturezaNota = parsed.natureza;
           return item;
         });
         nfeImportada = { itens: itensProntos };
@@ -4246,7 +4548,7 @@
       nfeReader.readAsText(nfeFile);
       return;
     }
-    if(action === 'cancelar-nfe'){ nfeImportada = null; renderCompras(); return; }
+    if(action === 'cancelar-nfe'){ nfeImportada = null; notaEmDetalheChave = null; renderCompras(); return; }
     if(action === 'importar-itens-nfe'){
       if(!nfeImportada) return;
       var selecionados = nfeImportada.itens.filter(function(item){ return item.incluir; });
@@ -4341,6 +4643,7 @@
       saveKey('producao', state.producao);
       if(mudouFinanceiro) saveKey('financeiro', state.financeiro);
       nfeImportada = null;
+      notaEmDetalheChave = null;
       renderAll();
       return;
     }
@@ -4401,6 +4704,13 @@
     }
     if(action === 'del-generic'){
       var entityKey = btn.dataset.entity;
+      if(entityKey === 'servicosPrestados'){
+        var registroAExcluir = state.servicosPrestados.find(function(x){ return x.id === id; });
+        if(registroAExcluir && registroAExcluir.financeiroId){
+          state.financeiro = state.financeiro.filter(function(f){ return f.id !== registroAExcluir.financeiroId; });
+          saveKey('financeiro', state.financeiro);
+        }
+      }
       state[entityKey] = state[entityKey].filter(function(x){ return x.id !== id; });
       saveKey(entityKey, state[entityKey]);
       renderAll(); return;
