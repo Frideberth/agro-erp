@@ -74,6 +74,8 @@
   .stat .label{ font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.03em; }
   .stat .value{ font-family:'Zilla Slab', serif; font-size:24px; color:var(--rain); font-weight:700; margin-top:2px; }
   table{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  .mapa-scroll{ overflow-x:auto; }
+  .mapa-scroll table{ min-width:760px; }
   th{
     text-align:left; padding:8px 10px; font-size:11px; text-transform:uppercase; letter-spacing:0.03em;
     color:var(--ink-soft); border-bottom:1px solid var(--paper-line);
@@ -146,6 +148,9 @@
           <input type="number" id="mm" required min="0" step="0.1" placeholder="0">
         </div>
       </div>
+      <div id="aviso-editando" style="display:none; font-size:12.5px; background:#FCE9C7; color:#7A5A12; padding:8px 12px; border-radius:6px; margin-bottom:10px;">
+        Editando um registro existente. <button type="button" class="link-btn" id="btn-cancelar-edicao" style="color:#7A5A12;">Cancelar edição</button>
+      </div>
       <button type="submit" class="submit" id="btn-enviar">Registrar leitura</button>
     </form>
   </div>
@@ -158,7 +163,7 @@
     <div class="filtros">
       <div class="field">
         <label for="filtro-propriedade">Filtrar por propriedade</label>
-        <input type="text" id="filtro-propriedade" placeholder="Digite pra filtrar...">
+        <select id="filtro-propriedade"><option value="">Todas as propriedades</option></select>
       </div>
       <div class="field">
         <label for="filtro-local">Filtrar por local</label>
@@ -169,6 +174,22 @@
       <button type="button" class="secundario" id="btn-exportar">⬇ Exportar para Excel</button>
     </div>
     <div id="tabela-wrap"></div>
+  </div>
+
+  <div class="card">
+    <h2>Mapa Anual</h2>
+    <p class="sub">Visão do ano inteiro pra uma propriedade, igual ao mapa de anotações em papel.</p>
+    <div class="filtros">
+      <div class="field">
+        <label for="mapa-propriedade">Propriedade</label>
+        <select id="mapa-propriedade"><option value="">Selecione…</option></select>
+      </div>
+      <div class="field">
+        <label for="mapa-ano">Ano</label>
+        <select id="mapa-ano"><option value="">Selecione…</option></select>
+      </div>
+    </div>
+    <div id="mapa-wrap"></div>
   </div>
 </main>
 
@@ -183,6 +204,10 @@
   var registros = [];
   var filtroPropriedade = '';
   var filtroLocal = '';
+  var editandoId = null;
+  var mapaPropriedade = '';
+  var mapaAno = '';
+  var MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
   function uid(){
     if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
@@ -220,6 +245,18 @@
     return lista;
   }
 
+  function propriedadesConhecidas(){
+    var mapa = {};
+    var lista = [];
+    registros.forEach(function(r){
+      if(!r.propriedade || mapa[r.propriedade]) return;
+      mapa[r.propriedade] = true;
+      lista.push(r.propriedade);
+    });
+    lista.sort(function(a,b){ return a.localeCompare(b); });
+    return lista;
+  }
+
   function renderSelectsLocal(){
     var locais = locaisConhecidos();
     var optsForm = '<option value="">Selecione…</option>';
@@ -241,6 +278,16 @@
     var filtroAtual = selectFiltro.value;
     selectFiltro.innerHTML = optsFiltro;
     selectFiltro.value = filtroAtual;
+
+    var propriedades = propriedadesConhecidas();
+    var optsFiltroProp = '<option value="">Todas as propriedades</option>';
+    propriedades.forEach(function(p){
+      optsFiltroProp += '<option value="' + escapeHtml(p) + '">' + escapeHtml(p) + '</option>';
+    });
+    var selectFiltroProp = document.getElementById('filtro-propriedade');
+    var filtroPropAtual = selectFiltroProp.value;
+    selectFiltroProp.innerHTML = optsFiltroProp;
+    selectFiltroProp.value = filtroPropAtual;
   }
 
   function carregar(){
@@ -275,9 +322,8 @@
 
   function listaFiltrada(){
     var lista = registros.slice().sort(function(a,b){ return (b.data||'').localeCompare(a.data||'') || (b.criadoEm||0)-(a.criadoEm||0); });
-    if(filtroPropriedade.trim()){
-      var termo = filtroPropriedade.trim().toLowerCase();
-      lista = lista.filter(function(r){ return (r.propriedade||'').toLowerCase().indexOf(termo) !== -1; });
+    if(filtroPropriedade){
+      lista = lista.filter(function(r){ return r.propriedade === filtroPropriedade; });
     }
     if(filtroLocal){
       lista = lista.filter(function(r){ return chaveLocal(r.municipio, r.estado) === filtroLocal; });
@@ -292,7 +338,7 @@
       el.innerHTML = '<div class="empty">Nenhum registro encontrado com esse filtro.</div>';
       return;
     }
-    var html = '<table><thead><tr><th>Data</th><th>Produtor</th><th>Propriedade</th><th>Local</th><th class="num">Chuva</th></tr></thead><tbody>';
+    var html = '<table><thead><tr><th>Data</th><th>Produtor</th><th>Propriedade</th><th>Local</th><th class="num">Chuva</th><th></th></tr></thead><tbody>';
     lista.forEach(function(r){
       html += '<tr>';
       html += '<td>' + fmtData(r.data) + '</td>';
@@ -300,16 +346,91 @@
       html += '<td>' + escapeHtml(r.propriedade) + '</td>';
       html += '<td>' + (r.municipio ? escapeHtml(r.municipio) + (r.estado ? ' - ' + escapeHtml(r.estado) : '') : '—') + '</td>';
       html += '<td class="num">' + (Number(r.mm)||0).toLocaleString('pt-BR', {maximumFractionDigits:1}) + ' mm</td>';
+      html += '<td style="white-space:nowrap;"><button type="button" class="link-btn" data-action="editar-registro" data-id="' + r.id + '">Editar</button> · <button type="button" class="link-btn" data-action="remover-registro" data-id="' + r.id + '" style="color:#7E2F22;">Remover</button></td>';
       html += '</tr>';
     });
     html += '</tbody></table>';
     el.innerHTML = html;
   }
 
+  function gerarMapaAnualHtml(regs, ano, tituloPropriedade){
+    var matriz = {};
+    regs.forEach(function(r){
+      if(!r.data) return;
+      var partes = r.data.split('-');
+      if(parseInt(partes[0], 10) !== ano) return;
+      var mes = parseInt(partes[1], 10);
+      var dia = parseInt(partes[2], 10);
+      if(!matriz[dia]) matriz[dia] = {};
+      matriz[dia][mes] = (matriz[dia][mes] || 0) + (Number(r.mm) || 0);
+    });
+    var totalPorMes = {};
+    for(var m = 1; m <= 12; m++) totalPorMes[m] = 0;
+    for(var d = 1; d <= 31; d++){
+      for(var mm = 1; mm <= 12; mm++){
+        if(matriz[d] && matriz[d][mm]) totalPorMes[mm] += matriz[d][mm];
+      }
+    }
+    function diasNoMes(mesNum){ return new Date(ano, mesNum, 0).getDate(); }
+
+    var html = '<div class="mapa-scroll"><p style="font-size:12.5px; font-weight:600; margin:0 0 8px;">' + escapeHtml(tituloPropriedade) + ' — ' + ano + '</p>';
+    html += '<table><thead><tr><th>Dia</th>';
+    for(var mh = 1; mh <= 12; mh++) html += '<th>' + MESES[mh-1] + '</th>';
+    html += '</tr></thead><tbody>';
+    for(var dia = 1; dia <= 31; dia++){
+      html += '<tr><td>' + String(dia).padStart(2,'0') + '</td>';
+      for(var mes = 1; mes <= 12; mes++){
+        var v = (matriz[dia] && matriz[dia][mes]) ? matriz[dia][mes] : null;
+        html += '<td class="num">' + (v !== null ? v.toLocaleString('pt-BR', {maximumFractionDigits:1}) : '') + '</td>';
+      }
+      html += '</tr>';
+    }
+    html += '<tr style="font-weight:700; background:var(--paper-2);"><td>TOTAL</td>';
+    for(var mt = 1; mt <= 12; mt++){
+      html += '<td class="num">' + (totalPorMes[mt] ? totalPorMes[mt].toLocaleString('pt-BR', {maximumFractionDigits:1}) : '') + '</td>';
+    }
+    html += '</tr>';
+    html += '<tr style="font-weight:700;"><td>MÉDIA</td>';
+    for(var md = 1; md <= 12; md++){
+      var media = totalPorMes[md] ? (totalPorMes[md] / diasNoMes(md)) : null;
+      html += '<td class="num">' + (media !== null ? media.toLocaleString('pt-BR', {maximumFractionDigits:1}) : '') + '</td>';
+    }
+    html += '</tr></tbody></table></div>';
+    return html;
+  }
+
+  function renderMapa(){
+    var selectProp = document.getElementById('mapa-propriedade');
+    var selectAno = document.getElementById('mapa-ano');
+
+    var propriedades = propriedadesConhecidas();
+    var optsProp = '<option value="">Selecione…</option>';
+    propriedades.forEach(function(p){ optsProp += '<option value="' + escapeHtml(p) + '">' + escapeHtml(p) + '</option>'; });
+    selectProp.innerHTML = optsProp;
+    if(!mapaPropriedade && propriedades.length) mapaPropriedade = propriedades[0];
+    selectProp.value = mapaPropriedade;
+
+    var anos = registros.map(function(r){ return (r.data||'').slice(0,4); }).filter(function(v){ return v; }).filter(function(v,i,a){ return a.indexOf(v)===i; }).sort().reverse();
+    var optsAno = '<option value="">Selecione…</option>';
+    anos.forEach(function(a){ optsAno += '<option value="' + a + '">' + a + '</option>'; });
+    selectAno.innerHTML = optsAno;
+    if(!mapaAno && anos.length) mapaAno = anos[0];
+    selectAno.value = mapaAno;
+
+    var wrap = document.getElementById('mapa-wrap');
+    if(!mapaPropriedade || !mapaAno){
+      wrap.innerHTML = '<div class="empty">Escolha uma propriedade e um ano.</div>';
+      return;
+    }
+    var regsDaPropriedade = registros.filter(function(r){ return r.propriedade === mapaPropriedade; });
+    wrap.innerHTML = gerarMapaAnualHtml(regsDaPropriedade, parseInt(mapaAno, 10), mapaPropriedade);
+  }
+
   function renderTudo(){
     renderSelectsLocal();
     renderStats();
     renderTabela();
+    renderMapa();
   }
 
   function mostrarMsg(texto, tipo){
@@ -332,6 +453,55 @@
     mostrarCampoLocalNovo(false);
   });
 
+  function iniciarEdicao(id){
+    var registro = registros.find(function(r){ return r.id === id; });
+    if(!registro) return;
+    editandoId = id;
+    document.getElementById('produtor').value = registro.produtor || '';
+    document.getElementById('propriedade').value = registro.propriedade || '';
+    document.getElementById('data').value = registro.data || '';
+    document.getElementById('mm').value = registro.mm || '';
+    mostrarCampoLocalNovo(false);
+    document.getElementById('local').value = chaveLocal(registro.municipio, registro.estado);
+    document.getElementById('aviso-editando').style.display = 'block';
+    document.getElementById('btn-enviar').textContent = 'Salvar edição';
+    document.getElementById('form-chuva').scrollIntoView({behavior: 'smooth', block: 'start'});
+  }
+
+  function cancelarEdicao(){
+    editandoId = null;
+    document.getElementById('form-chuva').reset();
+    document.getElementById('data').valueAsDate = new Date();
+    mostrarCampoLocalNovo(false);
+    document.getElementById('aviso-editando').style.display = 'none';
+    document.getElementById('btn-enviar').textContent = 'Registrar leitura';
+  }
+
+  function removerRegistro(id){
+    if(!window.confirm('Remover esse registro? Não dá pra desfazer.')) return;
+    carregar().then(function(){
+      registros = registros.filter(function(r){ return r.id !== id; });
+      return salvar();
+    }).then(function(r){
+      if(!r.ok) throw new Error('falha ao remover');
+      mostrarMsg('Registro removido.', 'ok');
+      if(editandoId === id) cancelarEdicao();
+      renderTudo();
+    }).catch(function(){
+      mostrarMsg('Não foi possível remover agora. Tenta de novo em instantes.', 'erro');
+    });
+  }
+
+  document.getElementById('btn-cancelar-edicao').addEventListener('click', cancelarEdicao);
+
+  document.getElementById('tabela-wrap').addEventListener('click', function(e){
+    var btn = e.target.closest('[data-action]');
+    if(!btn) return;
+    var id = btn.dataset.id;
+    if(btn.dataset.action === 'editar-registro') iniciarEdicao(id);
+    if(btn.dataset.action === 'remover-registro') removerRegistro(id);
+  });
+
   document.getElementById('form-chuva').addEventListener('submit', function(e){
     e.preventDefault();
     var btn = document.getElementById('btn-enviar');
@@ -349,37 +519,45 @@
       mostrarMsg('Escolhe um local (ou cadastra um novo).', 'erro'); return;
     }
 
-    var novo = {
-      id: uid(),
+    var dadosFormulario = {
       produtor: document.getElementById('produtor').value.trim(),
       propriedade: document.getElementById('propriedade').value.trim(),
       municipio: municipio,
       estado: estado,
       data: document.getElementById('data').value,
-      mm: parseFloat(document.getElementById('mm').value) || 0,
-      criadoEm: Date.now()
+      mm: parseFloat(document.getElementById('mm').value) || 0
     };
-    if(!novo.produtor || !novo.propriedade || !novo.data){ mostrarMsg('Preenche nome, propriedade e data.', 'erro'); return; }
+    if(!dadosFormulario.produtor || !dadosFormulario.propriedade || !dadosFormulario.data){ mostrarMsg('Preenche nome, propriedade e data.', 'erro'); return; }
 
-    btn.disabled = true; btn.textContent = 'Enviando…';
+    var idEmEdicao = editandoId;
+    btn.disabled = true; btn.textContent = idEmEdicao ? 'Salvando…' : 'Enviando…';
     carregar().then(function(){
-      registros.push(novo);
+      if(idEmEdicao){
+        var idx = registros.findIndex(function(r){ return r.id === idEmEdicao; });
+        if(idx !== -1){
+          var criadoEmOriginal = registros[idx].criadoEm;
+          registros[idx] = Object.assign({id: idEmEdicao, criadoEm: criadoEmOriginal}, dadosFormulario);
+        }
+      } else {
+        dadosFormulario.id = uid();
+        dadosFormulario.criadoEm = Date.now();
+        registros.push(dadosFormulario);
+      }
       return salvar();
     }).then(function(r){
       if(!r.ok) throw new Error('falha ao salvar');
-      mostrarMsg('Leitura registrada! Obrigado por contribuir.', 'ok');
-      document.getElementById('form-chuva').reset();
-      document.getElementById('data').valueAsDate = new Date();
-      mostrarCampoLocalNovo(false);
+      mostrarMsg(idEmEdicao ? 'Registro atualizado!' : 'Leitura registrada! Obrigado por contribuir.', 'ok');
+      cancelarEdicao();
       renderTudo();
     }).catch(function(){
       mostrarMsg('Não foi possível salvar agora. Tenta de novo em instantes.', 'erro');
     }).finally(function(){
-      btn.disabled = false; btn.textContent = 'Registrar leitura';
+      btn.disabled = false;
+      btn.textContent = editandoId ? 'Salvar edição' : 'Registrar leitura';
     });
   });
 
-  document.getElementById('filtro-propriedade').addEventListener('input', function(e){
+  document.getElementById('filtro-propriedade').addEventListener('change', function(e){
     filtroPropriedade = e.target.value;
     renderTabela();
   });
@@ -387,6 +565,16 @@
   document.getElementById('filtro-local').addEventListener('change', function(e){
     filtroLocal = e.target.value;
     renderTabela();
+  });
+
+  document.getElementById('mapa-propriedade').addEventListener('change', function(e){
+    mapaPropriedade = e.target.value;
+    renderMapa();
+  });
+
+  document.getElementById('mapa-ano').addEventListener('change', function(e){
+    mapaAno = e.target.value;
+    renderMapa();
   });
 
   document.getElementById('btn-exportar').addEventListener('click', function(){

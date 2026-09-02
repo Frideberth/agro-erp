@@ -2768,6 +2768,55 @@
   }
 
   /* ---------------- AGRO5.0 — espaço para novos indicadores/tecnologias ---------------- */
+  function gerarMapaAnualChuvaHtml(registros, ano, tituloPropriedade){
+    var matriz = {};
+    registros.forEach(function(r){
+      if(!r.data) return;
+      var partes = r.data.split('-');
+      var anoReg = parseInt(partes[0], 10);
+      if(anoReg !== ano) return;
+      var mes = parseInt(partes[1], 10);
+      var dia = parseInt(partes[2], 10);
+      if(!matriz[dia]) matriz[dia] = {};
+      matriz[dia][mes] = (matriz[dia][mes] || 0) + (Number(r.mm) || 0);
+    });
+
+    var totalPorMes = {};
+    for(var m = 1; m <= 12; m++) totalPorMes[m] = 0;
+    for(var d = 1; d <= 31; d++){
+      for(var mm = 1; mm <= 12; mm++){
+        if(matriz[d] && matriz[d][mm]) totalPorMes[mm] += matriz[d][mm];
+      }
+    }
+    function diasNoMes(mesNum){ return new Date(ano, mesNum, 0).getDate(); }
+
+    var html = '<div class="paper table-wrap" style="overflow-x:auto;"><p style="font-size:12.5px; font-weight:600; padding:12px 12px 0;">' + escapeHtml(tituloPropriedade) + ' — ' + ano + '</p>';
+    html += '<table style="min-width:820px;"><thead><tr><th>Dia</th>';
+    for(var mh = 1; mh <= 12; mh++) html += '<th>' + MESES[mh-1] + '</th>';
+    html += '</tr></thead><tbody>';
+    for(var dia = 1; dia <= 31; dia++){
+      html += '<tr><td>' + String(dia).padStart(2,'0') + '</td>';
+      for(var mes = 1; mes <= 12; mes++){
+        var valorCel = (matriz[dia] && matriz[dia][mes]) ? matriz[dia][mes] : null;
+        html += '<td class="num">' + (valorCel !== null ? valorCel.toLocaleString('pt-BR', {maximumFractionDigits:1}) : '') + '</td>';
+      }
+      html += '</tr>';
+    }
+    html += '<tr style="font-weight:700; background:var(--paper-2);"><td>TOTAL</td>';
+    for(var mt = 1; mt <= 12; mt++){
+      html += '<td class="num">' + (totalPorMes[mt] ? totalPorMes[mt].toLocaleString('pt-BR', {maximumFractionDigits:1}) : '') + '</td>';
+    }
+    html += '</tr>';
+    html += '<tr style="font-weight:700;"><td>MÉDIA</td>';
+    for(var md = 1; md <= 12; md++){
+      var media = totalPorMes[md] ? (totalPorMes[md] / diasNoMes(md)) : null;
+      html += '<td class="num">' + (media !== null ? media.toLocaleString('pt-BR', {maximumFractionDigits:1}) : '') + '</td>';
+    }
+    html += '</tr>';
+    html += '</tbody></table></div>';
+    return html;
+  }
+
   function renderAgro50(){
     var el = document.getElementById('tab-agro50');
     var html = '<div class="paper note-box">Esse espaço é pra ir incorporando, aos poucos, tecnologias e indicadores novos ao sistema — sempre focado no que faz sentido pra sua realidade, sem depender de comprar hardware. Primeiro tópico: <strong>Pluviometria</strong>. Próximos que podemos trabalhar juntos: rastreabilidade da cadeia produtiva e alertas/indicadores preditivos em cima dos dados que você já registra.</div>';
@@ -2796,27 +2845,25 @@
     html += buildGenericFormHtml('chuvas');
     html += buildGenericTableHtml('chuvas');
 
+    var propriedadesComChuva = state.propriedades.filter(function(p){ return state.chuvas.some(function(c){ return c.propriedadeId === p.id; }); });
+    var anosComChuva = state.chuvas.map(function(c){ return (c.data||'').slice(0,4); }).filter(function(v){ return v; }).filter(function(v,i,a){ return a.indexOf(v)===i; }).sort().reverse();
+    if(!chuvaMapaAno) chuvaMapaAno = anosComChuva[0] || anoAtual;
+    if(!chuvaMapaPropriedadeId && propriedadesComChuva.length) chuvaMapaPropriedadeId = propriedadesComChuva[0].id;
+
     if(state.chuvas.length){
-      var porMes = {};
-      state.chuvas.forEach(function(c){
-        var chave = (c.data||'').slice(0,7);
-        if(!chave) return;
-        porMes[chave] = (porMes[chave]||0) + (Number(c.mm)||0);
-      });
-      var mesesOrdenados = Object.keys(porMes).sort().reverse();
-      if(mesesOrdenados.length){
-        html += '<div class="section-title">Total por mês</div>';
-        html += '<div class="paper table-wrap"><table><thead><tr><th>Mês</th><th>Total (mm)</th></tr></thead><tbody>';
-        mesesOrdenados.forEach(function(chave){
-          var partes = chave.split('-');
-          var label = MESES[parseInt(partes[1],10)-1] + '/' + partes[0];
-          html += '<tr><td>' + label + '</td><td class="num">' + porMes[chave].toLocaleString('pt-BR', {maximumFractionDigits:1}) + ' mm</td></tr>';
-        });
-        html += '</tbody></table></div>';
+      html += '<div class="section-title">Mapa Anual de Chuva</div>';
+      html += '<div class="paper form-card">';
+      html += '<div class="entry-form">';
+      html += selectField('chuva-mapa-propriedade', 'Propriedade', propriedadesComChuva.map(function(p){ return {value:p.id, label:p.nome}; }), chuvaMapaPropriedadeId || undefined);
+      html += selectField('chuva-mapa-ano', 'Ano', (anosComChuva.length ? anosComChuva : [anoAtual]).map(function(a){ return {value:a, label:a}; }), chuvaMapaAno || undefined);
+      html += '</div></div>';
+
+      if(chuvaMapaPropriedadeId && chuvaMapaAno){
+        html += gerarMapaAnualChuvaHtml(state.chuvas.filter(function(c){ return c.propriedadeId === chuvaMapaPropriedadeId; }), parseInt(chuvaMapaAno, 10), propriedadeNome(chuvaMapaPropriedadeId));
       }
     }
 
-    html += '<div class="paper note-box">Registre a leitura do pluviômetro sempre que chover — o total do mês e do ano são calculados automaticamente. "Dias desde a última chuva" ajuda a identificar períodos de estiagem.</div>';
+    html += '<div class="paper note-box">Registre a leitura do pluviômetro sempre que chover — o total do mês e do ano são calculados automaticamente. "Dias desde a última chuva" ajuda a identificar períodos de estiagem. "Média" no mapa anual é o total do mês dividido pelos dias daquele mês.</div>';
 
     html += '<div class="section-title">Alertas Inteligentes</div>';
     var alertasInteligentes = [];
@@ -3503,6 +3550,8 @@
   }
   var nfeImportada = null;
   var rastreabilidadeSafraId = null;
+  var chuvaMapaAno = null;
+  var chuvaMapaPropriedadeId = null;
   var notaEmDetalheChave = null; // qual nota está aberta no painel de detalhe (mestre-detalhe)
   var sefazUltimaResposta = null;
   var sefazDocumentosAcumulados = []; // notas completas (procNFe) já encontradas, mantidas mesmo se uma consulta seguinte falhar
@@ -3877,6 +3926,16 @@
     }
     if(e.target && e.target.id === 'f-rastreabilidade-safra'){
       rastreabilidadeSafraId = e.target.value || null;
+      renderAgro50();
+      return;
+    }
+    if(e.target && e.target.id === 'f-chuva-mapa-propriedade'){
+      chuvaMapaPropriedadeId = e.target.value || null;
+      renderAgro50();
+      return;
+    }
+    if(e.target && e.target.id === 'f-chuva-mapa-ano'){
+      chuvaMapaAno = e.target.value || null;
       renderAgro50();
       return;
     }
