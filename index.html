@@ -480,7 +480,10 @@
   function talhaoOptionsFn(){ return [{value:'', label:'—'}].concat(state.talhoes.map(function(t){ return {value:t.id, label:t.nome}; })); }
   function propriedadeOptionsFn(){ return state.propriedades.map(function(p){ return {value:p.id, label:p.nome}; }); }
   function parceiroOptionsFn(){ return [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })); }
-  function safraOptionsFn(){ return state.safras.map(function(s){ return {value:s.id, label:safraLabel(s.id)}; }); }
+  function safraOptionsFn(incluirId){ return safraOptionsAtivas(incluirId); }
+  function safraOptionsAtivas(incluirId){
+    return state.safras.filter(function(s){ return s.ativa !== false || s.id === incluirId; }).map(function(s){ return {value:s.id, label: safraLabel(s.id) + (s.ativa === false ? ' (inativa)' : '')}; });
+  }
 
   var ENTITY_CONFIGS = {
     arrendamentos: {
@@ -1627,7 +1630,7 @@
     cfg.fields.forEach(function(f){
       var current = editingRecord ? editingRecord[f.name] : undefined;
       if(f.type === 'select'){
-        var opts = typeof f.optionsFn === 'function' ? f.optionsFn() : f.options;
+        var opts = typeof f.optionsFn === 'function' ? f.optionsFn(current) : f.options;
         html += selectField(f.name, f.label, opts, current);
       } else {
         html += field(f.type, f.name, f.label, !!f.required, f.placeholder || '', f.extra || {}, current);
@@ -2304,9 +2307,10 @@
       if(!safrasFiltradas.length){
         html += '<div class="empty-state">Nenhuma safra no ano agrícola "' + escapeHtml(safrasAnoFiltro) + '".</div>';
       } else {
-      html += '<div class="table-wrap"><table><thead><tr><th>Talhão</th><th>Cultura</th><th>Plantio</th><th>Ano agrícola</th><th>Produtiv. esperada</th><th>Previsão colheita</th><th>Status</th><th></th></tr></thead><tbody>';
+      html += '<div class="table-wrap"><table><thead><tr><th>Talhão</th><th>Cultura</th><th>Plantio</th><th>Ano agrícola</th><th>Produtiv. esperada</th><th>Previsão colheita</th><th>Status</th><th>Ativa</th><th></th></tr></thead><tbody>';
       safrasFiltradas.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(s){
-        html += '<tr>';
+        var ativa = s.ativa !== false;
+        html += '<tr' + (!ativa ? ' style="opacity:0.6;"' : '') + '>';
         html += '<td>' + escapeHtml(talhaoNome(s.talhaoId)) + '</td>';
         html += '<td>' + escapeHtml(culturaNome(s.culturaId)) + '</td>';
         html += '<td>' + fmtDate(s.dataPlantio) + '</td>';
@@ -2314,10 +2318,12 @@
         html += '<td class="num">' + (s.produtividadeEsperada ? fmtNum(s.produtividadeEsperada) + ' sc/ha' : '—') + '</td>';
         html += '<td>' + (s.previsaoColheita ? fmtDate(s.previsaoColheita) : '—') + '</td>';
         html += '<td><span class="badge status-' + s.status + '">' + STATUS_LABEL[s.status] + '</span></td>';
-        html += '<td><button class="btn-edit" data-action="edit-safra" data-id="' + s.id + '">Editar</button><button class="btn-del" data-action="del-safra" data-id="' + s.id + '">Remover</button></td>';
+        html += '<td><span class="badge" style="background:' + (ativa ? '#7FA36D' : '#8B8368') + '; color:#fff;">' + (ativa ? 'Ativa' : 'Inativa') + '</span></td>';
+        html += '<td><button class="btn-edit" data-action="edit-safra" data-id="' + s.id + '">Editar</button><button class="btn-edit" data-action="toggle-ativa-safra" data-id="' + s.id + '">' + (ativa ? 'Inativar' : 'Ativar') + '</button><button class="btn-del" data-action="del-safra" data-id="' + s.id + '">Remover</button></td>';
         html += '</tr>';
       });
       html += '</tbody></table></div>';
+      html += '<div class="paper note-box">Uma safra <strong>inativa</strong> some dos seletores usados pra registrar novas atividades (Diário de Campo, Colheita, Venda Antecipada) e da Rastreabilidade — mas continua aparecendo normalmente nos relatórios que já têm dados históricos dela (Rentabilidade, Produtividade). Use pra "aposentar" safras antigas sem perder o histórico.</div>';
       }
     }
     html += '</div>';
@@ -2344,7 +2350,7 @@
 
       html += '<div class="paper form-card"><h3>' + (editingEntrada ? 'Editar colheita' : 'Registrar colheita (entrada em estoque)') + '</h3>';
       html += '<form class="entry-form" id="form-colheita-entrada"' + (editingEntrada ? ' data-editing-id="' + editingEntrada.id + '"' : '') + '>';
-      html += selectField('safraId', 'Safra', state.safras.map(function(s){ return {value:s.id, label:safraLabel(s.id)}; }), editingEntrada ? editingEntrada.safraId : undefined);
+      html += selectField('safraId', 'Safra', safraOptionsAtivas(editingEntrada ? editingEntrada.safraId : null), editingEntrada ? editingEntrada.safraId : undefined);
       html += field('number', 'quantidade', 'Quantidade colhida', true, '0', {step:'0.01', min:'0'}, editingEntrada ? editingEntrada.quantidade : undefined);
       html += field('text', 'unidade', 'Unidade', false, 'Ex: sc, kg, ton', {}, editingEntrada ? editingEntrada.unidade : undefined);
       html += field('number', 'precoUnitario', 'Preço estimado (R$/unid.)', false, '0,00', {step:'0.01', min:'0'}, editingEntrada ? editingEntrada.precoUnitario : undefined);
@@ -2363,7 +2369,7 @@
 
       html += '<div class="paper form-card"><h3>' + (editingVenda ? 'Editar venda' : 'Registrar venda (saída do estoque)') + '</h3>';
       html += '<form class="entry-form" id="form-colheita-venda"' + (editingVenda ? ' data-editing-id="' + editingVenda.id + '"' : '') + '>';
-      html += selectField('safraId', 'Safra', state.safras.map(function(s){ return {value:s.id, label:safraLabel(s.id)}; }), editingVenda ? editingVenda.safraId : undefined);
+      html += selectField('safraId', 'Safra', safraOptionsAtivas(editingVenda ? editingVenda.safraId : null), editingVenda ? editingVenda.safraId : undefined);
       html += field('number', 'quantidade', 'Quantidade vendida', true, '0', {step:'0.01', min:'0'}, editingVenda ? editingVenda.quantidade : undefined);
       html += field('text', 'unidade', 'Unidade', false, 'Ex: sc, kg, ton', {}, editingVenda ? editingVenda.unidade : undefined);
       html += field('number', 'precoUnitario', 'Preço de venda (R$/unid.)', false, '0,00', {step:'0.01', min:'0'}, editingVenda ? editingVenda.precoUnitario : undefined);
@@ -2469,7 +2475,7 @@
       html += '<button type="button" class="btn-add-inline" data-action="open-tipo-modal" title="Novo tipo de atividade">+</button>';
       html += '</div>';
       html += selectField('talhaoId', 'Talhão (opcional)', [{value:'', label:'—'}].concat(state.talhoes.map(function(t){ return {value:t.id, label:t.nome}; })), editingRecord ? editingRecord.talhaoId : undefined);
-      html += selectField('safraId', 'Safra (opcional)', [{value:'', label:'—'}].concat(state.safras.map(function(s){ return {value:s.id, label:safraLabel(s.id)}; })), editingRecord ? editingRecord.safraId : undefined);
+      html += selectField('safraId', 'Safra (opcional)', [{value:'', label:'—'}].concat(safraOptionsAtivas(editingRecord ? editingRecord.safraId : null)), editingRecord ? editingRecord.safraId : undefined);
       html += selectField('produtoId', 'Produto (opcional)', [{value:'', label:'—'}].concat(state.produtos.map(function(p){ return {value:p.id, label:p.nome}; })), editingRecord ? editingRecord.produtoId : undefined);
       html += field('number', 'quantidade', 'Quantidade', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.quantidade : undefined);
       html += field('text', 'unidade', 'Unidade', false, 'Ex: kg, L, sc', {}, editingRecord ? editingRecord.unidade : undefined);
@@ -2916,7 +2922,7 @@
       html += '<div class="paper empty-state">Cadastre uma safra pra usar a rastreabilidade.</div>';
     } else {
       html += '<div class="paper form-card">';
-      html += selectField('rastreabilidade-safra', 'Escolha a safra', [{value:'', label:'Selecione…'}].concat(state.safras.map(function(s){ return {value:s.id, label: safraLabel(s.id)}; })), rastreabilidadeSafraId || '');
+      html += selectField('rastreabilidade-safra', 'Escolha a safra', [{value:'', label:'Selecione…'}].concat(safraOptionsAtivas(rastreabilidadeSafraId)), rastreabilidadeSafraId || '');
       html += '</div>';
 
       var safraRastreio = rastreabilidadeSafraId ? state.safras.find(function(s){ return s.id === rastreabilidadeSafraId; }) : null;
@@ -4263,7 +4269,7 @@
         var sIdx = state.safras.findIndex(function(s){ return s.id === sEditingId; });
         if(sIdx !== -1){ Object.keys(sFields).forEach(function(k){ state.safras[sIdx][k] = sFields[k]; }); }
       } else {
-        sFields.id = uid(); sFields.criadoEm = Date.now();
+        sFields.id = uid(); sFields.criadoEm = Date.now(); sFields.ativa = true;
         state.safras.push(sFields);
       }
       saveKey('safras', state.safras);
@@ -4778,6 +4784,14 @@
     if(action === 'edit-talhao'){ editState = {scope:'talhoes', id: id}; renderAll(); var f2 = document.getElementById('form-talhao'); if(f2) f2.scrollIntoView({behavior:'smooth', block:'start'}); return; }
     if(action === 'del-safra'){ state.safras = state.safras.filter(function(s){ return s.id !== id; }); saveKey('safras', state.safras); renderAll(); return; }
     if(action === 'edit-safra'){ editState = {scope:'safras', id: id}; renderAll(); var f3 = document.getElementById('form-safra'); if(f3) f3.scrollIntoView({behavior:'smooth', block:'start'}); return; }
+    if(action === 'toggle-ativa-safra'){
+      var safraToggle = state.safras.find(function(s){ return s.id === id; });
+      if(!safraToggle) return;
+      safraToggle.ativa = safraToggle.ativa === false ? true : false;
+      saveKey('safras', state.safras);
+      renderAll();
+      return;
+    }
     if(action === 'del-producao'){ state.producao = state.producao.filter(function(p){ return p.id !== id; }); saveKey('producao', state.producao); renderAll(); return; }
     if(action === 'edit-producao'){
       editState = {scope: btn.dataset.tipo === 'entrada' ? 'producao-entrada' : 'producao-saida', id: id};
