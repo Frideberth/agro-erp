@@ -1586,6 +1586,40 @@
     }
     html += '</div>';
 
+    var safrasAtivas = state.safras.filter(function(s){ return s.ativa !== false; });
+    if(safrasAtivas.length){
+      var paletaCultura = ['#7FA36D', '#C98A2B', '#8B8368', '#A9B7C6', '#4F7942', '#D08370', '#DFA84E'];
+      var corPorCultura = {};
+      state.culturas.forEach(function(c, idx){ corPorCultura[c.id] = paletaCultura[idx % paletaCultura.length]; });
+
+      var colunasKanban = [
+        {status: 'planejada', titulo: 'Planejada'},
+        {status: 'andamento', titulo: 'Em andamento'},
+        {status: 'colhida', titulo: 'Colhida'}
+      ];
+
+      html += '<div><div class="section-title" style="margin-top:0;">Safras por estágio</div>';
+      html += '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px;">';
+      colunasKanban.forEach(function(col){
+        var safrasColuna = safrasAtivas.filter(function(s){ return s.status === col.status; });
+        html += '<div class="paper" style="padding:12px; background:var(--paper-2);">';
+        html += '<div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-soft); margin-bottom:10px; display:flex; justify-content:space-between;"><span>' + col.titulo + '</span><span>' + safrasColuna.length + '</span></div>';
+        if(!safrasColuna.length){
+          html += '<div style="font-size:12px; color:var(--ink-soft); padding:8px 0;">Nenhuma safra aqui.</div>';
+        } else {
+          safrasColuna.forEach(function(s){
+            var cor = corPorCultura[s.culturaId] || '#C9C3A4';
+            html += '<div style="background:#FBF7EC; border-left:4px solid ' + cor + '; border-radius:4px; padding:8px 10px; margin-bottom:8px; font-size:12.5px;">';
+            html += '<div style="font-weight:600;">' + escapeHtml(talhaoNome(s.talhaoId)) + '</div>';
+            html += '<div style="color:var(--ink-soft);">' + escapeHtml(culturaNome(s.culturaId)) + (s.anoAgricola ? ' · ' + escapeHtml(s.anoAgricola) : '') + '</div>';
+            html += '</div>';
+          });
+        }
+        html += '</div>';
+      });
+      html += '</div></div>';
+    }
+
 
     var recentFin = state.financeiro.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).slice(0,5);
     html += '<div><div class="section-title" style="margin-top:0;">Últimos lançamentos</div>';
