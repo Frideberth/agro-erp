@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html>
-<head><meta name="theme-color" content="#2f5d3a"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Diapp Agro">
+<head>
+<meta name="theme-color" content="#315f3b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Diapp Agro">
+
   <meta charset="utf-8">
   <title>Bundled Page</title>
   <style>
@@ -17,10 +22,62 @@
       This page requires JavaScript to display.
     </div>
   </noscript>
-<style id="diapp-agro-theme">:root{--agro:#2f5d3a;--agro-dark:#23472c;--leaf:#8aa65a;--cream:#fbf8ee;--border:#d7d1bc;--text:#273226}html,body{background:radial-gradient(circle at 10% 0%,rgba(138,166,90,.14),transparent 32%),radial-gradient(circle at 90% 10%,rgba(199,155,67,.10),transparent 28%),linear-gradient(180deg,var(--cream),#f4f0e3)!important;color:var(--text)!important}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif!important}input,select,textarea{border-color:var(--border)!important;background:#fffdf7!important;color:var(--text)!important;border-radius:9px!important}input:focus,select:focus,textarea:focus{outline:2px solid rgba(138,166,90,.3)!important;border-color:var(--leaf)!important}button,[role=button],input[type=button],input[type=submit]{border-radius:10px!important}table{border-color:var(--border)!important;background:rgba(255,253,247,.85)!important}th{background:var(--agro)!important;color:#fff!important}.card,.panel,.box,[class*=card],[class*=panel]{border-color:var(--border)!important;box-shadow:0 3px 14px rgba(47,93,58,.08)!important;background:rgba(255,253,247,.9)!important}h1,h2,h3,h4{color:var(--agro-dark)!important}a{color:var(--agro)!important}.diapp-agro-badge{display:inline-flex;align-items:center;gap:7px;margin:10px 12px 0;padding:6px 11px;border-radius:999px;background:rgba(138,166,90,.15);color:var(--agro-dark);font-size:.78rem;font-weight:700;border:1px solid rgba(138,166,90,.25)}.diapp-agro-badge:before{content:"🌱"}</style>
+
+<style id="diapp-agro-theme">
+:root{
+  --agro-green:#315f3b;
+  --agro-green-dark:#23452b;
+  --agro-green-light:#718f50;
+  --agro-leaf:#8ca65c;
+  --agro-earth:#8b6947;
+  --agro-cream:#faf7ed;
+  --agro-border:#d8d1bc;
+  --agro-text:#293328;
+  --agro-muted:#687264;
+  --agro-gold:#c59a48;
+}
+html,body{
+  background-color:var(--agro-cream)!important;
+  color:var(--agro-text)!important;
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif!important;
+}
+input,select,textarea{
+  background:#fffdf7!important;
+  border-color:var(--agro-border)!important;
+  color:var(--agro-text)!important;
+  border-radius:9px!important;
+}
+input:focus,select:focus,textarea:focus{
+  outline:2px solid rgba(113,143,80,.25)!important;
+  border-color:var(--agro-green-light)!important;
+}
+button{
+  border-radius:9px!important;
+}
+table{
+  border-color:var(--agro-border)!important;
+}
+th{
+  background:var(--agro-green)!important;
+  color:#fff!important;
+}
+.card,.panel,.box,
+[class*="card"],[class*="panel"]{
+  border-color:var(--agro-border)!important;
+  box-shadow:0 3px 14px rgba(49,95,59,.08)!important;
+}
+h1,h2,h3,h4{
+  color:var(--agro-green-dark)!important;
+}
+a{
+  color:var(--agro-green)!important;
+}
+</style>
+
 </head>
 <body>
-<div class="diapp-agro-badge">Gestão Rural</div>
   <div id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" sc-camel-view-box="0 0 100 100"><rect width="100" height="100" fill="#7a8a5e"></rect><text x="50" y="50" font-family="Georgia,serif" font-size="30" fill="#f5ead8" text-anchor="middle" dominant-baseline="central">Di</text></svg></div>
   <div id="__bundler_loading">Unpacking...</div>
 
