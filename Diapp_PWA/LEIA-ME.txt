@@ -1,0 +1,30 @@
+Diapp — instalar como aplicativo
+=================================
+
+iPhone / iPad (mais simples, sem servidor)
+1. Envie o arquivo index.html para o iPhone (AirDrop, e-mail, iCloud Drive).
+2. Abra no Safari.
+3. Toque em Compartilhar > Adicionar à Tela de Início.
+Pronto: abre em tela cheia, com ícone próprio, e salva os dados no aparelho.
+
+Instalação completa (ícone, offline e atualização automática)
+Publique esta pasta inteira em qualquer endereço https (GitHub Pages, Netlify,
+Vercel, Cloudflare Pages — todos gratuitos). Abra o endereço no Safari e use
+Adicionar à Tela de Início. O service worker guarda o app para uso offline.
+
+Android: ao abrir o endereço no Chrome, aparece "Instalar aplicativo".
+
+Arquivos
+  index.html            o app
+  manifest.webmanifest  nome, ícone, cor e modo tela cheia
+  sw.js                 cache offline
+  icon-180/192/512.png  ícones
+
+Backup
+Toque no botão redondo no alto do cabeçalho para Exportar (gera um arquivo
+diapp-AAAA-MM-DD.json que você salva em Arquivos/iCloud ou envia por e-mail)
+ou Importar (restaura de um arquivo exportado, substituindo a lista atual).
+Para levar os dados a outro aparelho: exporte num, importe no outro.
+
+Os dados ficam no próprio aparelho (armazenamento do navegador). Não são
+enviados para nenhum servidor, e não sincronizam entre aparelhos.
