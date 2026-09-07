@@ -398,7 +398,7 @@
 (function(){
   "use strict";
 
-  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas'];
+  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas','sefazNotasPendentes','sefazItensRevisao','sefazProgresso'];
   var state = {};
   var editState = null; // {scope:'generic', entityKey, id} ou {scope:'talhoes'|'safras'|'operacoes'|'financeiro'|'producao', id}
   ALL_KEYS.forEach(function(k){ state[k] = []; });
@@ -1244,6 +1244,9 @@
             saveKey('financiamentos', state.financiamentos);
           }
         })();
+        sefazDocumentosAcumulados = state.sefazNotasPendentes || [];
+        if(state.sefazItensRevisao && state.sefazItensRevisao.length) nfeImportada = {itens: state.sefazItensRevisao};
+        if(state.sefazProgresso && state.sefazProgresso[0]) sefazUltimaResposta = {ultNSU: state.sefazProgresso[0].ultNSU};
         if(hasCloudStorage || hasLocalStorage || hasNetlifyBlobs) loading.classList.add('hidden');
         renderAll();
       })
@@ -1918,6 +1921,12 @@
 
     html += '<div class="paper form-card"><h3>Testar consulta na SEFAZ</h3>';
     html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 12px;">✅ A conexão e a leitura do certificado já foram validadas — a SEFAZ respondeu certinho. Se testou em Homologação e veio "Nenhum documento localizado", é esperado (ambiente de testes, normalmente vazio) — escolha <strong>Produção</strong> pra ver suas notas de verdade.</p>';
+    if(state.sefazProgresso && state.sefazProgresso[0] && state.sefazProgresso[0].ultNSU){
+      var progressoNsu = state.sefazProgresso[0];
+      var nsuLimpo = progressoNsu.ultNSU.replace(/^0+(?=\d)/, '');
+      var maxLimpo = (progressoNsu.maxNSU || '').replace(/^0+(?=\d)/, '');
+      html += '<div class="paper note-box" style="margin-bottom:14px;"><strong>Progresso salvo:</strong> última consulta parou no NSU <strong>' + escapeHtml(nsuLimpo) + '</strong>' + (maxLimpo ? ' de <strong>' + escapeHtml(maxLimpo) + '</strong> disponíveis' : '') + (progressoNsu.atualizadoEm ? ' — em ' + fmtDate(progressoNsu.atualizadoEm.slice(0,10)) : '') + '. Esse número já vem preenchido no campo "Último NSU" abaixo, mesmo se você sair e voltar depois.</div>';
+    }
     html += '<div class="entry-form">';
     html += selectField('sefaz-ambiente', 'Ambiente', [{value:'homologacao', label:'Homologação (testes)'}, {value:'producao', label:'Produção (notas reais)'}]);
     var ufsOptions = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map(function(u){ return {value:u, label:u}; });
@@ -2079,12 +2088,25 @@
         } else {
           sefazProximoTesteLiberadoEm = Date.now() + 2 * 60 * 1000;
         }
+        state.sefazNotasPendentes = sefazDocumentosAcumulados;
+        saveKey('sefazNotasPendentes', state.sefazNotasPendentes);
+        if(data.ultNSU){
+          state.sefazProgresso = [{ultNSU: data.ultNSU, maxNSU: data.maxNSU || '', atualizadoEm: new Date().toISOString()}];
+          saveKey('sefazProgresso', state.sefazProgresso);
+        }
         renderCompras();
       })
       .catch(function(err){
         sefazUltimaResposta = { erro: String(err) };
         renderCompras();
       });
+  }
+
+  function persistirRevisaoNFe(){
+    if(nfeImportada && nfeImportada.itens){
+      state.sefazItensRevisao = nfeImportada.itens;
+      saveKey('sefazItensRevisao', state.sefazItensRevisao);
+    }
   }
 
   function trazerNotasSefaz(){
@@ -2127,6 +2149,10 @@
     if(!nfeImportada) nfeImportada = { itens: [] };
     nfeImportada.itens = nfeImportada.itens.concat(novosItens);
     sefazDocumentosAcumulados = docsRestantes;
+    state.sefazItensRevisao = nfeImportada.itens;
+    state.sefazNotasPendentes = sefazDocumentosAcumulados;
+    saveKey('sefazItensRevisao', state.sefazItensRevisao);
+    saveKey('sefazNotasPendentes', state.sefazNotasPendentes);
     renderCompras();
     var formCardEl = document.querySelector('#tab-compras .paper.form-card');
     if(formCardEl) formCardEl.scrollIntoView({behavior: 'smooth', block: 'start'});
@@ -3924,16 +3950,19 @@
     if(e.target && e.target.id && e.target.id.indexOf('nfe-item-incluir-') === 0){
       var idxIncl = parseInt(e.target.id.replace('nfe-item-incluir-', ''), 10);
       if(nfeImportada && nfeImportada.itens[idxIncl]) nfeImportada.itens[idxIncl].incluir = e.target.checked;
+      persistirRevisaoNFe();
       return;
     }
     if(e.target && e.target.id && e.target.id.indexOf('nfe-item-produto-') === 0){
       var idxProd = parseInt(e.target.id.replace('nfe-item-produto-', ''), 10);
       if(nfeImportada && nfeImportada.itens[idxProd]) nfeImportada.itens[idxProd].produtoId = e.target.value;
+      persistirRevisaoNFe();
       return;
     }
     if(e.target && e.target.id && e.target.id.indexOf('nfe-item-safra-') === 0){
       var idxSafraNfe = parseInt(e.target.id.replace('nfe-item-safra-', ''), 10);
       if(nfeImportada && nfeImportada.itens[idxSafraNfe]) nfeImportada.itens[idxSafraNfe].safraId = e.target.value;
+      persistirRevisaoNFe();
       return;
     }
     if(e.target && e.target.id && e.target.id.indexOf('nfe-item-destino-') === 0){
@@ -3948,6 +3977,7 @@
         if(spanProduto) spanProduto.style.display = '';
         if(spanSafra) spanSafra.style.display = 'none';
       }
+      persistirRevisaoNFe();
       return;
     }
     if(e.target && e.target.id === 'f-cc-parceiro'){
@@ -4642,13 +4672,14 @@
           return item;
         });
         nfeImportada = { itens: itensProntos };
+        persistirRevisaoNFe();
         renderCompras();
       };
       nfeReader.onerror = function(){ alert('Não foi possível ler esse arquivo.'); };
       nfeReader.readAsText(nfeFile);
       return;
     }
-    if(action === 'cancelar-nfe'){ nfeImportada = null; notaEmDetalheChave = null; renderCompras(); return; }
+    if(action === 'cancelar-nfe'){ nfeImportada = null; notaEmDetalheChave = null; state.sefazItensRevisao = []; saveKey('sefazItensRevisao', state.sefazItensRevisao); renderCompras(); return; }
     if(action === 'importar-itens-nfe'){
       if(!nfeImportada) return;
       var selecionados = nfeImportada.itens.filter(function(item){ return item.incluir; });
@@ -4744,6 +4775,8 @@
       if(mudouFinanceiro) saveKey('financeiro', state.financeiro);
       nfeImportada = null;
       notaEmDetalheChave = null;
+      state.sefazItensRevisao = [];
+      saveKey('sefazItensRevisao', state.sefazItensRevisao);
       renderAll();
       return;
     }
