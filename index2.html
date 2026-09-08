@@ -2991,98 +2991,6 @@
 
     html += '<div class="paper note-box">Registre a leitura do pluviômetro sempre que chover — o total do mês e do ano são calculados automaticamente. "Dias desde a última chuva" ajuda a identificar períodos de estiagem. "Média" no mapa anual é o total do mês dividido pelos dias daquele mês.</div>';
 
-    var propriedadesComChuvaHidrica = state.propriedades.filter(function(p){ return state.chuvas.some(function(c){ return c.propriedadeId === p.id; }); });
-    if(propriedadesComChuvaHidrica.length){
-      if(!hidricaPropriedadeId) hidricaPropriedadeId = propriedadesComChuvaHidrica[0].id;
-      html += '<div class="section-title">Análise Hídrica</div>';
-      html += '<div class="paper form-card">';
-      html += selectField('hidrica-propriedade', 'Propriedade', propriedadesComChuvaHidrica.map(function(p){ return {value:p.id, label:p.nome}; }), hidricaPropriedadeId);
-      html += '</div>';
-
-      var chuvasDaPropHidrica = state.chuvas.filter(function(c){ return c.propriedadeId === hidricaPropriedadeId; });
-      var ultimaDataChuva = chuvasDaPropHidrica.map(function(c){ return c.data; }).filter(function(v){ return v; }).sort().reverse()[0];
-      var hojeHidrico = new Date().toISOString().slice(0,10);
-      var dataReferenciaHidrica = ultimaDataChuva && ultimaDataChuva > hojeHidrico ? ultimaDataChuva : hojeHidrico;
-
-      var acum7 = chuvaAcumuladaPeriodo(hidricaPropriedadeId, dataReferenciaHidrica, 7);
-      var acum15 = chuvaAcumuladaPeriodo(hidricaPropriedadeId, dataReferenciaHidrica, 15);
-      var acum30 = chuvaAcumuladaPeriodo(hidricaPropriedadeId, dataReferenciaHidrica, 30);
-      var acum60 = chuvaAcumuladaPeriodo(hidricaPropriedadeId, dataReferenciaHidrica, 60);
-
-      html += '<div class="stat-row">';
-      html += statCard('Acumulado 7 dias', fmtNum(acum7) + ' mm');
-      html += statCard('Acumulado 15 dias', fmtNum(acum15) + ' mm');
-      html += statCard('Acumulado 30 dias', fmtNum(acum30) + ' mm');
-      html += statCard('Acumulado 60 dias', fmtNum(acum60) + ' mm');
-      html += '</div>';
-
-      var dataInicio90 = new Date(new Date(dataReferenciaHidrica + 'T00:00:00').getTime() - 89 * 86400000).toISOString().slice(0,10);
-      var veranico90 = maiorVeranico(hidricaPropriedadeId, dataInicio90, dataReferenciaHidrica, 1);
-      html += '<div class="stat-row">';
-      html += statCard('Veranico em andamento', veranico90.sequenciaAteFim + ' dia(s)', veranico90.sequenciaAteFim >= 10 ? 'cost' : '');
-      html += statCard('Maior veranico (90 dias)', veranico90.maiorSequencia + ' dia(s)', veranico90.maiorSequencia >= 15 ? 'cost' : '');
-      html += '</div>';
-
-      html += '<div class="section-title">Déficit/Excesso mensal (últimos 12 meses)</div>';
-      html += '<div class="paper table-wrap"><table><thead><tr><th>Mês</th><th>Chuva registrada</th><th>Dias com dado</th><th>Média histórica</th><th>Diferença</th></tr></thead><tbody>';
-      var anoRefHidrico = parseInt(dataReferenciaHidrica.slice(0,4), 10);
-      var mesRefHidrico = parseInt(dataReferenciaHidrica.slice(5,7), 10);
-      for(var mesesAtras = 11; mesesAtras >= 0; mesesAtras--){
-        var indiceMesAbsoluto = (anoRefHidrico * 12 + (mesRefHidrico - 1)) - mesesAtras;
-        var anoMes = Math.floor(indiceMesAbsoluto / 12);
-        var mesMes = (indiceMesAbsoluto % 12) + 1;
-        var registrosDoMes = chuvasDaPropHidrica.filter(function(c){ return c.data && c.data.slice(0,7) === (anoMes + '-' + String(mesMes).padStart(2,'0')); });
-        var chuvaDoMes = registrosDoMes.reduce(function(s,c){ return s + (Number(c.mm)||0); }, 0);
-        var diasComDado = registrosDoMes.length;
-        var diasNoMesRef = new Date(anoMes, mesMes, 0).getDate();
-        var mediaHistoricaMes = climatologiaMesPropriedade(hidricaPropriedadeId, mesMes);
-        var diferenca = (mediaHistoricaMes !== null && diasComDado > 0) ? chuvaDoMes - mediaHistoricaMes : null;
-        html += '<tr' + (diasComDado === 0 ? ' style="opacity:0.55;"' : '') + '><td>' + MESES[mesMes-1] + '/' + anoMes + '</td><td class="num">' + fmtNum(chuvaDoMes) + ' mm</td>';
-        html += '<td class="num">' + diasComDado + '/' + diasNoMesRef + (diasComDado === 0 ? ' <span style="color:var(--cost-dark);">(sem dados)</span>' : '') + '</td>';
-        html += '<td class="num">' + (mediaHistoricaMes !== null ? fmtNum(mediaHistoricaMes) + ' mm' : '—') + '</td>';
-        html += '<td class="num">' + (diferenca !== null ? '<span class="badge" style="background:' + (diferenca < 0 ? '#A23E2E' : '#7FA36D') + '; color:#fff;">' + (diferenca >= 0 ? '+' : '') + fmtNum(diferenca) + ' mm</span>' : '—') + '</td></tr>';
-      }
-      html += '</tbody></table></div>';
-      html += '<div class="paper note-box" style="margin-top:8px;">Linhas em cinza claro com "(sem dados)" não significam que não choveu — significam que a estação de referência não tinha leituras suficientes naquele mês pra calcular o total. Só compare a "Diferença" quando a coluna "Dias com dado" estiver completa ou quase completa.</div>';
-
-      var safrasComReferenciaHidrica = state.safras.filter(function(s){ return s.ativa !== false && (s.status === 'andamento' || s.status === 'planejada') && s.dataPlantio; });
-      html += '<div class="section-title">Necessidade hídrica por cultura</div>';
-      if(!safrasComReferenciaHidrica.length){
-        html += '<div class="paper empty-state">Nenhuma safra ativa com data de plantio preenchida.</div>';
-      } else {
-        html += '<div class="paper table-wrap"><table><thead><tr><th>Talhão / Safra</th><th>Dias desde o plantio</th><th>Chuva acumulada</th><th>Faixa de referência</th><th>Situação</th></tr></thead><tbody>';
-        safrasComReferenciaHidrica.forEach(function(s){
-          var talhaoHidrico = state.talhoes.find(function(t){ return t.id === s.talhaoId; });
-          var propriedadeDaSafra = hidricaPropriedadeId; // usamos a chuva da propriedade selecionada como referência
-          var ref = necessidadeHidricaCultura(culturaNome(s.culturaId));
-          var diasDesdePlantio = Math.floor((new Date(dataReferenciaHidrica + 'T00:00:00').getTime() - new Date(s.dataPlantio + 'T00:00:00').getTime()) / 86400000);
-          if(diasDesdePlantio < 0) return;
-          var janelaAcumulado = ref && ref.tipo === 'anual' ? 365 : Math.min(diasDesdePlantio + 1, ref ? ref.cicloDias : diasDesdePlantio + 1);
-          var chuvaAcumuladaSafra = chuvaAcumuladaPeriodo(propriedadeDaSafra, dataReferenciaHidrica, janelaAcumulado);
-          html += '<tr>';
-          html += '<td>' + escapeHtml(safraLabel(s.id)) + '</td>';
-          html += '<td class="num">' + diasDesdePlantio + '</td>';
-          html += '<td class="num">' + fmtNum(chuvaAcumuladaSafra) + ' mm</td>';
-          if(!ref){
-            html += '<td>—</td><td style="color:var(--ink-soft); font-size:12px;">Sem referência cadastrada pra essa cultura</td>';
-          } else {
-            var fracaoCiclo = ref.tipo === 'ciclo' ? Math.min(diasDesdePlantio / ref.cicloDias, 1) : Math.min(diasDesdePlantio / 365, 1);
-            var minEsperado = ref.min * fracaoCiclo;
-            var maxEsperado = ref.max * fracaoCiclo;
-            html += '<td class="num">' + fmtNum(minEsperado) + '–' + fmtNum(maxEsperado) + ' mm</td>';
-            var situacao, corSituacao;
-            if(chuvaAcumuladaSafra < minEsperado * 0.8){ situacao = 'Abaixo do esperado'; corSituacao = '#A23E2E'; }
-            else if(chuvaAcumuladaSafra > maxEsperado * 1.2){ situacao = 'Acima do esperado'; corSituacao = '#3B6EA5'; }
-            else { situacao = 'Dentro da faixa'; corSituacao = '#7FA36D'; }
-            html += '<td><span class="badge" style="background:' + corSituacao + '; color:#fff;">' + situacao + '</span></td>';
-          }
-          html += '</tr>';
-        });
-        html += '</tbody></table></div>';
-        html += '<div class="paper note-box">⚠️ A "Faixa de referência" é uma aproximação baseada em publicações da Embrapa (necessidade total de água por ciclo/ano), distribuída de forma proporcional aos dias já passados desde o plantio — <strong>não é um balanço hídrico de verdade</strong> (que precisaria de evapotranspiração, temperatura e tipo de solo, dados que não temos aqui). Culturas fora de soja/milho/café ainda não têm referência cadastrada. Use como indicativo, não como decisão isolada de irrigação/manejo.</div>';
-      }
-    }
-
     html += '<div class="section-title">Alertas Inteligentes</div>';
     var alertasInteligentes = [];
     state.safras.forEach(function(s){
@@ -3287,72 +3195,6 @@
     var mediaProdutividade = produtividades.length ? produtividades.reduce(function(a,b){ return a+b; },0) / produtividades.length : null;
     var mediaCustoHa = custosHa.length ? custosHa.reduce(function(a,b){ return a+b; },0) / custosHa.length : null;
     return {mediaProdutividade: mediaProdutividade, mediaCustoHa: mediaCustoHa, qtdSafras: safrasDoTalhao.length};
-  }
-
-  /* ---------------- Análise Hídrica ---------------- */
-  var NECESSIDADE_HIDRICA_CULTURA = {
-    'soja': {min: 450, max: 800, cicloDias: 120, tipo: 'ciclo', fonte: 'Embrapa Soja'},
-    'milho': {min: 400, max: 700, cicloDias: 150, tipo: 'ciclo', fonte: 'Embrapa Milho e Sorgo'},
-    'cafe': {min: 1600, max: 2500, cicloDias: 365, tipo: 'anual', fonte: 'Embrapa Café'}
-  };
-  function normalizarNomeCultura(nome){
-    return (nome || '').trim().toLowerCase()
-      .replace(/[áàâã]/g, 'a').replace(/[éê]/g, 'e').replace(/[íî]/g, 'i')
-      .replace(/[óôõ]/g, 'o').replace(/[úû]/g, 'u').replace(/ç/g, 'c');
-  }
-  function necessidadeHidricaCultura(nomeCultura){
-    return NECESSIDADE_HIDRICA_CULTURA[normalizarNomeCultura(nomeCultura)] || null;
-  }
-
-  function chuvaAcumuladaPeriodo(propriedadeId, dataFinalStr, dias){
-    var dataFinal = new Date(dataFinalStr + 'T00:00:00');
-    var dataInicial = new Date(dataFinal.getTime() - (dias - 1) * 86400000);
-    var soma = 0;
-    state.chuvas.forEach(function(c){
-      if(c.propriedadeId !== propriedadeId || !c.data) return;
-      var d = new Date(c.data + 'T00:00:00');
-      if(d >= dataInicial && d <= dataFinal) soma += Number(c.mm) || 0;
-    });
-    return soma;
-  }
-
-  function maiorVeranico(propriedadeId, dataInicioStr, dataFimStr, limiteMm){
-    limiteMm = limiteMm === undefined ? 1 : limiteMm;
-    var mapaChuva = {};
-    state.chuvas.forEach(function(c){ if(c.propriedadeId === propriedadeId) mapaChuva[c.data] = Number(c.mm) || 0; });
-    var dataAtual = new Date(dataInicioStr + 'T00:00:00');
-    var dataFim = new Date(dataFimStr + 'T00:00:00');
-    var maiorSequencia = 0, sequenciaAtual = 0, sequenciaAteFim = 0;
-    while(dataAtual <= dataFim){
-      var chaveDia = dataAtual.toISOString().slice(0,10);
-      var mmDia = mapaChuva.hasOwnProperty(chaveDia) ? mapaChuva[chaveDia] : null;
-      if(mmDia !== null && mmDia < limiteMm){
-        sequenciaAtual++;
-        if(sequenciaAtual > maiorSequencia) maiorSequencia = sequenciaAtual;
-      } else if(mmDia !== null){
-        sequenciaAtual = 0;
-      }
-      dataAtual = new Date(dataAtual.getTime() + 86400000);
-    }
-    sequenciaAteFim = sequenciaAtual;
-    return {maiorSequencia: maiorSequencia, sequenciaAteFim: sequenciaAteFim};
-  }
-
-  function climatologiaMesPropriedade(propriedadeId, mes){
-    var propNome = state.propriedades.find(function(p){ return p.id === propriedadeId; });
-    if(propNome && typeof CLIMATOLOGIA_INMET_ABATIA !== 'undefined' && propNome.nome.trim().toLowerCase() === CLIMATOLOGIA_ABATIA_PROPRIEDADE_NOME){
-      return CLIMATOLOGIA_INMET_ABATIA[mes] || null;
-    }
-    var totaisPorAno = {};
-    state.chuvas.forEach(function(c){
-      if(c.propriedadeId !== propriedadeId || !c.data) return;
-      var partes = c.data.split('-');
-      if(parseInt(partes[1],10) !== mes) return;
-      var ano = partes[0];
-      totaisPorAno[ano] = (totaisPorAno[ano]||0) + (Number(c.mm)||0);
-    });
-    var valores = Object.keys(totaisPorAno).map(function(a){ return totaisPorAno[a]; });
-    return valores.length ? valores.reduce(function(a,b){return a+b;},0) / valores.length : null;
   }
 
   function renderRentabilidade(){
@@ -3861,7 +3703,6 @@
   var nfeImportada = null;
   var rastreabilidadeSafraId = null;
   var chuvaMapaAno = null;
-  var hidricaPropriedadeId = null;
   var chuvaMapaPropriedadeId = null;
   var notaEmDetalheChave = null; // qual nota está aberta no painel de detalhe (mestre-detalhe)
   var sefazUltimaResposta = null;
@@ -4246,11 +4087,6 @@
     }
     if(e.target && e.target.id === 'f-chuva-mapa-propriedade'){
       chuvaMapaPropriedadeId = e.target.value || null;
-      renderAgro50();
-      return;
-    }
-    if(e.target && e.target.id === 'f-hidrica-propriedade'){
-      hidricaPropriedadeId = e.target.value || null;
       renderAgro50();
       return;
     }
