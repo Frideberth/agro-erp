@@ -497,6 +497,16 @@
   function talhaoOptionsFn(){ return [{value:'', label:'—'}].concat(state.talhoes.map(function(t){ return {value:t.id, label:t.nome}; })); }
   function propriedadeOptionsFn(){ return state.propriedades.map(function(p){ return {value:p.id, label:p.nome}; }); }
   function parceiroOptionsFn(){ return [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })); }
+  function valorDescontoContaReceber(item){
+    var valorBruto = Number(item.valor) || 0;
+    var descontoValor = Number(item.descontoValor) || 0;
+    if(item.descontoTipo === 'Percentual') return valorBruto * (descontoValor / 100);
+    if(item.descontoTipo === 'ValorFixo') return descontoValor;
+    return 0;
+  }
+  function valorLiquidoContaReceber(item){
+    return (Number(item.valor) || 0) - valorDescontoContaReceber(item);
+  }
   function valorTotalServicoPrestado(item){
     var qtd = Number(item.quantidade) || 1;
     return qtd * (Number(item.valor) || 0);
@@ -788,7 +798,9 @@
         {name:'categoria', type:'select', label:'Categoria', options:['Venda de colheita','Arrendamento','Outro'].map(function(c){return {value:c,label:c};})},
         {name:'parceiroId', type:'select', label:'Parceiro (opcional)', optionsFn: parceiroOptionsFn},
         {name:'talhaoId', type:'select', label:'Talhão (opcional)', optionsFn: talhaoOptionsFn},
-        {name:'valor', type:'number', label:'Valor (R$)', required:true, extra:{step:'0.01', min:'0'}, placeholder:'0,00'},
+        {name:'valor', type:'number', label:'Valor bruto (R$)', required:true, extra:{step:'0.01', min:'0'}, placeholder:'0,00'},
+        {name:'descontoTipo', type:'select', label:'Desconto', options:[{value:'Nenhum', label:'Sem desconto'}, {value:'Percentual', label:'Percentual (%)'}, {value:'ValorFixo', label:'Valor fixo (R$)'}]},
+        {name:'descontoValor', type:'number', label:'Valor do desconto', extra:{step:'0.01', min:'0'}, placeholder:'0'},
         {name:'vencimento', type:'date', label:'Vencimento'},
         {name:'status', type:'select', label:'Status', options:['Pendente','Recebido'].map(function(c){return {value:c,label:c};})},
         {name:'dataRecebimento', type:'date', label:'Data do recebimento'}
@@ -796,7 +808,9 @@
       columns: [
         {key:'descricao', label:'Descrição'},
         {key:'categoria', label:'Categoria'},
-        {key:'valor', label:'Valor', format:'brl'},
+        {key:'valor', label:'Valor bruto', format:'brl'},
+        {key:'desconto', label:'Desconto', compute: function(item){ var d = valorDescontoContaReceber(item); return d > 0 ? '−' + fmtBRL(d) : '—'; }},
+        {key:'valorTotal', label:'Valor total', format:'brl', compute: valorLiquidoContaReceber},
         {key:'vencimento', label:'Vencimento', format:'date'},
         {key:'status', label:'Status', format:'badge', colors:{'Pendente':'#DFA84E','Recebido':'#7FA36D'}}
       ]
@@ -1240,7 +1254,6 @@
               var chave = f.tipo + '|' + f.categoria;
               f.contaId = mapaCategoria[chave] || (f.tipo === 'custo' ? 'ct-outros-operacional' : 'ct-outras-receitas');
               if(f.quantidade === undefined) f.quantidade = 0;
-              if(f.peso === undefined) f.peso = 0;
               if(f.unidade === undefined) f.unidade = '';
               mudouFin = true;
             }
@@ -1299,9 +1312,86 @@
         })();
         var CLIMATOLOGIA_INMET_ABATIA = {1: 177.5, 2: 142.6, 3: 92.3, 4: 79.7, 5: 86.6, 6: 81.5, 7: 83.9, 8: 53.0, 9: 80.8, 10: 143.5, 11: 139.0, 12: 161.7};
         var CLIMATOLOGIA_ABATIA_PROPRIEDADE_NOME = 'sitio santa izabel';
+        (function(){
+          var jaTemContasIntegrada = state.contasPagar.some(function(c){ return c.origemImportacao === 'integrada-2026-09'; });
+          if(jaTemContasIntegrada) return;
+          var parceiroIntegrada = state.parceiros.find(function(p){ return p.nome.trim().toLowerCase().indexOf('integrada') !== -1; });
+          if(!parceiroIntegrada){
+            parceiroIntegrada = {id: uid(), nome: 'Integrada', tipo: 'Fornecedor', contato: '', criadoEm: Date.now()};
+            state.parceiros.push(parceiroIntegrada);
+            saveKey('parceiros', state.parceiros);
+          }
+          var novasContasIntegrada = [
+            {id: uid(), descricao: 'Integrada - parcela vencimento 30/09/2026', categoria: 'Fornecedor', parceiroId: parceiroIntegrada.id, talhaoId: '', valor: 30833.07, vencimento: '2026-09-30', status: 'Pendente', dataPagamento: '', origemImportacao: 'integrada-2026-09', criadoEm: Date.now()},
+            {id: uid(), descricao: 'Integrada - parcela vencimento 30/04/2027', categoria: 'Fornecedor', parceiroId: parceiroIntegrada.id, talhaoId: '', valor: 96432.00, vencimento: '2027-04-30', status: 'Pendente', dataPagamento: '', origemImportacao: 'integrada-2026-09', criadoEm: Date.now() + 1}
+          ];
+          state.contasPagar = state.contasPagar.concat(novasContasIntegrada);
+          saveKey('contasPagar', state.contasPagar);
+        })();
+        (function(){
+          // Corrige lançamentos de Serviços Prestados/Contratados criados antes do cálculo quantidade×valor unitário
+          var precisaCorrecaoServico = state.servicosPrestados.some(function(s){ return s.financeiroId && !s.correcaoValorV1Aplicada; });
+          if(!precisaCorrecaoServico) return;
+          var mudouFinanceiroCorrecao = false;
+          state.servicosPrestados.forEach(function(s){
+            if(s.correcaoValorV1Aplicada) return;
+            s.correcaoValorV1Aplicada = true;
+            if(!s.financeiroId) return;
+            var finIdxCorrecao = state.financeiro.findIndex(function(f){ return f.id === s.financeiroId; });
+            if(finIdxCorrecao === -1) return;
+            var valorCorreto = valorTotalServicoPrestado(s);
+            if(Number(state.financeiro[finIdxCorrecao].valor) !== valorCorreto){
+              state.financeiro[finIdxCorrecao].valor = valorCorreto;
+              mudouFinanceiroCorrecao = true;
+            }
+          });
+          saveKey('servicosPrestados', state.servicosPrestados);
+          if(mudouFinanceiroCorrecao) saveKey('financeiro', state.financeiro);
+        })();
+        (function(){
+          // Corrige lançamento específico onde "Valor" foi digitado como valor por unidade, não como total
+          var lancDiariaColheita = state.financeiro.find(function(f){
+            return !f.correcaoDiariaColheitaV1Aplicada && (f.descricao||'').trim().toLowerCase() === 'diárias serviço colheita'
+              && Number(f.valor) === 120 && Number(f.quantidade) === 20 && !(Number(f.valorUnitario) > 0);
+          });
+          if(lancDiariaColheita){
+            lancDiariaColheita.valorUnitario = 120;
+            lancDiariaColheita.valor = 2400;
+            lancDiariaColheita.correcaoDiariaColheitaV1Aplicada = true;
+            saveKey('financeiro', state.financeiro);
+          }
+        })();
         sefazDocumentosAcumulados = state.sefazNotasPendentes || [];
         if(state.sefazItensRevisao && state.sefazItensRevisao.length) nfeImportada = {itens: state.sefazItensRevisao};
         if(state.sefazProgresso && state.sefazProgresso[0]) sefazUltimaResposta = {ultNSU: state.sefazProgresso[0].ultNSU};
+        (function(){
+          // Preenche retroativamente notas importadas antes de existir o rastreamento de itens/valor/destino
+          var precisaBackfillNotas = state.notasFiscaisImportadas.some(function(n){ return n.qtdItens === undefined; });
+          if(!precisaBackfillNotas) return;
+          var mudouAlgumaNota = false;
+          state.notasFiscaisImportadas.forEach(function(n){
+            if(n.qtdItens !== undefined) return;
+            var destinosEncontrados = {};
+            var qtdItens = 0, valorTotal = 0;
+            state.compras.forEach(function(c){
+              if(!c.notaFiscal || c.notaFiscal !== n.numero) return;
+              var fornecedorCompra = c.fornecedorId ? parceiroNome(c.fornecedorId) : '';
+              if(n.fornecedorNome && fornecedorCompra !== n.fornecedorNome) return;
+              qtdItens++; valorTotal += Number(c.valorTotal) || 0; destinosEncontrados.compra = true;
+            });
+            if(n.numero){
+              state.producao.forEach(function(p){
+                if(p.tipo !== 'entrada' || !p.observacao || p.observacao.indexOf('NF ' + n.numero) === -1) return;
+                qtdItens++; valorTotal += (Number(p.quantidade) || 0) * (Number(p.precoUnitario) || 0); destinosEncontrados.colheita = true;
+              });
+            }
+            if(qtdItens > 0){
+              n.qtdItens = qtdItens; n.valorTotal = valorTotal; n.destinos = Object.keys(destinosEncontrados);
+              mudouAlgumaNota = true;
+            }
+          });
+          if(mudouAlgumaNota) saveKey('notasFiscaisImportadas', state.notasFiscaisImportadas);
+        })();
         if(hasCloudStorage || hasLocalStorage || hasNetlifyBlobs) loading.classList.add('hidden');
         renderAll();
       })
@@ -1434,7 +1524,7 @@
     state.contasReceber.forEach(function(c){
       if(c.status === 'Pendente' && c.vencimento){
         var d = new Date(c.vencimento);
-        if(d <= limite) lista.push({desc:'A receber · ' + c.descricao, valor:Number(c.valor)||0, vencimento:c.vencimento, tipo:'entrada', atrasado: d < hoje});
+        if(d <= limite) lista.push({desc:'A receber · ' + c.descricao, valor:valorLiquidoContaReceber(c), vencimento:c.vencimento, tipo:'entrada', atrasado: d < hoje});
       }
     });
     lista.sort(function(a,b){ return new Date(a.vencimento) - new Date(b.vencimento); });
@@ -1453,8 +1543,8 @@
       else { events.push({date: c.vencimento, valor:Number(c.valor)||0, tipo:'saida', realizado:false}); }
     });
     state.contasReceber.forEach(function(c){
-      if(c.status === 'Recebido'){ events.push({date: c.dataRecebimento || c.vencimento, valor:Number(c.valor)||0, tipo:'entrada', realizado:true}); }
-      else { events.push({date: c.vencimento, valor:Number(c.valor)||0, tipo:'entrada', realizado:false}); }
+      if(c.status === 'Recebido'){ events.push({date: c.dataRecebimento || c.vencimento, valor:valorLiquidoContaReceber(c), tipo:'entrada', realizado:true}); }
+      else { events.push({date: c.vencimento, valor:valorLiquidoContaReceber(c), tipo:'entrada', realizado:false}); }
     });
     return events.filter(function(e){ return e.date; });
   }
@@ -2334,7 +2424,8 @@
         var subLine = subParts.join(' - ');
         if(p.areaTotal) subLine += (subLine ? ' · ' : '') + 'Área registrada: ' + fmtHa(p.areaTotal);
         html += '<div class="property-sub">' + (subLine || '—') + '</div></div>';
-        html += '<button class="btn-del" data-action="del-generic" data-entity="propriedades" data-id="' + p.id + '">Remover</button>';
+        html += '<div><button class="btn-edit" data-action="edit-generic" data-entity="propriedades" data-id="' + p.id + '">Editar</button>';
+        html += '<button class="btn-del" data-action="del-generic" data-entity="propriedades" data-id="' + p.id + '">Remover</button></div>';
         html += '</div>';
 
         html += '<div class="property-sublabel">Talhões desta propriedade (' + talhoesDaProp.length + ' · ' + fmtHa(areaTalhoes) + ')</div>';
@@ -2409,6 +2500,7 @@
 
   /* ---------------- Safras ---------------- */
   var safrasAnoFiltro = '';
+  var safraMapaAnoSelecionado = null;
 
   function renderSafras(){
     var el = document.getElementById('tab-safras');
@@ -2433,6 +2525,36 @@
       html += '</form>';
     }
     html += '</div>';
+
+    if(state.safras.length){
+      var anosDoMapa = state.safras.map(function(s){ return s.anoAgricola || 'Sem ano definido'; }).filter(function(v,i,a){ return a.indexOf(v)===i; }).sort().reverse();
+      html += '<div class="section-title" style="margin-top:0;">Mapa de Safras</div>';
+      html += '<div class="plot-map">';
+      anosDoMapa.forEach(function(ano){
+        var safrasDoAno = state.safras.filter(function(s){ return (s.anoAgricola || 'Sem ano definido') === ano; });
+        var selecionado = ano === safraMapaAnoSelecionado;
+        html += '<button type="button" class="plot ' + (selecionado ? 'status-andamento' : 'status-none') + '" data-action="toggle-safra-mapa-ano" data-ano="' + escapeHtml(ano) + '" title="Ver safras de ' + escapeHtml(ano) + '">';
+        html += '<div><div class="plot-name">' + escapeHtml(ano) + '</div><div class="plot-area">' + safrasDoAno.length + ' safra(s)</div></div>';
+        html += '<span class="plot-cta">' + (selecionado ? 'Fechar' : 'Ver safras') + '</span>';
+        html += '</button>';
+      });
+      html += '</div>';
+
+      if(safraMapaAnoSelecionado){
+        var safrasDoAnoSelecionado = state.safras.filter(function(s){ return (s.anoAgricola || 'Sem ano definido') === safraMapaAnoSelecionado; });
+        html += '<div class="plot-map" style="margin-top:10px;">';
+        safrasDoAnoSelecionado.forEach(function(s){
+          var statusClass = 'status-' + s.status;
+          var talhaoDaSafra = state.talhoes.find(function(t){ return t.id === s.talhaoId; });
+          html += '<button type="button" class="plot ' + statusClass + '" data-action="edit-safra-mapa" data-id="' + s.id + '" title="Editar essa safra">';
+          html += '<div><div class="plot-name">' + escapeHtml(talhaoDaSafra ? talhaoDaSafra.nome : '—') + '</div><div class="plot-area">' + (talhaoDaSafra ? fmtHa(talhaoDaSafra.area) : '') + '</div></div>';
+          html += '<div><div class="plot-crop">' + escapeHtml(culturaNome(s.culturaId)) + '</div><span class="plot-status">' + STATUS_LABEL[s.status] + '</span></div>';
+          html += '<span class="plot-cta">Editar</span>';
+          html += '</button>';
+        });
+        html += '</div>';
+      }
+    }
 
     html += '<div class="paper">';
     if(!state.safras.length){
@@ -2692,12 +2814,14 @@
       html += '<button type="button" class="btn-add-inline" data-action="open-conta-modal" title="Nova conta">+</button>';
       html += '</div>';
       var mostrarDiariaJaAqui = editingRecord && editingRecord.contaId && contaNome(editingRecord.contaId) === 'Diária';
-      html += field('number', 'valor', 'Valor (R$)', true, '0,00', mostrarDiariaJaAqui ? {step:'0.01', min:'0', readonly:'readonly', style:'background:#E8DCB9;'} : {step:'0.01', min:'0'}, editingRecord ? editingRecord.valor : undefined);
-
       html += '<div id="campos-padrao-financeiro" style="display:' + (mostrarDiariaJaAqui ? 'none' : 'contents') + ';">';
-      html += field('number', 'quantidade', 'Qtd. (opcional)', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.quantidade : undefined);
-      html += field('number', 'peso', 'Quantidade (Opcional)', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.peso : undefined);
+      html += field('number', 'quantidade', 'Quantidade (opcional)', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.quantidade : undefined);
+      html += field('number', 'valorUnitario', 'Valor unitário (opcional)', false, '0,00', {step:'0.01', min:'0'}, editingRecord ? editingRecord.valorUnitario : undefined);
+      html += '</div>';
+      html += field('number', 'valor', 'Valor total (R$)', true, '0,00', mostrarDiariaJaAqui ? {step:'0.01', min:'0', readonly:'readonly', style:'background:#E8DCB9;'} : {step:'0.01', min:'0'}, editingRecord ? editingRecord.valor : undefined);
+      html += '<div id="campos-padrao-financeiro-2" style="display:' + (mostrarDiariaJaAqui ? 'none' : 'contents') + ';">';
       html += field('text', 'unidade', 'Tipo (Opcional)', false, 'Ex: SC, kg, L', {}, editingRecord ? (mostrarDiariaJaAqui ? 'diárias' : editingRecord.unidade) : undefined);
+      html += '<span id="qtd-valorunit-hint" style="grid-column: 1 / -1; font-size:11.5px; color:var(--ink-soft);">Preenchendo Quantidade e Valor unitário, o "Valor total (R$)" acima é calculado automaticamente (Quantidade × Valor unitário) — você ainda pode digitar o Valor total direto por cima, se preferir.</span>';
       html += '</div>';
 
       html += selectField('status', 'Status', [{value:'Pago', label:'Pago / recebido'}, {value:'Pendente', label:'Pendente (a pagar ou a receber)'}], editingRecord ? (editingRecord.status || 'Pago') : 'Pago');
@@ -2720,14 +2844,14 @@
       html += '<div id="campos-hora-extra" style="grid-column: 1 / -1; display:' + (mostrarHoraExtra ? 'grid' : 'none') + '; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:12px; padding-top:4px; border-top:1px dashed var(--paper-line); margin-top:4px;">';
       html += field('number', 'horasExtras', 'Horas extras (opcional)', false, '0', {step:'0.5', min:'0'}, editingRecord ? editingRecord.horasExtras : undefined);
       html += field('number', 'valorHoraExtra', 'Valor da hora extra (R$)', false, '0,00', {step:'0.01', min:'0'}, editingRecord ? editingRecord.valorHoraExtra : undefined);
-      html += '<span id="hora-extra-hint" style="grid-column: 1 / -1; font-size:11.5px; color:var(--ink-soft);">Some este valor ao "Valor (R$)" acima, se quiser incluir a hora extra no total pago.</span>';
+      html += '<span id="hora-extra-hint" style="grid-column: 1 / -1; font-size:11.5px; color:var(--ink-soft);">Some este valor ao "Valor total (R$)" acima, se quiser incluir a hora extra no total pago.</span>';
       html += '</div>';
 
       var mostrarDiaria = mostrarDiariaJaAqui;
       html += '<div id="campos-diaria" style="grid-column: 1 / -1; display:' + (mostrarDiaria ? 'grid' : 'none') + '; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:12px; padding-top:4px; border-top:1px dashed var(--paper-line); margin-top:4px;">';
       html += field('number', 'qtdDiarias', 'Nº de diárias', false, '0', {step:'0.5', min:'0'}, editingRecord ? editingRecord.qtdDiarias : undefined);
       html += field('number', 'valorDiaria', 'Valor por diária (R$)', false, '0,00', {step:'0.01', min:'0'}, editingRecord ? editingRecord.valorDiaria : undefined);
-      html += '<span id="diaria-hint" style="grid-column: 1 / -1; font-size:11.5px; color:var(--ink-soft);">O "Valor (R$)" acima é calculado automaticamente (Nº de diárias × Valor por diária).</span>';
+      html += '<span id="diaria-hint" style="grid-column: 1 / -1; font-size:11.5px; color:var(--ink-soft);">O "Valor total (R$)" acima é calculado automaticamente (Nº de diárias × Valor por diária).</span>';
       html += '</div>';
 
       html += field('text', 'descricao', 'Descrição / Documento', false, 'Ex: DOC 137832 - Cooperativa', {}, editingRecord ? editingRecord.descricao : undefined);
@@ -2765,22 +2889,23 @@
       html += '<div class="empty-state">Nenhum lançamento financeiro ainda.</div>';
     } else {
       html += '<div style="padding:14px 18px 0;"><input type="text" id="search-financeiro" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
-      html += '<div class="table-wrap"><table><thead><tr><th>Data/Venc.</th><th>Tipo</th><th>Status</th><th>Conta</th><th>Qtd./Peso</th><th>Talhão</th><th>Descrição</th><th>Funcionário</th><th>Valor</th><th></th></tr></thead><tbody>';
+      html += '<div class="table-wrap"><table><thead><tr><th>Data/Venc.</th><th>Funcionário</th><th>Descrição</th><th>Conta</th><th>Talhão</th><th>Quantidade</th><th>Valor Unitário</th><th>Valor Total</th><th>Tipo</th><th>Status</th><th></th></tr></thead><tbody>';
       state.financeiro.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(f){
         var status = f.status || 'Pago';
         html += '<tr>';
         html += '<td>' + fmtDate(status === 'Pendente' ? f.vencimento : f.data) + '</td>';
-        html += '<td><span class="badge tipo-' + f.tipo + '">' + (f.tipo === 'custo' ? 'Custo' : 'Receita') + '</span></td>';
-        html += '<td><span class="badge" style="background:' + (status === 'Pendente' ? '#DFA84E' : '#7FA36D') + '; color:#1B1508">' + status + '</span></td>';
-        html += '<td>' + (f.contaId ? escapeHtml(contaLabel(f.contaId)) : escapeHtml(f.categoria || '—')) + '</td>';
-        html += '<td class="num">' + (f.quantidade ? fmtNum(f.quantidade) : '—') + (f.peso ? ' / ' + fmtNum(f.peso) : '') + (f.unidade ? ' ' + escapeHtml(f.unidade) : '') + '</td>';
-        html += '<td>' + (f.talhoesIds && f.talhoesIds.length ? escapeHtml(f.talhoesIds.map(talhaoNome).join(', ')) : (f.talhaoId ? escapeHtml(talhaoNome(f.talhaoId)) : '—')) + '</td>';
+        html += '<td>' + (f.membroId ? escapeHtml(membroNome(f.membroId)) : '—') + (f.temAnexo ? ' <button type="button" class="btn-edit" data-action="ver-anexo" data-id="' + f.id + '" title="Ver comprovante" style="padding:2px 7px; font-size:11px;">📎</button>' : '') + '</td>';
         html += '<td>' + escapeHtml(f.descricao || '—')
           + (f.horasExtras ? ' <span style="font-size:11px; color:var(--ink-soft);">(+' + fmtNum(f.horasExtras) + 'h extra = ' + fmtBRL((Number(f.horasExtras)||0)*(Number(f.valorHoraExtra)||0)) + ')</span>' : '')
           + (f.qtdDiarias ? ' <span style="font-size:11px; color:var(--ink-soft);">(' + fmtNum(f.qtdDiarias) + ' diária(s) = ' + fmtBRL((Number(f.qtdDiarias)||0)*(Number(f.valorDiaria)||0)) + ')</span>' : '')
           + '</td>';
-        html += '<td>' + (f.membroId ? escapeHtml(membroNome(f.membroId)) : '—') + (f.temAnexo ? ' <button type="button" class="btn-edit" data-action="ver-anexo" data-id="' + f.id + '" title="Ver comprovante" style="padding:2px 7px; font-size:11px;">📎</button>' : '') + '</td>';
-        html += '<td class="num ' + (f.tipo === 'custo' ? 'cost' : 'growth') + '">' + (f.tipo === 'custo' ? '−' : '+') + ' ' + fmtBRL(f.valor) + '</td>';
+        html += '<td>' + (f.contaId ? escapeHtml(contaLabel(f.contaId)) : escapeHtml(f.categoria || '—')) + '</td>';
+        html += '<td>' + (f.talhoesIds && f.talhoesIds.length ? escapeHtml(f.talhoesIds.map(talhaoNome).join(', ')) : (f.talhaoId ? escapeHtml(talhaoNome(f.talhaoId)) : '—')) + '</td>';
+        html += '<td class="num">' + (f.quantidade ? fmtNum(f.quantidade) : '—') + (f.unidade ? ' ' + escapeHtml(f.unidade) : '') + '</td>';
+        html += '<td class="num">' + (Number(f.valorUnitario) > 0 ? fmtBRL(f.valorUnitario) : '—') + '</td>';
+        html += '<td class="num ' + (f.tipo === 'custo' ? 'cost' : 'growth') + '">' + (Number(f.valorUnitario) > 0 ? ((f.tipo === 'custo' ? '−' : '+') + ' ' + fmtBRL(valorTotalLancamento(f))) : ((f.tipo === 'custo' ? '−' : '+') + ' ' + fmtBRL(f.valor))) + '</td>';
+        html += '<td><span class="badge tipo-' + f.tipo + '">' + (f.tipo === 'custo' ? 'Custo' : 'Receita') + '</span></td>';
+        html += '<td><span class="badge" style="background:' + (status === 'Pendente' ? '#DFA84E' : '#7FA36D') + '; color:#1B1508">' + status + '</span></td>';
         if(lancamentoEstaFechado(f)){
           html += '<td><span class="badge" style="background:#8B8368; color:#fff;" title="Período fechado">🔒 Fechado</span></td>';
         } else {
@@ -2840,16 +2965,18 @@
 
   function renderContasReceber(){
     var el = document.getElementById('tab-contasReceber');
-    var pendente = state.contasReceber.filter(function(c){ return c.status === 'Pendente'; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0);
-    var recebido = state.contasReceber.filter(function(c){ return c.status === 'Recebido'; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0);
+    var pendente = state.contasReceber.filter(function(c){ return c.status === 'Pendente'; }).reduce(function(s,c){ return s + valorLiquidoContaReceber(c); }, 0);
+    var recebido = state.contasReceber.filter(function(c){ return c.status === 'Recebido'; }).reduce(function(s,c){ return s + valorLiquidoContaReceber(c); }, 0);
+    var totalGeral = pendente + recebido;
 
     var html = '<div class="stat-row">';
     html += statCard('Total pendente', fmtBRL(pendente), 'growth');
     html += statCard('Total recebido', fmtBRL(recebido), 'growth');
+    html += statCard('Valor total (geral)', fmtBRL(totalGeral), 'growth');
     html += '</div>';
     html += buildGenericFormHtml('contasReceber');
     html += buildGenericTableHtml('contasReceber');
-    html += '<div class="paper note-box">Contas marcadas como "Recebido" e vinculadas a um talhão entram automaticamente na Rentabilidade. Estes lançamentos também alimentam o Fluxo de Caixa. Vendas de colheita registradas na aba Colheita geram receita automaticamente em Financeiro — não use Contas a Receber para a mesma venda, a menos que seja um valor futuro ainda sem colheita associada.</div>';
+    html += '<div class="paper note-box">Os totais acima já são o valor líquido, com desconto aplicado quando houver. Contas marcadas como "Recebido" e vinculadas a um talhão entram automaticamente na Rentabilidade. Estes lançamentos também alimentam o Fluxo de Caixa. Vendas de colheita registradas na aba Colheita geram receita automaticamente em Financeiro — não use Contas a Receber para a mesma venda, a menos que seja um valor futuro ainda sem colheita associada.</div>';
     el.innerHTML = html;
   }
 
@@ -3276,7 +3403,7 @@
     return state.contasPagar.filter(function(c){ return c.status === 'Pago' && c.talhaoId === talhaoId; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0);
   }
   function contasReceberRecebidasPorTalhao(talhaoId){
-    return state.contasReceber.filter(function(c){ return c.status === 'Recebido' && c.talhaoId === talhaoId; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0);
+    return state.contasReceber.filter(function(c){ return c.status === 'Recebido' && c.talhaoId === talhaoId; }).reduce(function(s,c){ return s + valorLiquidoContaReceber(c); }, 0);
   }
   function custosTotaisPorTalhao(talhaoId){ return custosFinanceiroPorTalhao(talhaoId) + contasPagarPagasPorTalhao(talhaoId); }
   function receitasTotaisPorTalhao(talhaoId){ return receitasFinanceiroPorTalhao(talhaoId) + contasReceberRecebidasPorTalhao(talhaoId); }
@@ -3475,7 +3602,7 @@
     var months = Object.keys(buckets).sort();
 
     var saldoRealizado = events.filter(function(e){ return e.realizado; }).reduce(function(s,e){ return s + (e.tipo==='entrada' ? e.valor : -e.valor); }, 0);
-    var totalPendenteReceber = state.contasReceber.filter(function(c){ return c.status === 'Pendente'; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0)
+    var totalPendenteReceber = state.contasReceber.filter(function(c){ return c.status === 'Pendente'; }).reduce(function(s,c){ return s + valorLiquidoContaReceber(c); }, 0)
       + state.financeiro.filter(function(f){ return f.status === 'Pendente' && f.tipo === 'receita'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
     var totalPendentePagar = state.contasPagar.filter(function(c){ return c.status === 'Pendente'; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0)
       + state.financeiro.filter(function(f){ return f.status === 'Pendente' && f.tipo === 'custo'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
@@ -3679,9 +3806,9 @@
   /* ---------------- Relatórios (DRE por Subgrupo/Conta) ---------------- */
   function relatoriosContaStats(contaId){
     var entries = state.financeiro.filter(function(f){ return f.contaId === contaId && (f.status || 'Pago') !== 'Pendente'; });
-    var valor = 0, qtd = 0, peso = 0;
-    entries.forEach(function(f){ valor += Number(f.valor||0); qtd += Number(f.quantidade||0); peso += Number(f.peso||0); });
-    return {valor:valor, qtd:qtd, peso:peso, entries:entries, precoMedio: qtd ? valor/qtd : 0, pesoMedio: qtd ? peso/qtd : 0};
+    var valor = 0, qtd = 0;
+    entries.forEach(function(f){ valor += Number(f.valor||0); qtd += Number(f.quantidade||0); });
+    return {valor:valor, qtd:qtd, entries:entries, precoMedio: qtd ? valor/qtd : 0};
   }
   function fmtPct(n){ return (Number(n)||0).toLocaleString('pt-BR', {maximumFractionDigits:2}) + '%'; }
 
@@ -3716,7 +3843,6 @@
           linhasContas += '<tr style="font-weight:600;">';
           linhasContas += '<td style="padding-left:24px;">' + escapeHtml(c.nome) + '</td>';
           linhasContas += '<td class="num">' + (st.qtd ? fmtNum(st.qtd) : '—') + '</td>';
-          linhasContas += '<td class="num">' + (st.pesoMedio ? fmtNum(st.pesoMedio) : '—') + '</td>';
           linhasContas += '<td class="num">' + (st.precoMedio ? fmtBRL(st.precoMedio) : '—') + '</td>';
           linhasContas += '<td class="num ' + (tipoSecao === 'custo' ? 'cost' : 'growth') + '">' + fmtBRL(st.valor) + '</td>';
           linhasContas += '<td class="num">' + fmtPct(percC) + '</td>';
@@ -3727,7 +3853,7 @@
             linhasContas += '<tr style="font-size:12px; color:var(--ink-soft);">';
             linhasContas += '<td style="padding-left:40px;">' + escapeHtml(docLabel) + (f.parceiroId ? ' — ' + escapeHtml(parceiroNome(f.parceiroId)) : '') + '</td>';
             linhasContas += '<td class="num">' + (f.quantidade ? fmtNum(f.quantidade) : '—') + '</td>';
-            linhasContas += '<td class="num">—</td><td class="num">—</td>';
+            linhasContas += '<td class="num">—</td>';
             linhasContas += '<td class="num">' + fmtBRL(f.valor) + '</td>';
             linhasContas += '<td class="num">—</td><td class="num">—</td>';
             linhasContas += '</tr>';
@@ -3739,7 +3865,7 @@
         corpo += '<tr style="font-weight:700; background:var(--paper-2);">';
         corpo += '<td>' + escapeHtml(sg.nome) + '</td>';
         corpo += '<td class="num">' + (sgQtd ? fmtNum(sgQtd) : '—') + '</td>';
-        corpo += '<td class="num">—</td><td class="num">—</td>';
+        corpo += '<td class="num">—</td>';
         corpo += '<td class="num ' + (tipoSecao === 'custo' ? 'cost' : 'growth') + '">' + fmtBRL(sgValor) + '</td>';
         corpo += '<td class="num">' + fmtPct(percSgC) + '</td>';
         corpo += '<td class="num">' + fmtPct(percSgR) + '</td>';
@@ -3750,9 +3876,9 @@
       if(!corpo){
         html += '<div class="empty-state">Nenhum lançamento "Pago" nesta seção ainda.</div>';
       } else {
-        html += '<div class="table-wrap"><table><thead><tr><th>Subgrupo · Conta · Documento</th><th>Qtd.</th><th>Peso méd.</th><th>Preço méd.</th><th>Valor</th><th>%custo</th><th>%receita</th></tr></thead><tbody>';
+        html += '<div class="table-wrap"><table><thead><tr><th>Subgrupo · Conta · Documento</th><th>Qtd.</th><th>Preço méd.</th><th>Valor</th><th>%custo</th><th>%receita</th></tr></thead><tbody>';
         html += corpo;
-        html += '<tr style="font-weight:700; border-top:2px solid var(--paper-line);"><td>TOTAL</td><td></td><td></td><td></td>';
+        html += '<tr style="font-weight:700; border-top:2px solid var(--paper-line);"><td>TOTAL</td><td></td><td></td>';
         html += '<td class="num">' + fmtBRL(totalSecao) + '</td>';
         html += '<td class="num">' + (totalCustos ? fmtPct(totalSecao/totalCustos*100) : '0,00%') + '</td>';
         html += '<td class="num">' + (totalReceitas ? fmtPct(totalSecao/totalReceitas*100) : '0,00%') + '</td></tr>';
@@ -4025,9 +4151,9 @@
     addSheet('DiarioDeCampo', state.operacoes.map(function(o){ return {Data:o.data, Tipo:o.tipo, Talhao: o.talhaoId?talhaoNome(o.talhaoId):'', Produto: o.produtoId?produtoNome(o.produtoId):'', Quantidade:o.quantidade, Unidade:o.unidade, Parceiro: o.parceiroId?parceiroNome(o.parceiroId):'', Responsavel: o.responsavelId?membroNome(o.responsavelId):''}; }));
     addSheet('Subgrupos', state.subgruposFinanceiro.map(function(s){ return {Nome:s.nome, Tipo: s.tipo==='custo'?'Despesa':'Receita'}; }));
     addSheet('ContasFinanceiro', state.contasFinanceiro.map(function(c){ return {Conta:c.nome, Subgrupo: subgrupoNome(c.subgrupoId)}; }));
-    addSheet('Financeiro', state.financeiro.map(function(f){ return {Data:f.data, Vencimento:f.vencimento, Status:f.status||'Pago', Tipo:f.tipo, Subgrupo: f.contaId?subgrupoNome((state.contasFinanceiro.find(function(c){return c.id===f.contaId;})||{}).subgrupoId):'', Conta: f.contaId?contaNome(f.contaId):f.categoria, Quantidade:f.quantidade, Peso:f.peso, Unidade:f.unidade, Talhoes: talhoesDoLancamento(f).map(talhaoNome).join(', '), Descricao:f.descricao, Valor:f.valor}; }));
+    addSheet('Financeiro', state.financeiro.map(function(f){ return {Data:f.data, Vencimento:f.vencimento, Status:f.status||'Pago', Tipo:f.tipo, Subgrupo: f.contaId?subgrupoNome((state.contasFinanceiro.find(function(c){return c.id===f.contaId;})||{}).subgrupoId):'', Conta: f.contaId?contaNome(f.contaId):f.categoria, Quantidade:f.quantidade, ValorUnitario:f.valorUnitario, Unidade:f.unidade, Talhoes: talhoesDoLancamento(f).map(talhaoNome).join(', '), Descricao:f.descricao, Valor:f.valor}; }));
     addSheet('ContasAPagar', state.contasPagar.map(function(c){ return {Descricao:c.descricao, Categoria:c.categoria, Valor:c.valor, Vencimento:c.vencimento, Status:c.status}; }));
-    addSheet('ContasAReceber', state.contasReceber.map(function(c){ return {Descricao:c.descricao, Categoria:c.categoria, Valor:c.valor, Vencimento:c.vencimento, Status:c.status}; }));
+    addSheet('ContasAReceber', state.contasReceber.map(function(c){ return {Descricao:c.descricao, Categoria:c.categoria, ValorBruto:c.valor, Desconto:valorDescontoContaReceber(c), ValorTotal:valorLiquidoContaReceber(c), Vencimento:c.vencimento, Status:c.status}; }));
 
     var rentTalhao = state.talhoes.map(function(t){
       var safraIdsDoTalhao = state.safras.filter(function(s){ return s.talhaoId === t.id; }).map(function(s){ return s.id; });
@@ -4209,6 +4335,9 @@
     if(e.target && (e.target.id === 'f-qtdDiarias' || e.target.id === 'f-valorDiaria')){
       recalcularValorDiaria();
     }
+    if(e.target && (e.target.id === 'f-quantidade' || e.target.id === 'f-valorUnitario') && e.target.closest && e.target.closest('#form-financeiro')){
+      recalcularValorPorQuantidade();
+    }
     if(e.target && e.target.id === 'f-safraId' && e.target.closest && e.target.closest('#form-colheita-entrada')){
       var safraEsc = state.safras.find(function(s){ return s.id === e.target.value; });
       var precoInputCot = document.getElementById('f-precoUnitario');
@@ -4311,10 +4440,12 @@
         }
 
         var camposPadrao = document.getElementById('campos-padrao-financeiro');
+        var camposPadrao2 = document.getElementById('campos-padrao-financeiro-2');
         var campoParc = document.getElementById('campo-parceiro');
         var valorIn = document.getElementById('f-valor');
         var tipoIn = document.getElementById('f-unidade');
         if(camposPadrao) camposPadrao.style.display = ehDiaria ? 'none' : 'contents';
+        if(camposPadrao2) camposPadrao2.style.display = ehDiaria ? 'none' : 'contents';
         if(campoParc) campoParc.style.display = ehDiaria ? 'none' : 'contents';
         if(valorIn){
           if(ehDiaria){ valorIn.setAttribute('readonly', 'readonly'); valorIn.style.background = '#E8DCB9'; valorIn.value = '0.00'; }
@@ -4324,6 +4455,25 @@
       }
     }
   });
+
+  function valorTotalLancamento(f){
+    if(Number(f.valorUnitario) > 0){
+      return Number(f.valorUnitario) * (Number(f.quantidade) || 1);
+    }
+    return Number(f.valor) || 0;
+  }
+
+  function recalcularValorPorQuantidade(){
+    var qtdEl = document.getElementById('f-quantidade');
+    var valorUnitEl = document.getElementById('f-valorUnitario');
+    var valorEl = document.getElementById('f-valor');
+    if(!qtdEl || !valorUnitEl || !valorEl) return;
+    var qtd = parseFloat(qtdEl.value) || 0;
+    var valorUnit = parseFloat(valorUnitEl.value) || 0;
+    if(qtd > 0 && valorUnit > 0){
+      valorEl.value = (qtd * valorUnit).toFixed(2);
+    }
+  }
 
   function recalcularValorDiaria(){
     var qtdEl = document.getElementById('f-qtdDiarias');
@@ -4336,7 +4486,7 @@
     var totalDiaria = qtd * valorD;
     if(valorInDiaria) valorInDiaria.value = totalDiaria.toFixed(2);
     if(hintD){
-      hintD.textContent = 'O "Valor (R$)" acima é calculado automaticamente (Nº de diárias × Valor por diária)' + (totalDiaria > 0 ? ' = ' + fmtBRL(totalDiaria) + '.' : '.');
+      hintD.textContent = 'O "Valor total (R$)" acima é calculado automaticamente (Nº de diárias × Valor por diária)' + (totalDiaria > 0 ? ' = ' + fmtBRL(totalDiaria) + '.' : '.');
     }
   }
 
@@ -4348,12 +4498,15 @@
         var valorH = parseFloat(document.getElementById('f-valorHoraExtra').value) || 0;
         var totalExtra = horas * valorH;
         hint.textContent = totalExtra > 0
-          ? 'Hora extra: ' + fmtBRL(totalExtra) + ' — some ao "Valor (R$)" acima, se quiser incluir no total pago.'
-          : 'Some este valor ao "Valor (R$)" acima, se quiser incluir a hora extra no total pago.';
+          ? 'Hora extra: ' + fmtBRL(totalExtra) + ' — some ao "Valor total (R$)" acima, se quiser incluir no total pago.'
+          : 'Some este valor ao "Valor total (R$)" acima, se quiser incluir a hora extra no total pago.';
       }
     }
     if(e.target && (e.target.id === 'f-qtdDiarias' || e.target.id === 'f-valorDiaria')){
       recalcularValorDiaria();
+    }
+    if(e.target && (e.target.id === 'f-quantidade' || e.target.id === 'f-valorUnitario') && e.target.closest && e.target.closest('#form-financeiro')){
+      recalcularValorPorQuantidade();
     }
     if(e.target && e.target.id && e.target.id.indexOf('search-') === 0){
       var entityKey = e.target.id.slice(7);
@@ -4722,7 +4875,7 @@
       var finFields = {
         contaId: finContaId, tipo: contaTipo(finContaId), categoria: finConta ? finConta.nome : '',
         valor: finEhDiaria ? (finQtdDiarias * finValorDiaria) : (parseFloat(data.get('valor')) || 0),
-        quantidade: finEhDiaria ? 0 : (parseFloat(data.get('quantidade')) || 0), peso: finEhDiaria ? 0 : (parseFloat(data.get('peso')) || 0),
+        quantidade: finEhDiaria ? 0 : (parseFloat(data.get('quantidade')) || 0), valorUnitario: finEhDiaria ? 0 : (parseFloat(data.get('valorUnitario')) || 0),
         unidade: finEhDiaria ? 'diárias' : (data.get('unidade') || '').trim(),
         status: data.get('status') || 'Pago', data: data.get('data') || '', vencimento: data.get('vencimento') || '',
         talhoesIds: finTalhoesIds, talhaoId: finTalhoesIds.length === 1 ? finTalhoesIds[0] : '', parceiroId: finEhDiaria ? '' : (data.get('parceiroId') || ''),
@@ -5161,6 +5314,19 @@
     if(action === 'edit-talhao'){ editState = {scope:'talhoes', id: id}; renderAll(); var f2 = document.getElementById('form-talhao'); if(f2) f2.scrollIntoView({behavior:'smooth', block:'start'}); return; }
     if(action === 'del-safra'){ state.safras = state.safras.filter(function(s){ return s.id !== id; }); saveKey('safras', state.safras); renderAll(); return; }
     if(action === 'edit-safra'){ editState = {scope:'safras', id: id}; renderAll(); var f3 = document.getElementById('form-safra'); if(f3) f3.scrollIntoView({behavior:'smooth', block:'start'}); return; }
+    if(action === 'toggle-safra-mapa-ano'){
+      var anoClicado = btn.dataset.ano;
+      safraMapaAnoSelecionado = (safraMapaAnoSelecionado === anoClicado) ? null : anoClicado;
+      renderSafras();
+      return;
+    }
+    if(action === 'edit-safra-mapa'){
+      editState = {scope:'safras', id: id};
+      renderSafras();
+      var formSafraMapa = document.getElementById('form-safra');
+      if(formSafraMapa) formSafraMapa.scrollIntoView({behavior:'smooth', block:'start'});
+      return;
+    }
     if(action === 'toggle-ativa-safra'){
       var safraToggle = state.safras.find(function(s){ return s.id === id; });
       if(!safraToggle) return;
