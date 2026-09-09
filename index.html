@@ -2969,7 +2969,10 @@
     html += '</div>';
 
     html += buildGenericFormHtml('chuvas');
-    html += buildGenericTableHtml('chuvas');
+    html += '<button type="button" class="btn" data-action="toggle-chuva-historico" style="margin:4px 0 12px;">' + (chuvaHistoricoAberto ? '▲ Ocultar histórico completo de registros' : '▼ Ver histórico completo de registros (' + state.chuvas.length + ')') + '</button>';
+    if(chuvaHistoricoAberto){
+      html += buildGenericTableHtml('chuvas');
+    }
 
     var propriedadesComChuva = state.propriedades.filter(function(p){ return state.chuvas.some(function(c){ return c.propriedadeId === p.id; }); });
     var anosComChuva = state.chuvas.map(function(c){ return (c.data||'').slice(0,4); }).filter(function(v){ return v; }).filter(function(v,i,a){ return a.indexOf(v)===i; }).sort().reverse();
@@ -3862,6 +3865,7 @@
   var rastreabilidadeSafraId = null;
   var chuvaMapaAno = null;
   var hidricaPropriedadeId = null;
+  var chuvaHistoricoAberto = false;
   var chuvaMapaPropriedadeId = null;
   var notaEmDetalheChave = null; // qual nota está aberta no painel de detalhe (mestre-detalhe)
   var sefazUltimaResposta = null;
@@ -5123,6 +5127,11 @@
       safraToggle.ativa = safraToggle.ativa === false ? true : false;
       saveKey('safras', state.safras);
       renderAll();
+      return;
+    }
+    if(action === 'toggle-chuva-historico'){
+      chuvaHistoricoAberto = !chuvaHistoricoAberto;
+      renderAgro50();
       return;
     }
     if(action === 'del-producao'){ state.producao = state.producao.filter(function(p){ return p.id !== id; }); saveKey('producao', state.producao); renderAll(); return; }
