@@ -1842,6 +1842,33 @@
     html += statCard('Aguardando recebimento', comprasPendentes);
     html += '</div>';
 
+    if(state.notasFiscaisImportadas.length){
+      var notasOrdenadas = state.notasFiscaisImportadas.slice().sort(function(a,b){ return (b.dataImportacao||'').localeCompare(a.dataImportacao||''); });
+      var notasParaMostrar = notasHistoricoAberto ? notasOrdenadas : notasOrdenadas.slice(0, 8);
+      html += '<div class="section-title" style="margin-top:0;">Notas importadas</div>';
+      html += '<div class="paper table-wrap"><table><thead><tr><th>Importada em</th><th>Nº nota</th><th>Fornecedor</th><th>Itens</th><th>Valor total</th><th>Destino</th></tr></thead><tbody>';
+      notasParaMostrar.forEach(function(n){
+        var destinoLabel = '—', destinoCor = '#C9C3A4';
+        if(n.destinos && n.destinos.length){
+          if(n.destinos.length > 1){ destinoLabel = 'Misto'; destinoCor = '#C98A2B'; }
+          else if(n.destinos[0] === 'colheita'){ destinoLabel = 'Colheita'; destinoCor = '#3B6EA5'; }
+          else { destinoLabel = 'Compra'; destinoCor = '#7FA36D'; }
+        }
+        html += '<tr>';
+        html += '<td>' + (n.dataImportacao ? fmtDate(n.dataImportacao.slice(0,10)) : '—') + '</td>';
+        html += '<td>' + escapeHtml(n.numero || '—') + '</td>';
+        html += '<td>' + escapeHtml(n.fornecedorNome || '—') + '</td>';
+        html += '<td class="num">' + (n.qtdItens !== undefined ? n.qtdItens : '—') + '</td>';
+        html += '<td class="num">' + (n.valorTotal !== undefined ? fmtBRL(n.valorTotal) : '—') + '</td>';
+        html += '<td><span class="badge" style="background:' + destinoCor + '; color:#fff;">' + destinoLabel + '</span></td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+      if(notasOrdenadas.length > 8){
+        html += '<button type="button" class="btn" data-action="toggle-notas-historico" style="margin:4px 0 16px;">' + (notasHistoricoAberto ? '▲ Ver só as recentes' : '▼ Ver todas (' + notasOrdenadas.length + ')') + '</button>';
+      }
+    }
+
     html += '<div class="paper form-card"><h3>' + (editingRecord ? 'Editar compra' : 'Nova compra') + '</h3>';
     if(!state.produtos.length){
       html += '<div class="empty-state">Cadastre um produto (aba Produtos) antes de registrar uma compra.</div>';
@@ -3866,6 +3893,7 @@
   var chuvaMapaAno = null;
   var hidricaPropriedadeId = null;
   var chuvaHistoricoAberto = false;
+  var notasHistoricoAberto = false;
   var chuvaMapaPropriedadeId = null;
   var notaEmDetalheChave = null; // qual nota está aberta no painel de detalhe (mestre-detalhe)
   var sefazUltimaResposta = null;
@@ -5026,14 +5054,26 @@
         }
       });
 
-      var chavesJaRegistradas = state.notasFiscaisImportadas.map(function(n){ return n.chave; });
+      var gruposPorChaveNota = {};
       selecionados.forEach(function(item){
-        if(!item.chaveNota || chavesJaRegistradas.indexOf(item.chaveNota) !== -1) return;
+        if(!item.chaveNota) return;
+        if(!gruposPorChaveNota[item.chaveNota]) gruposPorChaveNota[item.chaveNota] = {itens: [], valorTotal: 0, destinos: {}};
+        gruposPorChaveNota[item.chaveNota].itens.push(item);
+        gruposPorChaveNota[item.chaveNota].valorTotal += Number(item.vProd) || 0;
+        gruposPorChaveNota[item.chaveNota].destinos[item.destino || 'compra'] = true;
+      });
+      var chavesJaRegistradas = state.notasFiscaisImportadas.map(function(n){ return n.chave; });
+      Object.keys(gruposPorChaveNota).forEach(function(chave){
+        if(chavesJaRegistradas.indexOf(chave) !== -1) return;
+        var grupoNota = gruposPorChaveNota[chave];
+        var itemRefNota = grupoNota.itens[0];
         state.notasFiscaisImportadas.push({
-          chave: item.chaveNota, numero: item.numeroNota, fornecedorNome: item.fornecedorNomeNota,
-          dataEmissao: item.dataEmissaoNota, dataImportacao: new Date().toISOString()
+          chave: chave, numero: itemRefNota.numeroNota, fornecedorNome: itemRefNota.fornecedorNomeNota,
+          dataEmissao: itemRefNota.dataEmissaoNota, dataImportacao: new Date().toISOString(),
+          qtdItens: grupoNota.itens.length, valorTotal: grupoNota.valorTotal,
+          destinos: Object.keys(grupoNota.destinos)
         });
-        chavesJaRegistradas.push(item.chaveNota);
+        chavesJaRegistradas.push(chave);
       });
       saveKey('notasFiscaisImportadas', state.notasFiscaisImportadas);
 
@@ -5132,6 +5172,11 @@
     if(action === 'toggle-chuva-historico'){
       chuvaHistoricoAberto = !chuvaHistoricoAberto;
       renderAgro50();
+      return;
+    }
+    if(action === 'toggle-notas-historico'){
+      notasHistoricoAberto = !notasHistoricoAberto;
+      renderCompras();
       return;
     }
     if(action === 'del-producao'){ state.producao = state.producao.filter(function(p){ return p.id !== id; }); saveKey('producao', state.producao); renderAll(); return; }
