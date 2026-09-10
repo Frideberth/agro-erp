@@ -377,6 +377,10 @@
         <h1 id="page-title">Dashboard</h1>
         <div class="subtitle" id="page-subtitle">Visão geral da propriedade</div>
       </div>
+      <div style="position:relative; flex:1; max-width:320px; margin:0 20px; align-self:center;">
+        <input type="text" id="busca-global-input" placeholder="Buscar em tudo... (aba, talhão, produto, parceiro)" autocomplete="off" style="width:100%; padding:9px 12px; border:1px solid var(--paper-line); border-radius:6px; background:var(--paper); font-size:13px;">
+        <div id="busca-global-resultados" style="display:none; position:absolute; top:100%; left:0; right:0; background:var(--paper); border:1px solid var(--paper-line); border-radius:6px; box-shadow:var(--shadow); margin-top:4px; max-height:340px; overflow-y:auto; z-index:50;"></div>
+      </div>
       <div id="loading-indicator">Carregando dados…</div>
     </div>
 
@@ -603,7 +607,10 @@
         {key:'valorTotal', label:'Valor total', format:'brl', compute: valorTotalServicoPrestado},
         {key:'contaId', label:'Conta', compute: function(item){ return item.contaId ? contaLabel(item.contaId) : '—'; }},
         {key:'status', label:'Status', format:'badge', colors:{'Pendente':'#DFA84E', 'Pago':'#7FA36D', 'Recebido':'#7FA36D'}, compute: function(item){ if(item.status !== 'Pago') return item.status; return item.direcao === 'Prestado' ? 'Recebido' : 'Pago'; }}
-      ]
+      ],
+      extraRowAction: function(item){
+        return item.financeiroId ? '<button type="button" class="btn-edit" data-action="ver-lancamento-vinculado" data-id="' + item.financeiroId + '" title="Abre o lançamento gerado automaticamente no Financeiro">💰 Ver lançamento</button>' : '';
+      }
     },
     chuvas: {
       label: 'registro de chuva',
@@ -1107,7 +1114,7 @@
             var desc = (p.beneficiario || '') + (p.tipo ? ' (' + p.tipo + ')' : '');
             if(p.observacao) desc += (desc ? ' — ' : '') + p.observacao;
             state.financeiro.push({
-              id: uid(), tipo:'custo', categoria: p.categoria || 'Outros', valor: Number(p.valor) || 0,
+              id: uid(), origem: 'pagamento', tipo:'custo', categoria: p.categoria || 'Outros', valor: Number(p.valor) || 0,
               status: p.status === 'Pago' ? 'Pago' : 'Pendente',
               data: p.dataPagamento || '', vencimento: p.vencimento || '',
               talhaoId: p.talhaoId || '', parceiroId: '', membroId: '',
@@ -1553,6 +1560,65 @@
   }
 
   /* ---------------- Tab switching ---------------- */
+  var ORIGEM_LANCAMENTO_LABEL = {
+    'pagamento': {label:'Pagamento', cor:'#8B8368'},
+    'compra': {label:'Compra', cor:'#7FA36D'},
+    'servicoPrestado': {label:'Serviço Prestado', cor:'#3B6EA5'},
+    'colheitaVenda': {label:'Venda de Colheita', cor:'#4F7942'},
+    'nfe': {label:'NF-e', cor:'#C98A2B'},
+    'financiamento': {label:'Financiamento', cor:'#A23E2E'}
+  };
+
+  var ENTIDADES_BUSCA_GLOBAL = [
+    {chave:'talhoes', tab:'talhoes', campo:'nome', tipo:'Talhão', scopeCustom:'talhoes'},
+    {chave:'produtos', tab:'produtos', campo:'nome', tipo:'Produto'},
+    {chave:'parceiros', tab:'parceiros', campo:'nome', tipo:'Parceiro'},
+    {chave:'culturas', tab:'culturas', campo:'nome', tipo:'Cultura'},
+    {chave:'propriedades', tab:'propriedades', campo:'nome', tipo:'Propriedade'},
+    {chave:'equipe', tab:'equipe', campo:'nome', tipo:'Funcionário'},
+    {chave:'patrimonio', tab:'patrimonio', campo:'nome', tipo:'Patrimônio'}
+  ];
+
+  function buscaGlobal(termo){
+    var termoNorm = termo.trim().toLowerCase();
+    if(!termoNorm) return [];
+    var resultados = [];
+    Object.keys(pageMeta).forEach(function(tabKey){
+      if(pageMeta[tabKey].title.toLowerCase().indexOf(termoNorm) !== -1){
+        resultados.push({tipo:'Aba', label: pageMeta[tabKey].title, tab: tabKey, id: null});
+      }
+    });
+    ENTIDADES_BUSCA_GLOBAL.forEach(function(ent){
+      (state[ent.chave] || []).forEach(function(item){
+        var valorCampo = (item[ent.campo] || '').toString();
+        if(valorCampo.toLowerCase().indexOf(termoNorm) !== -1){
+          resultados.push({tipo: ent.tipo, label: valorCampo, tab: ent.tab, id: item.id, entityKey: ent.chave, scopeCustom: ent.scopeCustom});
+        }
+      });
+    });
+    return resultados.slice(0, 10);
+  }
+
+  function renderBuscaGlobalResultados(resultados, termo){
+    var el = document.getElementById('busca-global-resultados');
+    if(!el) return;
+    if(!termo.trim() || !resultados.length){
+      el.style.display = 'none';
+      el.innerHTML = '';
+      return;
+    }
+    var html = '';
+    resultados.forEach(function(r){
+      html += '<div class="busca-resultado-item" data-action="ir-busca-resultado" data-tab="' + r.tab + '" data-id="' + (r.id||'') + '" data-entity="' + (r.entityKey||'') + '" data-scope-custom="' + (r.scopeCustom||'') + '" style="padding:9px 12px; cursor:pointer; border-bottom:1px solid var(--paper-line); font-size:13px;">';
+      html += '<span style="font-size:10px; text-transform:uppercase; color:var(--ink-soft); letter-spacing:0.03em;">' + escapeHtml(r.tipo) + '</span><br>';
+      html += escapeHtml(r.label);
+      html += '</div>';
+    });
+    if(resultados.length === 10) html += '<div style="padding:7px 12px; font-size:11px; color:var(--ink-soft);">Mostrando os 10 primeiros resultados — digite mais pra refinar.</div>';
+    el.innerHTML = html;
+    el.style.display = 'block';
+  }
+
   function switchTab(tab){
     document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.tab === tab); });
     document.querySelectorAll('.tab-content').forEach(function(sec){ sec.classList.toggle('hidden', sec.id !== 'tab-' + tab); });
@@ -1680,7 +1746,44 @@
       html += '</div>';
     }
 
-    html += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin-top:24px;">';
+    var safrasAtivas = state.safras.filter(function(s){ return s.ativa !== false; });
+    if(safrasAtivas.length){
+      var paletaCultura = ['#7FA36D', '#C98A2B', '#8B8368', '#A9B7C6', '#4F7942', '#D08370', '#DFA84E'];
+      var corPorCultura = {};
+      state.culturas.forEach(function(c, idx){ corPorCultura[c.id] = paletaCultura[idx % paletaCultura.length]; });
+
+      var colunasKanban = [
+        {status: 'planejada', titulo: 'Planejada'},
+        {status: 'andamento', titulo: 'Em andamento'},
+        {status: 'colhida', titulo: 'Colhida'}
+      ];
+
+      html += '<div class="section-title">Safras por estágio</div>';
+      html += '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:14px; margin-bottom:8px;">';
+      colunasKanban.forEach(function(col){
+        var safrasColuna = safrasAtivas.filter(function(s){ return s.status === col.status; });
+        html += '<div class="paper" style="padding:14px; background:var(--paper-2); min-width:0;">';
+        html += '<div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-soft); margin-bottom:10px; display:flex; justify-content:space-between;"><span>' + col.titulo + '</span><span>' + safrasColuna.length + '</span></div>';
+        if(!safrasColuna.length){
+          html += '<div style="font-size:12px; color:var(--ink-soft); padding:8px 0;">Nenhuma safra aqui.</div>';
+        } else {
+          safrasColuna.forEach(function(s){
+            var cor = corPorCultura[s.culturaId] || '#C9C3A4';
+            html += '<div style="background:#FBF7EC; border-left:4px solid ' + cor + '; border-radius:4px; padding:8px 10px; margin-bottom:8px; font-size:12.5px; overflow-wrap:break-word;">';
+            html += '<div style="font-weight:600;">' + escapeHtml(talhaoNome(s.talhaoId)) + '</div>';
+            html += '<div style="color:var(--ink-soft);">' + escapeHtml(culturaNome(s.culturaId)) + (s.anoAgricola ? ' · ' + escapeHtml(s.anoAgricola) : '') + '</div>';
+            html += '</div>';
+          });
+        }
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+
+    html += '<button type="button" class="btn-add-inline" data-action="toggle-dashboard-detalhes" style="margin:8px 0 16px;">' + (dashboardMaisDetalhesAberto ? '▲ Ocultar detalhes' : '▼ Ver mais detalhes (últimas atividades, estoque, cotações, lançamentos)') + '</button>';
+    html += '<div id="dashboard-mais-detalhes" style="display:' + (dashboardMaisDetalhesAberto ? 'block' : 'none') + ';">';
+
+    html += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin-top:8px;">';
 
     html += '<div><div class="section-title" style="margin-top:0;">Últimas atividades</div>';
     var recentOps = state.operacoes.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).slice(0,5);
@@ -1737,8 +1840,6 @@
     }
     html += '</div>';
 
-    var safrasAtivas = state.safras.filter(function(s){ return s.ativa !== false; });
-
     var recentFin = state.financeiro.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).slice(0,5);
     html += '<div><div class="section-title" style="margin-top:0;">Últimos lançamentos</div>';
     if(!recentFin.length){
@@ -1753,39 +1854,7 @@
     html += '</div>';
 
     html += '</div>';
-
-    if(safrasAtivas.length){
-      var paletaCultura = ['#7FA36D', '#C98A2B', '#8B8368', '#A9B7C6', '#4F7942', '#D08370', '#DFA84E'];
-      var corPorCultura = {};
-      state.culturas.forEach(function(c, idx){ corPorCultura[c.id] = paletaCultura[idx % paletaCultura.length]; });
-
-      var colunasKanban = [
-        {status: 'planejada', titulo: 'Planejada'},
-        {status: 'andamento', titulo: 'Em andamento'},
-        {status: 'colhida', titulo: 'Colhida'}
-      ];
-
-      html += '<div class="section-title">Safras por estágio</div>';
-      html += '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:14px; margin-bottom:24px;">';
-      colunasKanban.forEach(function(col){
-        var safrasColuna = safrasAtivas.filter(function(s){ return s.status === col.status; });
-        html += '<div class="paper" style="padding:14px; background:var(--paper-2); min-width:0;">';
-        html += '<div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-soft); margin-bottom:10px; display:flex; justify-content:space-between;"><span>' + col.titulo + '</span><span>' + safrasColuna.length + '</span></div>';
-        if(!safrasColuna.length){
-          html += '<div style="font-size:12px; color:var(--ink-soft); padding:8px 0;">Nenhuma safra aqui.</div>';
-        } else {
-          safrasColuna.forEach(function(s){
-            var cor = corPorCultura[s.culturaId] || '#C9C3A4';
-            html += '<div style="background:#FBF7EC; border-left:4px solid ' + cor + '; border-radius:4px; padding:8px 10px; margin-bottom:8px; font-size:12.5px; overflow-wrap:break-word;">';
-            html += '<div style="font-weight:600;">' + escapeHtml(talhaoNome(s.talhaoId)) + '</div>';
-            html += '<div style="color:var(--ink-soft);">' + escapeHtml(culturaNome(s.culturaId)) + (s.anoAgricola ? ' · ' + escapeHtml(s.anoAgricola) : '') + '</div>';
-            html += '</div>';
-          });
-        }
-        html += '</div>';
-      });
-      html += '</div>';
-    }
+    html += '</div>'; // fecha #dashboard-mais-detalhes
 
     el.innerHTML = html;
   }
@@ -2536,6 +2605,8 @@
   /* ---------------- Safras ---------------- */
   var safrasAnoFiltro = '';
   var financeiroMesFiltro = '';
+  var financeiroMostrarMaisOpcoes = false;
+  var dashboardMaisDetalhesAberto = false;
   var safraMapaAnoSelecionado = null;
 
   function renderSafras(){
@@ -2835,6 +2906,9 @@
     var estoque = estoqueResumo();
     var saldoProjetado = saldo + estoque.total;
     var editingRecord = (editState && editState.scope === 'financeiro') ? state.financeiro.find(function(x){ return x.id === editState.id; }) : null;
+    if(editingRecord && (Number(editingRecord.quantidade) || Number(editingRecord.valorUnitario) || editingRecord.parceiroId || editingRecord.temAnexo || (editingRecord.talhoesIds && editingRecord.talhoesIds.length))){
+      financeiroMostrarMaisOpcoes = true;
+    }
 
     var html = '';
     if(mesesDisponiveis.length){
@@ -2866,31 +2940,12 @@
       html += '<button type="button" class="btn-add-inline" data-action="open-conta-modal" title="Nova conta">+</button>';
       html += '</div>';
       var mostrarDiariaJaAqui = editingRecord && editingRecord.contaId && contaNome(editingRecord.contaId) === 'Diária';
-      html += '<div id="campos-padrao-financeiro" style="display:' + (mostrarDiariaJaAqui ? 'none' : 'contents') + ';">';
-      html += field('number', 'quantidade', 'Quantidade (opcional)', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.quantidade : undefined);
-      html += field('number', 'valorUnitario', 'Valor unitário (opcional)', false, '0,00', {step:'0.01', min:'0'}, editingRecord ? editingRecord.valorUnitario : undefined);
-      html += '</div>';
       html += field('number', 'valor', 'Valor total (R$)', true, '0,00', mostrarDiariaJaAqui ? {step:'0.01', min:'0', readonly:'readonly', style:'background:#E8DCB9;'} : {step:'0.01', min:'0'}, editingRecord ? editingRecord.valor : undefined);
-      html += '<div id="campos-padrao-financeiro-2" style="display:' + (mostrarDiariaJaAqui ? 'none' : 'contents') + ';">';
-      html += field('text', 'unidade', 'Tipo (Opcional)', false, 'Ex: SC, kg, L', {}, editingRecord ? (mostrarDiariaJaAqui ? 'diárias' : editingRecord.unidade) : undefined);
-      html += '<span id="qtd-valorunit-hint" style="grid-column: 1 / -1; font-size:11.5px; color:var(--ink-soft);">Preenchendo Quantidade e Valor unitário, o "Valor total (R$)" acima é calculado automaticamente (Quantidade × Valor unitário) — você ainda pode digitar o Valor total direto por cima, se preferir.</span>';
-      html += '</div>';
-
       html += selectField('status', 'Status', [{value:'Pago', label:'Pago / recebido'}, {value:'Pendente', label:'Pendente (a pagar ou a receber)'}], editingRecord ? (editingRecord.status || 'Pago') : 'Pago');
       html += field('date', 'data', 'Data (se já pago/recebido)', false, '', {}, editingRecord ? editingRecord.data : undefined);
       html += field('date', 'vencimento', 'Vencimento (se pendente/parcelado)', false, '', {}, editingRecord ? editingRecord.vencimento : undefined);
-      if(!editingRecord){
-        html += field('number', 'parcelas', 'Parcelar em quantas vezes? (opcional)', false, '1', {step:'1', min:'1'});
-        html += '<div class="field"><label>Repetir automaticamente? (opcional)</label>';
-        html += '<div style="display:flex; gap:6px;">';
-        html += '<select name="recorrenciaFrequencia" style="flex:1; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"><option value="Mensal">Mensal</option><option value="Anual">Anual</option></select>';
-        html += '<input type="number" name="recorrenciaRepeticoes" placeholder="Nº de vezes" min="1" step="1" style="width:110px; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">';
-        html += '</div></div>';
-      }
-      html += '<div id="campo-parceiro" style="display:' + (mostrarDiariaJaAqui ? 'none' : 'contents') + ';">';
-      html += selectField('parceiroId', 'Parceiro / prestador (opcional)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })), editingRecord ? editingRecord.parceiroId : undefined);
-      html += '</div>';
       html += selectField('membroId', 'Funcionário (opcional)', [{value:'', label:'—'}].concat(state.equipe.map(function(m){ return {value:m.id, label:m.nome}; })), editingRecord ? editingRecord.membroId : undefined);
+      html += field('text', 'descricao', 'Descrição / Documento', false, 'Ex: DOC 137832 - Cooperativa', {}, editingRecord ? editingRecord.descricao : undefined);
 
       var mostrarHoraExtra = editingRecord && editingRecord.contaId && contaNome(editingRecord.contaId) === 'Salário';
       html += '<div id="campos-hora-extra" style="grid-column: 1 / -1; display:' + (mostrarHoraExtra ? 'grid' : 'none') + '; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:12px; padding-top:4px; border-top:1px dashed var(--paper-line); margin-top:4px;">';
@@ -2906,7 +2961,29 @@
       html += '<span id="diaria-hint" style="grid-column: 1 / -1; font-size:11.5px; color:var(--ink-soft);">O "Valor total (R$)" acima é calculado automaticamente (Nº de diárias × Valor por diária).</span>';
       html += '</div>';
 
-      html += field('text', 'descricao', 'Descrição / Documento', false, 'Ex: DOC 137832 - Cooperativa', {}, editingRecord ? editingRecord.descricao : undefined);
+      html += '<button type="button" class="btn-add-inline" data-action="toggle-financeiro-mais-opcoes" style="grid-column: 1 / -1; width:fit-content; margin-top:6px;">' + (financeiroMostrarMaisOpcoes ? '▲ Ocultar mais opções' : '▼ Mostrar mais opções (quantidade, parcelamento, recorrência, parceiro, comprovante, rateio por talhão)') + '</button>';
+
+      html += '<div id="financeiro-mais-opcoes" style="display:' + (financeiroMostrarMaisOpcoes ? 'contents' : 'none') + ';">';
+      var mostrarQtdValorUnit = !mostrarDiariaJaAqui;
+      html += '<div id="campos-padrao-financeiro" style="display:' + (mostrarQtdValorUnit ? 'contents' : 'none') + ';">';
+      html += field('number', 'quantidade', 'Quantidade (opcional)', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.quantidade : undefined);
+      html += field('number', 'valorUnitario', 'Valor unitário (opcional)', false, '0,00', {step:'0.01', min:'0'}, editingRecord ? editingRecord.valorUnitario : undefined);
+      html += '</div>';
+      html += '<div id="campos-padrao-financeiro-2" style="display:' + (mostrarQtdValorUnit ? 'contents' : 'none') + ';">';
+      html += field('text', 'unidade', 'Unidade (opcional)', false, 'Ex: SC, kg, L', {}, editingRecord ? (mostrarDiariaJaAqui ? 'diárias' : editingRecord.unidade) : undefined);
+      html += '<span id="qtd-valorunit-hint" style="grid-column: 1 / -1; font-size:11.5px; color:var(--ink-soft);">Preenchendo Quantidade e Valor unitário, o "Valor total (R$)" acima é calculado automaticamente (Quantidade × Valor unitário) — você ainda pode digitar o Valor total direto por cima, se preferir.</span>';
+      html += '</div>';
+      if(!editingRecord){
+        html += field('number', 'parcelas', 'Parcelar em quantas vezes? (opcional)', false, '1', {step:'1', min:'1'});
+        html += '<div class="field"><label>Repetir automaticamente? (opcional)</label>';
+        html += '<div style="display:flex; gap:6px;">';
+        html += '<select name="recorrenciaFrequencia" style="flex:1; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"><option value="Mensal">Mensal</option><option value="Anual">Anual</option></select>';
+        html += '<input type="number" name="recorrenciaRepeticoes" placeholder="Nº de vezes" min="1" step="1" style="width:110px; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">';
+        html += '</div></div>';
+      }
+      html += '<div id="campo-parceiro" style="display:' + (mostrarDiariaJaAqui ? 'none' : 'contents') + ';">';
+      html += selectField('parceiroId', 'Parceiro / prestador (opcional)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })), editingRecord ? editingRecord.parceiroId : undefined);
+      html += '</div>';
 
       html += '<div class="field"><label>Comprovante (opcional, imagem ou PDF)</label><input type="file" id="f-anexo-input" accept="image/*,application/pdf"></div>';
       if(editingRecord && editingRecord.temAnexo){
@@ -2929,6 +3006,7 @@
       }
       html += '<span style="font-size:11px; color:var(--ink-soft);">Marcando mais de um, o valor é dividido igualmente entre eles.</span>';
       html += '</div>';
+      html += '</div>';
 
       html += '<button type="submit" class="btn">' + (editingRecord ? 'Salvar alterações' : 'Adicionar lançamento') + '</button>';
       if(editingRecord) html += '<button type="button" class="btn-cancel" data-action="cancel-edit">Cancelar</button>';
@@ -2950,6 +3028,7 @@
         html += '<td>' + escapeHtml(f.descricao || '—')
           + (f.horasExtras ? ' <span style="font-size:11px; color:var(--ink-soft);">(+' + fmtNum(f.horasExtras) + 'h extra = ' + fmtBRL((Number(f.horasExtras)||0)*(Number(f.valorHoraExtra)||0)) + ')</span>' : '')
           + (f.qtdDiarias ? ' <span style="font-size:11px; color:var(--ink-soft);">(' + fmtNum(f.qtdDiarias) + ' diária(s) = ' + fmtBRL((Number(f.qtdDiarias)||0)*(Number(f.valorDiaria)||0)) + ')</span>' : '')
+          + (f.origem ? '<br><span class="badge" style="background:' + (ORIGEM_LANCAMENTO_LABEL[f.origem] ? ORIGEM_LANCAMENTO_LABEL[f.origem].cor : '#C9C3A4') + '; color:#fff; font-size:10px;">' + '🔗 ' + (ORIGEM_LANCAMENTO_LABEL[f.origem] ? ORIGEM_LANCAMENTO_LABEL[f.origem].label : f.origem) + '</span>' : '')
           + '</td>';
         html += '<td>' + (f.contaId ? escapeHtml(contaLabel(f.contaId)) : escapeHtml(f.categoria || '—')) + '</td>';
         html += '<td>' + (f.talhoesIds && f.talhoesIds.length ? escapeHtml(f.talhoesIds.map(talhaoNome).join(', ')) : (f.talhaoId ? escapeHtml(talhaoNome(f.talhaoId)) : '—')) + '</td>';
@@ -4575,6 +4654,10 @@
         tr.style.display = tr.textContent.toLowerCase().indexOf(query) !== -1 ? '' : 'none';
       });
     }
+    if(e.target && e.target.id === 'busca-global-input'){
+      var termoBusca = e.target.value;
+      renderBuscaGlobalResultados(buscaGlobal(termoBusca), termoBusca);
+    }
   });
 
   document.addEventListener('submit', function(e){
@@ -4652,7 +4735,7 @@
           if(comFields.contaId){
             var comConta = state.contasFinanceiro.find(function(c){ return c.id === comFields.contaId; });
             state.financeiro.push({
-              id: uid(), contaId: comFields.contaId, tipo: contaTipo(comFields.contaId), categoria: comConta ? comConta.nome : '',
+              id: uid(), origem: 'compra', contaId: comFields.contaId, tipo: contaTipo(comFields.contaId), categoria: comConta ? comConta.nome : '',
               valor: comFields.valorTotal, quantidade: 0, peso: 0, unidade: '', status: 'Pago',
               data: comFields.data || new Date().toISOString().slice(0,10), vencimento: '',
               talhoesIds: [], talhaoId: '', parceiroId: comFields.fornecedorId, membroId: '',
@@ -4766,7 +4849,7 @@
               state.financeiro[finIdx].descricao = descricaoServicoFinanceiro(registroAtual);
             } else {
               var novoFin = {
-                id: uid(), contaId: registroAtual.contaId, tipo: contaTipo(registroAtual.contaId), categoria: contaAtual ? contaAtual.nome : '',
+                id: uid(), origem: 'servicoPrestado', contaId: registroAtual.contaId, tipo: contaTipo(registroAtual.contaId), categoria: contaAtual ? contaAtual.nome : '',
                 valor: valorTotalServicoPrestado(registroAtual), quantidade: registroAtual.quantidade || 0, peso: 0, unidade: registroAtual.unidade || '',
                 status: 'Pago', data: registroAtual.data || new Date().toISOString().slice(0,10), vencimento: '',
                 talhoesIds: registroAtual.talhaoId ? [registroAtual.talhaoId] : [], talhaoId: registroAtual.talhaoId || '',
@@ -4790,7 +4873,7 @@
         if(entityKey === 'servicosPrestados' && fieldsData.status === 'Pago' && fieldsData.contaId){
           var contaServico = state.contasFinanceiro.find(function(c){ return c.id === fieldsData.contaId; });
           var novoFinCriacao = {
-            id: uid(), contaId: fieldsData.contaId, tipo: contaTipo(fieldsData.contaId), categoria: contaServico ? contaServico.nome : '',
+            id: uid(), origem: 'servicoPrestado', contaId: fieldsData.contaId, tipo: contaTipo(fieldsData.contaId), categoria: contaServico ? contaServico.nome : '',
             valor: valorTotalServicoPrestado(fieldsData), quantidade: fieldsData.quantidade || 0, peso: 0, unidade: fieldsData.unidade || '',
             status: 'Pago', data: fieldsData.data || new Date().toISOString().slice(0,10), vencimento: '',
             talhoesIds: fieldsData.talhaoId ? [fieldsData.talhaoId] : [], talhaoId: fieldsData.talhaoId || '',
@@ -4890,7 +4973,7 @@
         cvFields.id = uid(); cvFields.criadoEm = Date.now();
         state.producao.push(cvFields);
         state.financeiro.push({
-          id: uid(), contaId:'ct-venda-colheita', tipo:'receita', categoria:'Venda de Colheita', valor: cvQtd * cvPreco, data: cvData,
+          id: uid(), origem: 'colheitaVenda', contaId:'ct-venda-colheita', tipo:'receita', categoria:'Venda de Colheita', valor: cvQtd * cvPreco, data: cvData,
           quantidade: cvQtd, peso:0, unidade: data.get('unidade') || '', status:'Pago',
           talhaoId: cvSafra ? cvSafra.talhaoId : '', parceiroId: cvParceiroId, membroId:'',
           descricao: 'Venda de ' + cvQtd + (data.get('unidade') ? ' ' + data.get('unidade') : '') + ' — ' + safraLabel(cvSafraId),
@@ -5040,6 +5123,11 @@
   });
 
   document.addEventListener('click', function(e){
+    var resultadosBuscaEl = document.getElementById('busca-global-resultados');
+    if(resultadosBuscaEl && resultadosBuscaEl.style.display !== 'none' && !e.target.closest('#busca-global-input') && !e.target.closest('#busca-global-resultados')){
+      resultadosBuscaEl.style.display = 'none';
+    }
+
     var plotBtn = e.target.closest('.plot[data-talhao-id]');
     if(plotBtn){
       var talhaoId = plotBtn.dataset.talhaoId;
@@ -5255,7 +5343,7 @@
         if(contaEscolhida){
           var contaNfe = state.contasFinanceiro.find(function(c){ return c.id === contaEscolhida; });
           state.financeiro.push({
-            id: uid(), contaId: contaEscolhida, tipo: contaTipo(contaEscolhida), categoria: contaNfe ? contaNfe.nome : '',
+            id: uid(), origem: 'nfe', contaId: contaEscolhida, tipo: contaTipo(contaEscolhida), categoria: contaNfe ? contaNfe.nome : '',
             valor: item.vProd, quantidade: 0, peso: 0, unidade: '', status: 'Pago',
             data: item.dataEmissaoNota || new Date().toISOString().slice(0,10), vencimento: '',
             talhoesIds: [], talhaoId: '', parceiroId: fornecedorId, membroId: '',
@@ -5345,7 +5433,7 @@
       saveKey('financiamentos', state.financiamentos);
       var contaFin = state.contasFinanceiro.find(function(c){ return c.id === fin.contaId; });
       state.financeiro.push({
-        id: uid(), contaId: fin.contaId, tipo: contaTipo(fin.contaId), categoria: contaFin ? contaFin.nome : '',
+        id: uid(), origem: 'financiamento', contaId: fin.contaId, tipo: contaTipo(fin.contaId), categoria: contaFin ? contaFin.nome : '',
         valor: valorParcelaFin, quantidade: 0, peso: 0, unidade: '', status: 'Pago',
         data: new Date().toISOString().slice(0,10), vencimento: '',
         talhoesIds: fin.talhaoId ? [fin.talhaoId] : [], talhaoId: fin.talhaoId || '', parceiroId: '', membroId: '',
@@ -5397,6 +5485,40 @@
     if(action === 'toggle-chuva-historico'){
       chuvaHistoricoAberto = !chuvaHistoricoAberto;
       renderAgro50();
+      return;
+    }
+    if(action === 'ir-busca-resultado'){
+      var tabAlvo = btn.dataset.tab;
+      var idAlvo = btn.dataset.id;
+      var entityAlvo = btn.dataset.entity;
+      var scopeCustomAlvo = btn.dataset.scopeCustom;
+      switchTab(tabAlvo);
+      if(idAlvo){
+        editState = scopeCustomAlvo ? {scope: scopeCustomAlvo, id: idAlvo} : {scope:'generic', entityKey: entityAlvo, id: idAlvo};
+      }
+      renderAll();
+      var inputBusca = document.getElementById('busca-global-input');
+      var resultadosBusca = document.getElementById('busca-global-resultados');
+      if(inputBusca) inputBusca.value = '';
+      if(resultadosBusca){ resultadosBusca.style.display = 'none'; resultadosBusca.innerHTML = ''; }
+      return;
+    }
+    if(action === 'ver-lancamento-vinculado'){
+      switchTab('financeiro');
+      editState = {scope:'financeiro', id: id};
+      renderAll();
+      var formFinLanc = document.getElementById('form-financeiro');
+      if(formFinLanc) formFinLanc.scrollIntoView({behavior:'smooth', block:'start'});
+      return;
+    }
+    if(action === 'toggle-financeiro-mais-opcoes'){
+      financeiroMostrarMaisOpcoes = !financeiroMostrarMaisOpcoes;
+      renderFinanceiro();
+      return;
+    }
+    if(action === 'toggle-dashboard-detalhes'){
+      dashboardMaisDetalhesAberto = !dashboardMaisDetalhesAberto;
+      renderPainel();
       return;
     }
     if(action === 'toggle-notas-historico'){
