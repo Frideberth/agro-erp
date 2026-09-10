@@ -1362,6 +1362,9 @@
           }
         })();
         sefazDocumentosAcumulados = state.sefazNotasPendentes || [];
+        fetch('/.netlify/functions/certificado').then(function(r){ return r.json(); }).then(function(data){
+          certificadoDadosCache = {documento: data.documento || '', uf: data.uf || '', configurado: !!data.configurado};
+        }).catch(function(){});
         if(state.sefazItensRevisao && state.sefazItensRevisao.length) nfeImportada = {itens: state.sefazItensRevisao};
         if(state.sefazProgresso && state.sefazProgresso[0]) sefazUltimaResposta = {ultNSU: state.sefazProgresso[0].ultNSU};
         (function(){
@@ -1959,6 +1962,25 @@
       }
     }
 
+    var botoesNfeSecao = [
+      {chave: 'compra', label: 'Nova compra manual', icone: '📝'},
+      {chave: 'xml', label: 'Importar XML', icone: '📄'},
+      {chave: 'certificado', label: 'Certificado digital', icone: '🔐'},
+      {chave: 'sefaz', label: 'Importar notas SEFAZ', icone: '☁️'}
+    ];
+    html += '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:20px;">';
+    botoesNfeSecao.forEach(function(b){
+      var ativo = nfeSecaoAtiva === b.chave;
+      html += '<button type="button" class="paper" data-action="abrir-secao-nfe" data-secao="' + b.chave + '" style="padding:16px; text-align:center; cursor:pointer; border:2px solid ' + (ativo ? 'var(--accent)' : 'var(--paper-line)') + '; background:' + (ativo ? 'var(--paper-2)' : 'var(--paper)') + '; font-family:inherit;">';
+      html += '<div style="font-size:22px; margin-bottom:6px;">' + b.icone + '</div>';
+      html += '<div style="font-size:13px; font-weight:600; color:var(--ink);">' + b.label + '</div>';
+      html += '</button>';
+    });
+    html += '</div>';
+
+    if(editingRecord && nfeSecaoAtiva !== 'compra') nfeSecaoAtiva = 'compra';
+
+    if(nfeSecaoAtiva === 'compra'){
     html += '<div class="paper form-card"><h3>' + (editingRecord ? 'Editar compra' : 'Nova compra') + '</h3>';
     if(!state.produtos.length){
       html += '<div class="empty-state">Cadastre um produto (aba Produtos) antes de registrar uma compra.</div>';
@@ -1981,7 +2003,9 @@
       if(!editingRecord) html += '<p style="font-size:11px; color:var(--ink-soft); margin:10px 0 0;">Marcando "Recebido", a quantidade já soma no estoque do produto e uma despesa é criada automaticamente no Financeiro.</p>';
     }
     html += '</div>';
+    } // fim da seção compra
 
+    if(nfeSecaoAtiva === 'xml'){
     html += '<div class="paper form-card"><h3>Importar Nota Fiscal Eletrônica (XML)</h3>';
     html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 12px;">Sobe o arquivo XML da nota (o mesmo que você recebe do fornecedor ou baixa no portal da SEFAZ). O app lê os itens e você escolhe quais quer trazer pro sistema — cada um vira uma Compra, com estoque e despesa criados automaticamente.</p>';
     html += '<div class="entry-form">';
@@ -2088,13 +2112,17 @@
       html += '</div>';
     }
     html += '</div>';
+    } // fim da seção xml
 
+    if(nfeSecaoAtiva === 'certificado'){
     html += '<div class="paper form-card"><h3>Certificado Digital (A1) — armazenamento seguro</h3>';
-    html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 12px;">Isso guarda seu certificado de forma criptografada, preparando o terreno pra busca automática de notas na SEFAZ (etapa que ainda vamos construir). Por enquanto, o certificado fica guardado com segurança, mas a busca automática ainda não está ativa.</p>';
+    html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 12px;">Guardado de forma criptografada. Na hora do upload, o sistema já lê o CPF/CNPJ e (quando disponível no certificado) a UF, pra preencher sozinho a consulta na SEFAZ depois.</p>';
     html += '<div id="certificado-status" style="font-size:13px; margin-bottom:10px;">Verificando…</div>';
     html += '<div id="certificado-form-area"></div>';
     html += '</div>';
+    } // fim da seção certificado
 
+    if(nfeSecaoAtiva === 'sefaz'){
     html += '<div class="paper form-card"><h3>Testar consulta na SEFAZ</h3>';
     html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 12px;">✅ A conexão e a leitura do certificado já foram validadas — a SEFAZ respondeu certinho. Se testou em Homologação e veio "Nenhum documento localizado", é esperado (ambiente de testes, normalmente vazio) — escolha <strong>Produção</strong> pra ver suas notas de verdade.</p>';
     if(state.sefazProgresso && state.sefazProgresso[0] && state.sefazProgresso[0].ultNSU){
@@ -2104,10 +2132,15 @@
       html += '<div class="paper note-box" style="margin-bottom:14px;"><strong>Progresso salvo:</strong> última consulta parou no NSU <strong>' + escapeHtml(nsuLimpo) + '</strong>' + (maxLimpo ? ' de <strong>' + escapeHtml(maxLimpo) + '</strong> disponíveis' : '') + (progressoNsu.atualizadoEm ? ' — em ' + fmtDate(progressoNsu.atualizadoEm.slice(0,10)) : '') + '. Esse número já vem preenchido no campo "Último NSU" abaixo, mesmo se você sair e voltar depois.</div>';
     }
     html += '<div class="entry-form">';
-    html += selectField('sefaz-ambiente', 'Ambiente', [{value:'homologacao', label:'Homologação (testes)'}, {value:'producao', label:'Produção (notas reais)'}]);
+    html += selectField('sefaz-ambiente', 'Ambiente', [{value:'homologacao', label:'Homologação (testes)'}, {value:'producao', label:'Produção (notas reais)'}], 'producao');
     var ufsOptions = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map(function(u){ return {value:u, label:u}; });
-    html += selectField('sefaz-uf', 'UF do certificado', ufsOptions);
-    html += field('text', 'sefaz-documento', 'CPF ou CNPJ (só números)', false, '', {}, undefined);
+    html += selectField('sefaz-uf', 'UF do certificado', ufsOptions, certificadoDadosCache.uf || undefined);
+    html += field('text', 'sefaz-documento', 'CPF ou CNPJ (só números)', false, '', {}, certificadoDadosCache.documento || undefined);
+    if(certificadoDadosCache.configurado && (certificadoDadosCache.uf || certificadoDadosCache.documento)){
+      html += '<p style="grid-column:1/-1; font-size:11px; color:var(--ink-soft); margin:0;">✅ UF e documento preenchidos automaticamente a partir do certificado cadastrado.</p>';
+    } else if(certificadoDadosCache.configurado){
+      html += '<p style="grid-column:1/-1; font-size:11px; color:var(--cost-dark); margin:0;">Não consegui ler a UF/documento direto do certificado — preencha manualmente (isso pode acontecer dependendo de como a certificadora emitiu o certificado).</p>';
+    }
     html += field('text', 'sefaz-ultnsu', 'Último NSU (deixe 0 na primeira vez)', false, '0', {}, sefazUltimaResposta && sefazUltimaResposta.ultNSU ? sefazUltimaResposta.ultNSU.replace(/^0+(?=\d)/, '') : undefined);
     html += '<button type="button" class="btn" data-action="testar-sefaz" style="align-self:end;">Testar consulta</button>';
     html += '</div>';
@@ -2126,6 +2159,7 @@
     }
     html += '<pre id="sefaz-resultado" style="white-space:pre-wrap; word-break:break-word; font-size:11.5px; background:#FBF7EC; border:1px solid var(--paper-line); border-radius:4px; padding:10px; margin-top:12px; max-height:400px; overflow-y:auto;' + (sefazUltimaResposta ? '' : ' display:none;') + '">' + (sefazUltimaResposta ? escapeHtml(JSON.stringify(sefazUltimaResposta, null, 2)) : '') + '</pre>';
     html += '</div>';
+    } // fim da seção sefaz
 
     html += '<div class="paper">';
     if(!state.compras.length){
@@ -2160,8 +2194,9 @@
     fetch('/.netlify/functions/certificado')
       .then(function(r){ return r.json(); })
       .then(function(data){
+        certificadoDadosCache = {documento: data.documento || '', uf: data.uf || '', configurado: !!data.configurado};
         if(data.configurado){
-          elStatus.innerHTML = '✅ Certificado configurado: <strong>' + escapeHtml(data.nomeArquivo || 'certificado') + '</strong>' + (data.atualizadoEm ? ' (enviado em ' + fmtDate(data.atualizadoEm.slice(0,10)) + ')' : '');
+          elStatus.innerHTML = '✅ Certificado configurado: <strong>' + escapeHtml(data.nomeArquivo || 'certificado') + '</strong>' + (data.atualizadoEm ? ' (enviado em ' + fmtDate(data.atualizadoEm.slice(0,10)) + ')' : '') + (data.documento ? '<br>Documento: ' + escapeHtml(data.documento) : '') + (data.uf ? ' — UF: ' + escapeHtml(data.uf) : '');
           elForm.innerHTML = '<button type="button" class="btn-del" data-action="remover-certificado">Remover certificado</button>';
         } else {
           elStatus.innerHTML = data.erro ? ('⚠️ ' + escapeHtml(data.erro)) : 'Nenhum certificado configurado ainda.';
@@ -2500,6 +2535,7 @@
 
   /* ---------------- Safras ---------------- */
   var safrasAnoFiltro = '';
+  var financeiroMesFiltro = '';
   var safraMapaAnoSelecionado = null;
 
   function renderSafras(){
@@ -2786,15 +2822,31 @@
   /* ---------------- Financeiro ---------------- */
   function renderFinanceiro(){
     var el = document.getElementById('tab-financeiro');
-    var totalCustos = state.financeiro.filter(function(f){ return f.tipo === 'custo' && (f.status||'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
-    var totalReceitas = state.financeiro.filter(function(f){ return f.tipo === 'receita' && (f.status||'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
-    var totalPendente = state.financeiro.filter(function(f){ return f.status === 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+    var mesesDisponiveis = state.financeiro.map(function(f){ return (f.status === 'Pendente' ? f.vencimento : f.data || f.vencimento || ''); }).filter(function(v){ return v; }).map(function(v){ return v.slice(0,7); }).filter(function(v,i,a){ return a.indexOf(v)===i; }).sort().reverse();
+    var financeiroFiltrado = state.financeiro.filter(function(f){
+      if(!financeiroMesFiltro) return true;
+      var dataRef = f.status === 'Pendente' ? (f.vencimento || f.data) : (f.data || f.vencimento);
+      return dataRef && dataRef.slice(0,7) === financeiroMesFiltro;
+    });
+    var totalCustos = financeiroFiltrado.filter(function(f){ return f.tipo === 'custo' && (f.status||'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+    var totalReceitas = financeiroFiltrado.filter(function(f){ return f.tipo === 'receita' && (f.status||'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+    var totalPendente = financeiroFiltrado.filter(function(f){ return f.status === 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
     var saldo = totalReceitas - totalCustos;
     var estoque = estoqueResumo();
     var saldoProjetado = saldo + estoque.total;
     var editingRecord = (editState && editState.scope === 'financeiro') ? state.financeiro.find(function(x){ return x.id === editState.id; }) : null;
 
     var html = '';
+    if(mesesDisponiveis.length){
+      html += '<div class="field" style="max-width:240px; margin-bottom:14px;"><label>Mês de visualização</label><select id="f-financeiro-mes-filtro" style="width:100%; padding:8px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">';
+      html += '<option value="">Todos os meses</option>';
+      mesesDisponiveis.forEach(function(m){
+        var partes = m.split('-');
+        var label = MESES[parseInt(partes[1],10)-1] + '/' + partes[0];
+        html += '<option value="' + m + '"' + (financeiroMesFiltro === m ? ' selected' : '') + '>' + label + '</option>';
+      });
+      html += '</select></div>';
+    }
     html += '<div class="stat-row">';
     html += statCard('Total de custos', fmtBRL(totalCustos), 'cost');
     html += statCard('Total de receitas', fmtBRL(totalReceitas), 'growth');
@@ -2890,7 +2942,7 @@
     } else {
       html += '<div style="padding:14px 18px 0;"><input type="text" id="search-financeiro" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
       html += '<div class="table-wrap"><table><thead><tr><th>Data/Venc.</th><th>Funcionário</th><th>Descrição</th><th>Conta</th><th>Talhão</th><th>Quantidade</th><th>Valor Unitário</th><th>Valor Total</th><th>Tipo</th><th>Status</th><th></th></tr></thead><tbody>';
-      state.financeiro.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(f){
+      financeiroFiltrado.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(f){
         var status = f.status || 'Pago';
         html += '<tr>';
         html += '<td>' + fmtDate(status === 'Pendente' ? f.vencimento : f.data) + '</td>';
@@ -4019,6 +4071,8 @@
   var chuvaMapaAno = null;
   var hidricaPropriedadeId = null;
   var chuvaHistoricoAberto = false;
+  var nfeSecaoAtiva = null;
+  var certificadoDadosCache = {documento: '', uf: '', configurado: false};
   var notasHistoricoAberto = false;
   var chuvaMapaPropriedadeId = null;
   var notaEmDetalheChave = null; // qual nota está aberta no painel de detalhe (mestre-detalhe)
@@ -4418,6 +4472,11 @@
     if(e.target && e.target.id === 'f-chuva-mapa-ano'){
       chuvaMapaAno = e.target.value || null;
       renderAgro50();
+      return;
+    }
+    if(e.target && e.target.id === 'f-financeiro-mes-filtro'){
+      financeiroMesFiltro = e.target.value;
+      renderFinanceiro();
       return;
     }
     if(e.target && e.target.id === 'f-contaId'){
@@ -5342,6 +5401,12 @@
     }
     if(action === 'toggle-notas-historico'){
       notasHistoricoAberto = !notasHistoricoAberto;
+      renderCompras();
+      return;
+    }
+    if(action === 'abrir-secao-nfe'){
+      var secaoClicada = btn.dataset.secao;
+      nfeSecaoAtiva = (nfeSecaoAtiva === secaoClicada) ? null : secaoClicada;
       renderCompras();
       return;
     }

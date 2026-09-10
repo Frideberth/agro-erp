@@ -55,6 +55,29 @@ function decrypt(payload, key) {
   return decrypted.toString("utf8");
 }
 
+function extrairDadosCertificado(pfxBuffer, senha) {
+  try {
+    var p12Asn1 = forge.asn1.fromDer(forge.util.createBuffer(pfxBuffer.toString("binary")));
+    var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, senha);
+    var certBags = p12.getBags({ bagType: forge.pki.oids.certBag });
+    var certBag = (certBags[forge.pki.oids.certBag] || [])[0];
+    if (!certBag || !certBag.cert) return { documento: "", uf: "" };
+    var cert = certBag.cert;
+    var cnField = cert.subject.getField("CN");
+    var stField = cert.subject.getField("ST");
+    var cn = cnField ? cnField.value : "";
+    var st = stField ? stField.value : "";
+    var documento = "";
+    // Convenção ICP-Brasil: o CN termina em ":NNNNNNNNNNN" (CPF, 11 dígitos) ou ":NNNNNNNNNNNNNN" (CNPJ, 14 dígitos)
+    var match = cn.match(/:(\d{11}|\d{14})$/);
+    if (match) documento = match[1];
+    var uf = (st && st.length === 2) ? st.toUpperCase() : "";
+    return { documento: documento, uf: uf };
+  } catch {
+    return { documento: "", uf: "" };
+  }
+}
+
 export default async (req) => {
   const cors = {
     "Access-Control-Allow-Origin": "*",
@@ -85,6 +108,8 @@ export default async (req) => {
       return new Response(JSON.stringify({
         configurado: true,
         nomeArquivo: meta.nomeArquivo || "",
+        documento: meta.documento || "",
+        uf: meta.uf || "",
         atualizadoEm: meta.atualizadoEm || ""
       }), { headers: { "content-type": "application/json", ...cors } });
     } catch {
@@ -108,10 +133,12 @@ export default async (req) => {
           status: 400, headers: { "content-type": "application/json", ...cors }
         });
       }
+      var dadosCertificado;
       try {
         const pfxBuffer = Buffer.from(certBase64, "base64");
         const p12Asn1 = forge.asn1.fromDer(forge.util.createBuffer(pfxBuffer.toString("binary")));
         forge.pkcs12.pkcs12FromAsn1(p12Asn1, senha); // só valida — se a senha estiver errada ou o arquivo corrompido, isso já lança erro aqui
+        dadosCertificado = extrairDadosCertificado(pfxBuffer, senha);
       } catch (errValidacao) {
         return new Response(JSON.stringify({ error: "Não consegui abrir esse certificado com essa senha: " + String(errValidacao.message || errValidacao) + " — confira o arquivo e a senha e tente de novo." }), {
           status: 400, headers: { "content-type": "application/json", ...cors }
@@ -122,6 +149,8 @@ export default async (req) => {
       const registro = {
         ...encriptado,
         nomeArquivo: nomeArquivo || "certificado.pfx",
+        documento: dadosCertificado.documento || "",
+        uf: dadosCertificado.uf || "",
         atualizadoEm: new Date().toISOString()
       };
       await store.setJSON(BLOB_KEY, registro);
