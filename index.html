@@ -1426,6 +1426,102 @@
           saveKey('analisesSolo', state.analisesSolo);
         })();
         (function(){
+          var jaTemAnalisePista2024 = state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-sorbolso-pista-2024'; });
+          if(jaTemAnalisePista2024) return;
+          var talhaoPista = state.talhoes.find(function(t){ return t.nome.trim().toLowerCase() === 'pista'; });
+          if(!talhaoPista) return;
+          var kConvertidoPista = 0.70 * 390.983; // cmolc/dm³ -> mg/dm³ (laboratório Sorbolso reportou em cmolc/dm³, mesma regra do laudo do Café Novo)
+          state.analisesSolo.push({
+            id: uid(), talhaoId: talhaoPista.id, dataColeta: '2024-08-09', profundidade: '',
+            ph: 5.25, materiaOrganica: 31.84, fosforo: 7.00, potassio: Math.round(kConvertidoPista * 100) / 100,
+            calcio: 5.84, magnesio: 2.23, ctc: 12.60, saturacaoBases: 70.09,
+            aluminio: 0, hAl: 3.77, somaBases: null, saturacaoAluminio: 0.00,
+            zinco: 5.08, ferro: 151.53, manganes: 575.23, cobre: 21.48, boro: 0.68, enxofre: 26.36,
+            argila: null, silte: null, areia: null, classeTextural: '', aguaDisponivel: null,
+            laboratorio: 'Sorbolso Laboratórios (Rodocentro, Londrina-PR)',
+            observacao: 'pH H2O: 5,87. pH SMP: 6,37. CTC efetiva: 8,83 cmolc/dm³ (CTC aqui gravada é a de pH 7,0: 12,60). Alumínio trocável: N.D. (não detectado). Potássio original do laudo: 0,70 cmolc/dm³, convertido aqui para mg/dm³ pra manter o histórico na mesma unidade.',
+            origemImportacao: 'laudo-sorbolso-pista-2024', criadoEm: Date.now()
+          });
+          saveKey('analisesSolo', state.analisesSolo);
+        })();
+        (function(){
+          var jaTemAnaliseSantaIzabel2 = state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-laborsolo-santaizabel2-2024'; });
+          if(!jaTemAnaliseSantaIzabel2){
+            var talhaoSantaIzabel2 = state.talhoes.find(function(t){ return t.nome.trim().toLowerCase() === 'santa izabel 2'; });
+            if(talhaoSantaIzabel2){
+              var kConvertidoSI2 = 0.43 * 390.983;
+              state.analisesSolo.push({
+                id: uid(), talhaoId: talhaoSantaIzabel2.id, dataColeta: '2024-08-09', profundidade: '',
+                ph: 5.02, materiaOrganica: 26.26, fosforo: 10.07, potassio: Math.round(kConvertidoSI2 * 100) / 100,
+                calcio: 5.30, magnesio: 2.31, ctc: 12.41, saturacaoBases: 65.02,
+                aluminio: 0, hAl: 4.34, somaBases: null, saturacaoAluminio: 0.00,
+                zinco: 5.78, ferro: 135.10, manganes: 738.91, cobre: 20.11, boro: 0.44, enxofre: 42.93,
+                argila: null, silte: null, areia: null, classeTextural: '', aguaDisponivel: null,
+                laboratorio: 'Laborsolo Laboratórios (Rodocentro, Londrina-PR)',
+                observacao: 'Laudo Talhão "2" (nomenclatura antiga), Cód.Lab 95501/641454. Data de coleta não estava nítida na foto — usada a data da saída (09/08/2024) por indicação do usuário. pH H2O: 5,67. pH SMP: 6,18. CTC efetiva: 8,07 cmolc/dm³ (CTC aqui gravada é a de pH 7,0: 12,41). Alumínio trocável: N.D. (não detectado). Potássio original do laudo: 0,43 cmolc/dm³, convertido aqui para mg/dm³.',
+                origemImportacao: 'laudo-laborsolo-santaizabel2-2024', criadoEm: Date.now()
+              });
+              saveKey('analisesSolo', state.analisesSolo);
+            }
+          }
+          var jaTemAnalisePivo2024 = state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-laborsolo-pivo-2024'; });
+          if(!jaTemAnalisePivo2024){
+            var talhaoPivo2024 = state.talhoes.find(function(t){ var n = t.nome.trim().toLowerCase(); return n === 'pivo' || n === 'pivô'; });
+            if(talhaoPivo2024){
+              var kConvertidoPivo2024 = 0.47 * 390.983;
+              state.analisesSolo.push({
+                id: uid(), talhaoId: talhaoPivo2024.id, dataColeta: '2024-08-09', profundidade: '',
+                ph: 4.27, materiaOrganica: 24.90, fosforo: 11.25, potassio: Math.round(kConvertidoPivo2024 * 100) / 100,
+                calcio: 3.51, magnesio: 1.36, ctc: 11.78, saturacaoBases: 45.67,
+                aluminio: 0.60, hAl: 6.39, somaBases: null, saturacaoAluminio: 10.05,
+                zinco: 5.64, ferro: 153.95, manganes: 689.22, cobre: 21.39, boro: 0.85, enxofre: 60.01,
+                argila: null, silte: null, areia: null, classeTextural: '', aguaDisponivel: null,
+                laboratorio: 'Laborsolo Laboratórios (Rodocentro, Londrina-PR)',
+                observacao: 'Laudo "Talhão 4 Café" (nomenclatura antiga), Cód.Lab 95501/641456. pH H2O: 5,02. pH SMP: 5,66. CTC efetiva: 5,97 cmolc/dm³ (CTC aqui gravada é a de pH 7,0: 11,78). Potássio original do laudo: 0,47 cmolc/dm³, convertido aqui para mg/dm³.',
+                origemImportacao: 'laudo-laborsolo-pivo-2024', criadoEm: Date.now() + 1
+              });
+              saveKey('analisesSolo', state.analisesSolo);
+            }
+          }
+        })();
+        (function(){
+          var jaTemAnaliseSede2024 = state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-laborsolo-sede-2024'; });
+          if(jaTemAnaliseSede2024) return;
+          var talhaoSede = state.talhoes.find(function(t){ return t.nome.trim().toLowerCase() === 'sede'; });
+          if(!talhaoSede) return;
+          var kConvertidoSede = 0.39 * 390.983;
+          state.analisesSolo.push({
+            id: uid(), talhaoId: talhaoSede.id, dataColeta: '2024-08-08', profundidade: '',
+            ph: 5.34, materiaOrganica: 19.01, fosforo: 9.61, potassio: Math.round(kConvertidoSede * 100) / 100,
+            calcio: 4.36, magnesio: 1.46, ctc: 10.38, saturacaoBases: 60.02,
+            aluminio: 0.32, hAl: 4.15, somaBases: null, saturacaoAluminio: 4.89,
+            zinco: 4.77, ferro: 143.52, manganes: 635.74, cobre: 14.76, boro: 0.79, enxofre: 61.78,
+            argila: null, silte: null, areia: null, classeTextural: '', aguaDisponivel: null,
+            laboratorio: 'Laborsolo Laboratórios (Rodocentro, Londrina-PR)',
+            observacao: 'Laudo "3 Acima da Sede" (nomenclatura antiga), Cód.Lab 95501/641455. Data de coleta não informada no laudo ("***") — usada a data de saída (08/08/2024), mesmo critério do laudo de Santa Izabel 2. pH H2O: 5,95. pH SMP: 6,24. CTC efetiva: 6,55 cmolc/dm³ (CTC aqui gravada é a de pH 7,0: 10,38). Fósforo Mehlich 3: 4,18 mg/dm³ (não gravado — sistema usa só Mehlich-1). Potássio original do laudo: 0,39 cmolc/dm³, convertido aqui para mg/dm³.',
+            origemImportacao: 'laudo-laborsolo-sede-2024', criadoEm: Date.now()
+          });
+          saveKey('analisesSolo', state.analisesSolo);
+        })();
+        (function(){
+          var jaTemAnaliseCafeVelho2013 = state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-extrato-saturacao-cafevelho-2013'; });
+          if(jaTemAnaliseCafeVelho2013) return;
+          var talhaoCafeVelho = state.talhoes.find(function(t){ var n = t.nome.trim().toLowerCase(); return n === 'café velho' || n === 'cafe velho'; });
+          if(!talhaoCafeVelho) return;
+          state.analisesSolo.push({
+            id: uid(), talhaoId: talhaoCafeVelho.id, dataColeta: '2013-08-16', profundidade: '0-10cm',
+            ph: 6.73, materiaOrganica: null, fosforo: null, potassio: null,
+            calcio: null, magnesio: null, ctc: null, saturacaoBases: null,
+            aluminio: null, hAl: null, somaBases: null, saturacaoAluminio: null,
+            zinco: null, ferro: null, manganes: null, cobre: null, boro: null, enxofre: null,
+            argila: null, silte: null, areia: null, classeTextural: '', aguaDisponivel: null,
+            laboratorio: 'Não identificado no laudo (Cód.Lab 11636/60664)',
+            observacao: 'ATENÇÃO: metodologia diferente das demais análises — "Extrato de Saturação" (não é a análise de fertilidade padrão CaCl2/Mehlich-1/KCl usada nos outros laudos), por isso só pH e data foram gravados nos campos normais; os valores abaixo NÃO são comparáveis diretamente com cmolc/dm³ ou mg/dm³ das outras análises. Cód. Interesse: PI ZM A/06. Entrada 16/08/2013, Saída 23/08/2013. Resultados (mg/L): Ca 17,98; Mg 7,36; K 6,21; Na 0,78; S 8,703; P 0,001; Cu 0,003; Fe 0,969; Mn 0,041; Zn 0,006; B 0,018; Al 0,938; Co 0,001; Mo 0,001; Ni 0,001; Si 9,535. Condutividade elétrica (CE 20°C): 174,36 µS/cm. Umidade de saturação: 45,00%.',
+            origemImportacao: 'laudo-extrato-saturacao-cafevelho-2013', criadoEm: Date.now()
+          });
+          saveKey('analisesSolo', state.analisesSolo);
+        })();
+        (function(){
           // Corrige lançamentos de Serviços Prestados/Contratados criados antes do cálculo quantidade×valor unitário
           var precisaCorrecaoServico = state.servicosPrestados.some(function(s){ return s.financeiroId && !s.correcaoValorV1Aplicada; });
           if(!precisaCorrecaoServico) return;
@@ -1503,6 +1599,12 @@
     var list = state.safras.filter(function(s){ return s.talhaoId === talhaoId; });
     if(!list.length) return null;
     list.sort(function(a,b){ return (b.criadoEm||0) - (a.criadoEm||0); });
+    return list[0];
+  }
+  function ultimaAnaliseSoloDoTalhao(talhaoId){
+    var list = state.analisesSolo.filter(function(a){ return a.talhaoId === talhaoId; });
+    if(!list.length) return null;
+    list.sort(function(a,b){ return (b.dataColeta||'').localeCompare(a.dataColeta||''); });
     return list[0];
   }
   function talhaoNome(id){ var t = state.talhoes.find(function(t){ return t.id === id; }); return t ? t.nome : '—'; }
@@ -2694,9 +2796,10 @@
       html += '<div class="empty-state">Nenhum talhão cadastrado ainda.</div>';
     } else {
       html += '<div style="padding:14px 18px 0;"><input type="text" id="search-talhoes" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
-      html += '<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Área</th><th>Propriedade</th><th>Solo</th><th>Cultura anterior</th><th>Safra atual</th><th>Status</th><th></th></tr></thead><tbody>';
+      html += '<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Área</th><th>Propriedade</th><th>Solo</th><th>Cultura anterior</th><th>Safra atual</th><th>Status</th><th>Perfil do Solo</th><th></th></tr></thead><tbody>';
       state.talhoes.forEach(function(t){
         var safra = safraAtualDoTalhao(t.id);
+        var analiseRecente = ultimaAnaliseSoloDoTalhao(t.id);
         html += '<tr>';
         html += '<td>' + escapeHtml(t.nome) + '</td>';
         html += '<td class="num">' + fmtHa(t.area) + '</td>';
@@ -2705,6 +2808,15 @@
         html += '<td>' + (t.culturaAnteriorId ? escapeHtml(culturaNome(t.culturaAnteriorId)) : '—') + '</td>';
         html += '<td>' + (safra ? escapeHtml(culturaNome(safra.culturaId)) : '—') + '</td>';
         html += '<td>' + (safra ? '<span class="badge status-' + safra.status + '">' + STATUS_LABEL[safra.status] + '</span>' : '—') + '</td>';
+        html += '<td>';
+        if(analiseRecente){
+          html += '<div style="font-size:11.5px; line-height:1.5;">pH ' + fmtNum(analiseRecente.ph) + (analiseRecente.saturacaoBases !== null && analiseRecente.saturacaoBases !== undefined ? ' · V ' + fmtNum(analiseRecente.saturacaoBases) + '%' : '') + '<br>' + fmtDate(analiseRecente.dataColeta) + '</div>';
+          html += '<button type="button" class="btn-edit" data-action="ver-perfil-solo" data-id="' + t.id + '" style="margin-top:4px;">Ver histórico</button>';
+        } else {
+          html += '<span style="font-size:11.5px; color:var(--ink-soft);">Sem análise</span><br>';
+          html += '<button type="button" class="btn-edit" data-action="ver-perfil-solo" data-id="' + t.id + '" style="margin-top:4px;">Registrar</button>';
+        }
+        html += '</td>';
         html += '<td><button class="btn-edit" data-action="edit-talhao" data-id="' + t.id + '">Editar</button><button class="btn-del" data-action="del-talhao" data-id="' + t.id + '">Remover</button></td>';
         html += '</tr>';
       });
@@ -3346,20 +3458,49 @@
   function renderAnaliseSoloHtml(){
     var html = '<div class="section-title" style="margin-top:0;">Análise de Solo</div>';
     html += buildGenericFormHtml('analisesSolo');
+
+    var talhoesComAnalise = state.talhoes.filter(function(t){ return state.analisesSolo.some(function(a){ return a.talhaoId === t.id; }); });
+
+    if(talhoesComAnalise.length){
+      html += '<div class="section-title">Perfil do Solo por Talhão</div>';
+      html += '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:8px;">';
+      talhoesComAnalise.forEach(function(t){
+        var analisesDoTalhao = state.analisesSolo.filter(function(a){ return a.talhaoId === t.id; }).slice().sort(function(a,b){ return (b.dataColeta||'').localeCompare(a.dataColeta||''); });
+        var maisRecente = analisesDoTalhao[0];
+        var anterior = analisesDoTalhao[1];
+        var selecionado = soloTalhaoFiltro === t.id;
+        html += '<button type="button" class="paper" data-action="filtrar-perfil-solo" data-id="' + t.id + '" style="padding:14px; text-align:left; cursor:pointer; border:2px solid ' + (selecionado ? 'var(--accent)' : 'var(--paper-line)') + '; background:' + (selecionado ? 'var(--paper-2)' : 'var(--paper)') + '; font-family:inherit; min-width:0;">';
+        html += '<div style="font-weight:700; font-size:13.5px; margin-bottom:6px; color:var(--ink);">' + escapeHtml(t.nome) + '</div>';
+        html += '<div style="font-size:12px; color:var(--ink-soft);">' + (maisRecente.ph !== null && maisRecente.ph !== undefined ? 'pH ' + fmtNum(maisRecente.ph) : 'pH —') + (maisRecente.saturacaoBases !== null && maisRecente.saturacaoBases !== undefined ? ' · V ' + fmtNum(maisRecente.saturacaoBases) + '%' : '') + '</div>';
+        html += '<div style="font-size:11px; color:var(--ink-soft);">' + fmtDate(maisRecente.dataColeta) + '</div>';
+        var temV = maisRecente.saturacaoBases !== null && maisRecente.saturacaoBases !== undefined;
+        var anteriorTemV = anterior && anterior.saturacaoBases !== null && anterior.saturacaoBases !== undefined;
+        if(anterior && temV && anteriorTemV){
+          var diff = maisRecente.saturacaoBases - anterior.saturacaoBases;
+          var corTendencia = diff > 0.05 ? '#4F7942' : (diff < -0.05 ? '#A23E2E' : '#8B8368');
+          var setaTendencia = diff > 0.05 ? '▲' : (diff < -0.05 ? '▼' : '—');
+          html += '<div style="font-size:11px; color:' + corTendencia + '; font-weight:600; margin-top:6px;">' + setaTendencia + ' V% ' + (diff>=0?'+':'') + fmtNum(diff) + ' desde ' + fmtDate(anterior.dataColeta) + '</div>';
+        } else if(analisesDoTalhao.length > 1){
+          html += '<div style="font-size:11px; color:var(--ink-soft); margin-top:6px;">' + analisesDoTalhao.length + ' análises no histórico</div>';
+        }
+        html += '</button>';
+      });
+      html += '</div>';
+      if(soloTalhaoFiltro){
+        html += '<button type="button" class="btn-add-inline" data-action="filtrar-perfil-solo" data-id="" style="margin-bottom:16px;">✕ Limpar filtro (ver todos os talhões)</button>';
+      }
+    }
+
     if(!state.analisesSolo.length){
       html += '<div class="paper empty-state">Nenhuma análise de solo registrada ainda.</div>';
     } else {
-      var talhoesComAnalise = state.talhoes.filter(function(t){ return state.analisesSolo.some(function(a){ return a.talhaoId === t.id; }); });
-      html += '<div class="paper form-card">';
-      html += selectField('solo-talhao-filtro', 'Filtrar por talhão', [{value:'', label:'Todos os talhões'}].concat(talhoesComAnalise.map(function(t){ return {value:t.id, label:t.nome}; })), soloTalhaoFiltro || '');
-      html += '</div>';
       var analisesFiltradas = soloTalhaoFiltro ? state.analisesSolo.filter(function(a){ return a.talhaoId === soloTalhaoFiltro; }) : state.analisesSolo;
       var originalList = state.analisesSolo;
       state.analisesSolo = analisesFiltradas.slice().sort(function(a,b){ return (b.dataColeta||'').localeCompare(a.dataColeta||''); });
       html += buildGenericTableHtml('analisesSolo');
       state.analisesSolo = originalList;
     }
-    html += '<div class="paper note-box">Faixas de referência variam bastante por cultura, região e método do laboratório — não existe um "valor ideal" único. Use o histórico por talhão pra acompanhar a evolução ao longo do tempo, e compare com a recomendação do seu agrônomo pra cada cultura específica.</div>';
+    html += '<div class="paper note-box">Faixas de referência variam bastante por cultura, região e método do laboratório — não existe um "valor ideal" único. A seta de tendência compara a Saturação por Bases (V%) da análise mais recente com a anterior do mesmo talhão — não é diagnóstico, só um indicativo visual rápido. Use o histórico por talhão pra acompanhar a evolução ao longo do tempo, e compare com a recomendação do seu agrônomo pra cada cultura específica.</div>';
     return html;
   }
 
@@ -4718,11 +4859,6 @@
       renderAgro50();
       return;
     }
-    if(e.target && e.target.id === 'f-solo-talhao-filtro'){
-      soloTalhaoFiltro = e.target.value;
-      renderAgro50();
-      return;
-    }
     if(e.target && e.target.id === 'f-financeiro-mes-filtro'){
       financeiroMesFiltro = e.target.value;
       renderFinanceiro();
@@ -5629,6 +5765,18 @@
     }
     if(action === 'del-talhao'){ state.talhoes = state.talhoes.filter(function(t){ return t.id !== id; }); saveKey('talhoes', state.talhoes); renderAll(); return; }
     if(action === 'edit-talhao'){ editState = {scope:'talhoes', id: id}; renderAll(); var f2 = document.getElementById('form-talhao'); if(f2) f2.scrollIntoView({behavior:'smooth', block:'start'}); return; }
+    if(action === 'ver-perfil-solo'){
+      soloTalhaoFiltro = id;
+      agro50SecaoAtiva = 'solo';
+      switchTab('agro50');
+      renderAll();
+      return;
+    }
+    if(action === 'filtrar-perfil-solo'){
+      soloTalhaoFiltro = (soloTalhaoFiltro === id) ? '' : id;
+      renderAgro50();
+      return;
+    }
     if(action === 'del-safra'){ state.safras = state.safras.filter(function(s){ return s.id !== id; }); saveKey('safras', state.safras); renderAll(); return; }
     if(action === 'edit-safra'){ editState = {scope:'safras', id: id}; renderAll(); var f3 = document.getElementById('form-safra'); if(f3) f3.scrollIntoView({behavior:'smooth', block:'start'}); return; }
     if(action === 'toggle-safra-mapa-ano'){
