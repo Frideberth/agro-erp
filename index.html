@@ -419,7 +419,7 @@
 (function(){
   "use strict";
 
-  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas','sefazNotasPendentes','sefazItensRevisao','sefazProgresso'];
+  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas','sefazNotasPendentes','sefazItensRevisao','sefazProgresso','analisesSolo'];
   var state = {};
   var editState = null; // {scope:'generic', entityKey, id} ou {scope:'talhoes'|'safras'|'operacoes'|'financeiro'|'producao', id}
   ALL_KEYS.forEach(function(k){ state[k] = []; });
@@ -521,6 +521,52 @@
   }
 
   var ENTITY_CONFIGS = {
+    analisesSolo: {
+      label: 'análise de solo',
+      fields: [
+        {name:'talhaoId', type:'select', label:'Talhão', required:true, optionsFn: talhaoOptionsFn},
+        {name:'dataColeta', type:'date', label:'Data da coleta', required:true},
+        {name:'profundidade', type:'text', label:'Profundidade', placeholder:'Ex: 0-20cm'},
+        {name:'ph', type:'number', label:'pH (CaCl2)', extra:{step:'0.01', min:'0', max:'14'}, placeholder:'0'},
+        {name:'materiaOrganica', type:'number', label:'Matéria orgânica (g/dm³)', extra:{step:'0.1', min:'0'}, placeholder:'0'},
+        {name:'fosforo', type:'number', label:'Fósforo - P (mg/dm³)', extra:{step:'0.1', min:'0'}, placeholder:'0'},
+        {name:'potassio', type:'number', label:'Potássio - K (mg/dm³)', extra:{step:'0.1', min:'0'}, placeholder:'0'},
+        {name:'calcio', type:'number', label:'Cálcio - Ca (cmolc/dm³)', extra:{step:'0.01', min:'0'}, placeholder:'0'},
+        {name:'magnesio', type:'number', label:'Magnésio - Mg (cmolc/dm³)', extra:{step:'0.01', min:'0'}, placeholder:'0'},
+        {name:'ctc', type:'number', label:'CTC (cmolc/dm³)', extra:{step:'0.01', min:'0'}, placeholder:'0'},
+        {name:'saturacaoBases', type:'number', label:'Saturação por bases - V (%)', extra:{step:'0.1', min:'0', max:'100'}, placeholder:'0'},
+        {name:'aluminio', type:'number', label:'Alumínio - Al (cmolc/dm³)', advanced:true, extra:{step:'0.01', min:'0'}, placeholder:'0'},
+        {name:'hAl', type:'number', label:'H+Al (cmolc/dm³)', advanced:true, extra:{step:'0.01', min:'0'}, placeholder:'0'},
+        {name:'somaBases', type:'number', label:'Soma de bases - SB (cmolc/dm³)', advanced:true, extra:{step:'0.01', min:'0'}, placeholder:'0'},
+        {name:'saturacaoAluminio', type:'number', label:'Saturação por alumínio - m (%)', advanced:true, extra:{step:'0.1', min:'0', max:'100'}, placeholder:'0'},
+        {name:'enxofre', type:'number', label:'Enxofre - S (mg/dm³)', advanced:true, extra:{step:'0.1', min:'0'}, placeholder:'0'},
+        {name:'boro', type:'number', label:'Boro - B (mg/dm³)', advanced:true, extra:{step:'0.01', min:'0'}, placeholder:'0'},
+        {name:'cobre', type:'number', label:'Cobre - Cu (mg/dm³)', advanced:true, extra:{step:'0.01', min:'0'}, placeholder:'0'},
+        {name:'ferro', type:'number', label:'Ferro - Fe (mg/dm³)', advanced:true, extra:{step:'0.1', min:'0'}, placeholder:'0'},
+        {name:'manganes', type:'number', label:'Manganês - Mn (mg/dm³)', advanced:true, extra:{step:'0.1', min:'0'}, placeholder:'0'},
+        {name:'zinco', type:'number', label:'Zinco - Zn (mg/dm³)', advanced:true, extra:{step:'0.01', min:'0'}, placeholder:'0'},
+        {name:'argila', type:'number', label:'Argila (%)', advanced:true, extra:{step:'0.1', min:'0', max:'100'}, placeholder:'0'},
+        {name:'silte', type:'number', label:'Silte (%)', advanced:true, extra:{step:'0.1', min:'0', max:'100'}, placeholder:'0'},
+        {name:'areia', type:'number', label:'Areia (%)', advanced:true, extra:{step:'0.1', min:'0', max:'100'}, placeholder:'0'},
+        {name:'classeTextural', type:'text', label:'Classe textural (opcional)', advanced:true, placeholder:'Ex: Muito Argiloso'},
+        {name:'aguaDisponivel', type:'number', label:'Água disponível (mm/cm)', advanced:true, extra:{step:'0.01', min:'0'}, placeholder:'0'},
+        {name:'laboratorio', type:'text', label:'Laboratório (opcional)', advanced:true, placeholder:'Ex: Solocap'},
+        {name:'observacao', type:'text', label:'Observação (opcional)', advanced:true, placeholder:''}
+      ],
+      columns: [
+        {key:'dataColeta', label:'Data', format:'date'},
+        {key:'talhaoId', label:'Talhão', compute: function(item){ return talhaoNome(item.talhaoId); }},
+        {key:'profundidade', label:'Profundidade'},
+        {key:'ph', label:'pH'},
+        {key:'materiaOrganica', label:'M.O. (g/dm³)'},
+        {key:'fosforo', label:'P (mg/dm³)'},
+        {key:'potassio', label:'K (mg/dm³)'},
+        {key:'calcio', label:'Ca (cmolc/dm³)'},
+        {key:'magnesio', label:'Mg (cmolc/dm³)'},
+        {key:'ctc', label:'CTC (cmolc/dm³)'},
+        {key:'saturacaoBases', label:'V (%)'}
+      ]
+    },
     arrendamentos: {
       label: 'arrendamento',
       fields: [
@@ -1336,6 +1382,50 @@
           saveKey('contasPagar', state.contasPagar);
         })();
         (function(){
+          var jaTemAnaliseSolo2013 = state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-706-2013'; });
+          if(jaTemAnaliseSolo2013) return;
+          var talhaoPivo = state.talhoes.find(function(t){ var n = t.nome.trim().toLowerCase(); return n === 'pivo' || n === 'pivô'; });
+          if(!talhaoPivo) return;
+          var amostrasLaudo706 = [
+            {ref:'1602', refAntiga:'Talhão 1', ph:5.10, p:7.0, k:200, ca:3.11, mg:1.47, al:0.28, hAl:4.21, mo:1.87, sb:5.1, m:5.2, zn:2.6, fe:50.9, mn:106.0, cu:11.6, b:0.55, s:null, ctc:9.3, v:54.7},
+            {ref:'1603', refAntiga:'Talhão 3', ph:5.74, p:59.8, k:339, ca:6.84, mg:1.85, al:0.00, hAl:2.89, mo:1.75, sb:9.6, m:0.0, zn:3.3, fe:85.8, mn:105.0, cu:17.6, b:0.44, s:null, ctc:12.5, v:76.9},
+            {ref:'1604', refAntiga:'Talhão 2', ph:4.71, p:12.8, k:204, ca:2.47, mg:1.17, al:0.89, hAl:5.95, mo:1.99, sb:4.2, m:14.8, zn:null, fe:44.4, mn:165.0, cu:16.2, b:0.48, s:null, ctc:10.1, v:41.1},
+            {ref:'1605', refAntiga:'Talhão 3', ph:6.26, p:47.0, k:415, ca:6.35, mg:2.53, al:0.00, hAl:1.98, mo:1.29, sb:9.9, m:0.0, zn:null, fe:null, mn:null, cu:null, b:null, s:null, ctc:11.9, v:83.3},
+            {ref:'1606', refAntiga:'Talhão 2', ph:5.27, p:3.1, k:93, ca:3.32, mg:1.30, al:0.13, hAl:3.31, mo:1.29, sb:4.8, m:2.6, zn:null, fe:null, mn:null, cu:null, b:null, s:null, ctc:9.1, v:59.1},
+            {ref:'1607', refAntiga:'Talhão 1', ph:4.90, p:4.5, k:94, ca:2.64, mg:1.14, al:0.42, hAl:4.40, mo:1.29, sb:4.0, m:9.5, zn:null, fe:null, mn:null, cu:null, b:null, s:null, ctc:8.4, v:47.7}
+          ];
+          amostrasLaudo706.forEach(function(a, idx){
+            state.analisesSolo.push({
+              id: uid(), talhaoId: talhaoPivo.id, dataColeta: '2013-07-12', profundidade: '0-20cm',
+              ph: a.ph, materiaOrganica: a.mo, fosforo: a.p, potassio: a.k, calcio: a.ca, magnesio: a.mg, ctc: a.ctc, saturacaoBases: a.v,
+              aluminio: a.al, hAl: a.hAl, somaBases: a.sb, saturacaoAluminio: a.m,
+              zinco: a.zn, ferro: a.fe, manganes: a.mn, cobre: a.cu, boro: a.b, enxofre: a.s,
+              laboratorio: 'IFSULMINAS Campus Muzambinho', observacao: 'Laudo 706/2013 - Ref. Lab ' + a.ref + ' (nomenclatura antiga: ' + a.refAntiga + ')',
+              origemImportacao: 'laudo-706-2013', criadoEm: Date.now() + idx
+            });
+          });
+          saveKey('analisesSolo', state.analisesSolo);
+        })();
+        (function(){
+          var jaTemAnaliseCafeNovo2026 = state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-s2601010-cafenovo'; });
+          if(jaTemAnaliseCafeNovo2026) return;
+          var talhaoCafeNovo = state.talhoes.find(function(t){ var n = t.nome.trim().toLowerCase(); return n === 'café novo' || n === 'cafe novo'; });
+          if(!talhaoCafeNovo) return;
+          var kConvertido = 0.06 * 390.983; // cmolc/dm³ -> mg/dm³ (peso equivalente do K, laboratório ITL reportou em cmolc/dm³)
+          state.analisesSolo.push({
+            id: uid(), talhaoId: talhaoCafeNovo.id, dataColeta: '2026-05-28', profundidade: '',
+            ph: 4.83, materiaOrganica: 17.02, fosforo: 0.26, potassio: Math.round(kConvertido * 100) / 100,
+            calcio: 5.34, magnesio: 1.59, ctc: 11.33, saturacaoBases: 61.66,
+            aluminio: 0.01, hAl: 4.34, somaBases: null, saturacaoAluminio: null,
+            zinco: 3.46, ferro: 34.42, manganes: 27.64, cobre: 29.95, boro: null, enxofre: null,
+            argila: 65.3, silte: 30.3, areia: 4.5, classeTextural: 'Muito Argiloso', aguaDisponivel: 1.16,
+            laboratorio: 'ITL - Instituto de Tecnologia e Laboratórios (Londrina-PR)',
+            observacao: 'Laudo S2601010 (Química) + S2601010-F (Física). pH SMP: 6,18. Potássio original do laudo: 0,06 cmolc/dm³, convertido aqui para mg/dm³ pra manter o histórico na mesma unidade. Amostra entrada no laboratório em 28/04/2026, resultado em 06/05/2026.',
+            origemImportacao: 'laudo-s2601010-cafenovo', criadoEm: Date.now()
+          });
+          saveKey('analisesSolo', state.analisesSolo);
+        })();
+        (function(){
           // Corrige lançamentos de Serviços Prestados/Contratados criados antes do cálculo quantidade×valor unitário
           var precisaCorrecaoServico = state.servicosPrestados.some(function(s){ return s.financeiroId && !s.correcaoValorV1Aplicada; });
           if(!precisaCorrecaoServico) return;
@@ -1880,9 +1970,15 @@
     if(editState && editState.scope === 'generic' && editState.entityKey === entityKey){
       editingRecord = state[entityKey].find(function(x){ return x.id === editState.id; }) || null;
     }
+    var temCamposAvancados = cfg.fields.some(function(f){ return f.advanced; });
+    if(editingRecord && temCamposAvancados){
+      var editandoTemAvancado = cfg.fields.some(function(f){ return f.advanced && editingRecord[f.name] !== undefined && editingRecord[f.name] !== '' && editingRecord[f.name] !== 0; });
+      if(editandoTemAvancado) genericAvancadoAberto[entityKey] = true;
+    }
     var html = '<div class="paper form-card"><h3>' + (editingRecord ? 'Editar ' + cfg.label.toLowerCase() : 'Novo(a) ' + cfg.label.toLowerCase()) + '</h3>';
     html += '<form class="entry-form" data-form="generic" data-entity="' + entityKey + '"' + (editingRecord ? ' data-editing-id="' + editingRecord.id + '"' : '') + '>';
     cfg.fields.forEach(function(f){
+      if(f.advanced) return;
       var current = editingRecord ? editingRecord[f.name] : undefined;
       if(f.type === 'select'){
         var opts = typeof f.optionsFn === 'function' ? f.optionsFn(current) : f.options;
@@ -1895,6 +1991,22 @@
         html += field(f.type, f.name, f.label, !!f.required, f.placeholder || '', f.extra || {}, current);
       }
     });
+    if(temCamposAvancados){
+      var avancadoAberto = !!genericAvancadoAberto[entityKey];
+      html += '<button type="button" class="btn-add-inline" data-action="toggle-generic-avancado" data-entity="' + entityKey + '" style="grid-column: 1 / -1; width:fit-content; margin-top:6px;">' + (avancadoAberto ? '▲ Ocultar mais parâmetros' : '▼ Mostrar mais parâmetros') + '</button>';
+      html += '<div id="generic-avancado-' + entityKey + '" style="display:' + (avancadoAberto ? 'contents' : 'none') + ';">';
+      cfg.fields.forEach(function(f){
+        if(!f.advanced) return;
+        var current = editingRecord ? editingRecord[f.name] : undefined;
+        if(f.type === 'select'){
+          var opts = typeof f.optionsFn === 'function' ? f.optionsFn(current) : f.options;
+          html += selectField(f.name, f.label, opts, current);
+        } else {
+          html += field(f.type, f.name, f.label, !!f.required, f.placeholder || '', f.extra || {}, current);
+        }
+      });
+      html += '</div>';
+    }
     html += '<button type="submit" class="btn">' + (editingRecord ? 'Salvar alterações' : 'Adicionar') + '</button>';
     if(editingRecord) html += '<button type="button" class="btn-cancel" data-action="cancel-edit">Cancelar</button>';
     html += '</form></div>';
@@ -2607,6 +2719,9 @@
   var financeiroMesFiltro = '';
   var financeiroMostrarMaisOpcoes = false;
   var dashboardMaisDetalhesAberto = false;
+  var agro50SecaoAtiva = null;
+  var genericAvancadoAberto = {};
+  var soloTalhaoFiltro = '';
   var safraMapaAnoSelecionado = null;
 
   function renderSafras(){
@@ -3228,10 +3343,49 @@
     return html;
   }
 
+  function renderAnaliseSoloHtml(){
+    var html = '<div class="section-title" style="margin-top:0;">Análise de Solo</div>';
+    html += buildGenericFormHtml('analisesSolo');
+    if(!state.analisesSolo.length){
+      html += '<div class="paper empty-state">Nenhuma análise de solo registrada ainda.</div>';
+    } else {
+      var talhoesComAnalise = state.talhoes.filter(function(t){ return state.analisesSolo.some(function(a){ return a.talhaoId === t.id; }); });
+      html += '<div class="paper form-card">';
+      html += selectField('solo-talhao-filtro', 'Filtrar por talhão', [{value:'', label:'Todos os talhões'}].concat(talhoesComAnalise.map(function(t){ return {value:t.id, label:t.nome}; })), soloTalhaoFiltro || '');
+      html += '</div>';
+      var analisesFiltradas = soloTalhaoFiltro ? state.analisesSolo.filter(function(a){ return a.talhaoId === soloTalhaoFiltro; }) : state.analisesSolo;
+      var originalList = state.analisesSolo;
+      state.analisesSolo = analisesFiltradas.slice().sort(function(a,b){ return (b.dataColeta||'').localeCompare(a.dataColeta||''); });
+      html += buildGenericTableHtml('analisesSolo');
+      state.analisesSolo = originalList;
+    }
+    html += '<div class="paper note-box">Faixas de referência variam bastante por cultura, região e método do laboratório — não existe um "valor ideal" único. Use o histórico por talhão pra acompanhar a evolução ao longo do tempo, e compare com a recomendação do seu agrônomo pra cada cultura específica.</div>';
+    return html;
+  }
+
   function renderAgro50(){
     var el = document.getElementById('tab-agro50');
-    var html = '<div class="paper note-box">Esse espaço é pra ir incorporando, aos poucos, tecnologias e indicadores novos ao sistema — sempre focado no que faz sentido pra sua realidade, sem depender de comprar hardware. Primeiro tópico: <strong>Pluviometria</strong>. Próximos que podemos trabalhar juntos: rastreabilidade da cadeia produtiva e alertas/indicadores preditivos em cima dos dados que você já registra.</div>';
+    var html = '<div class="paper note-box">Esse espaço é pra ir incorporando, aos poucos, tecnologias e indicadores novos ao sistema — sempre focado no que faz sentido pra sua realidade, sem depender de comprar hardware.</div>';
 
+    var abasAgro50 = [
+      {chave: 'pluviometria', label: 'Pluviometria', icone: '🌧️'},
+      {chave: 'hidrica', label: 'Análise Hídrica', icone: '💧'},
+      {chave: 'solo', label: 'Análise de Solo', icone: '🌱'},
+      {chave: 'alertas', label: 'Alertas Inteligentes', icone: '⚠️'},
+      {chave: 'rastreabilidade', label: 'Rastreabilidade', icone: '🔗'}
+    ];
+    if(!agro50SecaoAtiva) agro50SecaoAtiva = 'pluviometria';
+    html += '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:10px; margin-bottom:20px;">';
+    abasAgro50.forEach(function(a){
+      var ativa = agro50SecaoAtiva === a.chave;
+      html += '<button type="button" class="paper" data-action="abrir-secao-agro50" data-secao="' + a.chave + '" style="padding:13px; text-align:center; cursor:pointer; border:2px solid ' + (ativa ? 'var(--accent)' : 'var(--paper-line)') + '; background:' + (ativa ? 'var(--paper-2)' : 'var(--paper)') + '; font-family:inherit;">';
+      html += '<div style="font-size:19px; margin-bottom:4px;">' + a.icone + '</div>';
+      html += '<div style="font-size:12.5px; font-weight:600; color:var(--ink);">' + a.label + '</div>';
+      html += '</button>';
+    });
+    html += '</div>';
+
+    if(agro50SecaoAtiva === 'pluviometria'){
     html += '<div class="section-title" style="margin-top:0;">Pluviometria</div>';
 
     var hoje = new Date();
@@ -3278,7 +3432,9 @@
     }
 
     html += '<div class="paper note-box">Registre a leitura do pluviômetro sempre que chover — o total do mês e do ano são calculados automaticamente. "Dias desde a última chuva" ajuda a identificar períodos de estiagem. "Média" no mapa anual é o total do mês dividido pelos dias daquele mês.</div>';
+    } // fim da secao pluviometria
 
+    if(agro50SecaoAtiva === 'hidrica'){
     var propriedadesComChuvaHidrica = state.propriedades.filter(function(p){ return state.chuvas.some(function(c){ return c.propriedadeId === p.id; }); });
     if(propriedadesComChuvaHidrica.length){
       if(!hidricaPropriedadeId) hidricaPropriedadeId = propriedadesComChuvaHidrica[0].id;
@@ -3370,8 +3526,14 @@
         html += '<div class="paper note-box">⚠️ A "Faixa de referência" é uma aproximação baseada em publicações da Embrapa (necessidade total de água por ciclo/ano), distribuída de forma proporcional aos dias já passados desde o plantio — <strong>não é um balanço hídrico de verdade</strong> (que precisaria de evapotranspiração, temperatura e tipo de solo, dados que não temos aqui). Culturas fora de soja/milho/café ainda não têm referência cadastrada. Use como indicativo, não como decisão isolada de irrigação/manejo.</div>';
       }
     }
+    } // fim da secao hidrica
 
-    html += '<div class="section-title">Alertas Inteligentes</div>';
+    if(agro50SecaoAtiva === 'solo'){
+      html += renderAnaliseSoloHtml();
+    } // fim da secao solo
+
+    if(agro50SecaoAtiva === 'alertas'){
+    html += '<div class="section-title" style="margin-top:0;">Alertas Inteligentes</div>';
     var alertasInteligentes = [];
     state.safras.forEach(function(s){
       if(s.status !== 'andamento' && s.status !== 'colhida') return;
@@ -3442,8 +3604,10 @@
       html += '</div>';
     }
     html += '<div class="paper note-box">Esses alertas comparam a safra atual com a média histórica do mesmo talhão (produtividade e custo/ha) e vendas contra a última cotação salva no Dashboard. Não é inteligência artificial de verdade — são regras simples em cima dos seus próprios dados, mas já ajudam a identificar desvios que passariam despercebidos.</div>';
+    } // fim da secao alertas
 
-    html += '<div class="section-title">Rastreabilidade por Safra</div>';
+    if(agro50SecaoAtiva === 'rastreabilidade'){
+    html += '<div class="section-title" style="margin-top:0;">Rastreabilidade por Safra</div>';
     if(!state.safras.length){
       html += '<div class="paper empty-state">Cadastre uma safra pra usar a rastreabilidade.</div>';
     } else {
@@ -3504,6 +3668,7 @@
       }
       html += '<div class="paper note-box">A rastreabilidade junta, numa visão só, tudo que já está espalhado pelo sistema: o que foi aplicado (Diário de Campo), o que foi colhido (Colheita) e pra quem foi vendido (Colheita → Venda) — útil pra comprovar a cadeia produtiva pra compradores ou certificações.</div>';
     }
+    } // fim da secao rastreabilidade
 
     el.innerHTML = html;
   }
@@ -4553,6 +4718,11 @@
       renderAgro50();
       return;
     }
+    if(e.target && e.target.id === 'f-solo-talhao-filtro'){
+      soloTalhaoFiltro = e.target.value;
+      renderAgro50();
+      return;
+    }
     if(e.target && e.target.id === 'f-financeiro-mes-filtro'){
       financeiroMesFiltro = e.target.value;
       renderFinanceiro();
@@ -5519,6 +5689,17 @@
     if(action === 'toggle-dashboard-detalhes'){
       dashboardMaisDetalhesAberto = !dashboardMaisDetalhesAberto;
       renderPainel();
+      return;
+    }
+    if(action === 'abrir-secao-agro50'){
+      agro50SecaoAtiva = btn.dataset.secao;
+      renderAgro50();
+      return;
+    }
+    if(action === 'toggle-generic-avancado'){
+      var entidadeToggle = btn.dataset.entity;
+      genericAvancadoAberto[entidadeToggle] = !genericAvancadoAberto[entidadeToggle];
+      renderAll();
       return;
     }
     if(action === 'toggle-notas-historico'){
