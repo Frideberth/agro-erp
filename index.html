@@ -1522,6 +1522,25 @@
           saveKey('analisesSolo', state.analisesSolo);
         })();
         (function(){
+          var jaTemAnalisePrecisaoPista = state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-agricultura-precisao-pista-2023'; });
+          if(jaTemAnalisePrecisaoPista) return;
+          var talhaoPistaPrecisao = state.talhoes.find(function(t){ return t.nome.trim().toLowerCase() === 'pista'; });
+          if(!talhaoPistaPrecisao) return;
+          var kConvertidoPrecisao = 0.57 * 390.983;
+          state.analisesSolo.push({
+            id: uid(), talhaoId: talhaoPistaPrecisao.id, dataColeta: '2023-03-25', profundidade: '0-20cm',
+            ph: 5.20, materiaOrganica: 26.1, fosforo: 9.63, potassio: Math.round(kConvertidoPrecisao * 100) / 100,
+            calcio: 6.67, magnesio: 1.32, ctc: 12.67, saturacaoBases: 67.44,
+            aluminio: 0.05, hAl: null, somaBases: 8.56, saturacaoAluminio: 0.83,
+            zinco: null, ferro: null, manganes: null, cobre: null, boro: null, enxofre: 11.19,
+            argila: 70.00, silte: null, areia: null, classeTextural: '', aguaDisponivel: null,
+            laboratorio: 'Agricultura de Precisão (agrônomo Laurindo Bassi)',
+            observacao: 'Relatório de Fertilidade e Recomendação por amostragem em grade (15 pontos, área total 43,72 ha) — os valores gravados aqui são a MÉDIA de cada mapa interpolado, não um ponto único. Talhão chamado de "Talhão 1" no relatório. Argila medida na camada 20-40cm (diferente dos demais parâmetros, medidos em 0-20cm). M.O. original do laudo: 2,61% — convertido aqui ×10 (=26,1) por indicação do usuário, pra ficar na mesma faixa dos outros laudos. Dados extras não gravados em campo próprio: Fósforo Remanescente (P-rem) médio 18,96 mg/L; saturações Ca% 52,48, Mg% 10,47, K% 4,49. Recomendações de adubação do relatório (não são resultado de análise, são sugestão de aplicação): Calagem (equilíbrio de cátions) 371 kg/ha calcítico + 1.189 kg/ha dolomítico; Calagem (saturação de bases 75%) 1.114 kg/ha calcítico; Fosfatagem (Super Fosfato Simples) 422 kg/ha; Potassagem (Cloreto de Potássio) 47 kg/ha; Gesso Agrícola (enxofre) 577 kg/ha.',
+            origemImportacao: 'laudo-agricultura-precisao-pista-2023', criadoEm: Date.now()
+          });
+          saveKey('analisesSolo', state.analisesSolo);
+        })();
+        (function(){
           // Corrige lançamentos de Serviços Prestados/Contratados criados antes do cálculo quantidade×valor unitário
           var precisaCorrecaoServico = state.servicosPrestados.some(function(s){ return s.financeiroId && !s.correcaoValorV1Aplicada; });
           if(!precisaCorrecaoServico) return;
