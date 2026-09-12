@@ -2383,6 +2383,56 @@
     html += '<div class="field"><label>Arquivo XML da NF-e</label><input type="file" id="nfe-file-input" accept=".xml"></div>';
     html += '<button type="button" class="btn" data-action="ler-nfe" style="align-self:end;">Ler nota</button>';
     html += '</div>';
+    html += '</div>';
+    } // fim da seção xml
+
+    if(nfeSecaoAtiva === 'certificado'){
+    html += '<div class="paper form-card"><h3>Certificado Digital (A1) — armazenamento seguro</h3>';
+    html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 12px;">Guardado de forma criptografada. Na hora do upload, o sistema já lê o CPF/CNPJ e (quando disponível no certificado) a UF, pra preencher sozinho a consulta na SEFAZ depois.</p>';
+    html += '<div id="certificado-status" style="font-size:13px; margin-bottom:10px;">Verificando…</div>';
+    html += '<div id="certificado-form-area"></div>';
+    html += '</div>';
+    } // fim da seção certificado
+
+    if(nfeSecaoAtiva === 'sefaz'){
+    html += '<div class="paper form-card"><h3>Testar consulta na SEFAZ</h3>';
+    html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 12px;">✅ A conexão e a leitura do certificado já foram validadas — a SEFAZ respondeu certinho. Se testou em Homologação e veio "Nenhum documento localizado", é esperado (ambiente de testes, normalmente vazio) — escolha <strong>Produção</strong> pra ver suas notas de verdade.</p>';
+    if(state.sefazProgresso && state.sefazProgresso[0] && state.sefazProgresso[0].ultNSU){
+      var progressoNsu = state.sefazProgresso[0];
+      var nsuLimpo = progressoNsu.ultNSU.replace(/^0+(?=\d)/, '');
+      var maxLimpo = (progressoNsu.maxNSU || '').replace(/^0+(?=\d)/, '');
+      html += '<div class="paper note-box" style="margin-bottom:14px;"><strong>Progresso salvo:</strong> última consulta parou no NSU <strong>' + escapeHtml(nsuLimpo) + '</strong>' + (maxLimpo ? ' de <strong>' + escapeHtml(maxLimpo) + '</strong> disponíveis' : '') + (progressoNsu.atualizadoEm ? ' — em ' + fmtDate(progressoNsu.atualizadoEm.slice(0,10)) : '') + '. Esse número já vem preenchido no campo "Último NSU" abaixo, mesmo se você sair e voltar depois.</div>';
+    }
+    html += '<div class="entry-form">';
+    html += selectField('sefaz-ambiente', 'Ambiente', [{value:'homologacao', label:'Homologação (testes)'}, {value:'producao', label:'Produção (notas reais)'}], 'producao');
+    var ufsOptions = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map(function(u){ return {value:u, label:u}; });
+    html += selectField('sefaz-uf', 'UF do certificado', ufsOptions, certificadoDadosCache.uf || undefined);
+    html += field('text', 'sefaz-documento', 'CPF ou CNPJ (só números)', false, '', {}, certificadoDadosCache.documento || undefined);
+    if(certificadoDadosCache.configurado && (certificadoDadosCache.uf || certificadoDadosCache.documento)){
+      html += '<p style="grid-column:1/-1; font-size:11px; color:var(--ink-soft); margin:0;">✅ UF e documento preenchidos automaticamente a partir do certificado cadastrado.</p>';
+    } else if(certificadoDadosCache.configurado){
+      html += '<p style="grid-column:1/-1; font-size:11px; color:var(--cost-dark); margin:0;">Não consegui ler a UF/documento direto do certificado — preencha manualmente (isso pode acontecer dependendo de como a certificadora emitiu o certificado).</p>';
+    }
+    html += field('text', 'sefaz-ultnsu', 'Último NSU (deixe 0 na primeira vez)', false, '0', {}, sefazUltimaResposta && sefazUltimaResposta.ultNSU ? sefazUltimaResposta.ultNSU.replace(/^0+(?=\d)/, '') : undefined);
+    html += '<button type="button" class="btn" data-action="testar-sefaz" style="align-self:end;">Testar consulta</button>';
+    html += '</div>';
+    if(sefazDocumentosAcumulados.length){
+      html += '<div style="display:flex; align-items:flex-end; gap:8px; margin-top:12px; flex-wrap:wrap;">';
+      html += '<div class="field" style="margin:0; max-width:220px;"><label>Quantas notas trazer agora?</label><input type="number" id="sefaz-qtd-notas" min="1" max="' + sefazDocumentosAcumulados.length + '" placeholder="Todas (' + sefazDocumentosAcumulados.length + ')"></div>';
+      html += '<button type="button" id="sefaz-trazer-notas-btn" class="btn" data-action="trazer-notas-sefaz">Trazer as ' + sefazDocumentosAcumulados.length + ' nota(s) completa(s) encontradas</button>';
+      html += '</div>';
+      html += '<p style="font-size:11px; color:var(--ink-soft); margin-top:6px;">Deixe em branco pra trazer todas de uma vez, ou digite um número (ex: 5) pra trazer só as mais recentes primeiro e ir aos poucos — as que sobrarem continuam guardadas aqui pra próxima vez.</p>';
+    } else {
+      html += '<button type="button" id="sefaz-trazer-notas-btn" class="btn" data-action="trazer-notas-sefaz" style="margin-top:12px; display:none;">Trazer notas completas pra revisão</button>';
+    }
+    html += '<p style="font-size:11px; color:var(--ink-soft); margin-top:6px;">As notas completas encontradas ficam guardadas aqui mesmo que uma consulta seguinte dê erro (ex: bloqueio de "consumo indevido") — não somem. Notas que <strong>já foram trazidas pro sistema antes</strong> são ignoradas automaticamente nesta busca — não aparecem de novo. Se ainda tiver mais notas (maxNSU maior que o último NSU buscado), o campo "Último NSU" acima já vem atualizado — é só clicar em "Testar consulta" de novo pra buscar o próximo lote.</p>';
+    if(sefazIgnoradasNaUltimaConsulta > 0){
+      html += '<p style="font-size:11px; color:var(--ink-soft); margin-top:4px;">A última consulta encontrou ' + sefazIgnoradasNaUltimaConsulta + ' nota(s) que já tinham sido importadas antes — foram ignoradas automaticamente.</p>';
+    }
+    html += '<pre id="sefaz-resultado" style="white-space:pre-wrap; word-break:break-word; font-size:11.5px; background:#FBF7EC; border:1px solid var(--paper-line); border-radius:4px; padding:10px; margin-top:12px; max-height:400px; overflow-y:auto;' + (sefazUltimaResposta ? '' : ' display:none;') + '">' + (sefazUltimaResposta ? escapeHtml(JSON.stringify(sefazUltimaResposta, null, 2)) : '') + '</pre>';
+    html += '</div>';
+    } // fim da seção sefaz
+
     if(nfeImportada && nfeImportada.itens && nfeImportada.itens.length){
       var gruposMap = {};
       var ordemChaves = [];
@@ -2482,55 +2532,6 @@
       html += '<button type="button" class="btn-cancel" data-action="cancelar-nfe" style="margin-top:12px;">Cancelar</button>';
       html += '</div>';
     }
-    html += '</div>';
-    } // fim da seção xml
-
-    if(nfeSecaoAtiva === 'certificado'){
-    html += '<div class="paper form-card"><h3>Certificado Digital (A1) — armazenamento seguro</h3>';
-    html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 12px;">Guardado de forma criptografada. Na hora do upload, o sistema já lê o CPF/CNPJ e (quando disponível no certificado) a UF, pra preencher sozinho a consulta na SEFAZ depois.</p>';
-    html += '<div id="certificado-status" style="font-size:13px; margin-bottom:10px;">Verificando…</div>';
-    html += '<div id="certificado-form-area"></div>';
-    html += '</div>';
-    } // fim da seção certificado
-
-    if(nfeSecaoAtiva === 'sefaz'){
-    html += '<div class="paper form-card"><h3>Testar consulta na SEFAZ</h3>';
-    html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 12px;">✅ A conexão e a leitura do certificado já foram validadas — a SEFAZ respondeu certinho. Se testou em Homologação e veio "Nenhum documento localizado", é esperado (ambiente de testes, normalmente vazio) — escolha <strong>Produção</strong> pra ver suas notas de verdade.</p>';
-    if(state.sefazProgresso && state.sefazProgresso[0] && state.sefazProgresso[0].ultNSU){
-      var progressoNsu = state.sefazProgresso[0];
-      var nsuLimpo = progressoNsu.ultNSU.replace(/^0+(?=\d)/, '');
-      var maxLimpo = (progressoNsu.maxNSU || '').replace(/^0+(?=\d)/, '');
-      html += '<div class="paper note-box" style="margin-bottom:14px;"><strong>Progresso salvo:</strong> última consulta parou no NSU <strong>' + escapeHtml(nsuLimpo) + '</strong>' + (maxLimpo ? ' de <strong>' + escapeHtml(maxLimpo) + '</strong> disponíveis' : '') + (progressoNsu.atualizadoEm ? ' — em ' + fmtDate(progressoNsu.atualizadoEm.slice(0,10)) : '') + '. Esse número já vem preenchido no campo "Último NSU" abaixo, mesmo se você sair e voltar depois.</div>';
-    }
-    html += '<div class="entry-form">';
-    html += selectField('sefaz-ambiente', 'Ambiente', [{value:'homologacao', label:'Homologação (testes)'}, {value:'producao', label:'Produção (notas reais)'}], 'producao');
-    var ufsOptions = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map(function(u){ return {value:u, label:u}; });
-    html += selectField('sefaz-uf', 'UF do certificado', ufsOptions, certificadoDadosCache.uf || undefined);
-    html += field('text', 'sefaz-documento', 'CPF ou CNPJ (só números)', false, '', {}, certificadoDadosCache.documento || undefined);
-    if(certificadoDadosCache.configurado && (certificadoDadosCache.uf || certificadoDadosCache.documento)){
-      html += '<p style="grid-column:1/-1; font-size:11px; color:var(--ink-soft); margin:0;">✅ UF e documento preenchidos automaticamente a partir do certificado cadastrado.</p>';
-    } else if(certificadoDadosCache.configurado){
-      html += '<p style="grid-column:1/-1; font-size:11px; color:var(--cost-dark); margin:0;">Não consegui ler a UF/documento direto do certificado — preencha manualmente (isso pode acontecer dependendo de como a certificadora emitiu o certificado).</p>';
-    }
-    html += field('text', 'sefaz-ultnsu', 'Último NSU (deixe 0 na primeira vez)', false, '0', {}, sefazUltimaResposta && sefazUltimaResposta.ultNSU ? sefazUltimaResposta.ultNSU.replace(/^0+(?=\d)/, '') : undefined);
-    html += '<button type="button" class="btn" data-action="testar-sefaz" style="align-self:end;">Testar consulta</button>';
-    html += '</div>';
-    if(sefazDocumentosAcumulados.length){
-      html += '<div style="display:flex; align-items:flex-end; gap:8px; margin-top:12px; flex-wrap:wrap;">';
-      html += '<div class="field" style="margin:0; max-width:220px;"><label>Quantas notas trazer agora?</label><input type="number" id="sefaz-qtd-notas" min="1" max="' + sefazDocumentosAcumulados.length + '" placeholder="Todas (' + sefazDocumentosAcumulados.length + ')"></div>';
-      html += '<button type="button" id="sefaz-trazer-notas-btn" class="btn" data-action="trazer-notas-sefaz">Trazer as ' + sefazDocumentosAcumulados.length + ' nota(s) completa(s) encontradas</button>';
-      html += '</div>';
-      html += '<p style="font-size:11px; color:var(--ink-soft); margin-top:6px;">Deixe em branco pra trazer todas de uma vez, ou digite um número (ex: 5) pra trazer só as mais recentes primeiro e ir aos poucos — as que sobrarem continuam guardadas aqui pra próxima vez.</p>';
-    } else {
-      html += '<button type="button" id="sefaz-trazer-notas-btn" class="btn" data-action="trazer-notas-sefaz" style="margin-top:12px; display:none;">Trazer notas completas pra revisão</button>';
-    }
-    html += '<p style="font-size:11px; color:var(--ink-soft); margin-top:6px;">As notas completas encontradas ficam guardadas aqui mesmo que uma consulta seguinte dê erro (ex: bloqueio de "consumo indevido") — não somem. Notas que <strong>já foram trazidas pro sistema antes</strong> são ignoradas automaticamente nesta busca — não aparecem de novo. Se ainda tiver mais notas (maxNSU maior que o último NSU buscado), o campo "Último NSU" acima já vem atualizado — é só clicar em "Testar consulta" de novo pra buscar o próximo lote.</p>';
-    if(sefazIgnoradasNaUltimaConsulta > 0){
-      html += '<p style="font-size:11px; color:var(--ink-soft); margin-top:4px;">A última consulta encontrou ' + sefazIgnoradasNaUltimaConsulta + ' nota(s) que já tinham sido importadas antes — foram ignoradas automaticamente.</p>';
-    }
-    html += '<pre id="sefaz-resultado" style="white-space:pre-wrap; word-break:break-word; font-size:11.5px; background:#FBF7EC; border:1px solid var(--paper-line); border-radius:4px; padding:10px; margin-top:12px; max-height:400px; overflow-y:auto;' + (sefazUltimaResposta ? '' : ' display:none;') + '">' + (sefazUltimaResposta ? escapeHtml(JSON.stringify(sefazUltimaResposta, null, 2)) : '') + '</pre>';
-    html += '</div>';
-    } // fim da seção sefaz
 
     html += '<div class="paper">';
     if(!state.compras.length){
