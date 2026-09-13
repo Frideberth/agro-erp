@@ -432,7 +432,7 @@
   </main>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<!-- Gráficos desenhados em SVG nativo — sem dependência de biblioteca externa -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 (function(){
@@ -1661,6 +1661,7 @@
   var calagemModalTalhaoId = null;
   var calagemVDesejado = 70;
   var calagemPrnt = 85;
+  var nfeTelaFocoAtiva = false;
   function renderCalagemModal(){
     var el = document.getElementById('calagem-modal-content');
     if(!el || !calagemModalTalhaoId) return;
@@ -2300,7 +2301,9 @@
     var totalComprado = state.compras.reduce(function(s,c){ return s + (Number(c.valorTotal)||0); }, 0);
     var comprasPendentes = state.compras.filter(function(c){ return c.status === 'Pendente'; }).length;
 
-    var html = '<div class="stat-row">';
+    var html = '';
+    if(!nfeTelaFocoAtiva){
+    html += '<div class="stat-row">';
     html += statCard('Compras registradas', state.compras.length);
     html += statCard('Total comprado', fmtBRL(totalComprado), 'cost');
     html += statCard('Aguardando recebimento', comprasPendentes);
@@ -2332,6 +2335,11 @@
         html += '<button type="button" class="btn" data-action="toggle-notas-historico" style="margin:4px 0 16px;">' + (notasHistoricoAberto ? '▲ Ver só as recentes' : '▼ Ver todas (' + notasOrdenadas.length + ')') + '</button>';
       }
     }
+    } // fim do "if(!nfeTelaFocoAtiva)" dos stat-cards/notas-importadas
+
+    if(nfeTelaFocoAtiva){
+      html += '<button type="button" class="btn-cancel" data-action="sair-foco-nfe" style="margin-bottom:16px;">← Voltar</button>';
+    } else {
 
     var botoesNfeSecao = [
       {chave: 'compra', label: 'Nova compra manual', icone: '📝'},
@@ -2348,8 +2356,9 @@
       html += '</button>';
     });
     html += '</div>';
+    } // fim do else (nav buttons só aparecem fora do modo focado)
 
-    if(editingRecord && nfeSecaoAtiva !== 'compra') nfeSecaoAtiva = 'compra';
+    if(!nfeTelaFocoAtiva && editingRecord && nfeSecaoAtiva !== 'compra') nfeSecaoAtiva = 'compra';
 
     if(nfeSecaoAtiva === 'compra'){
     html += '<div class="paper form-card"><h3>' + (editingRecord ? 'Editar compra' : 'Nova compra') + '</h3>';
@@ -2406,8 +2415,8 @@
     html += '<div class="entry-form">';
     html += selectField('sefaz-ambiente', 'Ambiente', [{value:'homologacao', label:'Homologação (testes)'}, {value:'producao', label:'Produção (notas reais)'}], 'producao');
     var ufsOptions = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map(function(u){ return {value:u, label:u}; });
-    html += selectField('sefaz-uf', 'UF do certificado', ufsOptions, certificadoDadosCache.uf || undefined);
-    html += field('text', 'sefaz-documento', 'CPF ou CNPJ (só números)', false, '', {}, certificadoDadosCache.documento || undefined);
+    html += selectField('sefaz-uf', 'UF do certificado', ufsOptions, certificadoDadosCache.uf || 'PR');
+    html += field('text', 'sefaz-documento', 'CPF ou CNPJ (só números)', false, '', {}, certificadoDadosCache.documento || '00680246908');
     if(certificadoDadosCache.configurado && (certificadoDadosCache.uf || certificadoDadosCache.documento)){
       html += '<p style="grid-column:1/-1; font-size:11px; color:var(--ink-soft); margin:0;">✅ UF e documento preenchidos automaticamente a partir do certificado cadastrado.</p>';
     } else if(certificadoDadosCache.configurado){
@@ -2533,6 +2542,7 @@
       html += '</div>';
     }
 
+    if(!nfeTelaFocoAtiva){
     html += '<div class="paper">';
     if(!state.compras.length){
       html += '<div class="empty-state">Nenhuma compra registrada ainda.</div>';
@@ -2555,6 +2565,7 @@
     }
     html += '</div>';
     html += '<div class="paper note-box">Compras marcadas como "Recebido" somam automaticamente no estoque (aba Produtos) e criam uma despesa "Pago" no Financeiro no momento em que são criadas. Editar ou remover uma compra depois não desfaz esses efeitos automaticamente — ajuste o estoque e o lançamento financeiro manualmente se precisar corrigir algo.</div>';
+    } // fim do "if(!nfeTelaFocoAtiva)" da lista de compras
     el.innerHTML = html;
     verificarStatusCertificado();
   }
@@ -4478,14 +4489,135 @@
     return {labels: months.map(monthLabel), valores: serie};
   }
 
-  var chartInstances = {};
-  function drawChart(canvasId, type, data, extraOptions){
-    var canvas = document.getElementById(canvasId);
-    if(!canvas || !window.Chart) return;
-    if(chartInstances[canvasId]) chartInstances[canvasId].destroy();
-    var options = {responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:'#2A2016'}}}, scales:{x:{ticks:{color:'#6B5D46'}}, y:{ticks:{color:'#6B5D46'}}}};
-    if(extraOptions){ Object.keys(extraOptions).forEach(function(k){ options[k] = extraOptions[k]; }); }
-    chartInstances[canvasId] = new Chart(canvas.getContext('2d'), {type:type, data:data, options:options});
+  function svgEscala(valores){
+    var max = Math.max.apply(null, valores.concat([0]));
+    var min = Math.min.apply(null, valores.concat([0]));
+    if(max === min){ max = max + 1; min = min - 1; }
+    return {max: max, min: min};
+  }
+
+  function svgBarChart(labels, datasets, opts){
+    opts = opts || {};
+    var horizontal = !!opts.horizontal;
+    var w = 640, h = 260, padL = horizontal ? 110 : 46, padR = 16, padT = 16, padB = horizontal ? 16 : 36;
+    var areaW = w - padL - padR, areaH = h - padT - padB;
+    var todosValores = [];
+    datasets.forEach(function(ds){ todosValores = todosValores.concat(ds.data); });
+    var esc = svgEscala(todosValores);
+    var faixa = esc.max - esc.min || 1;
+
+    var svg = '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%; height:100%; font-family:inherit;">';
+    // linha zero / eixo
+    var zeroPct = (0 - esc.min) / faixa;
+    if(horizontal){
+      var zeroX = padL + zeroPct * areaW;
+      svg += '<line x1="' + zeroX + '" y1="' + padT + '" x2="' + zeroX + '" y2="' + (padT+areaH) + '" stroke="var(--paper-line)" stroke-width="1"></line>';
+    } else {
+      var zeroY = padT + areaH - zeroPct * areaH;
+      svg += '<line x1="' + padL + '" y1="' + zeroY + '" x2="' + (padL+areaW) + '" y2="' + zeroY + '" stroke="var(--paper-line)" stroke-width="1"></line>';
+    }
+
+    var n = labels.length;
+    var dsCount = datasets.length;
+    if(horizontal){
+      var barH = (areaH / n) * 0.62 / dsCount;
+      var grupoH = areaH / n;
+      labels.forEach(function(lab, i){
+        datasets.forEach(function(ds, di){
+          var val = ds.data[i] || 0;
+          var valPct = (val - esc.min) / faixa;
+          var barY = padT + i*grupoH + grupoH*0.19 + di*barH;
+          var x0 = padL + zeroPct*areaW, x1 = padL + valPct*areaW;
+          var cor = Array.isArray(ds.cores) ? ds.cores[i] : (ds.cor || 'var(--accent)');
+          svg += '<rect x="' + Math.min(x0,x1) + '" y="' + barY + '" width="' + Math.abs(x1-x0) + '" height="' + barH*0.82 + '" fill="' + cor + '" rx="2"></rect>';
+        });
+        svg += '<text x="' + (padL-8) + '" y="' + (padT + i*grupoH + grupoH/2 + 4) + '" text-anchor="end" font-size="11" fill="var(--ink-soft)">' + escapeHtml(lab.length > 16 ? lab.slice(0,15)+'…' : lab) + '</text>';
+      });
+    } else {
+      var barW = (areaW / n) * 0.62 / dsCount;
+      var grupoW = areaW / n;
+      labels.forEach(function(lab, i){
+        datasets.forEach(function(ds, di){
+          var val = ds.data[i] || 0;
+          var valPct = (val - esc.min) / faixa;
+          var barX = padL + i*grupoW + grupoW*0.19 + di*barW;
+          var y0 = padT + areaH - zeroPct*areaH, y1 = padT + areaH - valPct*areaH;
+          svg += '<rect x="' + barX + '" y="' + Math.min(y0,y1) + '" width="' + barW*0.82 + '" height="' + Math.abs(y1-y0) + '" fill="' + ds.cor + '" rx="2"></rect>';
+        });
+        svg += '<text x="' + (padL + i*grupoW + grupoW/2) + '" y="' + (h-padB+16) + '" text-anchor="middle" font-size="10.5" fill="var(--ink-soft)">' + escapeHtml(lab) + '</text>';
+      });
+    }
+    svg += '</svg>';
+
+    var legenda = '';
+    if(dsCount > 1 || datasets[0].label){
+      legenda = '<div style="display:flex; gap:14px; flex-wrap:wrap; justify-content:center; margin-top:6px; font-size:12px;">';
+      datasets.forEach(function(ds){
+        legenda += '<span style="display:inline-flex; align-items:center; gap:5px;"><span style="width:10px; height:10px; border-radius:2px; background:' + ds.cor + '; display:inline-block;"></span>' + escapeHtml(ds.label || '') + '</span>';
+      });
+      legenda += '</div>';
+    }
+    return svg + legenda;
+  }
+
+  function svgDoughnutChart(labels, valores, cores){
+    var total = valores.reduce(function(s,v){ return s + v; }, 0);
+    if(total <= 0) return '<div style="padding:10px; font-size:13px; color:var(--ink-soft);">Sem valores pra mostrar.</div>';
+    var cx = 110, cy = 110, rOut = 90, rIn = 52;
+    var anguloAtual = -90;
+    var svg = '<svg viewBox="0 0 220 220" style="width:100%; height:100%; max-height:220px;">';
+    labels.forEach(function(lab, i){
+      var fatia = (valores[i] / total) * 360;
+      var a0 = anguloAtual * Math.PI/180, a1 = (anguloAtual+fatia) * Math.PI/180;
+      var x0o = cx + rOut*Math.cos(a0), y0o = cy + rOut*Math.sin(a0);
+      var x1o = cx + rOut*Math.cos(a1), y1o = cy + rOut*Math.sin(a1);
+      var x0i = cx + rIn*Math.cos(a1), y0i = cy + rIn*Math.sin(a1);
+      var x1i = cx + rIn*Math.cos(a0), y1i = cy + rIn*Math.sin(a0);
+      var largeArc = fatia > 180 ? 1 : 0;
+      var d = 'M' + x0o + ',' + y0o + ' A' + rOut + ',' + rOut + ' 0 ' + largeArc + ' 1 ' + x1o + ',' + y1o + ' L' + x0i + ',' + y0i + ' A' + rIn + ',' + rIn + ' 0 ' + largeArc + ' 0 ' + x1i + ',' + y1i + ' Z';
+      svg += '<path d="' + d + '" fill="' + cores[i] + '" stroke="var(--paper)" stroke-width="1.5"><title>' + escapeHtml(lab) + '</title></path>';
+      anguloAtual += fatia;
+    });
+    svg += '</svg>';
+    var legenda = '<div style="display:flex; flex-direction:column; gap:5px; margin-top:8px; font-size:11.5px; max-height:80px; overflow-y:auto;">';
+    labels.forEach(function(lab, i){
+      var pct = total ? (valores[i]/total*100) : 0;
+      legenda += '<span style="display:flex; align-items:center; gap:6px;"><span style="width:9px; height:9px; border-radius:2px; background:' + cores[i] + '; display:inline-block; flex:none;"></span>' + escapeHtml(lab) + ' <span style="color:var(--ink-soft); margin-left:auto;">' + fmtNum(pct) + '%</span></span>';
+    });
+    legenda += '</div>';
+    return '<div style="display:flex; flex-direction:column; align-items:center;">' + svg + legenda + '</div>';
+  }
+
+  function svgLineChart(labels, valores, cor){
+    var w = 640, h = 260, padL = 56, padR = 16, padT = 16, padB = 30;
+    var areaW = w - padL - padR, areaH = h - padT - padB;
+    var esc = svgEscala(valores);
+    var faixa = esc.max - esc.min || 1;
+    var n = labels.length;
+    var passo = n > 1 ? areaW / (n-1) : 0;
+    var pontos = valores.map(function(v, i){
+      var x = padL + i*passo;
+      var y = padT + areaH - ((v - esc.min)/faixa) * areaH;
+      return {x:x, y:y};
+    });
+    var zeroY = padT + areaH - ((0 - esc.min)/faixa) * areaH;
+
+    var svg = '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%; height:100%;">';
+    svg += '<line x1="' + padL + '" y1="' + zeroY + '" x2="' + (padL+areaW) + '" y2="' + zeroY + '" stroke="var(--paper-line)" stroke-width="1"></line>';
+
+    var linhaPath = 'M' + pontos.map(function(p){ return p.x + ',' + p.y; }).join(' L');
+    var areaPath = linhaPath + ' L' + pontos[pontos.length-1].x + ',' + zeroY + ' L' + pontos[0].x + ',' + zeroY + ' Z';
+    svg += '<path d="' + areaPath + '" fill="' + cor + '" fill-opacity="0.15" stroke="none"></path>';
+    svg += '<path d="' + linhaPath + '" fill="none" stroke="' + cor + '" stroke-width="2.2"></path>';
+    pontos.forEach(function(p){ svg += '<circle cx="' + p.x + '" cy="' + p.y + '" r="3" fill="' + cor + '"></circle>'; });
+
+    var passoLabel = Math.ceil(n / 8);
+    labels.forEach(function(lab, i){
+      if(i % passoLabel !== 0 && i !== n-1) return;
+      svg += '<text x="' + pontos[i].x + '" y="' + (h-padB+16) + '" text-anchor="middle" font-size="10" fill="var(--ink-soft)">' + escapeHtml(lab) + '</text>';
+    });
+    svg += '</svg>';
+    return svg;
   }
 
   function periodoFechado(dataISO){
@@ -4714,69 +4846,52 @@
 
     var semDadosFinanceiro = !state.financeiro || !state.financeiro.length;
 
-    if(!window.Chart){
-      html += '<div class="paper note-box">Não foi possível carregar a biblioteca de gráficos (conexão bloqueada, ad-blocker ou firewall?). Os dados continuam disponíveis nas demais abas e na exportação para Excel.</div>';
-    } else if(semDadosFinanceiro){
+    if(semDadosFinanceiro){
       html += '<div class="paper empty-state">Ainda não há lançamentos no Financeiro — os gráficos aparecem aqui assim que houver dados. Enquanto isso, dá pra usar a exportação para Excel e o backup acima normalmente.</div>';
     } else {
       html += '<div class="section-title" style="margin-top:0;">Custos vs. receitas por mês</div>';
-      html += '<div class="paper" style="padding:16px; height:300px;"><canvas id="chart-mes"></canvas></div>';
+      html += '<div class="paper" style="padding:16px;"><div id="chart-mes"></div></div>';
 
       html += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; margin-top:20px;">';
-      html += '<div><div class="section-title" style="margin-top:0;">Custos por categoria</div><div class="paper" style="padding:16px; height:280px;"><canvas id="chart-categoria"></canvas></div></div>';
-      html += '<div><div class="section-title" style="margin-top:0;">Resultado por talhão</div><div class="paper" style="padding:16px; height:280px;"><canvas id="chart-talhao"></canvas></div></div>';
+      html += '<div><div class="section-title" style="margin-top:0;">Custos por categoria</div><div class="paper" style="padding:16px;"><div id="chart-categoria"></div></div></div>';
+      html += '<div><div class="section-title" style="margin-top:0;">Resultado por talhão</div><div class="paper" style="padding:16px;"><div id="chart-talhao"></div></div></div>';
       html += '</div>';
 
       html += '<div class="section-title">Saldo acumulado projetado</div>';
-      html += '<div class="paper" style="padding:16px; height:300px;"><canvas id="chart-saldo"></canvas></div>';
+      html += '<div class="paper" style="padding:16px;"><div id="chart-saldo"></div></div>';
       html += '<div id="indicadores-erro"></div>';
     }
 
     el.innerHTML = html;
-    if(!window.Chart || semDadosFinanceiro) return;
+    if(semDadosFinanceiro) return;
 
     try{
       var mesData = financeiroPorMes();
-      drawChart('chart-mes', 'bar', {
-        labels: mesData.labels,
-        datasets: [
-          {label:'Custos', data:mesData.custos, backgroundColor:'#A23E2E'},
-          {label:'Receitas', data:mesData.receitas, backgroundColor:'#4F7942'}
-        ]
-      });
+      document.getElementById('chart-mes').innerHTML = svgBarChart(mesData.labels, [
+        {label:'Custos', data:mesData.custos, cor:'var(--cost)'},
+        {label:'Receitas', data:mesData.receitas, cor:'var(--growth)'}
+      ]);
 
       var catData = custosPorCategoria();
       var palette = ['#C98A2B','#4F7942','#A23E2E','#8B8368','#7FA36D','#DFA84E','#9C6A1E','#3B5B32'];
       if(catData.labels.length){
-        drawChart('chart-categoria', 'doughnut', {
-          labels: catData.labels,
-          datasets: [{data: catData.valores, backgroundColor: catData.labels.map(function(_, i){ return palette[i % palette.length]; })}]
-        });
+        document.getElementById('chart-categoria').innerHTML = svgDoughnutChart(catData.labels, catData.valores, catData.labels.map(function(_, i){ return palette[i % palette.length]; }));
       } else {
-        var elCat = document.getElementById('chart-categoria');
-        if(elCat && elCat.parentNode) elCat.parentNode.innerHTML = '<div style="padding:10px; font-size:13px; color:var(--ink-soft);">Nenhum custo "Pago" registrado ainda.</div>';
+        document.getElementById('chart-categoria').innerHTML = '<div style="padding:10px; font-size:13px; color:var(--ink-soft);">Nenhum custo "Pago" registrado ainda.</div>';
       }
 
       var talhaoData = resultadoPorTalhaoChart();
       if(talhaoData.labels.length){
-        drawChart('chart-talhao', 'bar', {
-          labels: talhaoData.labels,
-          datasets: [{label:'Resultado (R$)', data: talhaoData.valores, backgroundColor: talhaoData.cores}]
-        }, {indexAxis:'y'});
+        document.getElementById('chart-talhao').innerHTML = svgBarChart(talhaoData.labels, [{data: talhaoData.valores, cores: talhaoData.cores}], {horizontal:true});
       } else {
-        var elTal = document.getElementById('chart-talhao');
-        if(elTal && elTal.parentNode) elTal.parentNode.innerHTML = '<div style="padding:10px; font-size:13px; color:var(--ink-soft);">Cadastre talhões para ver o resultado por área.</div>';
+        document.getElementById('chart-talhao').innerHTML = '<div style="padding:10px; font-size:13px; color:var(--ink-soft);">Cadastre talhões para ver o resultado por área.</div>';
       }
 
       var saldoData = saldoAcumuladoMensal();
       if(saldoData.labels.length){
-        drawChart('chart-saldo', 'line', {
-          labels: saldoData.labels,
-          datasets: [{label:'Saldo acumulado (R$)', data: saldoData.valores, borderColor:'#C98A2B', backgroundColor:'rgba(201,138,43,0.15)', fill:true, tension:0.25}]
-        });
+        document.getElementById('chart-saldo').innerHTML = svgLineChart(saldoData.labels, saldoData.valores, 'var(--accent)');
       } else {
-        var elSaldo = document.getElementById('chart-saldo');
-        if(elSaldo && elSaldo.parentNode) elSaldo.parentNode.innerHTML = '<div style="padding:10px; font-size:13px; color:var(--ink-soft);">Sem lançamentos com data suficiente para projetar o saldo.</div>';
+        document.getElementById('chart-saldo').innerHTML = '<div style="padding:10px; font-size:13px; color:var(--ink-soft);">Sem lançamentos com data suficiente para projetar o saldo.</div>';
       }
     }catch(err){
       console.error('Erro ao desenhar os gráficos de Indicadores:', err);
@@ -5971,7 +6086,13 @@
     }
     if(action === 'abrir-secao-nfe'){
       var secaoClicada = btn.dataset.secao;
-      nfeSecaoAtiva = (nfeSecaoAtiva === secaoClicada) ? null : secaoClicada;
+      nfeTelaFocoAtiva = true;
+      nfeSecaoAtiva = secaoClicada;
+      renderCompras();
+      return;
+    }
+    if(action === 'sair-foco-nfe'){
+      nfeTelaFocoAtiva = false;
       renderCompras();
       return;
     }
