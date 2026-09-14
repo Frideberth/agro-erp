@@ -382,10 +382,10 @@
       <button class="nav-btn" data-tab="relatorios">Relatórios</button>
       <button class="nav-btn" data-tab="indicadores">Indicadores</button>
       <button class="nav-btn" data-tab="agro50">AGRO5.0</button>
-      <button class="nav-btn" data-tab="configuracoes">Configurações</button>
     </nav>
     <div class="sidebar-footer">
       Dados compartilhados com quem acessa este app.<br>
+      <button type="button" class="auth-link" data-action="switch-workspace" style="color:#9FAE93;">Trocar propriedade</button>
       <button type="button" class="auth-link" data-action="lock-app" style="color:#9FAE93;">Sair</button>
     </div>
   </aside>
@@ -428,7 +428,6 @@
     <section id="tab-orcamento" class="tab-content hidden"></section>
     <section id="tab-relatorios" class="tab-content hidden"></section>
     <section id="tab-indicadores" class="tab-content hidden"></section>
-    <section id="tab-configuracoes" class="tab-content hidden"></section>
     <section id="tab-agro50" class="tab-content hidden"></section>
   </main>
 </div>
@@ -439,7 +438,7 @@
 (function(){
   "use strict";
 
-  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas','sefazNotasPendentes','sefazItensRevisao','sefazProgresso','analisesSolo','imagensCampo'];
+  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas','sefazNotasPendentes','sefazItensRevisao','sefazProgresso','analisesSolo'];
   var state = {};
   var editState = null; // {scope:'generic', entityKey, id} ou {scope:'talhoes'|'safras'|'operacoes'|'financeiro'|'producao', id}
   ALL_KEYS.forEach(function(k){ state[k] = []; });
@@ -470,7 +469,6 @@
     orcamento: {title:'Orçado x Realizado', subtitle:'Compare o planejado com o que realmente foi gasto/recebido, por conta e por ano'},
     relatorios: {title:'Relatórios', subtitle:'Resultado de receitas e despesas por subgrupo e conta'},
     indicadores: {title:'Indicadores', subtitle:'Gráficos, dashboards e exportação para Excel e PDF'},
-    configuracoes: {title:'Configurações', subtitle:'Backup, certificado digital e troca de propriedade'},
     agro50: {title:'AGRO5.0', subtitle:'Espaço para incorporar novas tecnologias e indicadores ao sistema, conforme sua realidade'}
   };
 
@@ -1948,7 +1946,6 @@
     safeRender('orcamento', renderOrcamento);
     safeRender('relatorios', renderRelatorios);
     safeRender('indicadores', renderIndicadores);
-    safeRender('configuracoes', renderConfiguracoes);
   }
 
   function statCard(label, value, valueClass){
@@ -2347,6 +2344,7 @@
     var botoesNfeSecao = [
       {chave: 'compra', label: 'Nova compra manual', icone: '📝'},
       {chave: 'xml', label: 'Importar XML', icone: '📄'},
+      {chave: 'certificado', label: 'Certificado digital', icone: '🔐'},
       {chave: 'sefaz', label: 'Importar notas SEFAZ', icone: '☁️'}
     ];
     html += '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:20px;">';
@@ -2396,6 +2394,14 @@
     html += '</div>';
     html += '</div>';
     } // fim da seção xml
+
+    if(nfeSecaoAtiva === 'certificado'){
+    html += '<div class="paper form-card"><h3>Certificado Digital (A1) — armazenamento seguro</h3>';
+    html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 12px;">Guardado de forma criptografada. Na hora do upload, o sistema já lê o CPF/CNPJ e (quando disponível no certificado) a UF, pra preencher sozinho a consulta na SEFAZ depois.</p>';
+    html += '<div id="certificado-status" style="font-size:13px; margin-bottom:10px;">Verificando…</div>';
+    html += '<div id="certificado-form-area"></div>';
+    html += '</div>';
+    } // fim da seção certificado
 
     if(nfeSecaoAtiva === 'sefaz'){
     html += '<div class="paper form-card"><h3>Testar consulta na SEFAZ</h3>';
@@ -2561,6 +2567,7 @@
     html += '<div class="paper note-box">Compras marcadas como "Recebido" somam automaticamente no estoque (aba Produtos) e criam uma despesa "Pago" no Financeiro no momento em que são criadas. Editar ou remover uma compra depois não desfaz esses efeitos automaticamente — ajuste o estoque e o lançamento financeiro manualmente se precisar corrigir algo.</div>';
     } // fim do "if(!nfeTelaFocoAtiva)" da lista de compras
     el.innerHTML = html;
+    verificarStatusCertificado();
   }
 
   function verificarStatusCertificado(){
@@ -3551,52 +3558,6 @@
     return html;
   }
 
-  var imagensCampoTalhaoFiltro = '';
-  function renderImagensCampoHtml(){
-    var html = '<div class="section-title" style="margin-top:0;">Imagens de Campo (NDVI, RGB, etc.)</div>';
-    html += '<div class="paper note-box">Sobe aqui imagens exportadas de qualquer fonte (FieldView, drone, satélite) — NDVI, RGB ou outras. Não é uma integração automática, é upload manual mesmo: você baixa a imagem na plataforma de origem e sobe aqui pra guardar junto com o resto dos dados do talhão.</div>';
-
-    html += '<div class="paper form-card"><h3>Nova imagem</h3>';
-    html += '<form class="entry-form" id="form-imagem-campo">';
-    html += selectField('imgc-talhaoId', 'Talhão', talhaoOptionsFn());
-    html += selectField('imgc-safraId', 'Safra (opcional)', [{value:'', label:'—'}].concat(state.safras.map(function(s){ return {value:s.id, label:safraLabel(s.id)}; })));
-    html += field('date', 'imgc-data', 'Data da imagem', true, '', {});
-    html += selectField('imgc-tipo', 'Tipo', [{value:'NDVI', label:'NDVI'}, {value:'RGB', label:'RGB (cor verdadeira)'}, {value:'Outro', label:'Outro'}]);
-    html += '<div class="field"><label>Arquivo da imagem (até 5MB)</label><input type="file" id="imgc-arquivo" accept="image/*"></div>';
-    html += field('text', 'imgc-observacao', 'Observação (opcional)', false, 'Ex: área com estresse no canto sudeste', {});
-    html += '<button type="submit" class="btn">Adicionar imagem</button>';
-    html += '</form></div>';
-
-    if(!state.imagensCampo.length){
-      html += '<div class="paper empty-state">Nenhuma imagem cadastrada ainda.</div>';
-    } else {
-      var talhoesComImagem = state.talhoes.filter(function(t){ return state.imagensCampo.some(function(im){ return im.talhaoId === t.id; }); });
-      html += '<div class="paper form-card">';
-      html += selectField('imgc-filtro-talhao', 'Filtrar por talhão', [{value:'', label:'Todos os talhões'}].concat(talhoesComImagem.map(function(t){ return {value:t.id, label:t.nome}; })), imagensCampoTalhaoFiltro || '');
-      html += '</div>';
-
-      var listaImagens = imagensCampoTalhaoFiltro ? state.imagensCampo.filter(function(im){ return im.talhaoId === imagensCampoTalhaoFiltro; }) : state.imagensCampo;
-      listaImagens = listaImagens.slice().sort(function(a,b){ return (b.dataImagem||'').localeCompare(a.dataImagem||''); });
-
-      html += '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">';
-      var tipoCor = {NDVI:'#4F7942', RGB:'#3B6EA5', Outro:'#8B8368'};
-      listaImagens.forEach(function(im){
-        html += '<div class="paper" style="padding:14px;">';
-        html += '<div style="font-weight:700; font-size:13.5px; margin-bottom:4px;">' + escapeHtml(talhaoNome(im.talhaoId)) + '</div>';
-        html += '<div style="font-size:12px; color:var(--ink-soft); margin-bottom:6px;">' + fmtDate(im.dataImagem) + (im.safraId ? ' · ' + escapeHtml(safraLabel(im.safraId)) : '') + '</div>';
-        html += '<span class="badge" style="background:' + (tipoCor[im.tipo] || '#C9C3A4') + '; color:#fff;">' + escapeHtml(im.tipo) + '</span>';
-        if(im.observacao) html += '<div style="font-size:11.5px; color:var(--ink-soft); margin-top:8px;">' + escapeHtml(im.observacao) + '</div>';
-        html += '<div style="display:flex; gap:6px; margin-top:10px;">';
-        html += '<button type="button" class="btn-edit" data-action="ver-imagem-campo" data-id="' + im.id + '">🛰️ Ver imagem</button>';
-        html += '<button type="button" class="btn-del" data-action="del-imagem-campo" data-id="' + im.id + '">Remover</button>';
-        html += '</div>';
-        html += '</div>';
-      });
-      html += '</div>';
-    }
-    return html;
-  }
-
   function renderAnaliseSoloHtml(){
     var html = '<div class="section-title" style="margin-top:0;">Análise de Solo</div>';
     html += buildGenericFormHtml('analisesSolo');
@@ -3654,7 +3615,6 @@
       {chave: 'pluviometria', label: 'Pluviometria', icone: '🌧️'},
       {chave: 'hidrica', label: 'Análise Hídrica', icone: '💧'},
       {chave: 'solo', label: 'Análise de Solo', icone: '🌱'},
-      {chave: 'imagens', label: 'Imagens de Campo', icone: '🛰️'},
       {chave: 'alertas', label: 'Alertas Inteligentes', icone: '⚠️'},
       {chave: 'rastreabilidade', label: 'Rastreabilidade', icone: '🔗'}
     ];
@@ -3815,10 +3775,6 @@
     if(agro50SecaoAtiva === 'solo'){
       html += renderAnaliseSoloHtml();
     } // fim da secao solo
-
-    if(agro50SecaoAtiva === 'imagens'){
-      html += renderImagensCampoHtml();
-    } // fim da secao imagens
 
     if(agro50SecaoAtiva === 'alertas'){
     html += '<div class="section-title" style="margin-top:0;">Alertas Inteligentes</div>';
@@ -4874,44 +4830,19 @@
     XLSX.writeFile(wb, 'fazenda-relatorio.xlsx');
   }
 
-  function renderConfiguracoes(){
-    var el = document.getElementById('tab-configuracoes');
+  function renderIndicadores(){
+    var el = document.getElementById('tab-indicadores');
     var html = '';
-
-    html += '<div class="section-title" style="margin-top:0;">Backup e Restore</div>';
-    html += '<div class="paper form-card">';
-    html += '<div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">';
+    html += '<div class="no-print" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px;">';
+    html += '<button class="btn" type="button" data-action="export-excel">Exportar para Excel</button>';
+    html += '<button class="btn" type="button" data-action="export-pdf" style="background:var(--panel); color:var(--paper);">Imprimir / Salvar como PDF</button>';
+    html += '</div>';
+    html += '<div class="no-print" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:20px;">';
     html += '<button class="btn" type="button" data-action="export-backup" style="background:var(--growth-dark); color:#fff;">Baixar backup completo (.json)</button>';
     html += '<button class="btn" type="button" data-action="import-backup" style="background:transparent; border:1px solid var(--panel); color:var(--panel);">Restaurar backup (.json)</button>';
     html += '<input type="file" id="backup-file-input" accept="application/json" style="display:none">';
     html += '</div>';
-    html += '<p style="font-size:12px; color:var(--ink-soft); margin:12px 0 0;">Os dados deste app ficam salvos só neste navegador/computador. Baixe um backup periodicamente — restaurar substitui os dados atuais pelos do arquivo.</p>';
-    html += '</div>';
-
-    html += '<div class="section-title">Certificado Digital (A1)</div>';
-    html += '<div class="paper form-card">';
-    html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 12px;">Guardado de forma criptografada. Na hora do upload, o sistema já lê o CPF/CNPJ e (quando disponível no certificado) a UF, pra preencher sozinho a consulta na SEFAZ (aba NF-e) depois.</p>';
-    html += '<div id="certificado-status" style="font-size:13px; margin-bottom:10px;">Verificando…</div>';
-    html += '<div id="certificado-form-area"></div>';
-    html += '</div>';
-
-    html += '<div class="section-title">Propriedade / Conta</div>';
-    html += '<div class="paper form-card">';
-    html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 12px;">Troque pra outra propriedade ou conta cadastrada neste dispositivo.</p>';
-    html += '<button type="button" class="btn" data-action="switch-workspace">Trocar propriedade</button>';
-    html += '</div>';
-
-    el.innerHTML = html;
-    verificarStatusCertificado();
-  }
-
-  function renderIndicadores(){
-    var el = document.getElementById('tab-indicadores');
-    var html = '';
-    html += '<div class="no-print" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px;">';
-    html += '<button class="btn" type="button" data-action="export-excel">Exportar para Excel</button>';
-    html += '<button class="btn" type="button" data-action="export-pdf" style="background:var(--panel); color:var(--paper);">Imprimir / Salvar como PDF</button>';
-    html += '</div>';
+    html += '<div class="paper note-box" style="margin-top:0; margin-bottom:20px;">Os dados deste app ficam salvos só neste navegador/computador. Baixe um backup periodicamente — restaurar substitui os dados atuais pelos do arquivo.</div>';
 
     var semDadosFinanceiro = !state.financeiro || !state.financeiro.length;
 
@@ -5140,11 +5071,6 @@
       renderFinanceiro();
       return;
     }
-    if(e.target && e.target.id === 'f-imgc-filtro-talhao'){
-      imagensCampoTalhaoFiltro = e.target.value;
-      renderAgro50();
-      return;
-    }
     if(e.target && e.target.id === 'f-contaId'){
       var campos = document.getElementById('campos-hora-extra');
       if(campos){
@@ -5257,36 +5183,6 @@
     var form = e.target;
     e.preventDefault();
     var data = new FormData(form);
-
-    if(form.id === 'form-imagem-campo'){
-      var imgcTalhaoId = data.get('imgc-talhaoId');
-      var imgcData = data.get('imgc-data');
-      var imgcArquivoInput = document.getElementById('imgc-arquivo');
-      var imgcArquivo = imgcArquivoInput && imgcArquivoInput.files && imgcArquivoInput.files[0];
-      if(!imgcTalhaoId){ alert('Escolha o talhão.'); return; }
-      if(!imgcData){ alert('Preencha a data da imagem.'); return; }
-      if(!imgcArquivo){ alert('Escolha o arquivo da imagem.'); return; }
-      if(imgcArquivo.size > 5 * 1024 * 1024){ alert('A imagem precisa ter até 5MB.'); return; }
-
-      var novaImagemCampo = {
-        id: uid(), talhaoId: imgcTalhaoId, safraId: data.get('imgc-safraId') || '', dataImagem: imgcData,
-        tipo: data.get('imgc-tipo') || 'Outro', observacao: (data.get('imgc-observacao') || '').trim(),
-        temImagem: false, criadoEm: Date.now()
-      };
-      var imgcReader = new FileReader();
-      imgcReader.onload = function(e){
-        rawSet('imagemCampo::' + novaImagemCampo.id, {nome: imgcArquivo.name, tipo: imgcArquivo.type, dados: e.target.result}).then(function(){
-          novaImagemCampo.temImagem = true;
-          state.imagensCampo.push(novaImagemCampo);
-          saveKey('imagensCampo', state.imagensCampo);
-          form.reset();
-          renderAgro50();
-        });
-      };
-      imgcReader.onerror = function(){ alert('Não foi possível ler o arquivo da imagem. Tenta de novo.'); };
-      imgcReader.readAsDataURL(imgcArquivo);
-      return;
-    }
 
     if(form.id === 'form-gate'){
       if(form.dataset.mode === 'setup'){
@@ -6228,23 +6124,6 @@
           w.document.write('<title>' + escapeHtml(anexo.nome || 'Comprovante') + '</title>' + (anexo.tipo && anexo.tipo.indexOf('image') === 0 ? '<img src="' + anexo.dados + '" style="max-width:100%;">' : '<embed src="' + anexo.dados + '" style="width:100%; height:100vh;">'));
         }
       });
-      return;
-    }
-    if(action === 'ver-imagem-campo'){
-      rawGet('imagemCampo::' + id).then(function(img){
-        if(!img || !img.dados){ alert('Nenhuma imagem encontrada.'); return; }
-        var w = window.open();
-        if(w && w.document){
-          w.document.write('<title>' + escapeHtml(img.nome || 'Imagem de campo') + '</title><img src="' + img.dados + '" style="max-width:100%;">');
-        }
-      });
-      return;
-    }
-    if(action === 'del-imagem-campo'){
-      if(!window.confirm('Remover essa imagem? Não dá pra desfazer.')) return;
-      state.imagensCampo = state.imagensCampo.filter(function(im){ return im.id !== id; });
-      saveKey('imagensCampo', state.imagensCampo);
-      renderAgro50();
       return;
     }
     if(action === 'fechar-periodo'){
