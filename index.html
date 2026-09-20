@@ -160,8 +160,8 @@
   form.entry-form{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:12px; align-items:end;}
   .field{display:flex; flex-direction:column; gap:4px; min-width:0;}
   .field label{font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em;}
-  .field input, .field select{padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; color:var(--ink); font-size:13px; width:100%; min-width:0; box-sizing:border-box;}
-  .field input:focus, .field select:focus{border-color:var(--accent);}
+  .field input, .field select, .field textarea{padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; color:var(--ink); font-size:13px; width:100%; min-width:0; box-sizing:border-box; font-family:inherit;}
+  .field input:focus, .field select:focus, .field textarea:focus{border-color:var(--accent);}
   .btn{padding:9px 16px; border-radius:4px; border:none; font-size:13px; font-weight:600; background:var(--accent); color:#241704; transition:background .15s ease;}
   .btn:hover{background:var(--accent-dark); color:var(--paper);}
   .btn-del{background:transparent; border:1px solid var(--cost); color:var(--cost-dark); padding:4px 9px; font-size:11px; border-radius:4px; font-weight:600;}
@@ -282,6 +282,15 @@
     <div class="no-print" style="display:flex; gap:8px; margin-top:14px;">
       <button type="button" class="btn" data-action="imprimir-calagem" style="flex:1;">🖨️ Imprimir</button>
       <button type="button" class="btn-cancel" data-action="close-calagem-modal" style="flex:1;">Fechar</button>
+    </div>
+  </div>
+</div>
+<div id="efetivar-venda-modal-overlay" class="modal-overlay" style="display:none;">
+  <div class="modal-box paper" style="max-width:520px; max-height:90vh; overflow-y:auto;">
+    <div id="efetivar-venda-modal-content"></div>
+    <div style="display:flex; gap:8px; margin-top:14px;">
+      <button type="button" class="btn" data-action="confirmar-efetivar-venda" style="flex:1;">Confirmar entrega</button>
+      <button type="button" class="btn-cancel" data-action="close-efetivar-venda-modal" style="flex:1;">Cancelar</button>
     </div>
   </div>
 </div>
@@ -714,7 +723,16 @@
         {key:'compradorId', label:'Comprador', compute: function(item){ return item.compradorId ? parceiroNome(item.compradorId) : '—'; }},
         {key:'dataEntregaPrevista', label:'Entrega prevista', format:'date'},
         {key:'status', label:'Status', format:'badge', colors:{'Aberto':'#DFA84E', 'Entregue':'#7FA36D', 'Cancelado':'#C9C3A4'}}
-      ]
+      ],
+      extraRowAction: function(item){
+        if(item.status === 'Aberto'){
+          return '<button type="button" class="btn-edit" data-action="abrir-efetivar-venda" data-id="' + item.id + '" title="Registrar a entrega, calcular descontos e baixar do estoque">✅ Efetivar venda</button>';
+        }
+        if(item.financeiroId){
+          return '<button type="button" class="btn-edit" data-action="ver-lancamento-vinculado" data-id="' + item.financeiroId + '" title="Abre o lançamento gerado no Financeiro">💰 Ver lançamento</button>';
+        }
+        return '';
+      }
     },
     subgruposFinanceiro: {
       label: 'subgrupo financeiro',
@@ -1664,6 +1682,54 @@
   var calagemVDesejado = 70;
   var calagemPrnt = 85;
   var nfeTelaFocoAtiva = false;
+  var efetivarVendaId = null;
+  var efetivarVendaDescontos = {retencao: 1.00, fam: 0.10, senar: 0.20, inss: 1.32, gilrat: 0.11};
+  function renderEfetivarVendaModal(){
+    var el = document.getElementById('efetivar-venda-modal-content');
+    if(!el || !efetivarVendaId) return;
+    var venda = state.vendasAntecipadas.find(function(v){ return v.id === efetivarVendaId; });
+    if(!venda){ el.innerHTML = '<div class="empty-state">Venda não encontrada.</div>'; return; }
+
+    var qtdEntregueAtual = document.getElementById('efv-qtd-entregue');
+    var qtdEntregue = qtdEntregueAtual ? (parseFloat(qtdEntregueAtual.value) || 0) : Number(venda.quantidade) || 0;
+    var valorBruto = qtdEntregue * (Number(venda.precoFixado) || 0);
+    var descontosLabels = [
+      {chave:'retencao', label:'Retenção'}, {chave:'fam', label:'FAM'}, {chave:'senar', label:'SENAR'},
+      {chave:'inss', label:'INSS'}, {chave:'gilrat', label:'GILRAT'}
+    ];
+    var totalDescontoPct = 0;
+    descontosLabels.forEach(function(d){ totalDescontoPct += efetivarVendaDescontos[d.chave] || 0; });
+    var valorTotalDescontos = valorBruto * (totalDescontoPct / 100);
+    var valorLiquido = valorBruto - valorTotalDescontos;
+
+    var dataEntregaAtual = document.getElementById('efv-data-entrega');
+    var dataPagamentoAtual = document.getElementById('efv-data-pagamento');
+
+    var html = '<h3 style="margin:0 0 4px; font-family:\'Zilla Slab\',serif; font-size:18px;">Efetivar Venda Antecipada</h3>';
+    html += '<div style="font-size:13px; color:var(--ink-soft); margin-bottom:14px;">' + escapeHtml(safraLabel(venda.safraId)) + ' · Contratado: ' + fmtNum(venda.quantidade) + ' ' + escapeHtml(venda.unidade || '') + ' a ' + fmtBRL(venda.precoFixado) + (venda.compradorId ? ' · ' + escapeHtml(parceiroNome(venda.compradorId)) : '') + '</div>';
+
+    html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">';
+    html += '<div class="field" style="margin:0;"><label>Quantidade entregue</label><input type="number" id="efv-qtd-entregue" value="' + (venda.quantidade || 0) + '" min="0" step="0.01" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+    html += '<div class="field" style="margin:0;"><label>Data da entrega</label><input type="date" id="efv-data-entrega" value="' + (dataEntregaAtual && dataEntregaAtual.value ? dataEntregaAtual.value : new Date().toISOString().slice(0,10)) + '" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+    html += '</div>';
+    html += '<div class="field" style="margin-bottom:14px;"><label>Data de pagamento (pode ser diferente da entrega — confira na nota)</label><input type="date" id="efv-data-pagamento" value="' + (dataPagamentoAtual && dataPagamentoAtual.value ? dataPagamentoAtual.value : new Date().toISOString().slice(0,10)) + '" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+
+    html += '<div style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:6px;">Descontos da cooperativa (%)</div>';
+    html += '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:8px; margin-bottom:14px;">';
+    descontosLabels.forEach(function(d){
+      html += '<div class="field" style="margin:0;"><label>' + d.label + '</label><input type="number" id="efv-desconto-' + d.chave + '" value="' + efetivarVendaDescontos[d.chave] + '" min="0" step="0.01" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+    });
+    html += '</div>';
+
+    html += '<div style="padding:12px; background:var(--paper-2); border-radius:8px; font-size:13px; line-height:1.8;">';
+    html += '<div style="display:flex; justify-content:space-between;"><span>Valor bruto</span><strong>' + fmtBRL(valorBruto) + '</strong></div>';
+    html += '<div style="display:flex; justify-content:space-between; color:var(--cost-dark);"><span>− Descontos (' + fmtNum(totalDescontoPct) + '%)</span><span>' + fmtBRL(valorTotalDescontos) + '</span></div>';
+    html += '<div style="display:flex; justify-content:space-between; font-size:15px; font-weight:700; border-top:1px dashed var(--paper-line); margin-top:6px; padding-top:6px;"><span>Valor líquido</span><span>' + fmtBRL(valorLiquido) + '</span></div>';
+    html += '</div>';
+    html += '<p style="font-size:11px; color:var(--ink-soft); margin:10px 0 0;">Confirmando, essa quantidade sai do estoque da safra (na data de entrega) e o valor líquido entra como receita "Pago" no Financeiro (na data de pagamento).</p>';
+    el.innerHTML = html;
+  }
+
   function renderCalagemModal(){
     var el = document.getElementById('calagem-modal-content');
     if(!el || !calagemModalTalhaoId) return;
@@ -1849,7 +1915,8 @@
     'servicoPrestado': {label:'Serviço Prestado', cor:'#3B6EA5'},
     'colheitaVenda': {label:'Venda de Colheita', cor:'#4F7942'},
     'nfe': {label:'NF-e', cor:'#C98A2B'},
-    'financiamento': {label:'Financiamento', cor:'#A23E2E'}
+    'financiamento': {label:'Financiamento', cor:'#A23E2E'},
+    'vendaAntecipada': {label:'Venda Antecipada', cor:'#9C6A1E'}
   };
 
   var ENTIDADES_BUSCA_GLOBAL = [
@@ -2727,6 +2794,7 @@
         item.fornecedorNomeNota = parsed.fornecedorNome;
         item.chaveNota = parsed.chave;
         item.naturezaNota = parsed.natureza;
+        item.duplicatasNota = parsed.duplicatas || [];
         novosItens.push(item);
       });
     });
@@ -3181,7 +3249,7 @@
       html += selectField('parceiroId', 'Parceiro (opcional)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })), editingRecord ? editingRecord.parceiroId : undefined);
       html += selectField('responsavelId', 'Responsável (opcional)', [{value:'', label:'—'}].concat(state.equipe.map(function(m){ return {value:m.id, label:m.nome}; })), editingRecord ? editingRecord.responsavelId : undefined);
       html += field('date', 'data', 'Data', false, '', {}, editingRecord ? editingRecord.data : undefined);
-      html += field('text', 'observacao', 'Observação', false, 'Ex: Aplicação pós-chuva', {}, editingRecord ? editingRecord.observacao : undefined);
+      html += '<div class="field" style="grid-column: 1 / -1;"><label for="f-observacao">Observação</label><textarea id="f-observacao" name="observacao" rows="5" placeholder="Ex: Aplicação pós-chuva, recomendação agronômica, condições observadas...">' + (editingRecord && editingRecord.observacao ? escapeHtml(editingRecord.observacao) : '') + '</textarea></div>';
       html += '<button type="submit" class="btn">' + (editingRecord ? 'Salvar alterações' : 'Registrar atividade') + '</button>';
       if(editingRecord) html += '<button type="button" class="btn-cancel" data-action="cancel-edit">Cancelar</button>';
       html += '</form>';
@@ -3203,7 +3271,7 @@
         html += '<td class="num">' + (o.quantidade ? o.quantidade + (o.unidade ? ' ' + escapeHtml(o.unidade) : '') : '—') + '</td>';
         html += '<td>' + (o.parceiroId ? escapeHtml(parceiroNome(o.parceiroId)) : '—') + '</td>';
         html += '<td>' + (o.responsavelId ? escapeHtml(membroNome(o.responsavelId)) : '—') + '</td>';
-        html += '<td>' + escapeHtml(o.observacao || '—') + '</td>';
+        html += '<td style="max-width:220px;" title="' + escapeHtml(o.observacao || '') + '">' + (o.observacao ? escapeHtml(o.observacao.length > 60 ? o.observacao.slice(0,60) + '…' : o.observacao) : '—') + '</td>';
         html += '<td><button class="btn-edit" data-action="edit-operacao" data-id="' + o.id + '">Editar</button><button class="btn-del" data-action="del-operacao" data-id="' + o.id + '">Remover</button></td>';
         html += '</tr>';
       });
@@ -4713,7 +4781,18 @@
       }
       if(!itens.length) return null;
       var natureza = ideEl ? tagText(ideEl, 'natOp') : '';
-      return {numero: numero, dataEmissao: dataEmissao, fornecedorNome: fornecedorNome, chave: chave, natureza: natureza, itens: itens};
+      var duplicatas = [];
+      var cobrEl = infNFe.getElementsByTagName('cobr')[0];
+      if(cobrEl){
+        var dupEls = cobrEl.getElementsByTagName('dup');
+        for(var j = 0; j < dupEls.length; j++){
+          var vDupTxt = tagText(dupEls[j], 'vDup');
+          var dVencTxt = tagText(dupEls[j], 'dVenc');
+          if(!vDupTxt || !dVencTxt) continue;
+          duplicatas.push({numero: tagText(dupEls[j], 'nDup'), vencimento: dVencTxt, valor: parseFloat(vDupTxt) || 0});
+        }
+      }
+      return {numero: numero, dataEmissao: dataEmissao, fornecedorNome: fornecedorNome, chave: chave, natureza: natureza, itens: itens, duplicatas: duplicatas};
     }catch(err){
       console.error('Erro ao ler XML da NF-e:', err);
       return null;
@@ -5237,6 +5316,14 @@
       calagemVDesejado = parseFloat(document.getElementById('calagem-v-desejado').value) || 0;
       calagemPrnt = parseFloat(document.getElementById('calagem-prnt').value) || 1;
       renderCalagemModal();
+      return;
+    }
+    if(e.target && e.target.id && e.target.id.indexOf('efv-') === 0){
+      if(e.target.id.indexOf('efv-desconto-') === 0){
+        var chaveDesconto = e.target.id.slice('efv-desconto-'.length);
+        efetivarVendaDescontos[chaveDesconto] = parseFloat(e.target.value) || 0;
+      }
+      renderEfetivarVendaModal();
       return;
     }
     if(e.target && e.target.id && e.target.id.indexOf('search-') === 0){
@@ -5889,6 +5976,7 @@
           item.fornecedorNomeNota = parsed.fornecedorNome;
           item.chaveNota = parsed.chave;
           item.naturezaNota = parsed.natureza;
+          item.duplicatasNota = parsed.duplicatas || [];
           return item;
         });
         nfeImportada = { itens: itensProntos };
@@ -5910,8 +5998,10 @@
 
       var qtdCompra = selecionados.filter(function(item){ return item.destino !== 'colheita'; }).length;
       var qtdColheita = selecionados.length - qtdCompra;
+      var qtdComParcela = selecionados.filter(function(item){ return item.destino !== 'colheita' && item.duplicatasNota && item.duplicatasNota.length; }).length;
       var msgConfirma = 'Importar ' + selecionados.length + ' item(ns)?';
-      if(qtdCompra) msgConfirma += ' ' + qtdCompra + ' como compra (soma estoque de Produtos + despesa no Financeiro).';
+      if(qtdCompra) msgConfirma += ' ' + qtdCompra + ' como compra (soma estoque de Produtos).';
+      if(qtdComParcela) msgConfirma += ' ' + qtdComParcela + ' item(ns) têm parcela(s) com vencimento na nota — vão virar Conta(s) a Pagar em vez de despesa já paga.';
       if(qtdColheita) msgConfirma += ' ' + qtdColheita + ' como entrada de colheita (soma estoque de Produção, sem despesa).';
       if(!window.confirm(msgConfirma)) return;
 
@@ -5937,6 +6027,7 @@
         return id;
       }
 
+      var notasComVencimentoParaContasPagar = {};
       selecionados.forEach(function(item, idx){
         if(item.destino === 'colheita'){
           state.producao.push({
@@ -5963,7 +6054,12 @@
         state.compras.push(compraFields);
         var prodIdx = state.produtos.findIndex(function(p){ return p.id === produtoId; });
         if(prodIdx !== -1) state.produtos[prodIdx].estoqueAtual = (Number(state.produtos[prodIdx].estoqueAtual) || 0) + item.qCom;
-        if(contaEscolhida){
+        if(item.duplicatasNota && item.duplicatasNota.length){
+          if(!notasComVencimentoParaContasPagar[item.chaveNota]){
+            notasComVencimentoParaContasPagar[item.chaveNota] = {duplicatas: item.duplicatasNota, itensDescricao: [], numeroNota: item.numeroNota, fornecedorId: fornecedorId, categoria: (function(){ var c = state.contasFinanceiro.find(function(c){ return c.id === contaEscolhida; }); return c ? c.nome : 'Fornecedor'; })()};
+          }
+          notasComVencimentoParaContasPagar[item.chaveNota].itensDescricao.push(item.xProd);
+        } else if(contaEscolhida){
           var contaNfe = state.contasFinanceiro.find(function(c){ return c.id === contaEscolhida; });
           state.financeiro.push({
             id: uid(), origem: 'nfe', contaId: contaEscolhida, tipo: contaTipo(contaEscolhida), categoria: contaNfe ? contaNfe.nome : '',
@@ -5976,6 +6072,22 @@
           mudouFinanceiro = true;
         }
       });
+
+      var qtdContasPagarCriadas = 0;
+      Object.keys(notasComVencimentoParaContasPagar).forEach(function(chaveNotaPag){
+        var notaPag = notasComVencimentoParaContasPagar[chaveNotaPag];
+        var descricaoItens = notaPag.itensDescricao.join(', ');
+        notaPag.duplicatas.forEach(function(dupItem, dupIdx){
+          state.contasPagar.push({
+            id: uid(), descricao: 'NF ' + (notaPag.numeroNota || '') + (notaPag.duplicatas.length > 1 ? ' - parcela ' + (dupItem.numero || (dupIdx+1)) : '') + ' — ' + descricaoItens,
+            categoria: notaPag.categoria, parceiroId: notaPag.fornecedorId, talhaoId: '',
+            valor: dupItem.valor, vencimento: dupItem.vencimento, status: 'Pendente', dataPagamento: '',
+            origem: 'nfe', criadoEm: Date.now() + dupIdx
+          });
+          qtdContasPagarCriadas++;
+        });
+      });
+      if(qtdContasPagarCriadas) mudouFinanceiro = true;
 
       var gruposPorChaveNota = {};
       selecionados.forEach(function(item){
@@ -6005,6 +6117,7 @@
       saveKey('parceiros', state.parceiros);
       saveKey('producao', state.producao);
       if(mudouFinanceiro) saveKey('financeiro', state.financeiro);
+      if(qtdContasPagarCriadas) saveKey('contasPagar', state.contasPagar);
       nfeImportada = null;
       notaEmDetalheChave = null;
       state.sefazItensRevisao = [];
@@ -6160,6 +6273,89 @@
       renderAll();
       var formFinLanc = document.getElementById('form-financeiro');
       if(formFinLanc) formFinLanc.scrollIntoView({behavior:'smooth', block:'start'});
+      return;
+    }
+    if(action === 'abrir-efetivar-venda'){
+      efetivarVendaId = id;
+      efetivarVendaDescontos = {retencao: 1.00, fam: 0.10, senar: 0.20, inss: 1.32, gilrat: 0.11};
+      document.getElementById('efetivar-venda-modal-content').innerHTML = '';
+      renderEfetivarVendaModal();
+      document.getElementById('efetivar-venda-modal-overlay').style.display = 'flex';
+      return;
+    }
+    if(action === 'close-efetivar-venda-modal'){
+      document.getElementById('efetivar-venda-modal-overlay').style.display = 'none';
+      efetivarVendaId = null;
+      return;
+    }
+    if(action === 'confirmar-efetivar-venda'){
+      var vendaEfetivar = state.vendasAntecipadas.find(function(v){ return v.id === efetivarVendaId; });
+      if(!vendaEfetivar){ alert('Venda não encontrada.'); return; }
+      var qtdEntregueEl = document.getElementById('efv-qtd-entregue');
+      var dataEntregaEl = document.getElementById('efv-data-entrega');
+      var dataPagamentoEl = document.getElementById('efv-data-pagamento');
+      var qtdEntregueFinal = parseFloat(qtdEntregueEl.value) || 0;
+      var dataEntregaFinal = dataEntregaEl.value;
+      var dataPagamentoFinal = dataPagamentoEl.value;
+      if(qtdEntregueFinal <= 0){ alert('Informe a quantidade entregue.'); return; }
+      if(!dataEntregaFinal){ alert('Informe a data da entrega.'); return; }
+      if(!dataPagamentoFinal){ alert('Informe a data de pagamento.'); return; }
+
+      var descontosChaves = ['retencao', 'fam', 'senar', 'inss', 'gilrat'];
+      var descontosLabelsFinal = {retencao:'Retenção', fam:'FAM', senar:'SENAR', inss:'INSS', gilrat:'GILRAT'};
+      var descontosFinal = {};
+      var totalDescontoPctFinal = 0;
+      descontosChaves.forEach(function(chave){
+        var elDesconto = document.getElementById('efv-desconto-' + chave);
+        descontosFinal[chave] = elDesconto ? (parseFloat(elDesconto.value) || 0) : 0;
+        totalDescontoPctFinal += descontosFinal[chave];
+      });
+
+      var valorBrutoFinal = qtdEntregueFinal * (Number(vendaEfetivar.precoFixado) || 0);
+      var valorTotalDescontosFinal = valorBrutoFinal * (totalDescontoPctFinal / 100);
+      var valorLiquidoFinal = valorBrutoFinal - valorTotalDescontosFinal;
+
+      var producaoIdGerado = uid();
+      state.producao.push({
+        id: producaoIdGerado, safraId: vendaEfetivar.safraId, tipo: 'saida',
+        quantidade: qtdEntregueFinal, unidade: vendaEfetivar.unidade || '', precoUnitario: vendaEfetivar.precoFixado || 0,
+        data: dataEntregaFinal, parceiroId: vendaEfetivar.compradorId || '',
+        observacao: 'Entrega de Venda Antecipada' + (vendaEfetivar.observacao ? ' — ' + vendaEfetivar.observacao : ''),
+        criadoEm: Date.now()
+      });
+      saveKey('producao', state.producao);
+
+      var contaVendaAntecipada = state.contasFinanceiro.find(function(c){ return c.nome === 'Venda Antecipada'; });
+      var descricaoDescontos = descontosChaves.filter(function(c){ return descontosFinal[c] > 0; }).map(function(c){ return descontosLabelsFinal[c] + ' ' + fmtNum(descontosFinal[c]) + '%'; }).join(', ');
+      var financeiroIdGerado = uid();
+      state.financeiro.push({
+        id: financeiroIdGerado, origem: 'vendaAntecipada', contaId: contaVendaAntecipada ? contaVendaAntecipada.id : 'ct-venda-colheita',
+        tipo: 'receita', categoria: 'Venda Antecipada', valor: valorLiquidoFinal, data: dataPagamentoFinal,
+        quantidade: qtdEntregueFinal, unidade: vendaEfetivar.unidade || '', status: 'Pago',
+        talhaoId: vendaEfetivar.safraId ? (state.safras.find(function(s){ return s.id === vendaEfetivar.safraId; }) || {}).talhaoId || '' : '',
+        parceiroId: vendaEfetivar.compradorId || '', membroId: '',
+        descricao: 'Venda Antecipada — ' + safraLabel(vendaEfetivar.safraId) + ' (bruto ' + fmtBRL(valorBrutoFinal) + ', descontos: ' + (descricaoDescontos || 'nenhum') + ' = ' + fmtBRL(valorTotalDescontosFinal) + '; entregue em ' + fmtDate(dataEntregaFinal) + ')',
+        criadoEm: Date.now()
+      });
+      saveKey('financeiro', state.financeiro);
+
+      var idxVendaEfetivar = state.vendasAntecipadas.findIndex(function(v){ return v.id === efetivarVendaId; });
+      if(idxVendaEfetivar !== -1){
+        state.vendasAntecipadas[idxVendaEfetivar].status = 'Entregue';
+        state.vendasAntecipadas[idxVendaEfetivar].quantidadeEntregue = qtdEntregueFinal;
+        state.vendasAntecipadas[idxVendaEfetivar].dataEntregaReal = dataEntregaFinal;
+        state.vendasAntecipadas[idxVendaEfetivar].dataPagamento = dataPagamentoFinal;
+        state.vendasAntecipadas[idxVendaEfetivar].descontos = descontosFinal;
+        state.vendasAntecipadas[idxVendaEfetivar].valorBruto = valorBrutoFinal;
+        state.vendasAntecipadas[idxVendaEfetivar].valorLiquido = valorLiquidoFinal;
+        state.vendasAntecipadas[idxVendaEfetivar].producaoId = producaoIdGerado;
+        state.vendasAntecipadas[idxVendaEfetivar].financeiroId = financeiroIdGerado;
+      }
+      saveKey('vendasAntecipadas', state.vendasAntecipadas);
+
+      document.getElementById('efetivar-venda-modal-overlay').style.display = 'none';
+      efetivarVendaId = null;
+      renderAll();
       return;
     }
     if(action === 'toggle-financeiro-mais-opcoes'){
