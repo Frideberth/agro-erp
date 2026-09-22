@@ -90,7 +90,7 @@
   .sidebar-footer{margin-top:auto; font-size:11px; color:#7C8A70; line-height:1.5; padding:0 4px;}
 
   /* ---------- Main ---------- */
-  main{padding:28px 34px 60px; max-width:1180px;}
+  main{padding:28px 34px 60px; max-width:1640px;}
   .topbar{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:8px;}
   .topbar h1{font-family:'Zilla Slab', serif; font-size:28px; color:var(--paper); margin:0; font-weight:600;}
   .topbar .subtitle{color:#8E9B82; font-size:13px; margin-top:2px;}
@@ -508,6 +508,38 @@
     var atual = valor - (depreciavel * fracao);
     return Math.max(atual, valorResidual);
   }
+  function depreciacaoAnualItem(item){
+    var valor = Number(item.valor) || 0;
+    var vidaUtil = Number(item.vidaUtilAnos) || 0;
+    var percResidual = Number(item.percentualResidual) || 0;
+    if(!vidaUtil) return 0;
+    var valorResidual = valor * (percResidual / 100);
+    return (valor - valorResidual) / vidaUtil;
+  }
+  function depreciacaoAnualTotalFazenda(){
+    return state.patrimonio.reduce(function(s, item){ return s + depreciacaoAnualItem(item); }, 0);
+  }
+  function areaTotalFazenda(){
+    return state.talhoes.reduce(function(s, t){ return s + (Number(t.area) || 0); }, 0);
+  }
+  function depreciacaoPorTalhao(talhaoId){
+    var areaTotal = areaTotalFazenda();
+    if(areaTotal <= 0) return 0;
+    var t = state.talhoes.find(function(x){ return x.id === talhaoId; });
+    var area = t ? (Number(t.area) || 0) : 0;
+    return (area / areaTotal) * depreciacaoAnualTotalFazenda();
+  }
+  function custoOportunidadeAnualTotalFazenda(taxaPct){
+    var valorTotalPatrimonio = state.patrimonio.reduce(function(s, item){ return s + (Number(item.valor) || 0); }, 0);
+    return valorTotalPatrimonio * (taxaPct / 100);
+  }
+  function custoOportunidadePorTalhao(talhaoId, taxaPct){
+    var areaTotal = areaTotalFazenda();
+    if(areaTotal <= 0) return 0;
+    var t = state.talhoes.find(function(x){ return x.id === talhaoId; });
+    var area = t ? (Number(t.area) || 0) : 0;
+    return (area / areaTotal) * custoOportunidadeAnualTotalFazenda(taxaPct);
+  }
   function calcValorFinanciamentoComJuros(item){
     var principal = Number(item.valorTotal) || 0;
     var taxa = Number(item.taxaJuros) || 0;
@@ -648,7 +680,9 @@
         {key:'valorComJuros', label:'Valor total c/ juros', format:'brl', compute: function(item){ var v = calcValorFinanciamentoComJuros(item); return v === null ? '' : v; }},
         {key:'parcelas', label:'Parcelas', compute: function(item){ return (Number(item.parcelasPagas)||0) + ' / ' + (Number(item.numeroParcelas)||0); }},
         {key:'saldoDevedor', label:'Saldo devedor', format:'brl', compute: financiamentoSaldoDevedor},
-        {key:'status', label:'Status', format:'badge', colors:{'Ativo':'#DFA84E', 'Quitado':'#7FA36D'}}
+        {key:'dataFinal', label:'Vencimento', format:'date'},
+        {key:'status', label:'Status', format:'badge', colors:{'Ativo':'#DFA84E', 'Quitado':'#7FA36D'}},
+        {key:'observacao', label:'Observação'}
       ],
       extraRowAction: function(item){
         var pagas = Number(item.parcelasPagas) || 0, total = Number(item.numeroParcelas) || 0;
@@ -1580,6 +1614,229 @@
           saveKey('analisesSolo', state.analisesSolo);
         })();
         (function(){
+          var jaTemSafraCafeVelho2425 = state.safras.some(function(s){ return s.origemImportacao === 'relatorio-eprodutor-cafevelho-2024-2025'; });
+          if(jaTemSafraCafeVelho2425) return;
+          var talhaoCafeVelhoRel = state.talhoes.find(function(t){ var n = t.nome.trim().toLowerCase(); return n === 'café velho' || n === 'cafe velho'; });
+          if(!talhaoCafeVelhoRel) return;
+          var culturaCafeRel = state.culturas.find(function(c){ return c.nome.trim().toLowerCase().indexOf('caf') === 0; });
+
+          function encontrarContaPorNome(nomeConta, nomeSubgrupo){
+            var sg = state.subgruposFinanceiro.find(function(s){ return s.nome.trim().toLowerCase() === nomeSubgrupo.trim().toLowerCase(); });
+            if(!sg) return null;
+            var conta = state.contasFinanceiro.find(function(c){ return c.subgrupoId === sg.id && c.nome.trim().toLowerCase() === nomeConta.trim().toLowerCase(); });
+            return conta ? conta.id : null;
+          }
+
+          var safraCafeVelho2425 = {
+            id: uid(), talhaoId: talhaoCafeVelhoRel.id, culturaId: culturaCafeRel ? culturaCafeRel.id : '',
+            dataPlantio: '', anoAgricola: '2024/2025', status: 'colhida', ativa: true,
+            produtividadeEsperada: 0, previsaoColheita: '',
+            origemImportacao: 'relatorio-eprodutor-cafevelho-2024-2025', criadoEm: Date.now()
+          };
+          state.safras.push(safraCafeVelho2425);
+          saveKey('safras', state.safras);
+
+          var dataColheitaRel = '2025-06-30';
+          var dataVendaRel = '2025-07-31';
+
+          state.producao.push({
+            id: uid(), tipo: 'entrada', safraId: safraCafeVelho2425.id, quantidade: 529.60, unidade: 'Sacos',
+            precoUnitario: 0, responsavelId: '', localArmazenagem: '', data: dataColheitaRel,
+            observacao: 'Relatório de Resultado de Safra (eProdutor), café em coco, peso total 31.775,74kg, peso médio 60kg/saca',
+            umidade: 0, qualidade: '', maquinaId: '', horasUso: 0, criadoEm: Date.now()
+          });
+          state.producao.push({
+            id: uid(), tipo: 'saida', safraId: safraCafeVelho2425.id, quantidade: 529.60, unidade: 'Sacos',
+            precoUnitario: 2069.386, data: dataVendaRel, parceiroId: '',
+            observacao: 'Relatório de Resultado de Safra (eProdutor) — CAFE EM COCO',
+            criadoEm: Date.now() + 1
+          });
+          saveKey('producao', state.producao);
+
+          var contaVendaColheitaRel = encontrarContaPorNome('Venda de Colheita', 'Receita Produção Agrícola');
+          var contaServicosSoloRel = encontrarContaPorNome('Serviços com Solo', 'Receitas Serviços');
+          state.financeiro.push({
+            id: uid(), origem: 'colheitaVenda', contaId: contaVendaColheitaRel || '', tipo: 'receita', categoria: 'Venda de Colheita',
+            valor: 1095938.00, data: dataVendaRel, quantidade: 529.60, unidade: 'Sacos', status: 'Pago',
+            talhaoId: talhaoCafeVelhoRel.id, parceiroId: '', membroId: '',
+            descricao: 'Café em coco — Relatório de Resultado de Safra (eProdutor) 2024/2025',
+            criadoEm: Date.now() + 2
+          });
+          if(contaServicosSoloRel){
+            state.financeiro.push({
+              id: uid(), origem: 'relatorioHistorico', contaId: contaServicosSoloRel, tipo: 'receita', categoria: 'Serviços com Solo',
+              valor: 1026.00, data: dataVendaRel, quantidade: 0, unidade: '', status: 'Pago',
+              talhaoId: talhaoCafeVelhoRel.id, parceiroId: '', membroId: '',
+              descricao: 'Serviços com Solo — Relatório de Resultado de Safra (eProdutor) 2024/2025',
+              criadoEm: Date.now() + 3
+            });
+          }
+
+          var despesasRelatorio = [
+            {conta: 'Fertilizante Líquido', subgrupo: 'Custo Insumos Agrícolas', valor: 875.00},
+            {conta: 'Fert. Sólido Base', subgrupo: 'Custo Insumos Agrícolas', valor: 36000.00},
+            {conta: 'Fungicida', subgrupo: 'Custo Insumos Agrícolas', valor: 2160.16},
+            {conta: 'Colheita', subgrupo: 'Despesas com Serviços', valor: 89034.00},
+            {conta: 'Frete', subgrupo: 'Despesas com Serviços', valor: 1800.00},
+            {conta: 'Serviços Gerais', subgrupo: 'Despesas com Serviços', valor: 350.00},
+            {conta: 'Serviços Contratados', subgrupo: 'Despesas com Serviços', valor: 2286.54},
+            {conta: 'Outros', subgrupo: 'Despesas Operacionais', valor: 480.00, origemLabel: 'Outros Prod/Mat Utiliz. na Produção'},
+            {conta: 'Manutenção de Máquinas', subgrupo: 'Despesas Operacionais', valor: 2516.01, origemLabel: 'Despesas c/ Máquinas e Equip.'},
+            {conta: 'Maquinário', subgrupo: 'Despesas Operacionais', valor: 2263.33, origemLabel: 'Despesas com Veículo'},
+            {conta: 'Outros', subgrupo: 'Despesas Operacionais', valor: 38.71, origemLabel: 'Despesas Gerais'},
+            {conta: 'Outros', subgrupo: 'Despesas Administrativas', valor: 68.81, origemLabel: 'Uniforme/EPI'},
+            {conta: 'Salário', subgrupo: 'Despesas Administrativas', valor: 1564.00, origemLabel: 'Horas Extras'},
+            {conta: 'Salário', subgrupo: 'Despesas Administrativas', valor: 12512.58, origemLabel: 'Salário Mão de Obra Permanente'},
+            {conta: 'Mão de obra', subgrupo: 'Despesas Administrativas', valor: 35831.09, origemLabel: 'Mão de Obra Temporária'},
+            {conta: 'Outros', subgrupo: 'Despesas Administrativas', valor: 2.74, origemLabel: 'Manutenção e Reparo (adm)'},
+            {conta: 'Outros', subgrupo: 'Despesas Administrativas', valor: 112.96, origemLabel: 'Encargos Sociais e Trabalhistas'}
+          ];
+          despesasRelatorio.forEach(function(desp, idx){
+            var contaIdDesp = encontrarContaPorNome(desp.conta, desp.subgrupo);
+            state.financeiro.push({
+              id: uid(), origem: 'relatorioHistorico', contaId: contaIdDesp || '', tipo: 'custo', categoria: desp.origemLabel || desp.conta,
+              valor: desp.valor, data: dataVendaRel, quantidade: 0, unidade: '', status: 'Pago',
+              talhaoId: talhaoCafeVelhoRel.id, parceiroId: '', membroId: '',
+              descricao: (desp.origemLabel || desp.conta) + ' — Relatório de Resultado de Safra (eProdutor) 2024/2025',
+              criadoEm: Date.now() + 4 + idx
+            });
+          });
+          saveKey('financeiro', state.financeiro);
+        })();
+        (function(){
+          var jaTemDespesasMilho2026 = state.financeiro.some(function(f){ return f.origem === 'relatorioHistorico' && f.origemMilho2026 === true; });
+          if(jaTemDespesasMilho2026) return;
+          var nomesTalhoesMilho = ['pasto', 'hirome', 'sede', 'pivo', 'pista'];
+          var talhoesMilho = nomesTalhoesMilho.map(function(nome){
+            return state.talhoes.find(function(t){ return t.nome.trim().toLowerCase() === nome; });
+          }).filter(function(t){ return !!t; });
+          if(talhoesMilho.length !== 5) return;
+          var areaTotalMilho = talhoesMilho.reduce(function(s,t){ return s + (Number(t.area)||0); }, 0);
+          if(areaTotalMilho <= 0) return;
+
+          function encontrarContaPorNomeMilho(nomeConta, nomeSubgrupo){
+            var sg = state.subgruposFinanceiro.find(function(s){ return s.nome.trim().toLowerCase() === nomeSubgrupo.trim().toLowerCase(); });
+            if(!sg) return null;
+            var conta = state.contasFinanceiro.find(function(c){ return c.subgrupoId === sg.id && c.nome.trim().toLowerCase() === nomeConta.trim().toLowerCase(); });
+            return conta ? conta.id : null;
+          }
+
+          var dataDespesaMilho = '2026-06-30';
+          var despesasMilhoRelatorio = [
+            {conta: 'Adjuvante', subgrupo: 'Custo Insumos Agrícolas', valor: 991.34},
+            {conta: 'Fert. Sólido Base', subgrupo: 'Custo Insumos Agrícolas', valor: 58250.00},
+            {conta: 'Herbicida', subgrupo: 'Custo Insumos Agrícolas', valor: 12964.01},
+            {conta: 'Inseticida', subgrupo: 'Custo Insumos Agrícolas', valor: 4580.00},
+            {conta: 'Semente Milho', subgrupo: 'Custo Insumos Agrícolas', valor: 73098.14},
+            {conta: 'Plantio', subgrupo: 'Despesas com Serviços', valor: 2300.00},
+            {conta: 'Seguro Produção', subgrupo: 'Despesas com Serviços', valor: 2863.62},
+            {conta: 'Serviços Contratados', subgrupo: 'Despesas com Serviços', valor: 2461.34},
+            {conta: 'Maquinário', subgrupo: 'Despesas Operacionais', valor: 1426.60, origemLabel: 'Despesas com Veículo'},
+            {conta: 'Salário', subgrupo: 'Despesas Administrativas', valor: 250.00, origemLabel: 'Horas Extras'},
+            {conta: 'Salário', subgrupo: 'Despesas Administrativas', valor: 4638.03, origemLabel: 'Salário Mão de Obra Permanente'},
+            {conta: 'Mão de obra', subgrupo: 'Despesas Administrativas', valor: 7000.00, origemLabel: 'Mão de Obra Temporária'}
+          ];
+
+          var contadorMilho = 0;
+          despesasMilhoRelatorio.forEach(function(desp){
+            var contaIdDesp = encontrarContaPorNomeMilho(desp.conta, desp.subgrupo);
+            talhoesMilho.forEach(function(t){
+              var fracaoArea = (Number(t.area)||0) / areaTotalMilho;
+              var valorRateado = desp.valor * fracaoArea;
+              if(valorRateado <= 0) return;
+              state.financeiro.push({
+                id: uid(), origem: 'relatorioHistorico', origemMilho2026: true, contaId: contaIdDesp || '', tipo: 'custo',
+                categoria: desp.origemLabel || desp.conta, valor: Math.round(valorRateado * 100) / 100, data: dataDespesaMilho,
+                quantidade: 0, unidade: '', status: 'Pago', talhaoId: t.id, parceiroId: '', membroId: '',
+                descricao: (desp.origemLabel || desp.conta) + ' — Relatório de Resultado de Safra Milho 2026 (rateado por área, ' + fmtNum(fracaoArea*100) + '% de ' + escapeHtml(t.nome) + ')',
+                criadoEm: Date.now() + contadorMilho
+              });
+              contadorMilho++;
+            });
+          });
+          saveKey('financeiro', state.financeiro);
+        })();
+        (function(){
+          // Migração: preenche safraId retroativamente nos lançamentos do relatório histórico do Café Velho (safra já existia antes desse campo existir)
+          var safraCafeVelhoMigracao = state.safras.find(function(s){ return s.origemImportacao === 'relatorio-eprodutor-cafevelho-2024-2025'; });
+          if(!safraCafeVelhoMigracao) return;
+          var mudouAlgumaCoisaMigracaoCV = false;
+          state.financeiro.forEach(function(f){
+            if(f.talhaoId === safraCafeVelhoMigracao.talhaoId && !f.safraId && (f.origem === 'colheitaVenda' || f.origem === 'relatorioHistorico') && !f.origemMilho2026){
+              f.safraId = safraCafeVelhoMigracao.id;
+              mudouAlgumaCoisaMigracaoCV = true;
+            }
+          });
+          if(mudouAlgumaCoisaMigracaoCV) saveKey('financeiro', state.financeiro);
+        })();
+        (function(){
+          // Migração: preenche safraId retroativamente nos lançamentos de milho 2026/2026 (safras já existiam antes desse campo existir)
+          var mudouAlgumaCoisaMigracaoMilho = false;
+          state.financeiro.forEach(function(f){
+            if(f.origemMilho2026 === true && !f.safraId){
+              var safraMilhoDoTalhao = state.safras.find(function(s){ return s.talhaoId === f.talhaoId && s.anoAgricola === '2026/2026'; });
+              if(safraMilhoDoTalhao){
+                f.safraId = safraMilhoDoTalhao.id;
+                mudouAlgumaCoisaMigracaoMilho = true;
+              }
+            }
+          });
+          if(mudouAlgumaCoisaMigracaoMilho) saveKey('financeiro', state.financeiro);
+        })();
+        (function(){
+          // Migração única: vincula lançamentos "soltos" (sem safra) dos 5 talhões de milho 2026/2026 à safra correta, por pedido do usuário
+          var jaAplicouMigracaoSoltosMilho = state.financeiro.some(function(f){ return f.migradoSafraMilho2026SoltosV1 === true; });
+          if(jaAplicouMigracaoSoltosMilho) return;
+          var nomesTalhoesMilhoSoltos = ['pasto', 'hirome', 'sede', 'pivo', 'pista'];
+          var talhoesMilhoSoltos = nomesTalhoesMilhoSoltos.map(function(nome){
+            return state.talhoes.find(function(t){ return t.nome.trim().toLowerCase() === nome; });
+          }).filter(function(t){ return !!t; });
+          if(!talhoesMilhoSoltos.length) return;
+          var talhaoIdsMilhoSoltos = talhoesMilhoSoltos.map(function(t){ return t.id; });
+          var mudouAlgumaCoisaMigracaoSoltos = false;
+          state.financeiro.forEach(function(f){
+            if(!f.safraId && f.talhaoId && talhaoIdsMilhoSoltos.indexOf(f.talhaoId) !== -1){
+              var safraMilhoDesseTalhao = state.safras.find(function(s){ return s.talhaoId === f.talhaoId && s.anoAgricola === '2026/2026'; });
+              if(safraMilhoDesseTalhao){
+                f.safraId = safraMilhoDesseTalhao.id;
+                f.migradoSafraMilho2026SoltosV1 = true;
+                mudouAlgumaCoisaMigracaoSoltos = true;
+              }
+            }
+          });
+          if(mudouAlgumaCoisaMigracaoSoltos) saveKey('financeiro', state.financeiro);
+        })();
+        (function(){
+          var jaTemTitulosCoopermota = state.contasPagar.some(function(c){ return c.origemImportacao === 'coopermota-titulos-2026-09'; });
+          if(jaTemTitulosCoopermota) return;
+          var parceiroCoopermota = state.parceiros.find(function(p){ return p.nome.trim().toLowerCase() === 'coopermota cooperativa'; });
+          if(!parceiroCoopermota){
+            parceiroCoopermota = {id: uid(), nome: 'Coopermota Cooperativa', tipo: 'Fornecedor', telefone: '', email: '', observacao: '', criadoEm: Date.now()};
+            state.parceiros.push(parceiroCoopermota);
+            saveKey('parceiros', state.parceiros);
+          }
+          var titulosCoopermota = [
+            {titulo:'000001407', emissao:'2026-03-24', valor:6100.00, itens:'Sem Milho Transg. K9510 VIP3 Ins. Max Supra'},
+            {titulo:'000001453', emissao:'2026-03-25', valor:1220.00, itens:'Sem Milho Transg. K9510 VIP3 Ins. Max Supra'},
+            {titulo:'000001462', emissao:'2026-03-26', valor:640.00, itens:'Sem Milho Transg. K7575 VIP3 Ins. Max Supra'},
+            {titulo:'000001466', emissao:'2026-03-26', valor:3230.00, itens:'Magnum 5kgs - Adama'},
+            {titulo:'000001651', emissao:'2026-04-06', valor:1350.00, itens:'Perito 970SG 10kgs - UPL'},
+            {titulo:'000001776', emissao:'2026-04-13', valor:2185.00, itens:'Priori Top 5L - Syngenta, Kasumin 5L - UPL'},
+            {titulo:'000001883', emissao:'2026-04-20', valor:2845.00, itens:'Verdict Ultra 5L - Corteva, Aurora 1L - FMC, Zapp Q.I. 20L - Syngenta'},
+            {titulo:'000002331', emissao:'2026-06-03', valor:524.00, itens:'Zartan 10grs UPL, Decorum 20L - Rainbow'},
+            {titulo:'000002510', emissao:'2026-06-26', valor:3265.00, itens:'Adubo Foliar Fulcrum 5L - Fertybio, Priori Top 5L - Syngenta, Kasumin 5L - UPL'},
+            {titulo:'000002758', emissao:'2026-07-28', valor:760.00, itens:'Dual Gold 960 EC 20L - Syngenta'}
+          ];
+          titulosCoopermota.forEach(function(t, idx){
+            state.contasPagar.push({
+              id: uid(), descricao: 'NF ' + t.titulo + ' — ' + t.itens, categoria: 'Insumo', parceiroId: parceiroCoopermota.id,
+              talhaoId: '', talhoesIds: [], safraId: '', valor: t.valor, vencimento: '2026-09-30', status: 'Pendente', dataPagamento: '',
+              origemImportacao: 'coopermota-titulos-2026-09', criadoEm: Date.now() + idx
+            });
+          });
+          saveKey('contasPagar', state.contasPagar);
+        })();
+        (function(){
           // Corrige lançamentos de Serviços Prestados/Contratados criados antes do cálculo quantidade×valor unitário
           var precisaCorrecaoServico = state.servicosPrestados.some(function(s){ return s.financeiroId && !s.correcaoValorV1Aplicada; });
           if(!precisaCorrecaoServico) return;
@@ -1682,6 +1939,9 @@
   var calagemVDesejado = 70;
   var calagemPrnt = 85;
   var nfeTelaFocoAtiva = false;
+  var rentabilidadeIncluirDepreciacao = false;
+  var rentabilidadeIncluirCustoOportunidade = false;
+  var rentabilidadeTaxaOportunidade = 10;
   var efetivarVendaId = null;
   var efetivarVendaDescontos = {retencao: 1.00, fam: 0.10, senar: 0.20, inss: 1.32, gilrat: 0.11};
   function renderEfetivarVendaModal(){
@@ -1916,7 +2176,8 @@
     'colheitaVenda': {label:'Venda de Colheita', cor:'#4F7942'},
     'nfe': {label:'NF-e', cor:'#C98A2B'},
     'financiamento': {label:'Financiamento', cor:'#A23E2E'},
-    'vendaAntecipada': {label:'Venda Antecipada', cor:'#9C6A1E'}
+    'vendaAntecipada': {label:'Venda Antecipada', cor:'#9C6A1E'},
+    'relatorioHistorico': {label:'Relatório Histórico', cor:'#6B5D46'}
   };
 
   var ENTIDADES_BUSCA_GLOBAL = [
@@ -2274,6 +2535,26 @@
     return html;
   }
 
+  var genericTableSort = {};
+  function valorParaOrdenarGenerico(c, item){
+    return c.compute ? c.compute(item) : item[c.key];
+  }
+  function compararParaOrdenarGenerico(c, a, b, direcao){
+    var va = valorParaOrdenarGenerico(c, a);
+    var vb = valorParaOrdenarGenerico(c, b);
+    var vazioA = (va === undefined || va === null || va === '');
+    var vazioB = (vb === undefined || vb === null || vb === '');
+    if(vazioA && vazioB) return 0;
+    if(vazioA) return 1;
+    if(vazioB) return -1;
+    var resultado;
+    if(typeof va === 'number' && typeof vb === 'number'){
+      resultado = va - vb;
+    } else {
+      resultado = String(va).localeCompare(String(vb), 'pt-BR', {numeric:true, sensitivity:'base'});
+    }
+    return direcao === 'desc' ? -resultado : resultado;
+  }
   function buildGenericTableHtml(entityKey){
     var cfg = ENTITY_CONFIGS[entityKey];
     var list = state[entityKey];
@@ -2284,10 +2565,24 @@
       if(list.length > 4){
         html += '<div style="padding:14px 18px 0;"><input type="text" id="search-' + entityKey + '" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
       }
+      var ordenAtualGenerico = genericTableSort[entityKey];
       html += '<div class="table-wrap"><table><thead><tr>';
-      cfg.columns.forEach(function(c){ html += '<th>' + c.label + '</th>'; });
+      cfg.columns.forEach(function(c){
+        var ativo = ordenAtualGenerico && ordenAtualGenerico.coluna === c.key;
+        var seta = ativo ? (ordenAtualGenerico.direcao === 'asc' ? ' ▲' : ' ▼') : '';
+        html += '<th data-action="sort-generic-table" data-entity="' + entityKey + '" data-key="' + c.key + '" style="cursor:pointer; user-select:none;" title="Clique para ordenar">' + escapeHtml(c.label) + seta + '</th>';
+      });
       html += '<th></th></tr></thead><tbody>';
-      list.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(item){
+      var listaOrdenadaGenerico = list.slice();
+      if(ordenAtualGenerico){
+        var colunaOrdenarGenerico = cfg.columns.find(function(c){ return c.key === ordenAtualGenerico.coluna; });
+        if(colunaOrdenarGenerico){
+          listaOrdenadaGenerico.sort(function(a,b){ return compararParaOrdenarGenerico(colunaOrdenarGenerico, a, b, ordenAtualGenerico.direcao); });
+        }
+      } else {
+        listaOrdenadaGenerico.sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); });
+      }
+      listaOrdenadaGenerico.forEach(function(item){
         html += '<tr>';
         cfg.columns.forEach(function(c){
           var val = c.compute ? c.compute(item) : item[c.key];
@@ -2993,6 +3288,7 @@
   /* ---------------- Safras ---------------- */
   var safrasAnoFiltro = '';
   var financeiroMesFiltro = '';
+  var financeiroSoSemSafra = false;
   var financeiroMostrarMaisOpcoes = false;
   var dashboardMaisDetalhesAberto = false;
   var agro50SecaoAtiva = null;
@@ -3290,6 +3586,8 @@
       var dataRef = f.status === 'Pendente' ? (f.vencimento || f.data) : (f.data || f.vencimento);
       return dataRef && dataRef.slice(0,7) === financeiroMesFiltro;
     });
+    var qtdSemSafraNoFiltroAtual = financeiroFiltrado.filter(function(f){ return !f.safraId; }).length;
+    if(financeiroSoSemSafra) financeiroFiltrado = financeiroFiltrado.filter(function(f){ return !f.safraId; });
     var totalCustos = financeiroFiltrado.filter(function(f){ return f.tipo === 'custo' && (f.status||'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
     var totalReceitas = financeiroFiltrado.filter(function(f){ return f.tipo === 'receita' && (f.status||'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
     var totalPendente = financeiroFiltrado.filter(function(f){ return f.status === 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
@@ -3311,6 +3609,9 @@
         html += '<option value="' + m + '"' + (financeiroMesFiltro === m ? ' selected' : '') + '>' + label + '</option>';
       });
       html += '</select></div>';
+    }
+    if(qtdSemSafraNoFiltroAtual > 0 || financeiroSoSemSafra){
+      html += '<button type="button" class="btn-add-inline" data-action="toggle-financeiro-so-sem-safra" style="margin-bottom:14px;">' + (financeiroSoSemSafra ? '✕ Ver todos os lançamentos' : '⚠️ Ver só os sem safra vinculada (' + qtdSemSafraNoFiltroAtual + ')') + '</button>';
     }
     html += '<div class="stat-row">';
     html += statCard('Total de custos', fmtBRL(totalCustos), 'cost');
@@ -3375,6 +3676,7 @@
       html += '<div id="campo-parceiro" style="display:' + (mostrarDiariaJaAqui ? 'none' : 'contents') + ';">';
       html += selectField('parceiroId', 'Parceiro / prestador (opcional)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })), editingRecord ? editingRecord.parceiroId : undefined);
       html += '</div>';
+      html += '<div id="campo-safra-financeiro"></div>';
 
       html += '<div class="field"><label>Comprovante (opcional, imagem ou PDF)</label><input type="file" id="f-anexo-input" accept="image/*,application/pdf"></div>';
       if(editingRecord && editingRecord.temAnexo){
@@ -3410,7 +3712,7 @@
       html += '<div class="empty-state">Nenhum lançamento financeiro ainda.</div>';
     } else {
       html += '<div style="padding:14px 18px 0;"><input type="text" id="search-financeiro" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
-      html += '<div class="table-wrap"><table><thead><tr><th>Data/Venc.</th><th>Funcionário</th><th>Descrição</th><th>Conta</th><th>Talhão</th><th>Quantidade</th><th>Valor Unitário</th><th>Valor Total</th><th>Tipo</th><th>Status</th><th></th></tr></thead><tbody>';
+      html += '<div class="table-wrap"><table><thead><tr><th>Data/Venc.</th><th>Funcionário</th><th>Descrição</th><th>Conta</th><th>Talhão</th><th>Safra</th><th>Quantidade</th><th>Valor Unitário</th><th>Valor Total</th><th>Tipo</th><th>Status</th><th></th></tr></thead><tbody>';
       financeiroFiltrado.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(f){
         var status = f.status || 'Pago';
         html += '<tr>';
@@ -3423,6 +3725,12 @@
           + '</td>';
         html += '<td>' + (f.contaId ? escapeHtml(contaLabel(f.contaId)) : escapeHtml(f.categoria || '—')) + '</td>';
         html += '<td>' + (f.talhoesIds && f.talhoesIds.length ? escapeHtml(f.talhoesIds.map(talhaoNome).join(', ')) : (f.talhaoId ? escapeHtml(talhaoNome(f.talhaoId)) : '—')) + '</td>';
+        html += '<td>' + (function(){
+          if(!f.safraId) return '—';
+          var sf = state.safras.find(function(sx){ return sx.id === f.safraId; });
+          if(!sf) return '—';
+          return escapeHtml(culturaNome(sf.culturaId) + (sf.anoAgricola ? ' (' + sf.anoAgricola + ')' : ''));
+        })() + '</td>';
         html += '<td class="num">' + (f.quantidade ? fmtNum(f.quantidade) : '—') + (f.unidade ? ' ' + escapeHtml(f.unidade) : '') + '</td>';
         html += '<td class="num">' + (Number(f.valorUnitario) > 0 ? fmtBRL(f.valorUnitario) : '—') + '</td>';
         html += '<td class="num ' + (f.tipo === 'custo' ? 'cost' : 'growth') + '">' + (Number(f.valorUnitario) > 0 ? ((f.tipo === 'custo' ? '−' : '+') + ' ' + fmtBRL(valorTotalLancamento(f))) : ((f.tipo === 'custo' ? '−' : '+') + ' ' + fmtBRL(f.valor))) + '</td>';
@@ -3467,6 +3775,7 @@
     html += '</div>';
 
     el.innerHTML = html;
+    atualizarSafraFinanceiroFiltrada();
   }
 
   /* ---------------- Contas a Pagar / Contas a Receber ---------------- */
@@ -3474,15 +3783,75 @@
     var el = document.getElementById('tab-contasPagar');
     var pendente = state.contasPagar.filter(function(c){ return c.status === 'Pendente'; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0);
     var pago = state.contasPagar.filter(function(c){ return c.status === 'Pago'; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0);
+    var editingRecordCP = (editState && editState.scope === 'generic' && editState.entityKey === 'contasPagar') ? state.contasPagar.find(function(x){ return x.id === editState.id; }) : null;
 
     var html = '<div class="stat-row">';
     html += statCard('Total pendente', fmtBRL(pendente), 'cost');
     html += statCard('Total pago', fmtBRL(pago), 'growth');
     html += '</div>';
-    html += buildGenericFormHtml('contasPagar');
-    html += buildGenericTableHtml('contasPagar');
+
+    html += '<div class="paper form-card"><h3>' + (editingRecordCP ? 'Editar conta a pagar' : 'Nova conta a pagar') + '</h3>';
+    html += '<form class="entry-form" id="form-contapagar"' + (editingRecordCP ? ' data-editing-id="' + editingRecordCP.id + '"' : '') + '>';
+    html += field('text', 'descricao', 'Descrição', true, 'Ex: Fatura de fertilizante', {}, editingRecordCP ? editingRecordCP.descricao : undefined);
+    html += selectField('categoria', 'Categoria', ['Fornecedor','Insumo','Financiamento','Imposto','Aluguel','Outro'].map(function(c){ return {value:c,label:c}; }), editingRecordCP ? editingRecordCP.categoria : undefined);
+    html += selectField('parceiroId', 'Parceiro (opcional)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })), editingRecordCP ? editingRecordCP.parceiroId : undefined);
+    html += field('number', 'valor', 'Valor (R$)', true, '0,00', {step:'0.01', min:'0'}, editingRecordCP ? editingRecordCP.valor : undefined);
+    html += field('date', 'vencimento', 'Vencimento', false, '', {}, editingRecordCP ? editingRecordCP.vencimento : undefined);
+    html += selectField('status', 'Status', ['Pendente','Pago'].map(function(c){ return {value:c,label:c}; }), editingRecordCP ? editingRecordCP.status : undefined);
+    html += field('date', 'dataPagamento', 'Data do pagamento', false, '', {}, editingRecordCP ? editingRecordCP.dataPagamento : undefined);
+
+    html += '<div style="grid-column: 1 / -1; display:flex; flex-direction:column; gap:6px; padding-top:4px; border-top:1px dashed var(--paper-line); margin-top:4px;">';
+    html += '<label style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em;">Talhão(ões) — rateio (opcional)</label>';
+    if(!state.talhoes.length){
+      html += '<span style="font-size:12px; color:var(--ink-soft);">Nenhum talhão cadastrado.</span>';
+    } else {
+      var talhoesMarcadosCP = editingRecordCP ? (editingRecordCP.talhoesIds || (editingRecordCP.talhaoId ? [editingRecordCP.talhaoId] : [])) : [];
+      html += '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
+      state.talhoes.forEach(function(t){
+        var marcado = talhoesMarcadosCP.indexOf(t.id) !== -1;
+        html += '<label style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; padding:6px 12px; border:1px solid ' + (marcado ? 'var(--accent)' : 'var(--paper-line)') + '; border-radius:20px; background:' + (marcado ? '#F1E0BC' : '#FBF7EC') + '; cursor:pointer;">';
+        html += '<input type="checkbox" name="talhaoIdsCP" value="' + t.id + '"' + (marcado ? ' checked' : '') + '> ' + escapeHtml(t.nome);
+        html += '</label>';
+      });
+      html += '</div>';
+    }
+    html += '<span style="font-size:11px; color:var(--ink-soft);">Marcando mais de um, o valor é dividido igualmente entre eles (ou escolha ratear por safra logo abaixo).</span>';
+    html += '</div>';
+
+    html += '<div id="campo-safra-cp"></div>';
+
+    html += '<button type="submit" class="btn">' + (editingRecordCP ? 'Salvar alterações' : 'Adicionar') + '</button>';
+    if(editingRecordCP) html += '<button type="button" class="btn-cancel" data-action="cancel-edit">Cancelar</button>';
+    html += '</form></div>';
+
+    if(!state.contasPagar.length){
+      html += '<div class="paper empty-state">Nenhuma conta a pagar cadastrada ainda.</div>';
+    } else {
+      html += '<div class="table-wrap"><table><thead><tr><th>Descrição</th><th>Categoria</th><th>Parceiro</th><th>Talhão(ões)</th><th>Safra</th><th>Valor</th><th>Vencimento</th><th>Status</th><th></th></tr></thead><tbody>';
+      state.contasPagar.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(c){
+        html += '<tr>';
+        html += '<td>' + escapeHtml(c.descricao || '—') + '</td>';
+        html += '<td>' + escapeHtml(c.categoria || '—') + '</td>';
+        html += '<td>' + (c.parceiroId ? escapeHtml(parceiroNome(c.parceiroId)) : '—') + '</td>';
+        html += '<td>' + (c.talhoesIds && c.talhoesIds.length ? escapeHtml(c.talhoesIds.map(talhaoNome).join(', ')) : (c.talhaoId ? escapeHtml(talhaoNome(c.talhaoId)) : '—')) + '</td>';
+        html += '<td>' + (function(){
+          if(!c.safraId) return '—';
+          var sf = state.safras.find(function(sx){ return sx.id === c.safraId; });
+          if(!sf) return '—';
+          return escapeHtml(culturaNome(sf.culturaId) + (sf.anoAgricola ? ' (' + sf.anoAgricola + ')' : ''));
+        })() + '</td>';
+        html += '<td class="num">' + fmtBRL(c.valor) + '</td>';
+        html += '<td>' + fmtDate(c.vencimento) + '</td>';
+        html += '<td><span class="badge" style="background:' + (c.status === 'Pago' ? '#7FA36D' : '#DFA84E') + '; color:#1B1508">' + c.status + '</span></td>';
+        html += '<td><button class="btn-edit" data-action="edit-generic" data-entity="contasPagar" data-id="' + c.id + '">Editar</button>';
+        html += '<button class="btn-del" data-action="del-generic" data-entity="contasPagar" data-id="' + c.id + '">Remover</button></td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    }
     html += '<div class="paper note-box">Estes lançamentos alimentam o Fluxo de Caixa. Quando vinculados a um talhão e marcados como "Pago", também entram nos custos da Rentabilidade.</div>';
     el.innerHTML = html;
+    atualizarSafraContaPagarFiltrada();
   }
 
   function renderContasReceber(){
@@ -4012,14 +4381,26 @@
           html += '</tbody></table></div>';
         }
 
-        var custoTalhaoRastreio = custosTotaisPorTalhao(safraRastreio.talhaoId);
-        var receitaTalhaoRastreio = receitasTotaisPorTalhao(safraRastreio.talhaoId);
-        html += '<p style="font-size:12.5px; font-weight:600; margin:14px 0 6px;">Resumo financeiro do talhão</p>';
+        var financeiroDaSafraRastreio = state.financeiro.filter(function(f){ return f.safraId === safraRastreio.id; });
+        var temDadosDaSafraEspecifica = financeiroDaSafraRastreio.length > 0;
+        var custoTalhaoRastreio, receitaTalhaoRastreio;
+        if(temDadosDaSafraEspecifica){
+          custoTalhaoRastreio = financeiroDaSafraRastreio.filter(function(f){ return f.tipo === 'custo' && (f.status||'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + (Number(f.valor)||0); }, 0);
+          receitaTalhaoRastreio = financeiroDaSafraRastreio.filter(function(f){ return f.tipo === 'receita' && (f.status||'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + (Number(f.valor)||0); }, 0);
+        } else {
+          custoTalhaoRastreio = custosTotaisPorTalhao(safraRastreio.talhaoId);
+          receitaTalhaoRastreio = receitasTotaisPorTalhao(safraRastreio.talhaoId);
+        }
+        html += '<p style="font-size:12.5px; font-weight:600; margin:14px 0 6px;">Resumo financeiro ' + (temDadosDaSafraEspecifica ? 'da safra' : 'do talhão') + '</p>';
         html += '<div class="stat-row" style="margin:0;">';
         html += statCard('Custos', fmtBRL(custoTalhaoRastreio), 'cost');
         html += statCard('Receitas', fmtBRL(receitaTalhaoRastreio), 'growth');
         html += '</div>';
-        html += '<p style="font-size:11px; color:var(--ink-soft); margin-top:8px;">Esse resumo é do talhão inteiro (não só dessa safra) porque o rateio no Financeiro é feito por talhão. Se o talhão teve mais de uma safra, os valores incluem todas elas.</p>';
+        if(temDadosDaSafraEspecifica){
+          html += '<p style="font-size:11px; color:var(--ink-soft); margin-top:8px;">Esse resumo já é só dessa safra específica (' + financeiroDaSafraRastreio.length + ' lançamento(s) vinculado(s) diretamente a ela).</p>';
+        } else {
+          html += '<p style="font-size:11px; color:var(--ink-soft); margin-top:8px;">Esse resumo é do talhão inteiro (não só dessa safra), porque nenhum lançamento do Financeiro está vinculado diretamente a essa safra ainda — o rateio caiu no talhão como um todo. Se o talhão teve mais de uma safra, os valores incluem todas elas. Vincular a safra nos lançamentos (campo opcional em "Mostrar mais opções") deixa esse resumo mais preciso.</p>';
+        }
         html += '</div>';
       }
       html += '<div class="paper note-box">A rastreabilidade junta, numa visão só, tudo que já está espalhado pelo sistema: o que foi aplicado (Diário de Campo), o que foi colhido (Colheita) e pra quem foi vendido (Colheita → Venda) — útil pra comprovar a cadeia produtiva pra compradores ou certificações.</div>';
@@ -4168,6 +4549,23 @@
     var el = document.getElementById('tab-rentabilidade');
     var html = '';
 
+    html += '<div class="paper form-card" style="margin-bottom:20px;">';
+    html += '<div style="display:flex; gap:20px; flex-wrap:wrap; align-items:center;">';
+    html += '<label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;"><input type="checkbox" id="rent-incluir-depreciacao"' + (rentabilidadeIncluirDepreciacao ? ' checked' : '') + '> Incluir Depreciação</label>';
+    html += '<label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;"><input type="checkbox" id="rent-incluir-custo-oport"' + (rentabilidadeIncluirCustoOportunidade ? ' checked' : '') + '> Incluir Custo de Oportunidade</label>';
+    if(rentabilidadeIncluirCustoOportunidade){
+      html += '<label style="display:flex; align-items:center; gap:6px; font-size:13px;">Taxa ao ano (%) <input type="number" id="rent-taxa-oportunidade" value="' + rentabilidadeTaxaOportunidade + '" min="0" step="0.1" style="width:70px; padding:6px 8px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></label>';
+    }
+    html += '</div>';
+    html += '</div>';
+
+    var custoExtraPorTalhao = function(talhaoId){
+      var extra = 0;
+      if(rentabilidadeIncluirDepreciacao) extra += depreciacaoPorTalhao(talhaoId);
+      if(rentabilidadeIncluirCustoOportunidade) extra += custoOportunidadePorTalhao(talhaoId, rentabilidadeTaxaOportunidade);
+      return extra;
+    };
+
     html += '<div class="section-title" style="margin-top:0;">Por talhão</div>';
     if(!state.talhoes.length){
       html += '<div class="paper empty-state">Cadastre talhões para ver a rentabilidade.</div>';
@@ -4175,7 +4573,7 @@
       html += '<div class="paper table-wrap"><table><thead><tr><th>Talhão</th><th>Cultura atual</th><th>Custos</th><th>Custo/ha</th><th>Custo/saca</th><th>Receitas</th><th>Estoque projetado</th><th>Resultado</th><th>Retorno s/ custo</th></tr></thead><tbody>';
       state.talhoes.forEach(function(t){
         var safraIdsDoTalhao = state.safras.filter(function(s){ return s.talhaoId === t.id; }).map(function(s){ return s.id; });
-        var custos = custosTotaisPorTalhao(t.id);
+        var custos = custosTotaisPorTalhao(t.id) + custoExtraPorTalhao(t.id);
         var receitas = receitasTotaisPorTalhao(t.id);
         var estoqueValor = estoqueValorPorSafraIds(safraIdsDoTalhao);
         var resultado = receitas + estoqueValor - custos;
@@ -4209,7 +4607,7 @@
         var safrasDaCultura = state.safras.filter(function(s){ return s.culturaId === c.id; });
         var talhaoIds = safrasDaCultura.map(function(s){ return s.talhaoId; }).filter(function(v,i,a){ return a.indexOf(v)===i; });
         var safraIds = safrasDaCultura.map(function(s){ return s.id; });
-        var custos = talhaoIds.reduce(function(sum,tid){ return sum + custosTotaisPorTalhao(tid); }, 0);
+        var custos = talhaoIds.reduce(function(sum,tid){ return sum + custosTotaisPorTalhao(tid) + custoExtraPorTalhao(tid); }, 0);
         var receitas = talhaoIds.reduce(function(sum,tid){ return sum + receitasTotaisPorTalhao(tid); }, 0);
         var estoqueValor = estoqueValorPorSafraIds(safraIds);
         var resultado = receitas + estoqueValor - custos;
@@ -4232,7 +4630,7 @@
       html += '</tbody></table></div>';
     }
 
-    html += '<div class="paper note-box">Custos somam os lançamentos "Pago" do Financeiro e as Contas a Pagar "Pago", ambos vinculados ao talhão. Receitas somam o Financeiro "Pago" e as Contas a Receber "Recebido". "Custo/ha" divide o custo total pela área do talhão (ou soma das áreas, na visão por cultura). "Custo/saca" divide o custo total pela quantidade total colhida (aba Colheita), convertendo kg para sacas (60kg = 1sc) quando aplicável. Como um talhão pode ter mais de uma cultura ao longo do tempo, o agrupamento por cultura soma os talhões onde ela já foi ou está sendo cultivada — evite lançar o mesmo valor em mais de um lugar para não contar em duplicidade.</div>';
+    html += '<div class="paper note-box">Custos somam os lançamentos "Pago" do Financeiro e as Contas a Pagar "Pago", ambos vinculados ao talhão. Receitas somam o Financeiro "Pago" e as Contas a Receber "Recebido". "Custo/ha" divide o custo total pela área do talhão (ou soma das áreas, na visão por cultura). "Custo/saca" divide o custo total pela quantidade total colhida (aba Colheita), convertendo kg para sacas (60kg = 1sc) quando aplicável. Como um talhão pode ter mais de uma cultura ao longo do tempo, o agrupamento por cultura soma os talhões onde ela já foi ou está sendo cultivada — evite lançar o mesmo valor em mais de um lugar para não contar em duplicidade.<br><br>Marcando "Incluir Depreciação", somamos a depreciação anual de todo o Patrimônio (aba Patrimônio), distribuída entre os talhões proporcionalmente à área de cada um. Marcando "Incluir Custo de Oportunidade", somamos o valor total do Patrimônio × a taxa anual que você definir, também distribuído por área — é um valor de referência, não uma despesa que saiu do seu bolso. Os dois são estimativas: máquinas e capital não são de fato exclusivos de um talhão, a distribuição por área é só um critério razoável de ratear.</div>';
 
     el.innerHTML = html;
   }
@@ -5267,6 +5665,144 @@
     return Number(f.valor) || 0;
   }
 
+  function atualizarSafraContaPagarFiltrada(){
+    var elCampoSafra = document.getElementById('campo-safra-cp');
+    if(!elCampoSafra) return;
+    var checkboxesTalhao = document.querySelectorAll('input[name="talhaoIdsCP"]:checked');
+    var talhoesMarcadosAgora = [];
+    checkboxesTalhao.forEach(function(cb){ talhoesMarcadosAgora.push(cb.value); });
+
+    if(!talhoesMarcadosAgora.length){
+      elCampoSafra.innerHTML = '<div class="field"><label>Safra (opcional — deixa mais preciso o custo por safra)</label><select id="cp-safraId" name="safraId" disabled style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#E8DCB9; font-size:13px; color:var(--ink-soft);"><option>Marque o(s) talhão(ões) acima primeiro</option></select></div>';
+      return;
+    }
+
+    var safrasDosTalhoes = state.safras.filter(function(s){ return talhoesMarcadosAgora.indexOf(s.talhaoId) !== -1; });
+    var elSafraExistenteCP = document.getElementById('cp-safraId');
+    var safraAtualSelecionadaCP = elSafraExistenteCP ? elSafraExistenteCP.value : (function(){
+      var registroEmEdicaoSafraCP = (editState && editState.scope === 'generic' && editState.entityKey === 'contasPagar') ? state.contasPagar.find(function(x){ return x.id === editState.id; }) : null;
+      return registroEmEdicaoSafraCP ? (registroEmEdicaoSafraCP.safraId || '') : '';
+    })();
+    var manterSelecaoCP = safrasDosTalhoes.some(function(s){ return s.id === safraAtualSelecionadaCP; }) ? safraAtualSelecionadaCP : undefined;
+    var html = selectField('safraId', 'Safra (opcional — vincula essa conta a uma safra específica de um dos talhões marcados)', [{value:'', label:'—'}].concat(safrasDosTalhoes.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).map(function(s){ return {value:s.id, label:safraLabel(s.id)}; })), manterSelecaoCP);
+    html = html.replace('id="f-safraId"', 'id="cp-safraId"');
+
+    var combosCulturaAno = {};
+    safrasDosTalhoes.forEach(function(s){
+      var chave = s.culturaId + '::' + (s.anoAgricola || '');
+      if(!combosCulturaAno[chave]) combosCulturaAno[chave] = {culturaId: s.culturaId, anoAgricola: s.anoAgricola, talhoesIds: []};
+      combosCulturaAno[chave].talhoesIds.push(s.talhaoId);
+    });
+    var combosComMaisDeUmTalhao = Object.keys(combosCulturaAno).filter(function(chave){ return combosCulturaAno[chave].talhoesIds.length > 1; });
+    if(combosComMaisDeUmTalhao.length){
+      var comboAtualSelecionado = document.getElementById('cp-comboSafraRateio') ? document.getElementById('cp-comboSafraRateio').value : '';
+      var metodoRateioAtual = document.getElementById('cp-metodoRateioSafra') ? document.getElementById('cp-metodoRateioSafra').value : 'area';
+
+      html += '<div style="grid-column:1/-1; font-size:11px; color:var(--ink-soft); margin:2px 0;">— OU, em vez de escolher uma safra acima, deixa o sistema dividir automaticamente entre os talhões: —</div>';
+      html += '<div class="field" style="margin:0;"><label>Ratear pela safra (cultura + ano) presente em vários dos talhões marcados</label>';
+      html += '<select id="cp-comboSafraRateio" name="comboSafraRateio" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">';
+      html += '<option value="">— Não ratear automaticamente —</option>';
+      combosComMaisDeUmTalhao.forEach(function(chave){
+        var combo = combosCulturaAno[chave];
+        var qtdTalhoesNoCombo = combo.talhoesIds.length;
+        var label = culturaNome(combo.culturaId) + (combo.anoAgricola ? ' (' + combo.anoAgricola + ')' : '') + ' — ' + qtdTalhoesNoCombo + ' de ' + talhoesMarcadosAgora.length + ' talhão(ões) marcado(s)';
+        html += '<option value="' + chave + '"' + (chave === comboAtualSelecionado ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
+      });
+      html += '</select></div>';
+
+      if(comboAtualSelecionado){
+        html += '<div class="field" style="margin:0;"><label>Ratear o valor por</label>';
+        html += '<select id="cp-metodoRateioSafra" name="metodoRateioSafra" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">';
+        html += '<option value="area"' + (metodoRateioAtual === 'area' ? ' selected' : '') + '>Área de cada talhão</option>';
+        html += '<option value="igual"' + (metodoRateioAtual === 'igual' ? ' selected' : '') + '>Igualmente entre os talhões</option>';
+        html += '</select></div>';
+        var comboEscolhido = combosCulturaAno[comboAtualSelecionado];
+        if(comboEscolhido && comboEscolhido.talhoesIds.length < talhoesMarcadosAgora.length){
+          var forasDoCombo = talhoesMarcadosAgora.filter(function(tid){ return comboEscolhido.talhoesIds.indexOf(tid) === -1; }).map(talhaoNome).join(', ');
+          html += '<p style="grid-column:1/-1; font-size:11px; color:var(--cost-dark); margin:0;">Atenção: ' + escapeHtml(forasDoCombo) + ' não tem essa safra e vai ficar de fora do rateio.</p>';
+        }
+      }
+    }
+    elCampoSafra.innerHTML = html;
+  }
+
+  function atualizarSafraFinanceiroFiltrada(){
+    var elCampoSafra = document.getElementById('campo-safra-financeiro');
+    if(!elCampoSafra) return;
+    var checkboxesTalhao = document.querySelectorAll('input[name="talhaoIds"]:checked');
+    var talhoesMarcadosAgora = [];
+    checkboxesTalhao.forEach(function(cb){ talhoesMarcadosAgora.push(cb.value); });
+
+    if(!talhoesMarcadosAgora.length){
+      elCampoSafra.innerHTML = '<div class="field"><label>Safra (opcional — deixa mais preciso o custo/receita por safra)</label><select id="f-safraId" name="safraId" disabled style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#E8DCB9; font-size:13px; color:var(--ink-soft);"><option>Marque o(s) talhão(ões) abaixo primeiro</option></select></div>';
+      return;
+    }
+
+    if(talhoesMarcadosAgora.length === 1){
+      var elSafraExistente = document.getElementById('f-safraId');
+      var safraAtualSelecionada;
+      if(elSafraExistente){
+        safraAtualSelecionada = elSafraExistente.value;
+      } else {
+        var registroEmEdicaoSafra = (editState && editState.scope === 'financeiro') ? state.financeiro.find(function(x){ return x.id === editState.id; }) : null;
+        safraAtualSelecionada = registroEmEdicaoSafra ? (registroEmEdicaoSafra.safraId || '') : '';
+      }
+      var safrasFiltradasAgora = state.safras.filter(function(s){ return talhoesMarcadosAgora.indexOf(s.talhaoId) !== -1; });
+      var manterSelecao = safrasFiltradasAgora.some(function(s){ return s.id === safraAtualSelecionada; }) ? safraAtualSelecionada : undefined;
+      elCampoSafra.innerHTML = selectField('safraId', 'Safra (opcional — deixa mais preciso o custo/receita por safra)', [{value:'', label:'—'}].concat(safrasFiltradasAgora.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).map(function(s){ return {value:s.id, label:safraLabel(s.id)}; })), manterSelecao);
+      return;
+    }
+
+    // 2+ talhões marcados: sempre oferece escolher uma safra individual (de qualquer um dos talhões marcados)
+    var safrasDosTalhoes = state.safras.filter(function(s){ return talhoesMarcadosAgora.indexOf(s.talhaoId) !== -1; });
+    var elSafraExistenteMulti = document.getElementById('f-safraId');
+    var safraAtualSelecionadaMulti = elSafraExistenteMulti ? elSafraExistenteMulti.value : (function(){
+      var registroEmEdicaoSafraMulti = (editState && editState.scope === 'financeiro') ? state.financeiro.find(function(x){ return x.id === editState.id; }) : null;
+      return registroEmEdicaoSafraMulti ? (registroEmEdicaoSafraMulti.safraId || '') : '';
+    })();
+    var manterSelecaoMulti = safrasDosTalhoes.some(function(s){ return s.id === safraAtualSelecionadaMulti; }) ? safraAtualSelecionadaMulti : undefined;
+    var html = selectField('safraId', 'Safra (opcional — vincula esse lançamento a uma safra específica de um dos talhões marcados)', [{value:'', label:'—'}].concat(safrasDosTalhoes.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).map(function(s){ return {value:s.id, label:safraLabel(s.id)}; })), manterSelecaoMulti);
+
+    // Se houver uma safra (cultura+ano) presente em 2+ dos talhões marcados, oferece também ratear automaticamente entre eles
+    var combosCulturaAno = {};
+    safrasDosTalhoes.forEach(function(s){
+      var chave = s.culturaId + '::' + (s.anoAgricola || '');
+      if(!combosCulturaAno[chave]) combosCulturaAno[chave] = {culturaId: s.culturaId, anoAgricola: s.anoAgricola, talhoesIds: []};
+      combosCulturaAno[chave].talhoesIds.push(s.talhaoId);
+    });
+    var combosComMaisDeUmTalhao = Object.keys(combosCulturaAno).filter(function(chave){ return combosCulturaAno[chave].talhoesIds.length > 1; });
+    if(combosComMaisDeUmTalhao.length){
+      var comboAtualSelecionado = document.getElementById('f-comboSafraRateio') ? document.getElementById('f-comboSafraRateio').value : '';
+      var metodoRateioAtual = document.getElementById('f-metodoRateioSafra') ? document.getElementById('f-metodoRateioSafra').value : 'area';
+
+      html += '<div style="grid-column:1/-1; font-size:11px; color:var(--ink-soft); margin:2px 0;">— OU, em vez de escolher uma safra acima, deixa o sistema dividir automaticamente entre os talhões: —</div>';
+      html += '<div class="field" style="margin:0;"><label>Ratear pela safra (cultura + ano) presente em vários dos talhões marcados</label>';
+      html += '<select id="f-comboSafraRateio" name="comboSafraRateio" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">';
+      html += '<option value="">— Não ratear automaticamente —</option>';
+      combosComMaisDeUmTalhao.forEach(function(chave){
+        var combo = combosCulturaAno[chave];
+        var qtdTalhoesNoCombo = combo.talhoesIds.length;
+        var label = culturaNome(combo.culturaId) + (combo.anoAgricola ? ' (' + combo.anoAgricola + ')' : '') + ' — ' + qtdTalhoesNoCombo + ' de ' + talhoesMarcadosAgora.length + ' talhão(ões) marcado(s)';
+        html += '<option value="' + chave + '"' + (chave === comboAtualSelecionado ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
+      });
+      html += '</select></div>';
+
+      if(comboAtualSelecionado){
+        html += '<div class="field" style="margin:0;"><label>Ratear o valor por</label>';
+        html += '<select id="f-metodoRateioSafra" name="metodoRateioSafra" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">';
+        html += '<option value="area"' + (metodoRateioAtual === 'area' ? ' selected' : '') + '>Área de cada talhão</option>';
+        html += '<option value="igual"' + (metodoRateioAtual === 'igual' ? ' selected' : '') + '>Igualmente entre os talhões</option>';
+        html += '</select></div>';
+        var comboEscolhido = combosCulturaAno[comboAtualSelecionado];
+        if(comboEscolhido && comboEscolhido.talhoesIds.length < talhoesMarcadosAgora.length){
+          var forasDoCombo = talhoesMarcadosAgora.filter(function(tid){ return comboEscolhido.talhoesIds.indexOf(tid) === -1; }).map(talhaoNome).join(', ');
+          html += '<p style="grid-column:1/-1; font-size:11px; color:var(--cost-dark); margin:0;">Atenção: ' + escapeHtml(forasDoCombo) + ' não tem essa safra e vai ficar de fora do rateio.</p>';
+        }
+      }
+    }
+    elCampoSafra.innerHTML = html;
+  }
+
   function recalcularValorPorQuantidade(){
     var qtdEl = document.getElementById('f-quantidade');
     var valorUnitEl = document.getElementById('f-valorUnitario');
@@ -5318,12 +5854,27 @@
       renderCalagemModal();
       return;
     }
+    if(e.target && (e.target.id === 'rent-incluir-depreciacao' || e.target.id === 'rent-incluir-custo-oport' || e.target.id === 'rent-taxa-oportunidade')){
+      if(e.target.id === 'rent-incluir-depreciacao') rentabilidadeIncluirDepreciacao = e.target.checked;
+      if(e.target.id === 'rent-incluir-custo-oport') rentabilidadeIncluirCustoOportunidade = e.target.checked;
+      if(e.target.id === 'rent-taxa-oportunidade') rentabilidadeTaxaOportunidade = parseFloat(e.target.value) || 0;
+      renderRentabilidade();
+      return;
+    }
     if(e.target && e.target.id && e.target.id.indexOf('efv-') === 0){
       if(e.target.id.indexOf('efv-desconto-') === 0){
         var chaveDesconto = e.target.id.slice('efv-desconto-'.length);
         efetivarVendaDescontos[chaveDesconto] = parseFloat(e.target.value) || 0;
       }
       renderEfetivarVendaModal();
+      return;
+    }
+    if(e.target && e.target.id === 'f-comboSafraRateio'){
+      atualizarSafraFinanceiroFiltrada();
+      return;
+    }
+    if(e.target && e.target.id === 'cp-comboSafraRateio'){
+      atualizarSafraContaPagarFiltrada();
       return;
     }
     if(e.target && e.target.id && e.target.id.indexOf('search-') === 0){
@@ -5716,6 +6267,86 @@
       form.reset(); renderAll(); return;
     }
 
+    if(form.id === 'form-contapagar'){
+      var cpEditingId = form.dataset.editingId;
+      var cpTalhoesIds = [];
+      document.querySelectorAll('input[name="talhaoIdsCP"]:checked').forEach(function(cb){ cpTalhoesIds.push(cb.value); });
+      var cpValorBase = parseFloat(data.get('valor')) || 0;
+      var cpCamposComuns = {
+        descricao: (data.get('descricao') || '').trim(), categoria: data.get('categoria') || '',
+        parceiroId: data.get('parceiroId') || '', vencimento: data.get('vencimento') || '',
+        status: data.get('status') || 'Pendente', dataPagamento: data.get('dataPagamento') || ''
+      };
+
+      var cpComboSafraRateio = data.get('comboSafraRateio');
+      if(cpComboSafraRateio && cpTalhoesIds.length >= 2 && !cpEditingId){
+        var cpPartesCombo = cpComboSafraRateio.split('::');
+        var cpCulturaIdCombo = cpPartesCombo[0];
+        var cpAnoAgricolaCombo = cpPartesCombo[1] || '';
+        var cpMetodoRateio = data.get('metodoRateioSafra') || 'area';
+        var cpSafrasDoCombo = state.safras.filter(function(s){
+          return cpTalhoesIds.indexOf(s.talhaoId) !== -1 && s.culturaId === cpCulturaIdCombo && (s.anoAgricola || '') === cpAnoAgricolaCombo;
+        });
+        if(!cpSafrasDoCombo.length){
+          alert('Não encontrei nenhuma safra correspondente nos talhões marcados. Confira a seleção.');
+          return;
+        }
+        var cpBaseRateio;
+        if(cpMetodoRateio === 'area'){
+          cpBaseRateio = cpSafrasDoCombo.map(function(s){
+            var t = state.talhoes.find(function(tx){ return tx.id === s.talhaoId; });
+            return {safra: s, peso: t ? (Number(t.area) || 0) : 0};
+          });
+        } else {
+          cpBaseRateio = cpSafrasDoCombo.map(function(s){ return {safra: s, peso: 1}; });
+        }
+        var cpPesoTotal = cpBaseRateio.reduce(function(s,b){ return s + b.peso; }, 0);
+        if(cpPesoTotal <= 0){
+          alert('Não foi possível ratear (área total zerada). Confira as áreas dos talhões.');
+          return;
+        }
+        cpBaseRateio.forEach(function(b, idxRateio){
+          var fracao = b.peso / cpPesoTotal;
+          var novaConta = {};
+          Object.keys(cpCamposComuns).forEach(function(k){ novaConta[k] = cpCamposComuns[k]; });
+          novaConta.id = uid();
+          novaConta.criadoEm = Date.now() + idxRateio;
+          novaConta.valor = Math.round(cpValorBase * fracao * 100) / 100;
+          novaConta.talhoesIds = [b.safra.talhaoId];
+          novaConta.talhaoId = b.safra.talhaoId;
+          novaConta.safraId = b.safra.id;
+          novaConta.descricao = (cpCamposComuns.descricao ? cpCamposComuns.descricao + ' ' : '') + '(rateio ' + (cpMetodoRateio === 'area' ? 'por área' : 'igual') + ', ' + fmtNum(fracao*100) + '% — ' + escapeHtml(talhaoNome(b.safra.talhaoId)) + ')';
+          state.contasPagar.push(novaConta);
+        });
+        saveKey('contasPagar', state.contasPagar);
+        editState = null;
+        form.reset();
+        renderAll();
+        return;
+      }
+
+      var cpFields = {};
+      Object.keys(cpCamposComuns).forEach(function(k){ cpFields[k] = cpCamposComuns[k]; });
+      cpFields.valor = cpValorBase;
+      cpFields.talhoesIds = cpTalhoesIds;
+      cpFields.talhaoId = cpTalhoesIds.length === 1 ? cpTalhoesIds[0] : '';
+      cpFields.safraId = data.get('safraId') || '';
+
+      if(cpEditingId){
+        var idxCpEdit = state.contasPagar.findIndex(function(x){ return x.id === cpEditingId; });
+        if(idxCpEdit !== -1){ Object.keys(cpFields).forEach(function(k){ state.contasPagar[idxCpEdit][k] = cpFields[k]; }); }
+      } else {
+        cpFields.id = uid();
+        cpFields.criadoEm = Date.now();
+        state.contasPagar.push(cpFields);
+      }
+      saveKey('contasPagar', state.contasPagar);
+      editState = null;
+      form.reset();
+      renderAll();
+      return;
+    }
+
     if(form.id === 'form-financeiro'){
       var finEditingId = form.dataset.editingId;
       var finContaId = data.get('contaId');
@@ -5731,6 +6362,7 @@
         unidade: finEhDiaria ? 'diárias' : (data.get('unidade') || '').trim(),
         status: data.get('status') || 'Pago', data: data.get('data') || '', vencimento: data.get('vencimento') || '',
         talhoesIds: finTalhoesIds, talhaoId: finTalhoesIds.length === 1 ? finTalhoesIds[0] : '', parceiroId: finEhDiaria ? '' : (data.get('parceiroId') || ''),
+        safraId: data.get('safraId') || '',
         membroId: data.get('membroId') || '', descricao: (data.get('descricao') || '').trim(),
         horasExtras: parseFloat(data.get('horasExtras')) || 0, valorHoraExtra: parseFloat(data.get('valorHoraExtra')) || 0,
         qtdDiarias: finQtdDiarias, valorDiaria: finValorDiaria
@@ -5739,6 +6371,54 @@
       var finDataChave = finFields.data || finFields.vencimento || '';
       if(periodoFechado(finDataChave)){
         alert('O período ' + finDataChave.slice(0,7) + ' está fechado. Reabra-o na aba Financeiro antes de lançar ou alterar algo nessa data.');
+        return;
+      }
+
+      var finComboSafraRateio = data.get('comboSafraRateio');
+      if(finComboSafraRateio && finTalhoesIds.length >= 2 && !finEditingId){
+        var finPartesCombo = finComboSafraRateio.split('::');
+        var finCulturaIdCombo = finPartesCombo[0];
+        var finAnoAgricolaCombo = finPartesCombo[1] || '';
+        var finMetodoRateio = data.get('metodoRateioSafra') || 'area';
+        var finSafrasDoCombo = state.safras.filter(function(s){
+          return finTalhoesIds.indexOf(s.talhaoId) !== -1 && s.culturaId === finCulturaIdCombo && (s.anoAgricola || '') === finAnoAgricolaCombo;
+        });
+        if(!finSafrasDoCombo.length){
+          alert('Não encontrei nenhuma safra correspondente nos talhões marcados. Confira a seleção.');
+          return;
+        }
+        var finBaseRateio;
+        if(finMetodoRateio === 'area'){
+          finBaseRateio = finSafrasDoCombo.map(function(s){
+            var t = state.talhoes.find(function(tx){ return tx.id === s.talhaoId; });
+            return {safra: s, peso: t ? (Number(t.area) || 0) : 0};
+          });
+        } else {
+          finBaseRateio = finSafrasDoCombo.map(function(s){ return {safra: s, peso: 1}; });
+        }
+        var finPesoTotal = finBaseRateio.reduce(function(s,b){ return s + b.peso; }, 0);
+        if(finPesoTotal <= 0){
+          alert('Não foi possível ratear (área total zerada). Confira as áreas dos talhões.');
+          return;
+        }
+        finBaseRateio.forEach(function(b, idxRateio){
+          var fracao = b.peso / finPesoTotal;
+          var camposRateados = {};
+          Object.keys(finFields).forEach(function(k){ camposRateados[k] = finFields[k]; });
+          camposRateados.id = uid();
+          camposRateados.criadoEm = Date.now() + idxRateio;
+          camposRateados.valor = Math.round(finFields.valor * fracao * 100) / 100;
+          camposRateados.quantidade = finFields.quantidade ? Math.round(finFields.quantidade * fracao * 100) / 100 : 0;
+          camposRateados.talhoesIds = [b.safra.talhaoId];
+          camposRateados.talhaoId = b.safra.talhaoId;
+          camposRateados.safraId = b.safra.id;
+          camposRateados.descricao = (finFields.descricao ? finFields.descricao + ' ' : '') + '(rateio ' + (finMetodoRateio === 'area' ? 'por área' : 'igual') + ', ' + fmtNum(fracao*100) + '% — ' + escapeHtml(talhaoNome(b.safra.talhaoId)) + ')';
+          state.financeiro.push(camposRateados);
+        });
+        saveKey('financeiro', state.financeiro);
+        editState = null;
+        form.reset();
+        renderAll();
         return;
       }
 
@@ -5836,6 +6516,13 @@
     var resultadosBuscaEl = document.getElementById('busca-global-resultados');
     if(resultadosBuscaEl && resultadosBuscaEl.style.display !== 'none' && !e.target.closest('#busca-global-input') && !e.target.closest('#busca-global-resultados')){
       resultadosBuscaEl.style.display = 'none';
+    }
+
+    if(e.target && e.target.name === 'talhaoIds' && e.target.closest && e.target.closest('#form-financeiro')){
+      atualizarSafraFinanceiroFiltrada();
+    }
+    if(e.target && e.target.name === 'talhaoIdsCP' && e.target.closest && e.target.closest('#form-contapagar')){
+      atualizarSafraContaPagarFiltrada();
     }
 
     var plotBtn = e.target.closest('.plot[data-talhao-id]');
@@ -6149,6 +6836,18 @@
     if(action === 'import-financeiro'){ importarFinanceiroDeArquivo(); return; }
     if(action === 'import-backup'){ var fileInput = document.getElementById('backup-file-input'); if(fileInput) fileInput.click(); return; }
     if(action === 'cancel-edit'){ editState = null; renderAll(); return; }
+    if(action === 'sort-generic-table'){
+      var entKeyOrdenar = btn.dataset.entity;
+      var colKeyOrdenar = btn.dataset.key;
+      var atualOrdenar = genericTableSort[entKeyOrdenar];
+      if(atualOrdenar && atualOrdenar.coluna === colKeyOrdenar){
+        genericTableSort[entKeyOrdenar] = {coluna: colKeyOrdenar, direcao: atualOrdenar.direcao === 'asc' ? 'desc' : 'asc'};
+      } else {
+        genericTableSort[entKeyOrdenar] = {coluna: colKeyOrdenar, direcao: 'asc'};
+      }
+      renderAll();
+      return;
+    }
     if(action === 'edit-generic'){
       editState = {scope:'generic', entityKey: btn.dataset.entity, id: id};
       renderAll();
@@ -6360,6 +7059,11 @@
     }
     if(action === 'toggle-financeiro-mais-opcoes'){
       financeiroMostrarMaisOpcoes = !financeiroMostrarMaisOpcoes;
+      renderFinanceiro();
+      return;
+    }
+    if(action === 'toggle-financeiro-so-sem-safra'){
+      financeiroSoSemSafra = !financeiroSoSemSafra;
       renderFinanceiro();
       return;
     }
