@@ -448,7 +448,7 @@
 (function(){
   "use strict";
 
-  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas','sefazNotasPendentes','sefazItensRevisao','sefazProgresso','analisesSolo','imagensCampo','importsAplicados'];
+  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas','sefazNotasPendentes','sefazItensRevisao','sefazProgresso','analisesSolo','imagensCampo','importsAplicados','lavouras'];
   var state = {};
   var editState = null; // {scope:'generic', entityKey, id} ou {scope:'talhoes'|'safras'|'operacoes'|'financeiro'|'producao', id}
   ALL_KEYS.forEach(function(k){ state[k] = []; });
@@ -1937,6 +1937,24 @@
           });
           if(mudouAlgumaNota) saveKey('notasFiscaisImportadas', state.notasFiscaisImportadas);
         })();
+        (function(){
+          // Vendas de colheita e vendas antecipadas antigas sabiam a safra mas não gravavam safraId no Financeiro
+          if(importJaAplicado('backfill-safra-vendas-v1')) return;
+          var mudouVendas = false;
+          state.financeiro.forEach(function(f){
+            if(f.safraId) return;
+            if(f.origem === 'vendaAntecipada'){
+              var v = state.vendasAntecipadas.find(function(x){ return x.financeiroId === f.id; });
+              if(v && v.safraId){ f.safraId = v.safraId; mudouVendas = true; }
+            } else if(f.origem === 'colheitaVenda' && f.talhaoId){
+              var sfV = state.safras.find(function(sx){ return sx.talhaoId === f.talhaoId && (f.descricao || '').slice(-(safraLabel(sx.id).length + 3)) === ' — ' + safraLabel(sx.id); });
+              if(sfV){ f.safraId = sfV.id; mudouVendas = true; }
+            }
+          });
+          if(mudouVendas) saveKey('financeiro', state.financeiro);
+          marcarImportAplicado('backfill-safra-vendas-v1');
+        })();
+        sincronizarLavouras();
         if(hasCloudStorage || hasLocalStorage || hasNetlifyBlobs) loading.classList.add('hidden');
         renderAll();
       })
@@ -1976,6 +1994,7 @@
   var rentabilidadeIncluirDepreciacao = false;
   var rentabilidadeIncluirCustoOportunidade = false;
   var rentabilidadeTaxaOportunidade = 10;
+  var rentabilidadeIncluirGerais = false;
   var efetivarVendaId = null;
   var efetivarVendaDescontos = {retencao: 1.00, fam: 0.10, senar: 0.20, inss: 1.32, gilrat: 0.11};
   function renderEfetivarVendaModal(){
@@ -3334,8 +3353,36 @@
     var el = document.getElementById('tab-safras');
     var editingRecord = (editState && editState.scope === 'safras') ? state.safras.find(function(x){ return x.id === editState.id; }) : null;
     var html = '';
-    html += '<div class="paper form-card"><h3>' + (editingRecord ? 'Editar safra' : 'Nova safra') + '</h3>';
-    if(!state.talhoes.length){
+    html += '<div class="paper form-card"><h3>' + (editingRecord ? 'Editar talhão da lavoura (safra)' : 'Nova lavoura') + '</h3>';
+    if(!editingRecord && state.talhoes.length && state.culturas.length){
+      html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 12px;">Uma lavoura é uma cultura num ano agrícola, plantada em um ou vários talhões. Se já existir uma lavoura com a mesma cultura e o mesmo ano, os talhões marcados entram nela.</p>';
+      html += '<form class="entry-form" id="form-lavoura">';
+      html += selectField('culturaId', 'Cultura', state.culturas.map(function(c){ return {value:c.id, label:c.nome}; }));
+      html += field('text', 'anoAgricola', 'Ano agrícola', true, 'Ex: 2026/2027', {}, safrasAnoFiltro || undefined);
+      html += field('text', 'nomeLavoura', 'Apelido (opcional)', false, 'Ex: Milho Safrinha', {});
+      html += selectField('status', 'Status', [{value:'planejada', label:'Planejada'}, {value:'andamento', label:'Em andamento'}, {value:'colhida', label:'Colhida'}]);
+      html += field('date', 'dataPlantio', 'Data de plantio', false, '', {});
+      html += field('date', 'previsaoColheita', 'Previsão de colheita (opcional)', false, '', {});
+      html += field('number', 'produtividadeEsperada', 'Produtividade esperada (sc/ha, opcional)', false, '0', {step:'0.01', min:'0'});
+      html += '<div style="grid-column:1/-1; display:flex; flex-direction:column; gap:6px; padding-top:4px; border-top:1px dashed var(--paper-line); margin-top:4px;">';
+      html += '<label style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em;">Talhões da lavoura e área plantada</label>';
+      html += '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:8px;">';
+      state.talhoes.forEach(function(t){
+        html += '<div style="display:flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid var(--paper-line); border-radius:6px; background:#FBF7EC;">';
+        html += '<label style="display:flex; align-items:center; gap:6px; font-size:12.5px; flex:1; cursor:pointer;"><input type="checkbox" name="lavTalhaoIds" value="' + t.id + '"> ' + escapeHtml(t.nome) + '</label>';
+        html += '<input type="number" name="lavArea-' + t.id + '" value="' + (Number(t.area) || '') + '" step="0.01" min="0" title="Área plantada (ha)" style="width:80px; padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; font-size:12px;"> <span style="font-size:11px; color:var(--ink-soft);">ha</span>';
+        html += '</div>';
+      });
+      html += '</div>';
+      html += '<span style="font-size:11px; color:var(--ink-soft);">A área já vem com a área do talhão; mude se só uma parte dele foi plantada.</span>';
+      html += '</div>';
+      html += '<button type="submit" class="btn">Criar lavoura</button>';
+      html += '</form>';
+    }
+    if(!editingRecord){
+      if(!state.talhoes.length) html += '<div class="empty-state">Cadastre um talhão antes de criar uma lavoura.</div>';
+      else if(!state.culturas.length) html += '<div class="empty-state">Cadastre uma cultura antes de criar uma lavoura.</div>';
+    } else if(!state.talhoes.length){
       html += '<div class="empty-state">Cadastre um talhão antes de lançar uma safra.</div>';
     } else if(!state.culturas.length){
       html += '<div class="empty-state">Cadastre uma cultura antes de lançar uma safra.</div>';
@@ -3348,11 +3395,36 @@
       html += selectField('status', 'Status', [{value:'planejada', label:'Planejada'}, {value:'andamento', label:'Em andamento'}, {value:'colhida', label:'Colhida'}], editingRecord ? editingRecord.status : undefined);
       html += field('number', 'produtividadeEsperada', 'Produtividade esperada (sc/ha, opcional)', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.produtividadeEsperada : undefined);
       html += field('date', 'previsaoColheita', 'Previsão de colheita (opcional)', false, '', {}, editingRecord ? editingRecord.previsaoColheita : undefined);
+      html += field('number', 'areaPlantada', 'Área plantada (ha)', false, '', {step:'0.01', min:'0'}, editingRecord ? areaPlantadaSafra(editingRecord) : undefined);
       html += '<button type="submit" class="btn">' + (editingRecord ? 'Salvar alterações' : 'Adicionar safra') + '</button>';
       if(editingRecord) html += '<button type="button" class="btn-cancel" data-action="cancel-edit">Cancelar</button>';
       html += '</form>';
     }
     html += '</div>';
+
+    if((state.lavouras || []).length){
+      html += '<div class="section-title" style="margin-top:0;">Lavouras</div>';
+      html += '<div class="paper table-wrap"><table><thead><tr><th>Lavoura</th><th>Talhões (área plantada)</th><th>Área total</th><th>Status</th><th>Custo direto</th><th>Receita direta</th><th></th></tr></thead><tbody>';
+      state.lavouras.filter(function(l){ return !safrasAnoFiltro || l.anoAgricola === normalizarAnoAgricola(safrasAnoFiltro); }).slice().sort(function(a,b){
+        return (b.anoAgricola || '').localeCompare(a.anoAgricola || '') || lavouraLabel(a.id).localeCompare(lavouraLabel(b.id), 'pt-BR');
+      }).forEach(function(l){
+        var sfs = safrasDaLavoura(l.id);
+        var st = statusLavoura(l);
+        var custoL = sfs.reduce(function(sm, sf){ return sm + custoDiretoSafra(sf.id); }, 0);
+        var receitaL = sfs.reduce(function(sm, sf){ return sm + receitaDiretaSafra(sf.id); }, 0);
+        html += '<tr' + (l.encerrada ? ' style="opacity:0.6;"' : '') + '>';
+        html += '<td><strong>' + escapeHtml(lavouraLabel(l.id)) + '</strong></td>';
+        html += '<td style="font-size:12px;">' + sfs.map(function(sf){ return escapeHtml(talhaoNome(sf.talhaoId)) + ' (' + fmtHa(areaPlantadaSafra(sf)) + ')'; }).join(', ') + '</td>';
+        html += '<td class="num">' + fmtHa(areaPlantadaLavoura(l.id)) + '</td>';
+        html += '<td>' + STATUS_LAVOURA_LABEL[st] + '</td>';
+        html += '<td class="num cost">' + fmtBRL(custoL) + '</td>';
+        html += '<td class="num growth">' + fmtBRL(receitaL) + '</td>';
+        html += '<td><button class="btn-edit" data-action="renomear-lavoura" data-id="' + l.id + '">Apelido</button><button class="btn-edit" data-action="toggle-encerrar-lavoura" data-id="' + l.id + '">' + (l.encerrada ? 'Reabrir' : 'Encerrar') + '</button></td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+      html += '<p style="font-size:11px; color:var(--ink-soft); margin:8px 0 24px;">Lavouras encerradas somem da lista de destino dos lançamentos. Para mudar datas, status ou área de um talhão específico, use "Editar" na tabela de safras abaixo.</p>';
+    }
 
     if(state.safras.length){
       var anosDoMapa = state.safras.map(function(s){ return s.anoAgricola || 'Sem ano definido'; }).filter(function(v,i,a){ return a.indexOf(v)===i; }).sort().reverse();
@@ -3404,12 +3476,13 @@
       if(!safrasFiltradas.length){
         html += '<div class="empty-state">Nenhuma safra no ano agrícola "' + escapeHtml(safrasAnoFiltro) + '".</div>';
       } else {
-      html += '<div class="table-wrap"><table><thead><tr><th>Talhão</th><th>Cultura</th><th>Plantio</th><th>Ano agrícola</th><th>Produtiv. esperada</th><th>Previsão colheita</th><th>Status</th><th>Ativa</th><th></th></tr></thead><tbody>';
+      html += '<div class="table-wrap"><table><thead><tr><th>Talhão</th><th>Cultura</th><th>Área plantada</th><th>Plantio</th><th>Ano agrícola</th><th>Produtiv. esperada</th><th>Previsão colheita</th><th>Status</th><th>Ativa</th><th></th></tr></thead><tbody>';
       safrasFiltradas.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(s){
         var ativa = s.ativa !== false;
         html += '<tr' + (!ativa ? ' style="opacity:0.6;"' : '') + '>';
         html += '<td>' + escapeHtml(talhaoNome(s.talhaoId)) + '</td>';
         html += '<td>' + escapeHtml(culturaNome(s.culturaId)) + '</td>';
+        html += '<td class="num">' + fmtHa(areaPlantadaSafra(s)) + '</td>';
         html += '<td>' + fmtDate(s.dataPlantio) + '</td>';
         html += '<td>' + (s.anoAgricola ? escapeHtml(s.anoAgricola) : '—') + '</td>';
         html += '<td class="num">' + (s.produtividadeEsperada ? fmtNum(s.produtividadeEsperada) + ' sc/ha' : '—') + '</td>';
@@ -3620,8 +3693,8 @@
       var dataRef = f.status === 'Pendente' ? (f.vencimento || f.data) : (f.data || f.vencimento);
       return dataRef && dataRef.slice(0,7) === financeiroMesFiltro;
     });
-    var qtdSemSafraNoFiltroAtual = financeiroFiltrado.filter(function(f){ return !f.safraId; }).length;
-    if(financeiroSoSemSafra) financeiroFiltrado = financeiroFiltrado.filter(function(f){ return !f.safraId; });
+    var qtdSemSafraNoFiltroAtual = financeiroFiltrado.filter(function(f){ return destinoEfetivo(f) === 'classificar'; }).length;
+    if(financeiroSoSemSafra) financeiroFiltrado = financeiroFiltrado.filter(function(f){ return destinoEfetivo(f) === 'classificar'; });
     var totalCustos = financeiroFiltrado.filter(function(f){ return f.tipo === 'custo' && (f.status||'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
     var totalReceitas = financeiroFiltrado.filter(function(f){ return f.tipo === 'receita' && (f.status||'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
     var totalPendente = financeiroFiltrado.filter(function(f){ return f.status === 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
@@ -3645,7 +3718,7 @@
       html += '</select></div>';
     }
     if(qtdSemSafraNoFiltroAtual > 0 || financeiroSoSemSafra){
-      html += '<button type="button" class="btn-add-inline" data-action="toggle-financeiro-so-sem-safra" style="margin-bottom:14px;">' + (financeiroSoSemSafra ? '✕ Ver todos os lançamentos' : '⚠️ Ver só os sem safra vinculada (' + qtdSemSafraNoFiltroAtual + ')') + '</button>';
+      html += '<button type="button" class="btn-add-inline" data-action="toggle-financeiro-so-sem-safra" style="margin-bottom:14px; width:auto; height:auto; padding:7px 14px; white-space:nowrap; font-size:13px;">' + (financeiroSoSemSafra ? '✕ Ver todos os lançamentos' : '⚠️ A classificar (' + qtdSemSafraNoFiltroAtual + ')') + '</button>';
     }
     html += '<div class="stat-row">';
     html += statCard('Total de custos', fmtBRL(totalCustos), 'cost');
@@ -3672,6 +3745,7 @@
       html += field('date', 'vencimento', 'Vencimento (se pendente/parcelado)', false, '', {}, editingRecord ? editingRecord.vencimento : undefined);
       html += selectField('membroId', 'Funcionário (opcional)', [{value:'', label:'—'}].concat(state.equipe.map(function(m){ return {value:m.id, label:m.nome}; })), editingRecord ? editingRecord.membroId : undefined);
       html += field('text', 'descricao', 'Descrição / Documento', false, 'Ex: DOC 137832 - Cooperativa', {}, editingRecord ? editingRecord.descricao : undefined);
+      html += '<div id="destino-financeiro" data-destino-widget="1" style="grid-column: 1 / -1; display:flex; flex-direction:column; gap:8px; padding:10px 0 6px; border-top:1px dashed var(--paper-line); border-bottom:1px dashed var(--paper-line); margin:4px 0;"></div>';
 
       var mostrarHoraExtra = editingRecord && editingRecord.contaId && contaNome(editingRecord.contaId) === 'Salário';
       html += '<div id="campos-hora-extra" style="grid-column: 1 / -1; display:' + (mostrarHoraExtra ? 'grid' : 'none') + '; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:12px; padding-top:4px; border-top:1px dashed var(--paper-line); margin-top:4px;">';
@@ -3687,7 +3761,7 @@
       html += '<span id="diaria-hint" style="grid-column: 1 / -1; font-size:11.5px; color:var(--ink-soft);">O "Valor total (R$)" acima é calculado automaticamente (Nº de diárias × Valor por diária).</span>';
       html += '</div>';
 
-      html += '<button type="button" class="btn-add-inline" data-action="toggle-financeiro-mais-opcoes" style="grid-column: 1 / -1; width:fit-content; margin-top:6px;">' + (financeiroMostrarMaisOpcoes ? '▲ Ocultar mais opções' : '▼ Mostrar mais opções (quantidade, parcelamento, recorrência, parceiro, comprovante, rateio por talhão)') + '</button>';
+      html += '<button type="button" class="btn-add-inline" data-action="toggle-financeiro-mais-opcoes" style="grid-column: 1 / -1; width:fit-content; margin-top:6px;">' + (financeiroMostrarMaisOpcoes ? '▲ Ocultar mais opções' : '▼ Mostrar mais opções (quantidade, parcelamento, recorrência, parceiro, comprovante)') + '</button>';
 
       html += '<div id="financeiro-mais-opcoes" style="display:' + (financeiroMostrarMaisOpcoes ? 'contents' : 'none') + ';">';
       var mostrarQtdValorUnit = !mostrarDiariaJaAqui;
@@ -3710,29 +3784,11 @@
       html += '<div id="campo-parceiro" style="display:' + (mostrarDiariaJaAqui ? 'none' : 'contents') + ';">';
       html += selectField('parceiroId', 'Parceiro / prestador (opcional)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })), editingRecord ? editingRecord.parceiroId : undefined);
       html += '</div>';
-      html += '<div id="campo-safra-financeiro"></div>';
 
       html += '<div class="field"><label>Comprovante (opcional, imagem ou PDF)</label><input type="file" id="f-anexo-input" accept="image/*,application/pdf"></div>';
       if(editingRecord && editingRecord.temAnexo){
         html += '<div class="field" style="justify-content:flex-end;"><button type="button" class="btn-edit" data-action="ver-anexo" data-id="' + editingRecord.id + '" style="width:100%;">Ver comprovante atual</button></div>';
       }
-      html += '<div style="grid-column: 1 / -1; display:flex; flex-direction:column; gap:6px; padding-top:4px; border-top:1px dashed var(--paper-line); margin-top:4px;">';
-      html += '<label style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em;">Talhão(ões) — rateio (opcional)</label>';
-      if(!state.talhoes.length){
-        html += '<span style="font-size:12px; color:var(--ink-soft);">Nenhum talhão cadastrado.</span>';
-      } else {
-        var talhoesMarcados = editingRecord ? (editingRecord.talhoesIds || (editingRecord.talhaoId ? [editingRecord.talhaoId] : [])) : [];
-        html += '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
-        state.talhoes.forEach(function(t){
-          var marcado = talhoesMarcados.indexOf(t.id) !== -1;
-          html += '<label style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; padding:6px 12px; border:1px solid ' + (marcado ? 'var(--accent)' : 'var(--paper-line)') + '; border-radius:20px; background:' + (marcado ? '#F1E0BC' : '#FBF7EC') + '; cursor:pointer;">';
-          html += '<input type="checkbox" name="talhaoIds" value="' + t.id + '"' + (marcado ? ' checked' : '') + '> ' + escapeHtml(t.nome);
-          html += '</label>';
-        });
-        html += '</div>';
-      }
-      html += '<span style="font-size:11px; color:var(--ink-soft);">Marcando mais de um, o valor é dividido igualmente entre eles.</span>';
-      html += '</div>';
       html += '</div>';
 
       html += '<button type="submit" class="btn">' + (editingRecord ? 'Salvar alterações' : 'Adicionar lançamento') + '</button>';
@@ -3746,10 +3802,22 @@
       html += '<div class="empty-state">Nenhum lançamento financeiro ainda.</div>';
     } else {
       html += '<div style="padding:14px 18px 0;"><input type="text" id="search-financeiro" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
-      html += '<div class="table-wrap"><table><thead><tr><th>Data/Venc.</th><th>Funcionário</th><th>Descrição</th><th>Conta</th><th>Talhão</th><th>Safra</th><th>Quantidade</th><th>Valor Unitário</th><th>Valor Total</th><th>Tipo</th><th>Status</th><th></th></tr></thead><tbody>';
+      if(financeiroSoSemSafra){
+        html += '<div style="padding:12px 18px 0; display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;">';
+        html += '<div class="field" style="margin:0; min-width:260px;"><label>Classificar os marcados como</label><select id="classif-destino" style="' + ESTILO_SELECT_DESTINO + '">';
+        html += '<option value="">— escolha —</option><option value="geral">🏠 Geral da fazenda</option><option value="talhao">🗺️ Só talhão (mantém o talhão que já está)</option>';
+        html += '<optgroup label="🌱 Lavoura">';
+        lavourasSelecionaveis().forEach(function(l){ html += '<option value="lav:' + l.id + '">' + escapeHtml(lavouraLabel(l.id)) + '</option>'; });
+        html += '</optgroup></select></div>';
+        html += '<button type="button" class="btn" data-action="aplicar-classificacao">Aplicar aos marcados</button>';
+        html += '<span style="font-size:11.5px; color:var(--ink-soft); flex-basis:100%;">Lavoura: cada lançamento vai para a safra dessa lavoura no talhão dele (se estava dividido entre vários talhões, cada parte vai para o seu). Sem talhão, divide pela área plantada da lavoura.</span>';
+        html += '</div>';
+      }
+      html += '<div class="table-wrap"><table><thead><tr>' + (financeiroSoSemSafra ? '<th><input type="checkbox" id="classif-todos" title="Marcar todos"></th>' : '') + '<th>Data/Venc.</th><th>Funcionário</th><th>Descrição</th><th>Conta</th><th>Talhão</th><th>Destino</th><th>Quantidade</th><th>Valor Unitário</th><th>Valor Total</th><th>Tipo</th><th>Status</th><th></th></tr></thead><tbody>';
       financeiroFiltrado.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(f){
         var status = f.status || 'Pago';
         html += '<tr>';
+        if(financeiroSoSemSafra) html += '<td>' + (lancamentoEstaFechado(f) ? '🔒' : '<input type="checkbox" class="classif-cb" value="' + f.id + '">') + '</td>';
         html += '<td>' + fmtDate(status === 'Pendente' ? f.vencimento : f.data) + '</td>';
         html += '<td>' + (f.membroId ? escapeHtml(membroNome(f.membroId)) : '—') + (f.temAnexo ? ' <button type="button" class="btn-edit" data-action="ver-anexo" data-id="' + f.id + '" title="Ver comprovante" style="padding:2px 7px; font-size:11px;">📎</button>' : '') + '</td>';
         html += '<td>' + escapeHtml(f.descricao || '—')
@@ -3759,12 +3827,7 @@
           + '</td>';
         html += '<td>' + (f.contaId ? escapeHtml(contaLabel(f.contaId)) : escapeHtml(f.categoria || '—')) + '</td>';
         html += '<td>' + (f.talhoesIds && f.talhoesIds.length ? escapeHtml(f.talhoesIds.map(talhaoNome).join(', ')) : (f.talhaoId ? escapeHtml(talhaoNome(f.talhaoId)) : '—')) + '</td>';
-        html += '<td>' + (function(){
-          if(!f.safraId) return '—';
-          var sf = state.safras.find(function(sx){ return sx.id === f.safraId; });
-          if(!sf) return '—';
-          return escapeHtml(culturaNome(sf.culturaId) + (sf.anoAgricola ? ' (' + sf.anoAgricola + ')' : ''));
-        })() + '</td>';
+        html += '<td>' + destinoCelulaHtml(f) + '</td>';
         html += '<td class="num">' + (f.quantidade ? fmtNum(f.quantidade) : '—') + (f.unidade ? ' ' + escapeHtml(f.unidade) : '') + '</td>';
         html += '<td class="num">' + (Number(f.valorUnitario) > 0 ? fmtBRL(f.valorUnitario) : '—') + '</td>';
         html += '<td class="num ' + (f.tipo === 'custo' ? 'cost' : 'growth') + '">' + (Number(f.valorUnitario) > 0 ? ((f.tipo === 'custo' ? '−' : '+') + ' ' + fmtBRL(valorTotalLancamento(f))) : ((f.tipo === 'custo' ? '−' : '+') + ' ' + fmtBRL(f.valor))) + '</td>';
@@ -3809,7 +3872,7 @@
     html += '</div>';
 
     el.innerHTML = html;
-    atualizarSafraFinanceiroFiltrada();
+    renderDestinoWidget(document.getElementById('destino-financeiro'), editingRecord);
   }
 
   /* ---------------- Contas a Pagar / Contas a Receber ---------------- */
@@ -3834,25 +3897,7 @@
     html += selectField('status', 'Status', ['Pendente','Pago'].map(function(c){ return {value:c,label:c}; }), editingRecordCP ? editingRecordCP.status : undefined);
     html += field('date', 'dataPagamento', 'Data do pagamento', false, '', {}, editingRecordCP ? editingRecordCP.dataPagamento : undefined);
 
-    html += '<div style="grid-column: 1 / -1; display:flex; flex-direction:column; gap:6px; padding-top:4px; border-top:1px dashed var(--paper-line); margin-top:4px;">';
-    html += '<label style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em;">Talhão(ões) — rateio (opcional)</label>';
-    if(!state.talhoes.length){
-      html += '<span style="font-size:12px; color:var(--ink-soft);">Nenhum talhão cadastrado.</span>';
-    } else {
-      var talhoesMarcadosCP = editingRecordCP ? (editingRecordCP.talhoesIds || (editingRecordCP.talhaoId ? [editingRecordCP.talhaoId] : [])) : [];
-      html += '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
-      state.talhoes.forEach(function(t){
-        var marcado = talhoesMarcadosCP.indexOf(t.id) !== -1;
-        html += '<label style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; padding:6px 12px; border:1px solid ' + (marcado ? 'var(--accent)' : 'var(--paper-line)') + '; border-radius:20px; background:' + (marcado ? '#F1E0BC' : '#FBF7EC') + '; cursor:pointer;">';
-        html += '<input type="checkbox" name="talhaoIdsCP" value="' + t.id + '"' + (marcado ? ' checked' : '') + '> ' + escapeHtml(t.nome);
-        html += '</label>';
-      });
-      html += '</div>';
-    }
-    html += '<span style="font-size:11px; color:var(--ink-soft);">Marcando mais de um, o valor é dividido igualmente entre eles (ou escolha ratear por safra logo abaixo).</span>';
-    html += '</div>';
-
-    html += '<div id="campo-safra-cp"></div>';
+    html += '<div id="destino-contapagar" data-destino-widget="1" style="grid-column: 1 / -1; display:flex; flex-direction:column; gap:8px; padding:10px 0 6px; border-top:1px dashed var(--paper-line); margin-top:4px;"></div>';
 
     html += '<button type="submit" class="btn">' + (editingRecordCP ? 'Salvar alterações' : 'Adicionar') + '</button>';
     if(editingRecordCP) html += '<button type="button" class="btn-cancel" data-action="cancel-edit">Cancelar</button>';
@@ -3861,19 +3906,14 @@
     if(!state.contasPagar.length){
       html += '<div class="paper empty-state">Nenhuma conta a pagar cadastrada ainda.</div>';
     } else {
-      html += '<div class="table-wrap"><table><thead><tr><th>Descrição</th><th>Categoria</th><th>Parceiro</th><th>Talhão(ões)</th><th>Safra</th><th>Valor</th><th>Vencimento</th><th>Status</th><th></th></tr></thead><tbody>';
+      html += '<div class="table-wrap"><table><thead><tr><th>Descrição</th><th>Categoria</th><th>Parceiro</th><th>Talhão(ões)</th><th>Destino</th><th>Valor</th><th>Vencimento</th><th>Status</th><th></th></tr></thead><tbody>';
       state.contasPagar.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(c){
         html += '<tr>';
         html += '<td>' + escapeHtml(c.descricao || '—') + '</td>';
         html += '<td>' + escapeHtml(c.categoria || '—') + '</td>';
         html += '<td>' + (c.parceiroId ? escapeHtml(parceiroNome(c.parceiroId)) : '—') + '</td>';
         html += '<td>' + (c.talhoesIds && c.talhoesIds.length ? escapeHtml(c.talhoesIds.map(talhaoNome).join(', ')) : (c.talhaoId ? escapeHtml(talhaoNome(c.talhaoId)) : '—')) + '</td>';
-        html += '<td>' + (function(){
-          if(!c.safraId) return '—';
-          var sf = state.safras.find(function(sx){ return sx.id === c.safraId; });
-          if(!sf) return '—';
-          return escapeHtml(culturaNome(sf.culturaId) + (sf.anoAgricola ? ' (' + sf.anoAgricola + ')' : ''));
-        })() + '</td>';
+        html += '<td>' + destinoCelulaHtml(c) + '</td>';
         html += '<td class="num">' + fmtBRL(c.valor) + '</td>';
         html += '<td>' + fmtDate(c.vencimento) + '</td>';
         html += '<td><span class="badge" style="background:' + (c.status === 'Pago' ? '#7FA36D' : '#DFA84E') + '; color:#1B1508">' + c.status + '</span></td>';
@@ -3885,7 +3925,7 @@
     }
     html += '<div class="paper note-box">Estes lançamentos alimentam o Fluxo de Caixa. Quando vinculados a um talhão e marcados como "Pago", também entram nos custos da Rentabilidade.</div>';
     el.innerHTML = html;
-    atualizarSafraContaPagarFiltrada();
+    renderDestinoWidget(document.getElementById('destino-contapagar'), editingRecordCP);
   }
 
   function renderContasReceber(){
@@ -4304,10 +4344,9 @@
           texto: 'Produtividade de <strong>' + escapeHtml(safraLabel(s.id)) + '</strong> está ' + Math.round((1 - prodReal / hist.mediaProdutividade) * 100) + '% abaixo da média histórica desse talhão (' + fmtNum(prodReal) + ' vs ' + fmtNum(hist.mediaProdutividade) + ' sc/ha).'
         });
       }
-      var talhaoAlerta = state.talhoes.find(function(t){ return t.id === s.talhaoId; });
-      var areaAlerta = talhaoAlerta ? Number(talhaoAlerta.area) || 0 : 0;
-      if(areaAlerta > 0 && hist.mediaCustoHa !== null && hist.qtdSafras >= 1){
-        var custoHaAtual = custosTotaisPorTalhao(s.talhaoId) / areaAlerta;
+      var areaAlerta = areaPlantadaSafra(s);
+      if(areaAlerta > 0 && hist.mediaCustoHa !== null && hist.qtdSafras >= 1 && qtdLancamentosSafra(s.id) > 0){
+        var custoHaAtual = custoDiretoSafra(s.id) / areaAlerta;
         if(custoHaAtual > hist.mediaCustoHa * 1.15){
           alertasInteligentes.push({
             cor: '#C98A2B',
@@ -4415,25 +4454,25 @@
           html += '</tbody></table></div>';
         }
 
-        var financeiroDaSafraRastreio = state.financeiro.filter(function(f){ return f.safraId === safraRastreio.id; });
-        var temDadosDaSafraEspecifica = financeiroDaSafraRastreio.length > 0;
-        var custoTalhaoRastreio, receitaTalhaoRastreio;
-        if(temDadosDaSafraEspecifica){
-          custoTalhaoRastreio = financeiroDaSafraRastreio.filter(function(f){ return f.tipo === 'custo' && (f.status||'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + (Number(f.valor)||0); }, 0);
-          receitaTalhaoRastreio = financeiroDaSafraRastreio.filter(function(f){ return f.tipo === 'receita' && (f.status||'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + (Number(f.valor)||0); }, 0);
-        } else {
-          custoTalhaoRastreio = custosTotaisPorTalhao(safraRastreio.talhaoId);
-          receitaTalhaoRastreio = receitasTotaisPorTalhao(safraRastreio.talhaoId);
-        }
-        html += '<p style="font-size:12.5px; font-weight:600; margin:14px 0 6px;">Resumo financeiro ' + (temDadosDaSafraEspecifica ? 'da safra' : 'do talhão') + '</p>';
+        var custoSafraRastreio = custoDiretoSafra(safraRastreio.id);
+        var receitaSafraRastreio = receitaDiretaSafra(safraRastreio.id);
+        var qtdLancSafraRastreio = qtdLancamentosSafra(safraRastreio.id);
+        html += '<p style="font-size:12.5px; font-weight:600; margin:14px 0 6px;">Resumo financeiro da safra (só esse talhão)</p>';
         html += '<div class="stat-row" style="margin:0;">';
-        html += statCard('Custos', fmtBRL(custoTalhaoRastreio), 'cost');
-        html += statCard('Receitas', fmtBRL(receitaTalhaoRastreio), 'growth');
+        html += statCard('Custos', fmtBRL(custoSafraRastreio), 'cost');
+        html += statCard('Receitas', fmtBRL(receitaSafraRastreio), 'growth');
         html += '</div>';
-        if(temDadosDaSafraEspecifica){
-          html += '<p style="font-size:11px; color:var(--ink-soft); margin-top:8px;">Esse resumo já é só dessa safra específica (' + financeiroDaSafraRastreio.length + ' lançamento(s) vinculado(s) diretamente a ela).</p>';
-        } else {
-          html += '<p style="font-size:11px; color:var(--ink-soft); margin-top:8px;">Esse resumo é do talhão inteiro (não só dessa safra), porque nenhum lançamento do Financeiro está vinculado diretamente a essa safra ainda — o rateio caiu no talhão como um todo. Se o talhão teve mais de uma safra, os valores incluem todas elas. Vincular a safra nos lançamentos (campo opcional em "Mostrar mais opções") deixa esse resumo mais preciso.</p>';
+        html += '<p style="font-size:11px; color:var(--ink-soft); margin-top:8px;">' + (qtdLancSafraRastreio ? qtdLancSafraRastreio + ' lançamento(s) vinculado(s) a essa safra.' : 'Nenhum lançamento vinculado a essa safra ainda.') + '</p>';
+        var lavRastreio = lavouraPorId(safraRastreio.lavouraId);
+        var safrasLavRastreio = lavRastreio ? safrasDaLavoura(lavRastreio.id) : [];
+        if(safrasLavRastreio.length > 1){
+          var custoLavR = safrasLavRastreio.reduce(function(sm, sf){ return sm + custoDiretoSafra(sf.id); }, 0);
+          var receitaLavR = safrasLavRastreio.reduce(function(sm, sf){ return sm + receitaDiretaSafra(sf.id); }, 0);
+          html += '<p style="font-size:11.5px; margin:6px 0 0;">Lavoura inteira <strong>' + escapeHtml(lavouraLabel(lavRastreio.id)) + '</strong> (' + safrasLavRastreio.length + ' talhões, ' + fmtHa(areaPlantadaLavoura(lavRastreio.id)) + '): custos ' + fmtBRL(custoLavR) + ' · receitas ' + fmtBRL(receitaLavR) + '</p>';
+        }
+        var soltosTalhaoRastreio = custosSemDestinoDoTalhao(safraRastreio.talhaoId);
+        if(soltosTalhaoRastreio > 0){
+          html += '<p style="font-size:11.5px; color:var(--cost-dark); margin:8px 0 0;">⚠️ O talhão ' + escapeHtml(talhaoNome(safraRastreio.talhaoId)) + ' tem ' + fmtBRL(soltosTalhaoRastreio) + ' em custos pagos ainda sem destino (nem lavoura, nem "só talhão", nem "geral"). Eles <strong>não</strong> entram nessa safra — classifique-os no Financeiro → "A classificar".</p>';
         }
         html += '</div>';
       }
@@ -4452,22 +4491,234 @@
     if(f.talhaoId) return [f.talhaoId];
     return [];
   }
+  // Partes de um lançamento: [{talhaoId, safraId, valor}]. Lançamentos rateados guardam "partes" (um registro só, várias fatias);
+  // os antigos sem "partes" dividem o valor igualmente entre os talhões marcados.
+  function partesDoLancamento(r){
+    if(r.partes && r.partes.length) return r.partes;
+    var total = Number(r.valor) || 0;
+    var ts = talhoesDoLancamento(r);
+    if(!ts.length) return [{talhaoId:'', safraId: r.safraId || '', valor: total}];
+    return ts.map(function(t){ return {talhaoId: t, safraId: ts.length === 1 ? (r.safraId || '') : '', valor: total / ts.length}; });
+  }
+  function valorDoTalhaoNoLancamento(r, talhaoId){
+    return partesDoLancamento(r).reduce(function(s, pt){ return pt.talhaoId === talhaoId ? s + (Number(pt.valor) || 0) : s; }, 0);
+  }
   function custosFinanceiroPorTalhao(talhaoId){
-    return state.financeiro.filter(function(f){ return f.tipo === 'custo' && (f.status || 'Pago') !== 'Pendente'; }).reduce(function(s,f){
-      var talhoes = talhoesDoLancamento(f);
-      if(talhoes.indexOf(talhaoId) === -1) return s;
-      return s + (Number(f.valor||0) / talhoes.length);
-    }, 0);
+    return state.financeiro.filter(function(f){ return f.tipo === 'custo' && (f.status || 'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + valorDoTalhaoNoLancamento(f, talhaoId); }, 0);
   }
   function receitasFinanceiroPorTalhao(talhaoId){
-    return state.financeiro.filter(function(f){ return f.tipo === 'receita' && (f.status || 'Pago') !== 'Pendente'; }).reduce(function(s,f){
-      var talhoes = talhoesDoLancamento(f);
-      if(talhoes.indexOf(talhaoId) === -1) return s;
-      return s + (Number(f.valor||0) / talhoes.length);
-    }, 0);
+    return state.financeiro.filter(function(f){ return f.tipo === 'receita' && (f.status || 'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + valorDoTalhaoNoLancamento(f, talhaoId); }, 0);
   }
   function contasPagarPagasPorTalhao(talhaoId){
-    return state.contasPagar.filter(function(c){ return c.status === 'Pago' && c.talhaoId === talhaoId; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0);
+    return state.contasPagar.filter(function(c){ return c.status === 'Pago'; }).reduce(function(s,c){ return s + valorDoTalhaoNoLancamento(c, talhaoId); }, 0);
+  }
+
+  /* ---------------- Lavouras (cultura + ano agrícola, em um ou vários talhões) ---------------- */
+  // Cada registro de "safras" continua sendo o talhão dentro de uma lavoura (talhão × cultura × ano).
+  // A lavoura agrupa todas as safras com a mesma cultura e o mesmo ano agrícola.
+  function normalizarAnoAgricola(ano){ return (ano || '').replace(/\s+/g, ''); }
+  function chaveLavoura(culturaId, ano){ return (culturaId || '') + '::' + normalizarAnoAgricola(ano); }
+  function sincronizarLavouras(){
+    if(!Array.isArray(state.lavouras)) state.lavouras = [];
+    var mudouLav = false, mudouSafras = false;
+    var porChave = {};
+    state.lavouras.forEach(function(l){ porChave[chaveLavoura(l.culturaId, l.anoAgricola)] = porChave[chaveLavoura(l.culturaId, l.anoAgricola)] || l; });
+    state.safras.forEach(function(s){
+      var chave = chaveLavoura(s.culturaId, s.anoAgricola);
+      var lav = porChave[chave];
+      if(!lav){
+        lav = {id: 'lav-' + uid(), culturaId: s.culturaId, anoAgricola: normalizarAnoAgricola(s.anoAgricola), nome: '', encerrada: false, criadoEm: Date.now()};
+        state.lavouras.push(lav); porChave[chave] = lav; mudouLav = true;
+      }
+      if(s.lavouraId !== lav.id){ s.lavouraId = lav.id; mudouSafras = true; }
+    });
+    var usadas = {};
+    state.safras.forEach(function(s){ usadas[s.lavouraId] = true; });
+    var antes = state.lavouras.length;
+    state.lavouras = state.lavouras.filter(function(l){ return usadas[l.id]; });
+    if(state.lavouras.length !== antes) mudouLav = true;
+    if(mudouLav) saveKey('lavouras', state.lavouras);
+    if(mudouSafras) saveKey('safras', state.safras);
+  }
+  function lavouraPorId(id){ return (state.lavouras || []).find(function(l){ return l.id === id; }) || null; }
+  function safrasDaLavoura(lavouraId){ return state.safras.filter(function(s){ return s.lavouraId === lavouraId; }); }
+  function lavouraLabel(lavouraId){
+    var l = lavouraPorId(lavouraId);
+    if(!l) return '—';
+    var base = culturaNome(l.culturaId) + (l.anoAgricola ? ' ' + l.anoAgricola : '');
+    return l.nome ? l.nome + ' (' + base + ')' : base;
+  }
+  function areaPlantadaSafra(s){
+    if(!s) return 0;
+    var a = Number(s.areaPlantada);
+    if(a > 0) return a;
+    var t = state.talhoes.find(function(x){ return x.id === s.talhaoId; });
+    return t ? (Number(t.area) || 0) : 0;
+  }
+  function areaPlantadaLavoura(lavouraId){ return safrasDaLavoura(lavouraId).reduce(function(s, sf){ return s + areaPlantadaSafra(sf); }, 0); }
+  function statusLavoura(l){
+    if(!l) return 'planejada';
+    if(l.encerrada) return 'encerrada';
+    var sfs = safrasDaLavoura(l.id);
+    if(sfs.length && sfs.every(function(s){ return s.status === 'colhida'; })) return 'colhida';
+    if(sfs.some(function(s){ return s.status === 'andamento' || s.status === 'colhida'; })) return 'andamento';
+    return 'planejada';
+  }
+  var STATUS_LAVOURA_LABEL = {planejada:'Planejada', andamento:'Plantada / em andamento', colhida:'Colhida', encerrada:'Encerrada'};
+  function lavourasSelecionaveis(incluirId){
+    var ordem = {andamento:0, planejada:1, colhida:2, encerrada:3};
+    return (state.lavouras || []).filter(function(l){ return l.id === incluirId || (!l.encerrada && safrasDaLavoura(l.id).some(function(s){ return s.ativa !== false; })); })
+      .slice().sort(function(a,b){
+        var d = ordem[statusLavoura(a)] - ordem[statusLavoura(b)];
+        if(d) return d;
+        return (b.anoAgricola || '').localeCompare(a.anoAgricola || '') || lavouraLabel(a.id).localeCompare(lavouraLabel(b.id), 'pt-BR');
+      });
+  }
+
+  /* ---------------- Destino de lançamentos ---------------- */
+  // lavoura = ligado a uma safra (talhão dentro de uma lavoura); talhao = custo do talhão sem cultura; geral = custo geral da fazenda
+  // estoque/financiamento = automáticos que não são custo de lavoura; classificar = antigos ainda sem destino
+  function destinoEfetivo(r){
+    if(r.destino) return r.destino;
+    if(r.partes && r.partes.length) return 'lavoura';
+    var qtdTalhoesR = talhoesDoLancamento(r).length;
+    // Antigos marcados em vários talhões mas com UMA safra só são ambíguos: ficam "a classificar" até o usuário decidir
+    if(r.safraId) return qtdTalhoesR > 1 ? 'classificar' : 'lavoura';
+    var temTalhao = qtdTalhoesR > 0;
+    if(!temTalhao && (r.origem === 'compra' || r.origem === 'nfe')) return 'estoque';
+    if(!temTalhao && r.origem === 'financiamento') return 'financiamento';
+    return 'classificar';
+  }
+  var DESTINO_LABEL = {lavoura:'Lavoura', talhao:'Só talhão', geral:'Geral da fazenda', estoque:'Estoque', financiamento:'Financiamento', classificar:'A classificar'};
+  function destinoCelulaHtml(r){
+    var d = destinoEfetivo(r);
+    if(d === 'lavoura'){
+      var lavs = [], semLav = [];
+      partesDoLancamento(r).forEach(function(pt){
+        var sf = pt.safraId ? state.safras.find(function(sx){ return sx.id === pt.safraId; }) : null;
+        if(sf){ var lb = lavouraLabel(sf.lavouraId); if(lavs.indexOf(lb) === -1) lavs.push(lb); }
+        else if(pt.talhaoId) semLav.push(talhaoNome(pt.talhaoId));
+      });
+      return (lavs.length ? escapeHtml(lavs.join(', ')) : '—') + (semLav.length ? '<br><span style="font-size:11px; color:var(--ink-soft);">+ só talhão: ' + escapeHtml(semLav.join(', ')) + '</span>' : '');
+    }
+    if(d === 'classificar') return '<span class="badge" style="background:#DFA84E; color:#1B1508; white-space:nowrap;">⚠️ A classificar</span>';
+    return '<span style="font-size:12px; color:var(--ink-soft);">' + DESTINO_LABEL[d] + '</span>';
+  }
+
+  /* ---------------- Custos/receitas diretos de safra e lavoura ---------------- */
+  function somaValorPago(lista, tipo){
+    return lista.filter(function(f){ return f.tipo === tipo && (f.status || 'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + (Number(f.valor)||0); }, 0);
+  }
+  function valorDaSafraNoLancamento(r, safraId){
+    if(destinoEfetivo(r) !== 'lavoura') return 0;
+    return partesDoLancamento(r).reduce(function(s, pt){ return pt.safraId === safraId ? s + (Number(pt.valor) || 0) : s; }, 0);
+  }
+  function lancamentoTemSafra(r, safraId){
+    return destinoEfetivo(r) === 'lavoura' && partesDoLancamento(r).some(function(pt){ return pt.safraId === safraId; });
+  }
+  function custoDiretoSafra(safraId){
+    var fin = state.financeiro.filter(function(f){ return f.tipo === 'custo' && (f.status || 'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + valorDaSafraNoLancamento(f, safraId); }, 0);
+    var cp = state.contasPagar.filter(function(c){ return c.status === 'Pago'; }).reduce(function(s,c){ return s + valorDaSafraNoLancamento(c, safraId); }, 0);
+    return fin + cp;
+  }
+  function receitaDiretaSafra(safraId){
+    var fin = state.financeiro.filter(function(f){ return f.tipo === 'receita' && (f.status || 'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + valorDaSafraNoLancamento(f, safraId); }, 0);
+    var cr = state.contasReceber.filter(function(c){ return c.safraId === safraId && c.status === 'Recebido'; }).reduce(function(s,c){ return s + valorLiquidoContaReceber(c); }, 0);
+    return fin + cr;
+  }
+  function qtdLancamentosSafra(safraId){
+    return state.financeiro.filter(function(f){ return lancamentoTemSafra(f, safraId); }).length + state.contasPagar.filter(function(c){ return lancamentoTemSafra(c, safraId); }).length;
+  }
+  // Custos pagos do talhão que ainda não têm destino definido (nem safra, nem "só talhão", nem "geral")
+  function custosSemDestinoDoTalhao(talhaoId){
+    var fin = state.financeiro.filter(function(f){ return f.tipo === 'custo' && (f.status || 'Pago') !== 'Pendente' && destinoEfetivo(f) === 'classificar'; }).reduce(function(s,f){ return s + valorDoTalhaoNoLancamento(f, talhaoId); }, 0);
+    var cp = state.contasPagar.filter(function(c){ return c.status === 'Pago' && destinoEfetivo(c) === 'classificar'; }).reduce(function(s,c){ return s + valorDoTalhaoNoLancamento(c, talhaoId); }, 0);
+    return fin + cp;
+  }
+
+  /* ---------------- Rateio de custos gerais por área × tempo ---------------- */
+  // Período de uma safra: plantio → previsão de colheita (ou última colheita); se faltar, usa o ano agrícola
+  function periodoAnoAgricola(ano){
+    var m = normalizarAnoAgricola(ano).match(/^(\d{4})(?:\/(\d{2,4}))?$/);
+    if(!m) return null;
+    var a1 = parseInt(m[1], 10);
+    var a2 = m[2] ? parseInt(m[2].length === 2 ? String(a1).slice(0,2) + m[2] : m[2], 10) : a1;
+    if(a2 > a1) return {inicio: a1 + '-07-01', fim: a2 + '-06-30'};
+    return {inicio: a1 + '-01-01', fim: a1 + '-12-31'};
+  }
+  // Fica sempre dentro do ano agrícola (café plantado em 2015 não "ocupa" a terra desde 2015 na safra 2026/2027)
+  function periodoSafra(s){
+    var anoP = periodoAnoAgricola(s.anoAgricola);
+    var inicio = s.dataPlantio || (anoP ? anoP.inicio : '');
+    var fim = s.previsaoColheita || '';
+    if(!fim){
+      state.producao.forEach(function(p){ if(p.safraId === s.id && p.tipo === 'entrada' && p.data && p.data > fim) fim = p.data; });
+    }
+    if(!fim) fim = anoP ? anoP.fim : '';
+    if(anoP){
+      if(!inicio || inicio < anoP.inicio || inicio > anoP.fim) inicio = anoP.inicio;
+      if(!fim || fim > anoP.fim) fim = anoP.fim;
+    }
+    if(!inicio || !fim) return null;
+    if(fim < inicio) fim = anoP ? anoP.fim : inicio;
+    return {inicio: inicio, fim: fim};
+  }
+  function mesesEntre(inicio, fim){
+    var lista = [];
+    var y = parseInt(inicio.slice(0,4),10), m = parseInt(inicio.slice(5,7),10);
+    var yf = parseInt(fim.slice(0,4),10), mf = parseInt(fim.slice(5,7),10);
+    while(y < yf || (y === yf && m <= mf)){
+      lista.push(y + '-' + (m < 10 ? '0' : '') + m);
+      m++; if(m > 12){ m = 1; y++; }
+    }
+    return lista;
+  }
+  // mapa mês (AAAA-MM) → [{safraId, area}] das safras ativas naquele mês
+  function mapaSafrasAtivasPorMes(){
+    var mapa = {};
+    state.safras.forEach(function(s){
+      var p = periodoSafra(s);
+      if(!p) return;
+      var area = areaPlantadaSafra(s);
+      if(area <= 0) return;
+      mesesEntre(p.inicio, p.fim).forEach(function(ym){ (mapa[ym] = mapa[ym] || []).push({safraId: s.id, area: area}); });
+    });
+    return mapa;
+  }
+  // Custos gerais (destino "geral", pagos) rateados entre as safras ativas no mês, pela área plantada
+  function rateioCustosGeraisPorSafra(){
+    var mapa = mapaSafrasAtivasPorMes();
+    var porSafra = {}, naoAlocado = 0;
+    var itens = [];
+    state.financeiro.forEach(function(f){ if(f.tipo === 'custo' && (f.status||'Pago') !== 'Pendente' && destinoEfetivo(f) === 'geral') itens.push({valor: Number(f.valor)||0, data: f.data || f.vencimento || ''}); });
+    state.contasPagar.forEach(function(c){ if(c.status === 'Pago' && destinoEfetivo(c) === 'geral') itens.push({valor: Number(c.valor)||0, data: c.dataPagamento || c.vencimento || ''}); });
+    itens.forEach(function(it){
+      var ativas = it.data ? (mapa[it.data.slice(0,7)] || []) : [];
+      var areaAtiva = ativas.reduce(function(s,a){ return s + a.area; }, 0);
+      if(areaAtiva <= 0){ naoAlocado += it.valor; return; }
+      ativas.forEach(function(a){ porSafra[a.safraId] = (porSafra[a.safraId]||0) + it.valor * a.area / areaAtiva; });
+    });
+    return {porSafra: porSafra, naoAlocado: naoAlocado};
+  }
+  // Depreciação / custo de oportunidade: valor anual ÷ 12 por mês ativo, proporcional à área plantada ÷ área total da fazenda
+  // Se duas safras ocupam o mesmo talhão no mesmo mês (ex.: milho safrinha terminando e soja começando), dividem aquele mês entre si
+  function custosFixosPorSafra(valorAnual){
+    var areaTotal = areaTotalFazenda();
+    var res = {};
+    if(areaTotal <= 0 || !valorAnual) return res;
+    var ocupacao = {};
+    var periodos = {};
+    state.safras.forEach(function(s){
+      var p = periodoSafra(s); if(!p) return;
+      periodos[s.id] = mesesEntre(p.inicio, p.fim);
+      periodos[s.id].forEach(function(ym){ var k = s.talhaoId + '|' + ym; ocupacao[k] = (ocupacao[k] || 0) + 1; });
+    });
+    state.safras.forEach(function(s){
+      if(!periodos[s.id]) return;
+      var area = areaPlantadaSafra(s);
+      res[s.id] = periodos[s.id].reduce(function(sm, ym){ return sm + valorAnual / 12 * area / areaTotal / ocupacao[s.talhaoId + '|' + ym]; }, 0);
+    });
+    return res;
   }
   function contasReceberRecebidasPorTalhao(talhaoId){
     return state.contasReceber.filter(function(c){ return c.status === 'Recebido' && c.talhaoId === talhaoId; }).reduce(function(s,c){ return s + valorLiquidoContaReceber(c); }, 0);
@@ -4501,11 +4752,9 @@
     safrasDoTalhao.forEach(function(s){
       var prod = produtividadeRealSafra(s.id);
       if(prod !== null) produtividades.push(prod);
-      var talhao = state.talhoes.find(function(t){ return t.id === s.talhaoId; });
-      var area = talhao ? Number(talhao.area) || 0 : 0;
-      if(area > 0){
-        var custo = custosTotaisPorTalhao(s.talhaoId);
-        custosHa.push(custo / area);
+      var area = areaPlantadaSafra(s);
+      if(area > 0 && qtdLancamentosSafra(s.id) > 0){
+        custosHa.push(custoDiretoSafra(s.id) / area);
       }
     });
     var mediaProdutividade = produtividades.length ? produtividades.reduce(function(a,b){ return a+b; },0) / produtividades.length : null;
@@ -4585,6 +4834,7 @@
 
     html += '<div class="paper form-card" style="margin-bottom:20px;">';
     html += '<div style="display:flex; gap:20px; flex-wrap:wrap; align-items:center;">';
+    html += '<label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;" title="Só afeta as tabelas por lavoura e por cultura"><input type="checkbox" id="rent-incluir-gerais"' + (rentabilidadeIncluirGerais ? ' checked' : '') + '> Incluir custos gerais da fazenda (rateados)</label>';
     html += '<label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;"><input type="checkbox" id="rent-incluir-depreciacao"' + (rentabilidadeIncluirDepreciacao ? ' checked' : '') + '> Incluir Depreciação</label>';
     html += '<label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;"><input type="checkbox" id="rent-incluir-custo-oport"' + (rentabilidadeIncluirCustoOportunidade ? ' checked' : '') + '> Incluir Custo de Oportunidade</label>';
     if(rentabilidadeIncluirCustoOportunidade){
@@ -4599,6 +4849,72 @@
       if(rentabilidadeIncluirCustoOportunidade) extra += custoOportunidadePorTalhao(talhaoId, rentabilidadeTaxaOportunidade);
       return extra;
     };
+
+    // ---------- Por lavoura (custos diretos da lavoura + opcionais rateados por área × tempo) ----------
+    var rateioGerais = rentabilidadeIncluirGerais ? rateioCustosGeraisPorSafra() : {porSafra:{}, naoAlocado:0};
+    var deprPorSafra = rentabilidadeIncluirDepreciacao ? custosFixosPorSafra(depreciacaoAnualTotalFazenda()) : {};
+    var oportPorSafra = rentabilidadeIncluirCustoOportunidade ? custosFixosPorSafra(custoOportunidadeAnualTotalFazenda(rentabilidadeTaxaOportunidade)) : {};
+    var numerosDeSafras = function(sfs){
+      var ids = sfs.map(function(x){ return x.id; });
+      var custos = 0, receitas = 0, area = 0;
+      sfs.forEach(function(sf){
+        custos += custoDiretoSafra(sf.id) + (rateioGerais.porSafra[sf.id] || 0);
+        custos += (deprPorSafra[sf.id] || 0) + (oportPorSafra[sf.id] || 0);
+        receitas += receitaDiretaSafra(sf.id);
+        area += areaPlantadaSafra(sf);
+      });
+      var estoqueValor = estoqueValorPorSafraIds(ids);
+      var sacas = producaoTotalEmSacas(ids);
+      var resultado = receitas + estoqueValor - custos;
+      return {custos: custos, receitas: receitas, area: area, estoque: estoqueValor, sacas: sacas, resultado: resultado,
+        custoHa: area > 0 ? custos / area : null, custoSaca: sacas > 0 ? custos / sacas : null, retorno: custos > 0 ? resultado / custos * 100 : null};
+    };
+    var linhaNumeros = function(n){
+      var h = '';
+      h += '<td class="num">' + fmtHa(n.area) + '</td>';
+      h += '<td class="num cost">' + fmtBRL(n.custos) + '</td>';
+      h += '<td class="num">' + (n.custoHa === null ? '—' : fmtBRL(n.custoHa)) + '</td>';
+      h += '<td class="num">' + (n.sacas > 0 ? fmtNum(n.sacas) : '—') + '</td>';
+      h += '<td class="num">' + (n.custoSaca === null ? '—' : fmtBRL(n.custoSaca)) + '</td>';
+      h += '<td class="num growth">' + fmtBRL(n.receitas) + '</td>';
+      h += '<td class="num growth">' + fmtBRL(n.estoque) + '</td>';
+      h += '<td class="num ' + (n.resultado >= 0 ? 'growth' : 'cost') + '">' + fmtBRL(n.resultado) + '</td>';
+      h += '<td class="num">' + (n.retorno === null ? '—' : n.retorno.toLocaleString('pt-BR', {maximumFractionDigits:1}) + '%') + '</td>';
+      return h;
+    };
+    var cabecalhoNumeros = '<th>Área plantada</th><th>Custos</th><th>Custo/ha</th><th>Sacas</th><th>Custo/saca</th><th>Receitas</th><th>Estoque projetado</th><th>Resultado</th><th>Retorno s/ custo</th>';
+
+    html += '<div class="section-title" style="margin-top:0;">Por lavoura</div>';
+    if(!(state.lavouras || []).length){
+      html += '<div class="paper empty-state">Nenhuma lavoura ainda. Crie uma na aba Safras.</div>';
+    } else {
+      html += '<div class="paper table-wrap"><table><thead><tr><th>Lavoura</th><th>Status</th>' + cabecalhoNumeros + '</tr></thead><tbody>';
+      state.lavouras.slice().sort(function(a,b){ return (b.anoAgricola || '').localeCompare(a.anoAgricola || '') || lavouraLabel(a.id).localeCompare(lavouraLabel(b.id), 'pt-BR'); }).forEach(function(l){
+        var n = numerosDeSafras(safrasDaLavoura(l.id));
+        html += '<tr><td><strong>' + escapeHtml(lavouraLabel(l.id)) + '</strong><br><span style="font-size:11px; color:var(--ink-soft);">' + escapeHtml(safrasDaLavoura(l.id).map(function(sf){ return talhaoNome(sf.talhaoId); }).join(', ')) + '</span></td>';
+        html += '<td>' + STATUS_LAVOURA_LABEL[statusLavoura(l)] + '</td>' + linhaNumeros(n) + '</tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+    var custosAClassificar = state.financeiro.filter(function(f){ return f.tipo === 'custo' && (f.status||'Pago') !== 'Pendente' && destinoEfetivo(f) === 'classificar'; }).reduce(function(sm,f){ return sm + (Number(f.valor)||0); }, 0)
+      + state.contasPagar.filter(function(c){ return c.status === 'Pago' && destinoEfetivo(c) === 'classificar'; }).reduce(function(sm,c){ return sm + (Number(c.valor)||0); }, 0);
+    var avisosLav = [];
+    if(custosAClassificar > 0) avisosLav.push('⚠️ ' + fmtBRL(custosAClassificar) + ' em custos pagos ainda estão "a classificar" e não entram em nenhuma lavoura. Classifique no Financeiro → "A classificar".');
+    if(rentabilidadeIncluirGerais && rateioGerais.naoAlocado > 0) avisosLav.push(fmtBRL(rateioGerais.naoAlocado) + ' de custos gerais caíram em meses sem nenhuma lavoura ativa (ou sem data) e ficaram fora do rateio.');
+    if(avisosLav.length) html += '<div class="paper note-box" style="margin-top:8px;">' + avisosLav.join('<br>') + '</div>';
+
+    html += '<div class="section-title">Por cultura</div>';
+    if(!state.culturas.length){
+      html += '<div class="paper empty-state">Cadastre culturas para ver a rentabilidade agrupada.</div>';
+    } else {
+      html += '<div class="paper table-wrap"><table><thead><tr><th>Cultura</th>' + cabecalhoNumeros + '</tr></thead><tbody>';
+      state.culturas.forEach(function(c){
+        var sfsC = state.safras.filter(function(sf){ return sf.culturaId === c.id; });
+        if(!sfsC.length) return;
+        html += '<tr><td>' + escapeHtml(c.nome) + '</td>' + linhaNumeros(numerosDeSafras(sfsC)) + '</tr>';
+      });
+      html += '</tbody></table></div>';
+    }
 
     html += '<div class="section-title" style="margin-top:0;">Por talhão</div>';
     if(!state.talhoes.length){
@@ -4632,39 +4948,7 @@
       html += '</tbody></table></div>';
     }
 
-    html += '<div class="section-title">Por cultura</div>';
-    if(!state.culturas.length){
-      html += '<div class="paper empty-state">Cadastre culturas para ver a rentabilidade agrupada.</div>';
-    } else {
-      html += '<div class="paper table-wrap"><table><thead><tr><th>Cultura</th><th>Custos</th><th>Custo/ha</th><th>Custo/saca</th><th>Receitas</th><th>Estoque projetado</th><th>Resultado</th><th>Retorno s/ custo</th></tr></thead><tbody>';
-      state.culturas.forEach(function(c){
-        var safrasDaCultura = state.safras.filter(function(s){ return s.culturaId === c.id; });
-        var talhaoIds = safrasDaCultura.map(function(s){ return s.talhaoId; }).filter(function(v,i,a){ return a.indexOf(v)===i; });
-        var safraIds = safrasDaCultura.map(function(s){ return s.id; });
-        var custos = talhaoIds.reduce(function(sum,tid){ return sum + custosTotaisPorTalhao(tid) + custoExtraPorTalhao(tid); }, 0);
-        var receitas = talhaoIds.reduce(function(sum,tid){ return sum + receitasTotaisPorTalhao(tid); }, 0);
-        var estoqueValor = estoqueValorPorSafraIds(safraIds);
-        var resultado = receitas + estoqueValor - custos;
-        var retorno = custos > 0 ? (resultado / custos * 100) : null;
-        var areaTotal = talhaoIds.reduce(function(sum,tid){ var t = state.talhoes.find(function(x){ return x.id === tid; }); return sum + (t ? Number(t.area)||0 : 0); }, 0);
-        var custoPorHa = areaTotal > 0 ? (custos / areaTotal) : null;
-        var totalSacas = producaoTotalEmSacas(safraIds);
-        var custoPorSaca = totalSacas > 0 ? (custos / totalSacas) : null;
-        html += '<tr>';
-        html += '<td>' + escapeHtml(c.nome) + '</td>';
-        html += '<td class="num cost">' + fmtBRL(custos) + '</td>';
-        html += '<td class="num">' + (custoPorHa === null ? '—' : fmtBRL(custoPorHa)) + '</td>';
-        html += '<td class="num">' + (custoPorSaca === null ? '—' : fmtBRL(custoPorSaca)) + '</td>';
-        html += '<td class="num growth">' + fmtBRL(receitas) + '</td>';
-        html += '<td class="num growth">' + fmtBRL(estoqueValor) + '</td>';
-        html += '<td class="num ' + (resultado >= 0 ? 'growth' : 'cost') + '">' + fmtBRL(resultado) + '</td>';
-        html += '<td class="num">' + (retorno === null ? '—' : retorno.toLocaleString('pt-BR', {maximumFractionDigits:1}) + '%') + '</td>';
-        html += '</tr>';
-      });
-      html += '</tbody></table></div>';
-    }
-
-    html += '<div class="paper note-box">Custos somam os lançamentos "Pago" do Financeiro e as Contas a Pagar "Pago", ambos vinculados ao talhão. Receitas somam o Financeiro "Pago" e as Contas a Receber "Recebido". "Custo/ha" divide o custo total pela área do talhão (ou soma das áreas, na visão por cultura). "Custo/saca" divide o custo total pela quantidade total colhida (aba Colheita), convertendo kg para sacas (60kg = 1sc) quando aplicável. Como um talhão pode ter mais de uma cultura ao longo do tempo, o agrupamento por cultura soma os talhões onde ela já foi ou está sendo cultivada — evite lançar o mesmo valor em mais de um lugar para não contar em duplicidade.<br><br>Marcando "Incluir Depreciação", somamos a depreciação anual de todo o Patrimônio (aba Patrimônio), distribuída entre os talhões proporcionalmente à área de cada um. Marcando "Incluir Custo de Oportunidade", somamos o valor total do Patrimônio × a taxa anual que você definir, também distribuído por área — é um valor de referência, não uma despesa que saiu do seu bolso. Os dois são estimativas: máquinas e capital não são de fato exclusivos de um talhão, a distribuição por área é só um critério razoável de ratear.</div>';
+    html += '<div class="paper note-box"><strong>Por lavoura / por cultura:</strong> custos e receitas lançados direto na lavoura (destino "Lavoura"), pagos/recebidos. Custos gerais (destino "Geral") são rateados entre as lavouras ativas em cada mês, pela área plantada. Depreciação e custo de oportunidade entram pelos meses em que a lavoura ocupa a terra × área plantada ÷ área total da fazenda. Custos "só talhão" não entram em lavoura.<br><strong>Por talhão:</strong> tudo que já caiu no talhão, de qualquer lavoura e de qualquer ano, mais os custos "só talhão".</div>';
 
     el.innerHTML = html;
   }
@@ -5699,143 +5983,200 @@
     return Number(f.valor) || 0;
   }
 
-  function atualizarSafraContaPagarFiltrada(){
-    var elCampoSafra = document.getElementById('campo-safra-cp');
-    if(!elCampoSafra) return;
-    var checkboxesTalhao = document.querySelectorAll('input[name="talhaoIdsCP"]:checked');
-    var talhoesMarcadosAgora = [];
-    checkboxesTalhao.forEach(function(cb){ talhoesMarcadosAgora.push(cb.value); });
-
-    if(!talhoesMarcadosAgora.length){
-      elCampoSafra.innerHTML = '<div class="field"><label>Safra (opcional — deixa mais preciso o custo por safra)</label><select id="cp-safraId" name="safraId" disabled style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#E8DCB9; font-size:13px; color:var(--ink-soft);"><option>Marque o(s) talhão(ões) acima primeiro</option></select></div>';
-      return;
-    }
-
-    var safrasDosTalhoes = state.safras.filter(function(s){ return talhoesMarcadosAgora.indexOf(s.talhaoId) !== -1; });
-    var elSafraExistenteCP = document.getElementById('cp-safraId');
-    var safraAtualSelecionadaCP = elSafraExistenteCP ? elSafraExistenteCP.value : (function(){
-      var registroEmEdicaoSafraCP = (editState && editState.scope === 'generic' && editState.entityKey === 'contasPagar') ? state.contasPagar.find(function(x){ return x.id === editState.id; }) : null;
-      return registroEmEdicaoSafraCP ? (registroEmEdicaoSafraCP.safraId || '') : '';
-    })();
-    var manterSelecaoCP = safrasDosTalhoes.some(function(s){ return s.id === safraAtualSelecionadaCP; }) ? safraAtualSelecionadaCP : undefined;
-    var html = selectField('safraId', 'Safra (opcional — vincula essa conta a uma safra específica de um dos talhões marcados)', [{value:'', label:'—'}].concat(safrasDosTalhoes.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).map(function(s){ return {value:s.id, label:safraLabel(s.id)}; })), manterSelecaoCP);
-    html = html.replace('id="f-safraId"', 'id="cp-safraId"');
-
-    var combosCulturaAno = {};
-    safrasDosTalhoes.forEach(function(s){
-      var chave = s.culturaId + '::' + (s.anoAgricola || '');
-      if(!combosCulturaAno[chave]) combosCulturaAno[chave] = {culturaId: s.culturaId, anoAgricola: s.anoAgricola, talhoesIds: []};
-      combosCulturaAno[chave].talhoesIds.push(s.talhaoId);
-    });
-    var combosComMaisDeUmTalhao = Object.keys(combosCulturaAno).filter(function(chave){ return combosCulturaAno[chave].talhoesIds.length > 1; });
-    if(combosComMaisDeUmTalhao.length){
-      var comboAtualSelecionado = document.getElementById('cp-comboSafraRateio') ? document.getElementById('cp-comboSafraRateio').value : '';
-      var metodoRateioAtual = document.getElementById('cp-metodoRateioSafra') ? document.getElementById('cp-metodoRateioSafra').value : 'area';
-
-      html += '<div style="grid-column:1/-1; font-size:11px; color:var(--ink-soft); margin:2px 0;">— OU, em vez de escolher uma safra acima, deixa o sistema dividir automaticamente entre os talhões: —</div>';
-      html += '<div class="field" style="margin:0;"><label>Ratear pela safra (cultura + ano) presente em vários dos talhões marcados</label>';
-      html += '<select id="cp-comboSafraRateio" name="comboSafraRateio" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">';
-      html += '<option value="">— Não ratear automaticamente —</option>';
-      combosComMaisDeUmTalhao.forEach(function(chave){
-        var combo = combosCulturaAno[chave];
-        var qtdTalhoesNoCombo = combo.talhoesIds.length;
-        var label = culturaNome(combo.culturaId) + (combo.anoAgricola ? ' (' + combo.anoAgricola + ')' : '') + ' — ' + qtdTalhoesNoCombo + ' de ' + talhoesMarcadosAgora.length + ' talhão(ões) marcado(s)';
-        html += '<option value="' + chave + '"' + (chave === comboAtualSelecionado ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
-      });
-      html += '</select></div>';
-
-      if(comboAtualSelecionado){
-        html += '<div class="field" style="margin:0;"><label>Ratear o valor por</label>';
-        html += '<select id="cp-metodoRateioSafra" name="metodoRateioSafra" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">';
-        html += '<option value="area"' + (metodoRateioAtual === 'area' ? ' selected' : '') + '>Área de cada talhão</option>';
-        html += '<option value="igual"' + (metodoRateioAtual === 'igual' ? ' selected' : '') + '>Igualmente entre os talhões</option>';
-        html += '</select></div>';
-        var comboEscolhido = combosCulturaAno[comboAtualSelecionado];
-        if(comboEscolhido && comboEscolhido.talhoesIds.length < talhoesMarcadosAgora.length){
-          var forasDoCombo = talhoesMarcadosAgora.filter(function(tid){ return comboEscolhido.talhoesIds.indexOf(tid) === -1; }).map(talhaoNome).join(', ');
-          html += '<p style="grid-column:1/-1; font-size:11px; color:var(--cost-dark); margin:0;">Atenção: ' + escapeHtml(forasDoCombo) + ' não tem essa safra e vai ficar de fora do rateio.</p>';
-        }
-      }
-    }
-    elCampoSafra.innerHTML = html;
+  /* ---------------- Campo "Destino" (Lavoura / Só talhão / Geral) usado em Lançamentos e Contas a Pagar ---------------- */
+  var ESTILO_SELECT_DESTINO = 'width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;';
+  function lerEstadoDestinoDoDom(cont){
+    var form = cont.closest('form');
+    var radio = form.querySelector('input[name="destino"]:checked');
+    var selLav = form.querySelector('select[name="lavouraId"]');
+    var selMet = form.querySelector('select[name="metodoRateio"]');
+    var selSafraUnica = form.querySelector('select[name="destSafraId"]');
+    var safras = [], talhoes = [];
+    form.querySelectorAll('input[name="destSafraIds"]:checked').forEach(function(cb){ safras.push(cb.value); });
+    form.querySelectorAll('input[name="destTalhaoIds"]:checked').forEach(function(cb){ talhoes.push(cb.value); });
+    return {
+      destino: radio ? radio.value : '', lavouraId: selLav ? selLav.value : '', metodo: selMet ? selMet.value : 'area',
+      safraIds: safras, safraUnica: selSafraUnica ? selSafraUnica.value : '', talhaoIds: talhoes,
+      lavouraMudou: !!(selLav && cont.dataset.ultimaLavoura !== selLav.value)
+    };
   }
+  function estadoDestinoDoRegistro(r){
+    if(!r) return {destino:'', lavouraId:'', metodo:'area', safraIds:null, safraUnica:'', talhaoIds:[]};
+    var d = destinoEfetivo(r);
+    var safraIdsR = d === 'lavoura' ? partesDoLancamento(r).map(function(pt){ return pt.safraId; }).filter(function(x){ return x; }) : [];
+    var sf = safraIdsR.length ? state.safras.find(function(x){ return x.id === safraIdsR[0]; }) : null;
+    return {
+      destino: (d === 'lavoura' || d === 'talhao' || d === 'geral') ? d : '',
+      lavouraId: sf ? sf.lavouraId : '', metodo: r.metodoRateio || 'area', safraIds: safraIdsR.length ? safraIdsR : null, safraUnica: '',
+      talhaoIds: talhoesDoLancamento(r)
+    };
+  }
+  // cont: elemento <div data-destino-widget>; emEdicao: editando um registro único (não divide em vários)
+  function renderDestinoWidget(cont, registroEmEdicao){
+    if(!cont) return;
+    if(!cont.dataset.iniciado) cont.dataset.emEdicao = registroEmEdicao ? '1' : '';
+    var emEdicao = cont.dataset.emEdicao === '1';
+    var st = cont.dataset.iniciado ? lerEstadoDestinoDoDom(cont) : estadoDestinoDoRegistro(registroEmEdicao);
+    cont.dataset.iniciado = '1';
+    var form = cont.closest('form');
+    var valorInput = form ? form.querySelector('[name="valor"]') : null;
+    var valorTotal = valorInput ? (parseFloat(valorInput.value) || 0) : 0;
 
-  function atualizarSafraFinanceiroFiltrada(){
-    var elCampoSafra = document.getElementById('campo-safra-financeiro');
-    if(!elCampoSafra) return;
-    var checkboxesTalhao = document.querySelectorAll('input[name="talhaoIds"]:checked');
-    var talhoesMarcadosAgora = [];
-    checkboxesTalhao.forEach(function(cb){ talhoesMarcadosAgora.push(cb.value); });
+    var html = '<label style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em;">Destino do lançamento *</label>';
+    html += '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
+    [{v:'lavoura', l:'🌱 Lavoura'}, {v:'talhao', l:'🗺️ Só talhão (sem cultura)'}, {v:'geral', l:'🏠 Geral da fazenda'}].forEach(function(o){
+      var marcado = st.destino === o.v;
+      html += '<label style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; padding:6px 12px; border:1px solid ' + (marcado ? 'var(--accent)' : 'var(--paper-line)') + '; border-radius:20px; background:' + (marcado ? '#F1E0BC' : '#FBF7EC') + '; cursor:pointer;">';
+      html += '<input type="radio" name="destino" value="' + o.v + '"' + (marcado ? ' checked' : '') + '> ' + o.l + '</label>';
+    });
+    html += '</div>';
 
-    if(!talhoesMarcadosAgora.length){
-      elCampoSafra.innerHTML = '<div class="field"><label>Safra (opcional — deixa mais preciso o custo/receita por safra)</label><select id="f-safraId" name="safraId" disabled style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#E8DCB9; font-size:13px; color:var(--ink-soft);"><option>Marque o(s) talhão(ões) abaixo primeiro</option></select></div>';
-      return;
+    if(!st.destino){
+      html += '<span style="font-size:11.5px; color:var(--ink-soft);">Escolha para onde vai esse valor. Lavoura = custo/receita de uma cultura plantada (milho 2026, café 2026/2027...). Só talhão = coisa do talhão que não é de uma cultura (calagem, terraço). Geral = custo da fazenda como um todo (energia, administração, manutenção).</span>';
+      if(st.talhaoIds && st.talhaoIds.length) html += '<span style="font-size:11.5px; color:var(--cost-dark);">Esse lançamento hoje está no(s) talhão(ões) ' + escapeHtml(st.talhaoIds.map(talhaoNome).join(', ')) + ', sem destino definido.</span>';
     }
 
-    if(talhoesMarcadosAgora.length === 1){
-      var elSafraExistente = document.getElementById('f-safraId');
-      var safraAtualSelecionada;
-      if(elSafraExistente){
-        safraAtualSelecionada = elSafraExistente.value;
+    if(st.destino === 'lavoura'){
+      var opcoes = lavourasSelecionaveis(st.lavouraId);
+      if(!opcoes.length){
+        html += '<span style="font-size:12px; color:var(--cost-dark);">Nenhuma lavoura aberta. Crie uma na aba Safras (ou reabra uma encerrada).</span>';
       } else {
-        var registroEmEdicaoSafra = (editState && editState.scope === 'financeiro') ? state.financeiro.find(function(x){ return x.id === editState.id; }) : null;
-        safraAtualSelecionada = registroEmEdicaoSafra ? (registroEmEdicaoSafra.safraId || '') : '';
-      }
-      var safrasFiltradasAgora = state.safras.filter(function(s){ return talhoesMarcadosAgora.indexOf(s.talhaoId) !== -1; });
-      var manterSelecao = safrasFiltradasAgora.some(function(s){ return s.id === safraAtualSelecionada; }) ? safraAtualSelecionada : undefined;
-      elCampoSafra.innerHTML = selectField('safraId', 'Safra (opcional — deixa mais preciso o custo/receita por safra)', [{value:'', label:'—'}].concat(safrasFiltradasAgora.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).map(function(s){ return {value:s.id, label:safraLabel(s.id)}; })), manterSelecao);
-      return;
-    }
-
-    // 2+ talhões marcados: sempre oferece escolher uma safra individual (de qualquer um dos talhões marcados)
-    var safrasDosTalhoes = state.safras.filter(function(s){ return talhoesMarcadosAgora.indexOf(s.talhaoId) !== -1; });
-    var elSafraExistenteMulti = document.getElementById('f-safraId');
-    var safraAtualSelecionadaMulti = elSafraExistenteMulti ? elSafraExistenteMulti.value : (function(){
-      var registroEmEdicaoSafraMulti = (editState && editState.scope === 'financeiro') ? state.financeiro.find(function(x){ return x.id === editState.id; }) : null;
-      return registroEmEdicaoSafraMulti ? (registroEmEdicaoSafraMulti.safraId || '') : '';
-    })();
-    var manterSelecaoMulti = safrasDosTalhoes.some(function(s){ return s.id === safraAtualSelecionadaMulti; }) ? safraAtualSelecionadaMulti : undefined;
-    var html = selectField('safraId', 'Safra (opcional — vincula esse lançamento a uma safra específica de um dos talhões marcados)', [{value:'', label:'—'}].concat(safrasDosTalhoes.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).map(function(s){ return {value:s.id, label:safraLabel(s.id)}; })), manterSelecaoMulti);
-
-    // Se houver uma safra (cultura+ano) presente em 2+ dos talhões marcados, oferece também ratear automaticamente entre eles
-    var combosCulturaAno = {};
-    safrasDosTalhoes.forEach(function(s){
-      var chave = s.culturaId + '::' + (s.anoAgricola || '');
-      if(!combosCulturaAno[chave]) combosCulturaAno[chave] = {culturaId: s.culturaId, anoAgricola: s.anoAgricola, talhoesIds: []};
-      combosCulturaAno[chave].talhoesIds.push(s.talhaoId);
-    });
-    var combosComMaisDeUmTalhao = Object.keys(combosCulturaAno).filter(function(chave){ return combosCulturaAno[chave].talhoesIds.length > 1; });
-    if(combosComMaisDeUmTalhao.length){
-      var comboAtualSelecionado = document.getElementById('f-comboSafraRateio') ? document.getElementById('f-comboSafraRateio').value : '';
-      var metodoRateioAtual = document.getElementById('f-metodoRateioSafra') ? document.getElementById('f-metodoRateioSafra').value : 'area';
-
-      html += '<div style="grid-column:1/-1; font-size:11px; color:var(--ink-soft); margin:2px 0;">— OU, em vez de escolher uma safra acima, deixa o sistema dividir automaticamente entre os talhões: —</div>';
-      html += '<div class="field" style="margin:0;"><label>Ratear pela safra (cultura + ano) presente em vários dos talhões marcados</label>';
-      html += '<select id="f-comboSafraRateio" name="comboSafraRateio" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">';
-      html += '<option value="">— Não ratear automaticamente —</option>';
-      combosComMaisDeUmTalhao.forEach(function(chave){
-        var combo = combosCulturaAno[chave];
-        var qtdTalhoesNoCombo = combo.talhoesIds.length;
-        var label = culturaNome(combo.culturaId) + (combo.anoAgricola ? ' (' + combo.anoAgricola + ')' : '') + ' — ' + qtdTalhoesNoCombo + ' de ' + talhoesMarcadosAgora.length + ' talhão(ões) marcado(s)';
-        html += '<option value="' + chave + '"' + (chave === comboAtualSelecionado ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
-      });
-      html += '</select></div>';
-
-      if(comboAtualSelecionado){
-        html += '<div class="field" style="margin:0;"><label>Ratear o valor por</label>';
-        html += '<select id="f-metodoRateioSafra" name="metodoRateioSafra" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">';
-        html += '<option value="area"' + (metodoRateioAtual === 'area' ? ' selected' : '') + '>Área de cada talhão</option>';
-        html += '<option value="igual"' + (metodoRateioAtual === 'igual' ? ' selected' : '') + '>Igualmente entre os talhões</option>';
+        html += '<div class="field" style="margin:0; max-width:420px;"><label>Lavoura</label><select name="lavouraId" style="' + ESTILO_SELECT_DESTINO + '"><option value="">— escolha —</option>';
+        opcoes.forEach(function(l){
+          var stl = statusLavoura(l);
+          html += '<option value="' + l.id + '"' + (l.id === st.lavouraId ? ' selected' : '') + '>' + escapeHtml(lavouraLabel(l.id)) + (stl === 'andamento' ? ' ● em andamento' : '') + (stl === 'encerrada' ? ' (encerrada)' : '') + '</option>';
+        });
         html += '</select></div>';
-        var comboEscolhido = combosCulturaAno[comboAtualSelecionado];
-        if(comboEscolhido && comboEscolhido.talhoesIds.length < talhoesMarcadosAgora.length){
-          var forasDoCombo = talhoesMarcadosAgora.filter(function(tid){ return comboEscolhido.talhoesIds.indexOf(tid) === -1; }).map(talhaoNome).join(', ');
-          html += '<p style="grid-column:1/-1; font-size:11px; color:var(--cost-dark); margin:0;">Atenção: ' + escapeHtml(forasDoCombo) + ' não tem essa safra e vai ficar de fora do rateio.</p>';
+        var sfs = st.lavouraId ? safrasDaLavoura(st.lavouraId) : [];
+        if(sfs.length){
+          {
+            var marcadas = (st.safraIds && !st.lavouraMudou) ? st.safraIds : sfs.map(function(x){ return x.id; });
+            html += '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
+            sfs.forEach(function(x){
+              var mk = marcadas.indexOf(x.id) !== -1;
+              html += '<label style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; padding:5px 10px; border:1px solid ' + (mk ? 'var(--accent)' : 'var(--paper-line)') + '; border-radius:20px; background:' + (mk ? '#F1E0BC' : '#FBF7EC') + '; cursor:pointer;">';
+              html += '<input type="checkbox" name="destSafraIds" value="' + x.id + '"' + (mk ? ' checked' : '') + '> ' + escapeHtml(talhaoNome(x.talhaoId)) + ' · ' + fmtHa(areaPlantadaSafra(x)) + '</label>';
+            });
+            html += '</div>';
+            var sel = sfs.filter(function(x){ return marcadas.indexOf(x.id) !== -1; });
+            if(sel.length > 1){
+              html += '<div class="field" style="margin:0; max-width:300px;"><label>Dividir o valor por</label><select name="metodoRateio" style="' + ESTILO_SELECT_DESTINO + '">';
+              html += '<option value="area"' + (st.metodo !== 'igual' ? ' selected' : '') + '>Área plantada</option><option value="igual"' + (st.metodo === 'igual' ? ' selected' : '') + '>Igualmente</option></select></div>';
+              var pesos = sel.map(function(x){ return st.metodo === 'igual' ? 1 : areaPlantadaSafra(x); });
+              var somaP = pesos.reduce(function(a,b){ return a+b; }, 0);
+              if(somaP > 0){
+                html += '<span style="font-size:11.5px; color:var(--ink-soft);">Rateio: ' + sel.map(function(x, i){ return escapeHtml(talhaoNome(x.talhaoId)) + ' ' + fmtNum(pesos[i] / somaP * 100) + '%' + (valorTotal ? ' = ' + fmtBRL(valorTotal * pesos[i] / somaP) : ''); }).join(' · ') + '</span>';
+              }
+            }
+          }
         }
+        cont.dataset.ultimaLavoura = st.lavouraId || '';
       }
     }
-    elCampoSafra.innerHTML = html;
+
+    if(st.destino === 'lavoura' && registroEmEdicao && registroEmEdicao.partes && registroEmEdicao.partes.some(function(pt){ return !pt.safraId; })){
+      html += '<span style="font-size:11px; color:var(--cost-dark);">Esse lançamento também tem parte em talhão fora da lavoura (' + escapeHtml(registroEmEdicao.partes.filter(function(pt){ return !pt.safraId; }).map(function(pt){ return talhaoNome(pt.talhaoId); }).join(', ')) + '). Ao salvar, o rateio é refeito só entre os talhões marcados acima.</span>';
+    }
+    if(st.destino === 'talhao'){
+      html += '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
+      state.talhoes.forEach(function(t){
+        var mk = (st.talhaoIds || []).indexOf(t.id) !== -1;
+        html += '<label style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; padding:5px 10px; border:1px solid ' + (mk ? 'var(--accent)' : 'var(--paper-line)') + '; border-radius:20px; background:' + (mk ? '#F1E0BC' : '#FBF7EC') + '; cursor:pointer;">';
+        html += '<input type="checkbox" name="destTalhaoIds" value="' + t.id + '"' + (mk ? ' checked' : '') + '> ' + escapeHtml(t.nome) + '</label>';
+      });
+      html += '</div>';
+      html += '<span style="font-size:11px; color:var(--ink-soft);">Fica no talhão, mas não entra em nenhuma lavoura. Marcando mais de um, o valor é dividido igualmente.</span>';
+    }
+
+    if(st.destino === 'geral'){
+      html += '<span style="font-size:11.5px; color:var(--ink-soft);">Não fica em nenhum talhão. Na Rentabilidade por lavoura você pode ligar "Incluir custos gerais" para ratear esses valores pelas lavouras ativas no mês, pela área plantada.</span>';
+    }
+    cont.innerHTML = html;
   }
+  // Lê o destino do formulário e devolve as partes em que o valor vai ser dividido
+  function lerDestinoDoForm(form, emEdicao){
+    var radio = form.querySelector('input[name="destino"]:checked');
+    if(!radio) return {erro: 'Escolha o destino do lançamento: Lavoura, Só talhão ou Geral da fazenda.'};
+    var d = radio.value;
+    if(d === 'geral') return {destino:'geral', partes:[]};
+    if(d === 'talhao'){
+      var ts = [];
+      form.querySelectorAll('input[name="destTalhaoIds"]:checked').forEach(function(cb){ ts.push(cb.value); });
+      if(!ts.length) return {erro: 'Marque pelo menos um talhão.'};
+      return {destino:'talhao', talhoes: ts, partes:[]};
+    }
+    var selLav = form.querySelector('select[name="lavouraId"]');
+    if(!selLav || !selLav.value) return {erro: 'Escolha a lavoura.'};
+    var ids = [];
+    form.querySelectorAll('input[name="destSafraIds"]:checked').forEach(function(cb){ ids.push(cb.value); });
+    var sfs = state.safras.filter(function(x){ return ids.indexOf(x.id) !== -1; });
+    if(!sfs.length) return {erro: 'Marque pelo menos um talhão da lavoura.'};
+    var selMet = form.querySelector('select[name="metodoRateio"]');
+    var metodo = selMet ? selMet.value : 'area';
+    var pesos = sfs.map(function(x){ return metodo === 'igual' ? 1 : areaPlantadaSafra(x); });
+    var soma = pesos.reduce(function(a,b){ return a+b; }, 0);
+    if(soma <= 0){ pesos = sfs.map(function(){ return 1; }); soma = sfs.length; }
+    return {destino:'lavoura', metodo: metodo, partes: sfs.map(function(x, i){ return {talhaoId: x.talhaoId, safraId: x.id, fracao: pesos[i] / soma}; })};
+  }
+  // Grava o destino num registro (lançamento ou conta a pagar) a partir do valor dele
+  function aplicarDestino(reg, dest){
+    reg.destino = dest.destino;
+    delete reg.partes; delete reg.metodoRateio;
+    if(dest.destino === 'geral'){ reg.talhoesIds = []; reg.talhaoId = ''; reg.safraId = ''; return reg; }
+    if(dest.destino === 'talhao'){ reg.talhoesIds = dest.talhoes.slice(); reg.talhaoId = dest.talhoes.length === 1 ? dest.talhoes[0] : ''; reg.safraId = ''; return reg; }
+    var partes = dest.partes;
+    reg.talhoesIds = partes.map(function(pt){ return pt.talhaoId; }).filter(function(v,i,a){ return v && a.indexOf(v) === i; });
+    if(partes.length === 1){ reg.talhaoId = partes[0].talhaoId; reg.safraId = partes[0].safraId; return reg; }
+    reg.talhaoId = ''; reg.safraId = '';
+    var valores = dividirValor(Number(reg.valor) || 0, partes.map(function(pt){ return pt.fracao; }));
+    reg.partes = partes.map(function(pt, i){ return {talhaoId: pt.talhaoId, safraId: pt.safraId || '', valor: valores[i]}; });
+    if(dest.metodo) reg.metodoRateio = dest.metodo;
+    return reg;
+  }
+  // Classificação em lote dos lançamentos antigos sem destino
+  function classificarLancamentos(ids, destSel){
+    var ok = 0, pulados = [];
+    var lavId = destSel.indexOf('lav:') === 0 ? destSel.slice(4) : '';
+    var sfsLav = lavId ? safrasDaLavoura(lavId) : [];
+    ids.forEach(function(id){
+      var idx = state.financeiro.findIndex(function(x){ return x.id === id; });
+      if(idx === -1) return;
+      var f = state.financeiro[idx];
+      var desc = (f.descricao || contaNome(f.contaId) || 'lançamento') + ' (' + fmtBRL(f.valor) + ')';
+      if(lancamentoEstaFechado(f)){ pulados.push(desc + ' — período fechado'); return; }
+      var ts = talhoesDoLancamento(f);
+      if(destSel === 'geral'){
+        f.destino = 'geral'; f.talhoesIds = []; f.talhaoId = ''; f.safraId = ''; ok++; return;
+      }
+      if(destSel === 'talhao'){
+        if(!ts.length){ pulados.push(desc + ' — não tem talhão marcado'); return; }
+        f.destino = 'talhao'; f.safraId = ''; ok++; return;
+      }
+      if(!lavId) return;
+      var partes;
+      if(!ts.length){
+        var pesosL = sfsLav.map(areaPlantadaSafra), somaL = pesosL.reduce(function(a,b){ return a+b; }, 0);
+        if(somaL <= 0){ pesosL = sfsLav.map(function(){ return 1; }); somaL = sfsLav.length; }
+        partes = sfsLav.map(function(sf, i){ return {talhaoId: sf.talhaoId, safraId: sf.id, fracao: pesosL[i] / somaL}; });
+      } else {
+        // mantém a divisão que o lançamento já tinha (igual entre os talhões); talhões fora da lavoura ficam como "só talhão"
+        partes = ts.map(function(tid){ var sf = sfsLav.find(function(x){ return x.talhaoId === tid; }); return {talhaoId: tid, safraId: sf ? sf.id : '', fracao: 1 / ts.length}; });
+      }
+      if(!partes.some(function(pt){ return pt.safraId; })){ pulados.push(desc + ' — o talhão ' + ts.map(talhaoNome).join(', ') + ' não faz parte dessa lavoura'); return; }
+      aplicarDestino(f, {destino:'lavoura', metodo: ts.length ? 'igual' : 'area', partes: partes});
+      ok++;
+    });
+    return {ok: ok, pulados: pulados};
+  }
+  // Divide um valor em partes que somam exatamente o total (a última parte leva a diferença de arredondamento)
+  function dividirValor(total, fracoes){
+    var acum = 0;
+    return fracoes.map(function(fr, i){
+      if(i === fracoes.length - 1) return Math.round((total - acum) * 100) / 100;
+      var v = Math.round(total * fr * 100) / 100; acum += v; return v;
+    });
+  }
+
 
   function recalcularValorPorQuantidade(){
     var qtdEl = document.getElementById('f-quantidade');
@@ -5888,7 +6229,8 @@
       renderCalagemModal();
       return;
     }
-    if(e.target && (e.target.id === 'rent-incluir-depreciacao' || e.target.id === 'rent-incluir-custo-oport' || e.target.id === 'rent-taxa-oportunidade')){
+    if(e.target && (e.target.id === 'rent-incluir-depreciacao' || e.target.id === 'rent-incluir-custo-oport' || e.target.id === 'rent-taxa-oportunidade' || e.target.id === 'rent-incluir-gerais')){
+      if(e.target.id === 'rent-incluir-gerais') rentabilidadeIncluirGerais = e.target.checked;
       if(e.target.id === 'rent-incluir-depreciacao') rentabilidadeIncluirDepreciacao = e.target.checked;
       if(e.target.id === 'rent-incluir-custo-oport') rentabilidadeIncluirCustoOportunidade = e.target.checked;
       if(e.target.id === 'rent-taxa-oportunidade') rentabilidadeTaxaOportunidade = parseFloat(e.target.value) || 0;
@@ -5903,13 +6245,16 @@
       renderEfetivarVendaModal();
       return;
     }
-    if(e.target && e.target.id === 'f-comboSafraRateio'){
-      atualizarSafraFinanceiroFiltrada();
+    if(e.target && e.target.id === 'classif-todos'){
+      document.querySelectorAll('.classif-cb').forEach(function(cb){ cb.checked = e.target.checked; });
       return;
     }
-    if(e.target && e.target.id === 'cp-comboSafraRateio'){
-      atualizarSafraContaPagarFiltrada();
+    if(e.target && e.target.closest && e.target.closest('[data-destino-widget]')){
+      renderDestinoWidget(e.target.closest('[data-destino-widget]'));
       return;
+    }
+    if(e.target && e.target.name === 'valor' && e.target.form && e.target.form.querySelector('[data-destino-widget]')){
+      renderDestinoWidget(e.target.form.querySelector('[data-destino-widget]'));
     }
     if(e.target && e.target.id && e.target.id.indexOf('search-') === 0){
       var entityKey = e.target.id.slice(7);
@@ -6204,7 +6549,7 @@
             dataPlantio: '', anoAgricola: '', status: data.get('statusSafraAtual') || 'andamento',
             criadoEm: Date.now() + 1
           });
-          saveKey('safras', state.safras);
+          sincronizarLavouras(); saveKey('safras', state.safras);
         }
       }
       saveKey('talhoes', state.talhoes);
@@ -6212,9 +6557,39 @@
       form.reset(); renderAll(); return;
     }
 
+    if(form.id === 'form-lavoura'){
+      var lavTalhoes = [];
+      form.querySelectorAll('input[name="lavTalhaoIds"]:checked').forEach(function(cb){ lavTalhoes.push(cb.value); });
+      if(!lavTalhoes.length){ alert('Marque pelo menos um talhão para a lavoura.'); return; }
+      var lavCulturaId = data.get('culturaId');
+      var lavAno = normalizarAnoAgricola(data.get('anoAgricola'));
+      var jaTemNaLavoura = [];
+      var lavAgora = Date.now();
+      lavTalhoes.forEach(function(tid, idx){
+        var existe = state.safras.some(function(sx){ return sx.talhaoId === tid && sx.culturaId === lavCulturaId && normalizarAnoAgricola(sx.anoAgricola) === lavAno; });
+        if(existe){ jaTemNaLavoura.push(talhaoNome(tid)); return; }
+        state.safras.push({
+          id: uid(), talhaoId: tid, culturaId: lavCulturaId, anoAgricola: lavAno, status: data.get('status') || 'planejada',
+          dataPlantio: data.get('dataPlantio') || '', previsaoColheita: data.get('previsaoColheita') || '',
+          produtividadeEsperada: parseFloat(data.get('produtividadeEsperada')) || 0,
+          areaPlantada: parseFloat(data.get('lavArea-' + tid)) || 0, ativa: true, criadoEm: lavAgora + idx
+        });
+      });
+      sincronizarLavouras();
+      var lavNomeDigitado = (data.get('nomeLavoura') || '').trim();
+      if(lavNomeDigitado){
+        var lavCriada = state.lavouras.find(function(l){ return chaveLavoura(l.culturaId, l.anoAgricola) === chaveLavoura(lavCulturaId, lavAno); });
+        if(lavCriada){ lavCriada.nome = lavNomeDigitado; saveKey('lavouras', state.lavouras); }
+      }
+      saveKey('safras', state.safras);
+      if(jaTemNaLavoura.length) alert('Esses talhões já estavam nessa lavoura e foram ignorados: ' + jaTemNaLavoura.join(', '));
+      form.reset(); renderAll(); return;
+    }
+
     if(form.id === 'form-safra'){
       var sEditingId = form.dataset.editingId;
       var sFields = { talhaoId: data.get('talhaoId'), culturaId: data.get('culturaId'), dataPlantio: data.get('dataPlantio') || '', anoAgricola: (data.get('anoAgricola')||'').trim(), status: data.get('status'), produtividadeEsperada: parseFloat(data.get('produtividadeEsperada')) || 0, previsaoColheita: data.get('previsaoColheita') || '' };
+      sFields.areaPlantada = parseFloat(data.get('areaPlantada')) || 0;
       if(sEditingId){
         var sIdx = state.safras.findIndex(function(s){ return s.id === sEditingId; });
         if(sIdx !== -1){ Object.keys(sFields).forEach(function(k){ state.safras[sIdx][k] = sFields[k]; }); }
@@ -6222,7 +6597,7 @@
         sFields.id = uid(); sFields.criadoEm = Date.now(); sFields.ativa = true;
         state.safras.push(sFields);
       }
-      saveKey('safras', state.safras);
+      sincronizarLavouras(); saveKey('safras', state.safras);
       editState = null;
       form.reset(); renderAll(); return;
     }
@@ -6270,7 +6645,7 @@
         state.financeiro.push({
           id: uid(), origem: 'colheitaVenda', contaId:'ct-venda-colheita', tipo:'receita', categoria:'Venda de Colheita', valor: cvQtd * cvPreco, data: cvData,
           quantidade: cvQtd, peso:0, unidade: data.get('unidade') || '', status:'Pago',
-          talhaoId: cvSafra ? cvSafra.talhaoId : '', parceiroId: cvParceiroId, membroId:'',
+          talhaoId: cvSafra ? cvSafra.talhaoId : '', safraId: cvSafraId || '', destino: cvSafraId ? 'lavoura' : '', parceiroId: cvParceiroId, membroId:'',
           descricao: 'Venda de ' + cvQtd + (data.get('unidade') ? ' ' + data.get('unidade') : '') + ' — ' + safraLabel(cvSafraId),
           criadoEm: Date.now()
         });
@@ -6303,76 +6678,21 @@
 
     if(form.id === 'form-contapagar'){
       var cpEditingId = form.dataset.editingId;
-      var cpTalhoesIds = [];
-      document.querySelectorAll('input[name="talhaoIdsCP"]:checked').forEach(function(cb){ cpTalhoesIds.push(cb.value); });
-      var cpValorBase = parseFloat(data.get('valor')) || 0;
-      var cpCamposComuns = {
+      var cpDestino = lerDestinoDoForm(form);
+      if(cpDestino.erro){ alert(cpDestino.erro); return; }
+      var cpFields = {
         descricao: (data.get('descricao') || '').trim(), categoria: data.get('categoria') || '',
         parceiroId: data.get('parceiroId') || '', vencimento: data.get('vencimento') || '',
-        status: data.get('status') || 'Pendente', dataPagamento: data.get('dataPagamento') || ''
+        status: data.get('status') || 'Pendente', dataPagamento: data.get('dataPagamento') || '',
+        valor: parseFloat(data.get('valor')) || 0
       };
-
-      var cpComboSafraRateio = data.get('comboSafraRateio');
-      if(cpComboSafraRateio && cpTalhoesIds.length >= 2 && !cpEditingId){
-        var cpPartesCombo = cpComboSafraRateio.split('::');
-        var cpCulturaIdCombo = cpPartesCombo[0];
-        var cpAnoAgricolaCombo = cpPartesCombo[1] || '';
-        var cpMetodoRateio = data.get('metodoRateioSafra') || 'area';
-        var cpSafrasDoCombo = state.safras.filter(function(s){
-          return cpTalhoesIds.indexOf(s.talhaoId) !== -1 && s.culturaId === cpCulturaIdCombo && (s.anoAgricola || '') === cpAnoAgricolaCombo;
-        });
-        if(!cpSafrasDoCombo.length){
-          alert('Não encontrei nenhuma safra correspondente nos talhões marcados. Confira a seleção.');
-          return;
-        }
-        var cpBaseRateio;
-        if(cpMetodoRateio === 'area'){
-          cpBaseRateio = cpSafrasDoCombo.map(function(s){
-            var t = state.talhoes.find(function(tx){ return tx.id === s.talhaoId; });
-            return {safra: s, peso: t ? (Number(t.area) || 0) : 0};
-          });
-        } else {
-          cpBaseRateio = cpSafrasDoCombo.map(function(s){ return {safra: s, peso: 1}; });
-        }
-        var cpPesoTotal = cpBaseRateio.reduce(function(s,b){ return s + b.peso; }, 0);
-        if(cpPesoTotal <= 0){
-          alert('Não foi possível ratear (área total zerada). Confira as áreas dos talhões.');
-          return;
-        }
-        cpBaseRateio.forEach(function(b, idxRateio){
-          var fracao = b.peso / cpPesoTotal;
-          var novaConta = {};
-          Object.keys(cpCamposComuns).forEach(function(k){ novaConta[k] = cpCamposComuns[k]; });
-          novaConta.id = uid();
-          novaConta.criadoEm = Date.now() + idxRateio;
-          novaConta.valor = Math.round(cpValorBase * fracao * 100) / 100;
-          novaConta.talhoesIds = [b.safra.talhaoId];
-          novaConta.talhaoId = b.safra.talhaoId;
-          novaConta.safraId = b.safra.id;
-          novaConta.descricao = (cpCamposComuns.descricao ? cpCamposComuns.descricao + ' ' : '') + '(rateio ' + (cpMetodoRateio === 'area' ? 'por área' : 'igual') + ', ' + fmtNum(fracao*100) + '% — ' + escapeHtml(talhaoNome(b.safra.talhaoId)) + ')';
-          state.contasPagar.push(novaConta);
-        });
-        saveKey('contasPagar', state.contasPagar);
-        editState = null;
-        form.reset();
-        renderAll();
-        return;
-      }
-
-      var cpFields = {};
-      Object.keys(cpCamposComuns).forEach(function(k){ cpFields[k] = cpCamposComuns[k]; });
-      cpFields.valor = cpValorBase;
-      cpFields.talhoesIds = cpTalhoesIds;
-      cpFields.talhaoId = cpTalhoesIds.length === 1 ? cpTalhoesIds[0] : '';
-      cpFields.safraId = data.get('safraId') || '';
-
       if(cpEditingId){
         var idxCpEdit = state.contasPagar.findIndex(function(x){ return x.id === cpEditingId; });
-        if(idxCpEdit !== -1){ Object.keys(cpFields).forEach(function(k){ state.contasPagar[idxCpEdit][k] = cpFields[k]; }); }
+        if(idxCpEdit !== -1){ Object.keys(cpFields).forEach(function(k){ state.contasPagar[idxCpEdit][k] = cpFields[k]; }); aplicarDestino(state.contasPagar[idxCpEdit], cpDestino); }
       } else {
         cpFields.id = uid();
         cpFields.criadoEm = Date.now();
-        state.contasPagar.push(cpFields);
+        state.contasPagar.push(aplicarDestino(cpFields, cpDestino));
       }
       saveKey('contasPagar', state.contasPagar);
       editState = null;
@@ -6385,7 +6705,8 @@
       var finEditingId = form.dataset.editingId;
       var finContaId = data.get('contaId');
       var finConta = state.contasFinanceiro.find(function(c){ return c.id === finContaId; });
-      var finTalhoesIds = data.getAll('talhaoIds');
+      var finDestino = lerDestinoDoForm(form);
+      if(finDestino.erro){ alert(finDestino.erro); return; }
       var finEhDiaria = contaNome(finContaId) === 'Diária';
       var finQtdDiarias = parseFloat(data.get('qtdDiarias')) || 0;
       var finValorDiaria = parseFloat(data.get('valorDiaria')) || 0;
@@ -6395,8 +6716,7 @@
         quantidade: finEhDiaria ? 0 : (parseFloat(data.get('quantidade')) || 0), valorUnitario: finEhDiaria ? 0 : (parseFloat(data.get('valorUnitario')) || 0),
         unidade: finEhDiaria ? 'diárias' : (data.get('unidade') || '').trim(),
         status: data.get('status') || 'Pago', data: data.get('data') || '', vencimento: data.get('vencimento') || '',
-        talhoesIds: finTalhoesIds, talhaoId: finTalhoesIds.length === 1 ? finTalhoesIds[0] : '', parceiroId: finEhDiaria ? '' : (data.get('parceiroId') || ''),
-        safraId: data.get('safraId') || '',
+        parceiroId: finEhDiaria ? '' : (data.get('parceiroId') || ''),
         membroId: data.get('membroId') || '', descricao: (data.get('descricao') || '').trim(),
         horasExtras: parseFloat(data.get('horasExtras')) || 0, valorHoraExtra: parseFloat(data.get('valorHoraExtra')) || 0,
         qtdDiarias: finQtdDiarias, valorDiaria: finValorDiaria
@@ -6408,58 +6728,10 @@
         return;
       }
 
-      var finComboSafraRateio = data.get('comboSafraRateio');
-      if(finComboSafraRateio && finTalhoesIds.length >= 2 && !finEditingId){
-        var finPartesCombo = finComboSafraRateio.split('::');
-        var finCulturaIdCombo = finPartesCombo[0];
-        var finAnoAgricolaCombo = finPartesCombo[1] || '';
-        var finMetodoRateio = data.get('metodoRateioSafra') || 'area';
-        var finSafrasDoCombo = state.safras.filter(function(s){
-          return finTalhoesIds.indexOf(s.talhaoId) !== -1 && s.culturaId === finCulturaIdCombo && (s.anoAgricola || '') === finAnoAgricolaCombo;
-        });
-        if(!finSafrasDoCombo.length){
-          alert('Não encontrei nenhuma safra correspondente nos talhões marcados. Confira a seleção.');
-          return;
-        }
-        var finBaseRateio;
-        if(finMetodoRateio === 'area'){
-          finBaseRateio = finSafrasDoCombo.map(function(s){
-            var t = state.talhoes.find(function(tx){ return tx.id === s.talhaoId; });
-            return {safra: s, peso: t ? (Number(t.area) || 0) : 0};
-          });
-        } else {
-          finBaseRateio = finSafrasDoCombo.map(function(s){ return {safra: s, peso: 1}; });
-        }
-        var finPesoTotal = finBaseRateio.reduce(function(s,b){ return s + b.peso; }, 0);
-        if(finPesoTotal <= 0){
-          alert('Não foi possível ratear (área total zerada). Confira as áreas dos talhões.');
-          return;
-        }
-        finBaseRateio.forEach(function(b, idxRateio){
-          var fracao = b.peso / finPesoTotal;
-          var camposRateados = {};
-          Object.keys(finFields).forEach(function(k){ camposRateados[k] = finFields[k]; });
-          camposRateados.id = uid();
-          camposRateados.criadoEm = Date.now() + idxRateio;
-          camposRateados.valor = Math.round(finFields.valor * fracao * 100) / 100;
-          camposRateados.quantidade = finFields.quantidade ? Math.round(finFields.quantidade * fracao * 100) / 100 : 0;
-          camposRateados.talhoesIds = [b.safra.talhaoId];
-          camposRateados.talhaoId = b.safra.talhaoId;
-          camposRateados.safraId = b.safra.id;
-          camposRateados.descricao = (finFields.descricao ? finFields.descricao + ' ' : '') + '(rateio ' + (finMetodoRateio === 'area' ? 'por área' : 'igual') + ', ' + fmtNum(fracao*100) + '% — ' + escapeHtml(talhaoNome(b.safra.talhaoId)) + ')';
-          state.financeiro.push(camposRateados);
-        });
-        saveKey('financeiro', state.financeiro);
-        editState = null;
-        form.reset();
-        renderAll();
-        return;
-      }
-
       var finIdParaAnexo = null;
       if(finEditingId){
         var finIdx = state.financeiro.findIndex(function(f){ return f.id === finEditingId; });
-        if(finIdx !== -1){ Object.keys(finFields).forEach(function(k){ state.financeiro[finIdx][k] = finFields[k]; }); }
+        if(finIdx !== -1){ Object.keys(finFields).forEach(function(k){ state.financeiro[finIdx][k] = finFields[k]; }); aplicarDestino(state.financeiro[finIdx], finDestino); }
         finIdParaAnexo = finEditingId;
       } else {
         var finParcelas = parseInt(data.get('parcelas'), 10) || 1;
@@ -6483,7 +6755,7 @@
             parcelaFields.parcelaNum = pi + 1;
             parcelaFields.parcelaTotal = finParcelas;
             if(pi === 0) finIdParaAnexo = parcelaFields.id;
-            state.financeiro.push(parcelaFields);
+            state.financeiro.push(aplicarDestino(parcelaFields, finDestino));
           }
         } else {
           var finRepeticoes = parseInt(data.get('recorrenciaRepeticoes'), 10) || 0;
@@ -6505,11 +6777,11 @@
               recFields.recorrenciaTotal = finRepeticoes;
               recFields.recorrenciaFrequencia = data.get('recorrenciaFrequencia') || 'Mensal';
               if(ri === 0) finIdParaAnexo = recFields.id;
-              state.financeiro.push(recFields);
+              state.financeiro.push(aplicarDestino(recFields, finDestino));
             }
           } else {
             finFields.id = uid(); finFields.criadoEm = Date.now();
-            state.financeiro.push(finFields);
+            state.financeiro.push(aplicarDestino(finFields, finDestino));
             finIdParaAnexo = finFields.id;
           }
         }
@@ -6552,12 +6824,7 @@
       resultadosBuscaEl.style.display = 'none';
     }
 
-    if(e.target && e.target.name === 'talhaoIds' && e.target.closest && e.target.closest('#form-financeiro')){
-      atualizarSafraFinanceiroFiltrada();
-    }
-    if(e.target && e.target.name === 'talhaoIdsCP' && e.target.closest && e.target.closest('#form-contapagar')){
-      atualizarSafraContaPagarFiltrada();
-    }
+
 
     var plotBtn = e.target.closest('.plot[data-talhao-id]');
     if(plotBtn){
@@ -6956,7 +7223,28 @@
       renderAgro50();
       return;
     }
-    if(action === 'del-safra'){ state.safras = state.safras.filter(function(s){ return s.id !== id; }); saveKey('safras', state.safras); renderAll(); return; }
+    if(action === 'renomear-lavoura'){
+      var lavRen = lavouraPorId(id);
+      if(!lavRen) return;
+      var novoNomeLav = window.prompt('Apelido da lavoura (deixe vazio para usar só cultura + ano):', lavRen.nome || '');
+      if(novoNomeLav === null) return;
+      lavRen.nome = novoNomeLav.trim();
+      saveKey('lavouras', state.lavouras); renderAll(); return;
+    }
+    if(action === 'toggle-encerrar-lavoura'){
+      var lavEnc = lavouraPorId(id);
+      if(!lavEnc) return;
+      lavEnc.encerrada = !lavEnc.encerrada;
+      saveKey('lavouras', state.lavouras); renderAll(); return;
+    }
+    if(action === 'del-safra'){
+      // Lançamentos vinculados a essa safra voltam para "a classificar" (não ficam apontando para uma safra que não existe mais)
+      var mudouFinDel = false, mudouCpDel = false;
+      state.financeiro.forEach(function(f){ if(f.safraId === id){ f.safraId = ''; if(f.destino === 'lavoura') f.destino = ''; mudouFinDel = true; } });
+      state.contasPagar.forEach(function(c){ if(c.safraId === id){ c.safraId = ''; if(c.destino === 'lavoura') c.destino = ''; mudouCpDel = true; } });
+      if(mudouFinDel) saveKey('financeiro', state.financeiro);
+      if(mudouCpDel) saveKey('contasPagar', state.contasPagar);
+      state.safras = state.safras.filter(function(s){ return s.id !== id; }); sincronizarLavouras(); saveKey('safras', state.safras); renderAll(); return; }
     if(action === 'edit-safra'){ editState = {scope:'safras', id: id}; renderAll(); var f3 = document.getElementById('form-safra'); if(f3) f3.scrollIntoView({behavior:'smooth', block:'start'}); return; }
     if(action === 'toggle-safra-mapa-ano'){
       var anoClicado = btn.dataset.ano;
@@ -6975,7 +7263,7 @@
       var safraToggle = state.safras.find(function(s){ return s.id === id; });
       if(!safraToggle) return;
       safraToggle.ativa = safraToggle.ativa === false ? true : false;
-      saveKey('safras', state.safras);
+      sincronizarLavouras(); saveKey('safras', state.safras);
       renderAll();
       return;
     }
@@ -7066,6 +7354,7 @@
         tipo: 'receita', categoria: 'Venda Antecipada', valor: valorLiquidoFinal, data: dataPagamentoFinal,
         quantidade: qtdEntregueFinal, unidade: vendaEfetivar.unidade || '', status: 'Pago',
         talhaoId: vendaEfetivar.safraId ? (state.safras.find(function(s){ return s.id === vendaEfetivar.safraId; }) || {}).talhaoId || '' : '',
+        safraId: vendaEfetivar.safraId || '', destino: vendaEfetivar.safraId ? 'lavoura' : '',
         parceiroId: vendaEfetivar.compradorId || '', membroId: '',
         descricao: 'Venda Antecipada — ' + safraLabel(vendaEfetivar.safraId) + ' (bruto ' + fmtBRL(valorBrutoFinal) + ', descontos: ' + (descricaoDescontos || 'nenhum') + ' = ' + fmtBRL(valorTotalDescontosFinal) + '; entregue em ' + fmtDate(dataEntregaFinal) + ')',
         criadoEm: Date.now()
@@ -7094,6 +7383,18 @@
     if(action === 'toggle-financeiro-mais-opcoes'){
       financeiroMostrarMaisOpcoes = !financeiroMostrarMaisOpcoes;
       renderFinanceiro();
+      return;
+    }
+    if(action === 'aplicar-classificacao'){
+      var destSel = (document.getElementById('classif-destino') || {}).value || '';
+      var idsMarcados = [];
+      document.querySelectorAll('.classif-cb:checked').forEach(function(cb){ idsMarcados.push(cb.value); });
+      if(!destSel){ alert('Escolha o destino.'); return; }
+      if(!idsMarcados.length){ alert('Marque pelo menos um lançamento na tabela.'); return; }
+      var resClassif = classificarLancamentos(idsMarcados, destSel);
+      saveKey('financeiro', state.financeiro);
+      renderFinanceiro();
+      alert(resClassif.ok + ' lançamento(s) classificado(s).' + (resClassif.pulados.length ? '\n\nNão classificados:\n' + resClassif.pulados.join('\n') : ''));
       return;
     }
     if(action === 'toggle-financeiro-so-sem-safra'){
