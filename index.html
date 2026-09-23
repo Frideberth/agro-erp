@@ -3810,7 +3810,13 @@
         html += '<option value="">— escolha —</option><option value="geral">🏠 Geral da fazenda</option><option value="talhao">🗺️ Só talhão (mantém o talhão que já está)</option>';
         html += '<optgroup label="🌱 Lavoura">';
         lavourasSelecionaveis().forEach(function(l){ html += '<option value="lav:' + l.id + '">' + escapeHtml(lavouraLabel(l.id)) + '</option>'; });
-        html += '</optgroup></select></div>';
+        html += '</optgroup>';
+        if(state.patrimonio.length){
+          html += '<optgroup label="🚜 Máquina / equipamento">';
+          patrimonioParaDestino().forEach(function(it){ html += '<option value="maq:' + it.id + '">' + escapeHtml(it.nome) + '</option>'; });
+          html += '</optgroup>';
+        }
+        html += '</select></div>';
         html += '<button type="button" class="btn" data-action="aplicar-classificacao">Aplicar aos marcados</button>';
         html += '<span style="font-size:11.5px; color:var(--ink-soft); flex-basis:100%;">Lavoura: cada lançamento vai para a safra dessa lavoura no talhão dele (se estava dividido entre vários talhões, cada parte vai para o seu). Sem talhão, divide pela área plantada da lavoura.</span>';
         html += '</div>';
@@ -4593,7 +4599,7 @@
     if(!temTalhao && r.origem === 'financiamento') return 'financiamento';
     return 'classificar';
   }
-  var DESTINO_LABEL = {lavoura:'Lavoura', talhao:'Só talhão', geral:'Geral da fazenda', estoque:'Estoque', financiamento:'Financiamento', classificar:'A classificar'};
+  var DESTINO_LABEL = {lavoura:'Lavoura', talhao:'Só talhão', geral:'Geral da fazenda', maquina:'Máquina / equipamento', estoque:'Estoque', financiamento:'Financiamento', classificar:'A classificar'};
   function destinoCelulaHtml(r){
     var d = destinoEfetivo(r);
     if(d === 'lavoura'){
@@ -4605,8 +4611,30 @@
       });
       return (lavs.length ? escapeHtml(lavs.join(', ')) : '—') + (semLav.length ? '<br><span style="font-size:11px; color:var(--ink-soft);">+ só talhão: ' + escapeHtml(semLav.join(', ')) + '</span>' : '');
     }
+    if(d === 'maquina') return '🚜 ' + escapeHtml((r.maquinasIds || []).map(nomePatrimonio).join(', ') || '—');
     if(d === 'classificar') return '<span class="badge" style="background:#DFA84E; color:#1B1508; white-space:nowrap;">⚠️ A classificar</span>';
     return '<span style="font-size:12px; color:var(--ink-soft);">' + DESTINO_LABEL[d] + '</span>';
+  }
+
+  function patrimonioParaDestino(){
+    var ordemCat = {'Máquina':0, 'Veículo':1, 'Outro':2, 'Benfeitoria':3};
+    return state.patrimonio.slice().sort(function(a,b){
+      var d = (ordemCat[a.categoria] !== undefined ? ordemCat[a.categoria] : 2) - (ordemCat[b.categoria] !== undefined ? ordemCat[b.categoria] : 2);
+      return d || (a.nome || '').localeCompare(b.nome || '', 'pt-BR');
+    });
+  }
+  // Custos pagos lançados com destino "Máquina / equipamento" para um item do Patrimônio (dividido igualmente se marcou vários)
+  function custosDaMaquina(patrimonioId){
+    var soma = 0, qtd = 0;
+    var somar = function(r, pago){
+      if(!pago || destinoEfetivo(r) !== 'maquina') return;
+      var ms = r.maquinasIds || [];
+      if(ms.indexOf(patrimonioId) === -1) return;
+      soma += (Number(r.valor) || 0) / ms.length; qtd++;
+    };
+    state.financeiro.forEach(function(f){ somar(f, f.tipo === 'custo' && (f.status || 'Pago') !== 'Pendente'); });
+    state.contasPagar.forEach(function(c){ somar(c, c.status === 'Pago'); });
+    return {valor: soma, qtd: qtd};
   }
 
   /* ---------------- Custos/receitas diretos de safra e lavoura ---------------- */
@@ -4694,8 +4722,9 @@
     var mapa = mapaSafrasAtivasPorMes();
     var porSafra = {}, naoAlocado = 0;
     var itens = [];
-    state.financeiro.forEach(function(f){ if(f.tipo === 'custo' && (f.status||'Pago') !== 'Pendente' && destinoEfetivo(f) === 'geral') itens.push({valor: Number(f.valor)||0, data: f.data || f.vencimento || ''}); });
-    state.contasPagar.forEach(function(c){ if(c.status === 'Pago' && destinoEfetivo(c) === 'geral') itens.push({valor: Number(c.valor)||0, data: c.dataPagamento || c.vencimento || ''}); });
+    var ehGeralOuMaquina = function(r){ var d = destinoEfetivo(r); return d === 'geral' || d === 'maquina'; };
+    state.financeiro.forEach(function(f){ if(f.tipo === 'custo' && (f.status||'Pago') !== 'Pendente' && ehGeralOuMaquina(f)) itens.push({valor: Number(f.valor)||0, data: f.data || f.vencimento || ''}); });
+    state.contasPagar.forEach(function(c){ if(c.status === 'Pago' && ehGeralOuMaquina(c)) itens.push({valor: Number(c.valor)||0, data: c.dataPagamento || c.vencimento || ''}); });
     itens.forEach(function(it){
       var ativas = it.data ? (mapa[it.data.slice(0,7)] || []) : [];
       var areaAtiva = ativas.reduce(function(s,a){ return s + a.area; }, 0);
@@ -4838,7 +4867,7 @@
 
     html += '<div class="paper form-card" style="margin-bottom:20px;">';
     html += '<div style="display:flex; gap:20px; flex-wrap:wrap; align-items:center;">';
-    html += '<label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;" title="Só afeta as tabelas por lavoura e por cultura"><input type="checkbox" id="rent-incluir-gerais"' + (rentabilidadeIncluirGerais ? ' checked' : '') + '> Incluir custos gerais da fazenda (rateados)</label>';
+    html += '<label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;" title="Só afeta as tabelas por lavoura e por cultura"><input type="checkbox" id="rent-incluir-gerais"' + (rentabilidadeIncluirGerais ? ' checked' : '') + '> Incluir custos gerais e de máquinas (rateados)</label>';
     html += '<label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;"><input type="checkbox" id="rent-incluir-depreciacao"' + (rentabilidadeIncluirDepreciacao ? ' checked' : '') + '> Incluir Depreciação</label>';
     html += '<label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;"><input type="checkbox" id="rent-incluir-custo-oport"' + (rentabilidadeIncluirCustoOportunidade ? ' checked' : '') + '> Incluir Custo de Oportunidade</label>';
     if(rentabilidadeIncluirCustoOportunidade){
@@ -4920,7 +4949,20 @@
       html += '</tbody></table></div>';
     }
 
-    html += '<div class="section-title" style="margin-top:0;">Por talhão</div>';
+    var maquinasComCusto = state.patrimonio.map(function(it){ var c = custosDaMaquina(it.id); return {it: it, valor: c.valor, qtd: c.qtd, horas: horasUsoTotais(it.id)}; }).filter(function(x){ return x.qtd > 0; });
+    html += '<div class="section-title">Por máquina / equipamento</div>';
+    if(!maquinasComCusto.length){
+      html += '<div class="paper empty-state">Nenhum custo lançado com destino "Máquina / equipamento" ainda.</div>';
+    } else {
+      html += '<div class="paper table-wrap"><table><thead><tr><th>Máquina / equipamento</th><th>Categoria</th><th>Lançamentos</th><th>Custos pagos</th><th>Horas de uso</th><th>Custo/hora</th></tr></thead><tbody>';
+      maquinasComCusto.sort(function(a,b){ return b.valor - a.valor; }).forEach(function(x){
+        html += '<tr><td>' + escapeHtml(x.it.nome) + '</td><td>' + escapeHtml(x.it.categoria || '—') + '</td><td class="num">' + x.qtd + '</td><td class="num cost">' + fmtBRL(x.valor) + '</td>';
+        html += '<td class="num">' + (x.horas > 0 ? fmtNum(x.horas) + ' h' : '—') + '</td><td class="num">' + (x.horas > 0 ? fmtBRL(x.valor / x.horas) : '—') + '</td></tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+
+    html += '<div class="section-title">Por talhão</div>';
     if(!state.talhoes.length){
       html += '<div class="paper empty-state">Cadastre talhões para ver a rentabilidade.</div>';
     } else {
@@ -4952,7 +4994,7 @@
       html += '</tbody></table></div>';
     }
 
-    html += '<div class="paper note-box"><strong>Por lavoura / por cultura:</strong> custos e receitas lançados direto na lavoura (destino "Lavoura"), pagos/recebidos. Custos gerais (destino "Geral") são rateados entre as lavouras ativas em cada mês, pela área plantada. Depreciação e custo de oportunidade entram pelos meses em que a lavoura ocupa a terra × área plantada ÷ área total da fazenda. Custos "só talhão" não entram em lavoura.<br><strong>Por talhão:</strong> tudo que já caiu no talhão, de qualquer lavoura e de qualquer ano, mais os custos "só talhão".</div>';
+    html += '<div class="paper note-box"><strong>Por lavoura / por cultura:</strong> custos e receitas lançados direto na lavoura (destino "Lavoura"), pagos/recebidos. Custos gerais e de máquinas (destinos "Geral" e "Máquina / equipamento") só entram se você ligar a opção, rateados entre as lavouras ativas em cada mês, pela área plantada. Depreciação e custo de oportunidade entram pelos meses em que a lavoura ocupa a terra × área plantada ÷ área total da fazenda. Custos "só talhão" não entram em lavoura.<br><strong>Por talhão:</strong> tudo que já caiu no talhão, de qualquer lavoura e de qualquer ano, mais os custos "só talhão".</div>';
 
     el.innerHTML = html;
   }
@@ -5998,19 +6040,23 @@
     var safras = [], talhoes = [];
     form.querySelectorAll('input[name="destSafraIds"]:checked').forEach(function(cb){ safras.push(cb.value); });
     form.querySelectorAll('input[name="destTalhaoIds"]:checked').forEach(function(cb){ talhoes.push(cb.value); });
+    var maquinas = [];
+    form.querySelectorAll('input[name="destMaquinaIds"]:checked').forEach(function(cb){ maquinas.push(cb.value); });
     return {
+      maquinaIds: maquinas,
       destino: radio ? radio.value : '', lavouraId: selLav ? selLav.value : '', metodo: selMet ? selMet.value : 'area',
       safraIds: safras, safraUnica: selSafraUnica ? selSafraUnica.value : '', talhaoIds: talhoes,
       lavouraMudou: !!(selLav && cont.dataset.ultimaLavoura !== selLav.value)
     };
   }
   function estadoDestinoDoRegistro(r){
-    if(!r) return {destino:'', lavouraId:'', metodo:'area', safraIds:null, safraUnica:'', talhaoIds:[]};
+    if(!r) return {destino:'', lavouraId:'', metodo:'area', safraIds:null, safraUnica:'', talhaoIds:[], maquinaIds:[]};
     var d = destinoEfetivo(r);
     var safraIdsR = d === 'lavoura' ? partesDoLancamento(r).map(function(pt){ return pt.safraId; }).filter(function(x){ return x; }) : [];
     var sf = safraIdsR.length ? state.safras.find(function(x){ return x.id === safraIdsR[0]; }) : null;
     return {
-      destino: (d === 'lavoura' || d === 'talhao' || d === 'geral') ? d : '',
+      destino: (d === 'lavoura' || d === 'talhao' || d === 'geral' || d === 'maquina') ? d : '',
+      maquinaIds: r.maquinasIds || [],
       lavouraId: sf ? sf.lavouraId : '', metodo: r.metodoRateio || 'area', safraIds: safraIdsR.length ? safraIdsR : null, safraUnica: '',
       talhaoIds: talhoesDoLancamento(r)
     };
@@ -6028,7 +6074,7 @@
 
     var html = '<label style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em;">Destino do lançamento *</label>';
     html += '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
-    [{v:'lavoura', l:'🌱 Lavoura'}, {v:'talhao', l:'🗺️ Só talhão (sem cultura)'}, {v:'geral', l:'🏠 Geral da fazenda'}].forEach(function(o){
+    [{v:'lavoura', l:'🌱 Lavoura'}, {v:'talhao', l:'🗺️ Só talhão (sem cultura)'}, {v:'maquina', l:'🚜 Máquina / equipamento'}, {v:'geral', l:'🏠 Geral da fazenda'}].forEach(function(o){
       var marcado = st.destino === o.v;
       html += '<label style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; padding:6px 12px; border:1px solid ' + (marcado ? 'var(--accent)' : 'var(--paper-line)') + '; border-radius:20px; background:' + (marcado ? '#F1E0BC' : '#FBF7EC') + '; cursor:pointer;">';
       html += '<input type="radio" name="destino" value="' + o.v + '"' + (marcado ? ' checked' : '') + '> ' + o.l + '</label>';
@@ -6036,7 +6082,7 @@
     html += '</div>';
 
     if(!st.destino){
-      html += '<span style="font-size:11.5px; color:var(--ink-soft);">Escolha para onde vai esse valor. Lavoura = custo/receita de uma cultura plantada (milho 2026, café 2026/2027...). Só talhão = coisa do talhão que não é de uma cultura (calagem, terraço). Geral = custo da fazenda como um todo (energia, administração, manutenção).</span>';
+      html += '<span style="font-size:11.5px; color:var(--ink-soft);">Escolha para onde vai esse valor. Lavoura = custo/receita de uma cultura plantada (milho 2026, café 2026/2027...). Só talhão = coisa do talhão que não é de uma cultura (calagem, terraço). Máquina = manutenção, peças, combustível de um trator, colhedora, veículo ou equipamento do Patrimônio. Geral = custo da fazenda como um todo (energia, administração).</span>';
       if(st.talhaoIds && st.talhaoIds.length) html += '<span style="font-size:11.5px; color:var(--cost-dark);">Esse lançamento hoje está no(s) talhão(ões) ' + escapeHtml(st.talhaoIds.map(talhaoNome).join(', ')) + ', sem destino definido.</span>';
     }
 
@@ -6092,6 +6138,22 @@
       html += '<span style="font-size:11px; color:var(--ink-soft);">Fica no talhão, mas não entra em nenhuma lavoura. Marcando mais de um, o valor é dividido igualmente.</span>';
     }
 
+    if(st.destino === 'maquina'){
+      if(!state.patrimonio.length){
+        html += '<span style="font-size:12px; color:var(--cost-dark);">Nenhum item cadastrado no Patrimônio ainda.</span>';
+      } else {
+        var catAtual = null;
+        html += '<div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">';
+        patrimonioParaDestino().forEach(function(it){
+          if(it.categoria !== catAtual){ catAtual = it.categoria; html += '<span style="flex-basis:100%; font-size:10.5px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin-top:4px;">' + escapeHtml(catAtual || 'Outro') + '</span>'; }
+          var mk = (st.maquinaIds || []).indexOf(it.id) !== -1;
+          html += '<label style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; padding:5px 10px; border:1px solid ' + (mk ? 'var(--accent)' : 'var(--paper-line)') + '; border-radius:20px; background:' + (mk ? '#F1E0BC' : '#FBF7EC') + '; cursor:pointer;">';
+          html += '<input type="checkbox" name="destMaquinaIds" value="' + it.id + '"' + (mk ? ' checked' : '') + '> ' + escapeHtml(it.nome) + '</label>';
+        });
+        html += '</div>';
+        html += '<span style="font-size:11px; color:var(--ink-soft);">Itens do Patrimônio. Marcando mais de um, o valor é dividido igualmente. Na Rentabilidade aparece o custo de cada máquina (e o custo por hora, quando a Colheita registra horas de uso).</span>';
+      }
+    }
     if(st.destino === 'geral'){
       html += '<span style="font-size:11.5px; color:var(--ink-soft);">Não fica em nenhum talhão. Na Rentabilidade por lavoura você pode ligar "Incluir custos gerais" para ratear esses valores pelas lavouras ativas no mês, pela área plantada.</span>';
     }
@@ -6103,6 +6165,12 @@
     if(!radio) return {erro: 'Escolha o destino do lançamento: Lavoura, Só talhão ou Geral da fazenda.'};
     var d = radio.value;
     if(d === 'geral') return {destino:'geral', partes:[]};
+    if(d === 'maquina'){
+      var ms = [];
+      form.querySelectorAll('input[name="destMaquinaIds"]:checked').forEach(function(cb){ ms.push(cb.value); });
+      if(!ms.length) return {erro: 'Marque pelo menos uma máquina ou equipamento.'};
+      return {destino:'maquina', maquinas: ms, partes:[]};
+    }
     if(d === 'talhao'){
       var ts = [];
       form.querySelectorAll('input[name="destTalhaoIds"]:checked').forEach(function(cb){ ts.push(cb.value); });
@@ -6125,7 +6193,8 @@
   // Grava o destino num registro (lançamento ou conta a pagar) a partir do valor dele
   function aplicarDestino(reg, dest){
     reg.destino = dest.destino;
-    delete reg.partes; delete reg.metodoRateio;
+    delete reg.partes; delete reg.metodoRateio; delete reg.maquinasIds;
+    if(dest.destino === 'maquina'){ reg.maquinasIds = dest.maquinas.slice(); reg.talhoesIds = []; reg.talhaoId = ''; reg.safraId = ''; return reg; }
     if(dest.destino === 'geral'){ reg.talhoesIds = []; reg.talhaoId = ''; reg.safraId = ''; return reg; }
     if(dest.destino === 'talhao'){ reg.talhoesIds = dest.talhoes.slice(); reg.talhaoId = dest.talhoes.length === 1 ? dest.talhoes[0] : ''; reg.safraId = ''; return reg; }
     var partes = dest.partes;
@@ -6151,6 +6220,9 @@
       var ts = talhoesDoLancamento(f);
       if(destSel === 'geral'){
         f.destino = 'geral'; f.talhoesIds = []; f.talhaoId = ''; f.safraId = ''; ok++; return;
+      }
+      if(destSel.indexOf('maq:') === 0){
+        aplicarDestino(f, {destino:'maquina', maquinas:[destSel.slice(4)]}); ok++; return;
       }
       if(destSel === 'talhao'){
         if(!ts.length){ pulados.push(desc + ' — não tem talhão marcado'); return; }
