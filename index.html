@@ -448,7 +448,7 @@
 (function(){
   "use strict";
 
-  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas','sefazNotasPendentes','sefazItensRevisao','sefazProgresso','analisesSolo','imagensCampo'];
+  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas','sefazNotasPendentes','sefazItensRevisao','sefazProgresso','analisesSolo','imagensCampo','importsAplicados'];
   var state = {};
   var editState = null; // {scope:'generic', entityKey, id} ou {scope:'talhoes'|'safras'|'operacoes'|'financeiro'|'producao', id}
   ALL_KEYS.forEach(function(k){ state[k] = []; });
@@ -1077,6 +1077,22 @@
     return rawSet(currentWorkspaceId + '::' + key, arr);
   }
 
+  // Trava de importações únicas (seeds): registra que uma importação já foi aplicada,
+  // independente de os dados ainda existirem. Assim, excluir registros importados não faz eles voltarem.
+  function importJaAplicado(id){ return (state.importsAplicados || []).indexOf(id) !== -1; }
+  function marcarImportAplicado(id){
+    if(!Array.isArray(state.importsAplicados)) state.importsAplicados = [];
+    if(importJaAplicado(id)) return;
+    state.importsAplicados.push(id);
+    saveKey('importsAplicados', state.importsAplicados);
+  }
+  // Checa a trava; se ela ainda não existe mas os dados de antes da correção estão lá, marca como aplicada (sem duplicar).
+  function jaAplicadoOuLegado(id, checagemLegada){
+    if(importJaAplicado(id)) return true;
+    if(checagemLegada()){ marcarImportAplicado(id); return true; }
+    return false;
+  }
+
   function loadWorkspaces(){ return loadGlobal('workspaces').then(function(v){ return Array.isArray(v) ? v : []; }); }
   function saveWorkspaces(list){ return saveGlobal('workspaces', list); }
 
@@ -1244,7 +1260,7 @@
           state.pagamentos = [];
           saveKey('pagamentos', state.pagamentos);
         }
-        if(!state.patrimonio.some(function(p){ return p.id === 'import-patr-01'; })){
+        if(!jaAplicadoOuLegado('patrimonio-lote1-2026', function(){ return state.patrimonio.some(function(p){ return p.id === 'import-patr-01'; }); })){
           var itensPatrimonio = [
             {id:'import-patr-01', nome:'Barracão Novo', categoria:'Benfeitoria', status:'Operando', valor:150000, dataAquisicao:'2021-06-01', vidaUtilAnos:30, percentualResidual:20},
             {id:'import-patr-02', nome:'Barracão Velho', categoria:'Benfeitoria', status:'Operando', valor:50000, dataAquisicao:'2012-01-01', vidaUtilAnos:30, percentualResidual:20},
@@ -1269,8 +1285,9 @@
           var nowPatr = Date.now();
           itensPatrimonio.forEach(function(it, i){ it.criadoEm = nowPatr + i; state.patrimonio.push(it); });
           saveKey('patrimonio', state.patrimonio);
+          marcarImportAplicado('patrimonio-lote1-2026');
         }
-        if(!state.patrimonio.some(function(p){ return p.id === 'import-patr-20'; })){
+        if(!jaAplicadoOuLegado('patrimonio-lote2-2026', function(){ return state.patrimonio.some(function(p){ return p.id === 'import-patr-20'; }); })){
           var itensPatrimonio2 = [
             {id:'import-patr-20', nome:'Represa', categoria:'Benfeitoria', status:'Operando', valor:500000, dataAquisicao:'2021-03-01', vidaUtilAnos:30, percentualResidual:20},
             {id:'import-patr-21', nome:'Roçadeira (Agrale 1600, 2005)', categoria:'Máquina', status:'Operando', valor:3500, dataAquisicao:'2012-06-01', vidaUtilAnos:6, percentualResidual:20},
@@ -1287,6 +1304,7 @@
           var nowPatr2 = Date.now();
           itensPatrimonio2.forEach(function(it, i){ it.criadoEm = nowPatr2 + i; state.patrimonio.push(it); });
           saveKey('patrimonio', state.patrimonio);
+          marcarImportAplicado('patrimonio-lote2-2026');
         }
         (function(){
           var residuaisConhecidos = {
@@ -1388,7 +1406,7 @@
         })();
         (function(){
           var contratosBB = ['65208197', '65594153', '65208149'];
-          var jaTem = state.financiamentos.some(function(f){ return contratosBB.indexOf(f.numeroContrato) !== -1; });
+          var jaTem = jaAplicadoOuLegado('financiamentos-bb-2026', function(){ return state.financiamentos.some(function(f){ return contratosBB.indexOf(f.numeroContrato) !== -1; }); });
           if(!jaTem){
             state.financiamentos.push(
               {id:'import-fin-bb-01', banco:'Banco do Brasil S.A.', tipo:'Investimento', numeroContrato:'65208197', valorTotal:545524.42, dataContratacao:'2026-03-15', dataFinal:'2033-03-15', numeroParcelas:0, valorParcela:0, parcelasPagas:0, taxaJuros:0, talhaoId:'', contaId:'', status:'Ativo', observacao:'Aquisição de bens — importado do outro sistema em 15/04/2026 (data de liberação)', criadoEm:1},
@@ -1396,20 +1414,22 @@
               {id:'import-fin-bb-03', banco:'Banco do Brasil S.A.', tipo:'Custeio', numeroContrato:'65208149', valorTotal:166234.65, dataContratacao:'2026-01-08', dataFinal:'2027-01-28', numeroParcelas:0, valorParcela:0, parcelasPagas:0, taxaJuros:0, talhaoId:'', contaId:'', status:'Ativo', observacao:'Custeio produção / capital de giro — importado do outro sistema', criadoEm:3}
             );
             saveKey('financiamentos', state.financiamentos);
+            marcarImportAplicado('financiamentos-bb-2026');
           }
         })();
         (function(){
-          var jaTemMarega = state.financiamentos.some(function(f){ return f.numeroContrato === '65208162'; });
+          var jaTemMarega = jaAplicadoOuLegado('financiamento-marega-2026', function(){ return state.financiamentos.some(function(f){ return f.numeroContrato === '65208162'; }); });
           if(!jaTemMarega){
             state.financiamentos.push(
               {id:'import-fin-marega-01', banco:'Marega Comércio de Implementos', tipo:'Investimento', numeroContrato:'65208162', valorTotal:291387.46, dataContratacao:'2026-01-15', dataFinal:'2033-01-15', numeroParcelas:0, valorParcela:0, parcelasPagas:0, taxaJuros:0, talhaoId:'', contaId:'', status:'Quitado', observacao:'Aquisição de bens — importado do outro sistema (nome do financiador vinha cortado no print original, confira/complete)', criadoEm:4}
             );
             saveKey('financiamentos', state.financiamentos);
+            marcarImportAplicado('financiamento-marega-2026');
           }
         })();
         (function(){
           // Histórico de chuva INMET (Abatiá/PR) — importado uma vez, sob demanda do usuário
-          var jaImportouChuvaHistorica = state.chuvas.some(function(c){ return c.origemImportacao === 'inmet-abatia-2026'; });
+          var jaImportouChuvaHistorica = jaAplicadoOuLegado('inmet-abatia-2026', function(){ return state.chuvas.some(function(c){ return c.origemImportacao === 'inmet-abatia-2026'; }); });
           if(!jaImportouChuvaHistorica){
             var propAbatia = state.propriedades.find(function(p){ return p.nome.trim().toLowerCase() === 'sitio santa izabel'; });
             if(!propAbatia){
@@ -1434,12 +1454,13 @@
             });
             state.chuvas = state.chuvas.concat(novosRegistrosChuva);
             saveKey('chuvas', state.chuvas);
+            marcarImportAplicado('inmet-abatia-2026');
           }
         })();
         var CLIMATOLOGIA_INMET_ABATIA = {1: 177.5, 2: 142.6, 3: 92.3, 4: 79.7, 5: 86.6, 6: 81.5, 7: 83.9, 8: 53.0, 9: 80.8, 10: 143.5, 11: 139.0, 12: 161.7};
         var CLIMATOLOGIA_ABATIA_PROPRIEDADE_NOME = 'sitio santa izabel';
         (function(){
-          var jaTemContasIntegrada = state.contasPagar.some(function(c){ return c.origemImportacao === 'integrada-2026-09'; });
+          var jaTemContasIntegrada = jaAplicadoOuLegado('integrada-2026-09', function(){ return state.contasPagar.some(function(c){ return c.origemImportacao === 'integrada-2026-09'; }); });
           if(jaTemContasIntegrada) return;
           var parceiroIntegrada = state.parceiros.find(function(p){ return p.nome.trim().toLowerCase().indexOf('integrada') !== -1; });
           if(!parceiroIntegrada){
@@ -1453,9 +1474,10 @@
           ];
           state.contasPagar = state.contasPagar.concat(novasContasIntegrada);
           saveKey('contasPagar', state.contasPagar);
+          marcarImportAplicado('integrada-2026-09');
         })();
         (function(){
-          var jaTemAnaliseSolo2013 = state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-706-2013'; });
+          var jaTemAnaliseSolo2013 = jaAplicadoOuLegado('laudo-706-2013', function(){ return state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-706-2013'; }); });
           if(jaTemAnaliseSolo2013) return;
           var talhaoPivo = state.talhoes.find(function(t){ var n = t.nome.trim().toLowerCase(); return n === 'pivo' || n === 'pivô'; });
           if(!talhaoPivo) return;
@@ -1478,9 +1500,10 @@
             });
           });
           saveKey('analisesSolo', state.analisesSolo);
+          marcarImportAplicado('laudo-706-2013');
         })();
         (function(){
-          var jaTemAnaliseCafeNovo2026 = state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-s2601010-cafenovo'; });
+          var jaTemAnaliseCafeNovo2026 = jaAplicadoOuLegado('laudo-s2601010-cafenovo', function(){ return state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-s2601010-cafenovo'; }); });
           if(jaTemAnaliseCafeNovo2026) return;
           var talhaoCafeNovo = state.talhoes.find(function(t){ var n = t.nome.trim().toLowerCase(); return n === 'café novo' || n === 'cafe novo'; });
           if(!talhaoCafeNovo) return;
@@ -1497,9 +1520,10 @@
             origemImportacao: 'laudo-s2601010-cafenovo', criadoEm: Date.now()
           });
           saveKey('analisesSolo', state.analisesSolo);
+          marcarImportAplicado('laudo-s2601010-cafenovo');
         })();
         (function(){
-          var jaTemAnalisePista2024 = state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-sorbolso-pista-2024'; });
+          var jaTemAnalisePista2024 = jaAplicadoOuLegado('laudo-sorbolso-pista-2024', function(){ return state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-sorbolso-pista-2024'; }); });
           if(jaTemAnalisePista2024) return;
           var talhaoPista = state.talhoes.find(function(t){ return t.nome.trim().toLowerCase() === 'pista'; });
           if(!talhaoPista) return;
@@ -1516,9 +1540,10 @@
             origemImportacao: 'laudo-sorbolso-pista-2024', criadoEm: Date.now()
           });
           saveKey('analisesSolo', state.analisesSolo);
+          marcarImportAplicado('laudo-sorbolso-pista-2024');
         })();
         (function(){
-          var jaTemAnaliseSantaIzabel2 = state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-laborsolo-santaizabel2-2024'; });
+          var jaTemAnaliseSantaIzabel2 = jaAplicadoOuLegado('laudo-laborsolo-santaizabel2-2024', function(){ return state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-laborsolo-santaizabel2-2024'; }); });
           if(!jaTemAnaliseSantaIzabel2){
             var talhaoSantaIzabel2 = state.talhoes.find(function(t){ return t.nome.trim().toLowerCase() === 'santa izabel 2'; });
             if(talhaoSantaIzabel2){
@@ -1535,9 +1560,10 @@
                 origemImportacao: 'laudo-laborsolo-santaizabel2-2024', criadoEm: Date.now()
               });
               saveKey('analisesSolo', state.analisesSolo);
+              marcarImportAplicado('laudo-laborsolo-santaizabel2-2024');
             }
           }
-          var jaTemAnalisePivo2024 = state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-laborsolo-pivo-2024'; });
+          var jaTemAnalisePivo2024 = jaAplicadoOuLegado('laudo-laborsolo-pivo-2024', function(){ return state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-laborsolo-pivo-2024'; }); });
           if(!jaTemAnalisePivo2024){
             var talhaoPivo2024 = state.talhoes.find(function(t){ var n = t.nome.trim().toLowerCase(); return n === 'pivo' || n === 'pivô'; });
             if(talhaoPivo2024){
@@ -1554,11 +1580,12 @@
                 origemImportacao: 'laudo-laborsolo-pivo-2024', criadoEm: Date.now() + 1
               });
               saveKey('analisesSolo', state.analisesSolo);
+              marcarImportAplicado('laudo-laborsolo-pivo-2024');
             }
           }
         })();
         (function(){
-          var jaTemAnaliseSede2024 = state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-laborsolo-sede-2024'; });
+          var jaTemAnaliseSede2024 = jaAplicadoOuLegado('laudo-laborsolo-sede-2024', function(){ return state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-laborsolo-sede-2024'; }); });
           if(jaTemAnaliseSede2024) return;
           var talhaoSede = state.talhoes.find(function(t){ return t.nome.trim().toLowerCase() === 'sede'; });
           if(!talhaoSede) return;
@@ -1575,9 +1602,10 @@
             origemImportacao: 'laudo-laborsolo-sede-2024', criadoEm: Date.now()
           });
           saveKey('analisesSolo', state.analisesSolo);
+          marcarImportAplicado('laudo-laborsolo-sede-2024');
         })();
         (function(){
-          var jaTemAnaliseCafeVelho2013 = state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-extrato-saturacao-cafevelho-2013'; });
+          var jaTemAnaliseCafeVelho2013 = jaAplicadoOuLegado('laudo-extrato-saturacao-cafevelho-2013', function(){ return state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-extrato-saturacao-cafevelho-2013'; }); });
           if(jaTemAnaliseCafeVelho2013) return;
           var talhaoCafeVelho = state.talhoes.find(function(t){ var n = t.nome.trim().toLowerCase(); return n === 'café velho' || n === 'cafe velho'; });
           if(!talhaoCafeVelho) return;
@@ -1593,9 +1621,10 @@
             origemImportacao: 'laudo-extrato-saturacao-cafevelho-2013', criadoEm: Date.now()
           });
           saveKey('analisesSolo', state.analisesSolo);
+          marcarImportAplicado('laudo-extrato-saturacao-cafevelho-2013');
         })();
         (function(){
-          var jaTemAnalisePrecisaoPista = state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-agricultura-precisao-pista-2023'; });
+          var jaTemAnalisePrecisaoPista = jaAplicadoOuLegado('laudo-agricultura-precisao-pista-2023', function(){ return state.analisesSolo.some(function(a){ return a.origemImportacao === 'laudo-agricultura-precisao-pista-2023'; }); });
           if(jaTemAnalisePrecisaoPista) return;
           var talhaoPistaPrecisao = state.talhoes.find(function(t){ return t.nome.trim().toLowerCase() === 'pista'; });
           if(!talhaoPistaPrecisao) return;
@@ -1612,9 +1641,10 @@
             origemImportacao: 'laudo-agricultura-precisao-pista-2023', criadoEm: Date.now()
           });
           saveKey('analisesSolo', state.analisesSolo);
+          marcarImportAplicado('laudo-agricultura-precisao-pista-2023');
         })();
         (function(){
-          var jaTemSafraCafeVelho2425 = state.safras.some(function(s){ return s.origemImportacao === 'relatorio-eprodutor-cafevelho-2024-2025'; });
+          var jaTemSafraCafeVelho2425 = jaAplicadoOuLegado('relatorio-eprodutor-cafevelho-2024-2025', function(){ return state.safras.some(function(s){ return s.origemImportacao === 'relatorio-eprodutor-cafevelho-2024-2025'; }); });
           if(jaTemSafraCafeVelho2425) return;
           var talhaoCafeVelhoRel = state.talhoes.find(function(t){ var n = t.nome.trim().toLowerCase(); return n === 'café velho' || n === 'cafe velho'; });
           if(!talhaoCafeVelhoRel) return;
@@ -1702,9 +1732,10 @@
             });
           });
           saveKey('financeiro', state.financeiro);
+          marcarImportAplicado('relatorio-eprodutor-cafevelho-2024-2025');
         })();
         (function(){
-          var jaTemDespesasMilho2026 = state.financeiro.some(function(f){ return f.origem === 'relatorioHistorico' && f.origemMilho2026 === true; });
+          var jaTemDespesasMilho2026 = jaAplicadoOuLegado('milho-2026-relatorio-eprodutor', function(){ return state.financeiro.some(function(f){ return f.origem === 'relatorioHistorico' && f.origemMilho2026 === true; }); });
           if(jaTemDespesasMilho2026) return;
           var nomesTalhoesMilho = ['pasto', 'hirome', 'sede', 'pivo', 'pista'];
           var talhoesMilho = nomesTalhoesMilho.map(function(nome){
@@ -1755,6 +1786,7 @@
             });
           });
           saveKey('financeiro', state.financeiro);
+          marcarImportAplicado('milho-2026-relatorio-eprodutor');
         })();
         (function(){
           // Migração: preenche safraId retroativamente nos lançamentos do relatório histórico do Café Velho (safra já existia antes desse campo existir)
@@ -1785,7 +1817,7 @@
         })();
         (function(){
           // Migração única: vincula lançamentos "soltos" (sem safra) dos 5 talhões de milho 2026/2026 à safra correta, por pedido do usuário
-          var jaAplicouMigracaoSoltosMilho = state.financeiro.some(function(f){ return f.migradoSafraMilho2026SoltosV1 === true; });
+          var jaAplicouMigracaoSoltosMilho = jaAplicadoOuLegado('migracao-soltos-milho-2026-v1', function(){ return state.financeiro.some(function(f){ return f.migradoSafraMilho2026SoltosV1 === true; }); });
           if(jaAplicouMigracaoSoltosMilho) return;
           var nomesTalhoesMilhoSoltos = ['pasto', 'hirome', 'sede', 'pivo', 'pista'];
           var talhoesMilhoSoltos = nomesTalhoesMilhoSoltos.map(function(nome){
@@ -1805,9 +1837,10 @@
             }
           });
           if(mudouAlgumaCoisaMigracaoSoltos) saveKey('financeiro', state.financeiro);
+          marcarImportAplicado('migracao-soltos-milho-2026-v1');
         })();
         (function(){
-          var jaTemTitulosCoopermota = state.contasPagar.some(function(c){ return c.origemImportacao === 'coopermota-titulos-2026-09'; });
+          var jaTemTitulosCoopermota = jaAplicadoOuLegado('coopermota-titulos-2026-09', function(){ return state.contasPagar.some(function(c){ return c.origemImportacao === 'coopermota-titulos-2026-09'; }); });
           if(jaTemTitulosCoopermota) return;
           var parceiroCoopermota = state.parceiros.find(function(p){ return p.nome.trim().toLowerCase() === 'coopermota cooperativa'; });
           if(!parceiroCoopermota){
@@ -1835,6 +1868,7 @@
             });
           });
           saveKey('contasPagar', state.contasPagar);
+          marcarImportAplicado('coopermota-titulos-2026-09');
         })();
         (function(){
           // Corrige lançamentos de Serviços Prestados/Contratados criados antes do cálculo quantidade×valor unitário
