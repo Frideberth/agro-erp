@@ -3815,6 +3815,229 @@
   }
 
   /* ---------------- Diário de Campo (Operações) ---------------- */
+  /* ---------------- Diário de Campo: aplicações por lavoura, receituário e máquinas ---------------- */
+  var diarioRascunho = null;
+  var diarioPreTalhaoId = '';
+  function custoMedioProduto(produtoId){
+    var qtd = 0, valor = 0;
+    state.compras.forEach(function(c){
+      if(c.produtoId !== produtoId) return;
+      var q = Number(c.quantidade) || 0;
+      if(q <= 0) return;
+      qtd += q; valor += Number(c.valorTotal) || (q * (Number(c.valorUnitario) || 0));
+    });
+    return qtd > 0 ? valor / qtd : 0;
+  }
+  function unidadeProduto(produtoId){ var p = state.produtos.find(function(x){ return x.id === produtoId; }); return p ? (p.unidade || '') : ''; }
+  // Aplicações (onde) de uma atividade: [{safraId, talhaoId, area}]. Atividades antigas usam talhaoId/safraId soltos.
+  function aplicacoesDaOperacao(o){
+    if(o.aplicacoes && o.aplicacoes.length) return o.aplicacoes;
+    if(o.safraId){ var sf = state.safras.find(function(x){ return x.id === o.safraId; }); return [{safraId: o.safraId, talhaoId: sf ? sf.talhaoId : (o.talhaoId || ''), area: sf ? areaPlantadaSafra(sf) : 0}]; }
+    if(o.talhaoId){ var t = state.talhoes.find(function(x){ return x.id === o.talhaoId; }); return [{safraId: '', talhaoId: o.talhaoId, area: t ? (Number(t.area) || 0) : 0}]; }
+    return [];
+  }
+  function areaTotalOperacao(o){ return aplicacoesDaOperacao(o).reduce(function(s,a){ return s + (Number(a.area) || 0); }, 0); }
+  // Fração da atividade que cabe a uma safra (pela área aplicada)
+  function fracaoOperacaoNaSafra(o, safraId){
+    var aps = aplicacoesDaOperacao(o);
+    var tot = aps.reduce(function(s,a){ return s + (Number(a.area) || 0); }, 0);
+    var daSafra = aps.filter(function(a){ return a.safraId === safraId; });
+    if(!daSafra.length) return 0;
+    if(tot <= 0) return daSafra.length / aps.length;
+    return daSafra.reduce(function(s,a){ return s + (Number(a.area) || 0); }, 0) / tot;
+  }
+  function produtosDaOperacao(o){
+    if(o.produtos && o.produtos.length) return o.produtos;
+    if(o.produtoId) return [{produtoId: o.produtoId, dose: 0, quantidade: Number(o.quantidade) || 0, custoUnit: 0, custoTotal: 0, unidade: o.unidade || ''}];
+    return [];
+  }
+  function custoInsumosSafra(safraId){
+    return state.operacoes.reduce(function(s, o){
+      if(o.custear === false) return s;
+      var fr = fracaoOperacaoNaSafra(o, safraId);
+      if(!fr) return s;
+      return s + fr * produtosDaOperacao(o).reduce(function(sp, p){ return sp + (Number(p.custoTotal) || 0); }, 0);
+    }, 0);
+  }
+  // Horas de máquina: Diário de Campo (dividido pela área aplicada) + horas registradas na Colheita
+  function horasMaquinaSafra(patrimonioId, safraId){
+    var h = 0;
+    state.operacoes.forEach(function(o){
+      (o.maquinas || []).forEach(function(m){ if(m.patrimonioId === patrimonioId) h += (Number(m.horas) || 0) * fracaoOperacaoNaSafra(o, safraId); });
+    });
+    state.producao.forEach(function(p){ if(p.maquinaId === patrimonioId && p.safraId === safraId) h += Number(p.horasUso) || 0; });
+    return h;
+  }
+  function horasTotaisMaquina(patrimonioId){
+    var h = horasUsoTotais(patrimonioId);
+    state.operacoes.forEach(function(o){ (o.maquinas || []).forEach(function(m){ if(m.patrimonioId === patrimonioId) h += Number(m.horas) || 0; }); });
+    return h;
+  }
+  // Custo/hora real = custos pagos lançados na máquina ÷ horas de uso registradas
+  function custoHoraMaquina(patrimonioId){
+    var horas = horasTotaisMaquina(patrimonioId);
+    return horas > 0 ? custosDaMaquina(patrimonioId).valor / horas : 0;
+  }
+  function custoMaquinasSafra(safraId){
+    var usadas = {};
+    state.operacoes.forEach(function(o){ (o.maquinas || []).forEach(function(m){ usadas[m.patrimonioId] = true; }); });
+    state.producao.forEach(function(p){ if(p.maquinaId && Number(p.horasUso) > 0) usadas[p.maquinaId] = true; });
+    return Object.keys(usadas).reduce(function(s, mid){ return s + horasMaquinaSafra(mid, safraId) * custoHoraMaquina(mid); }, 0);
+  }
+
+  function rascunhoDiarioDoRegistro(o){
+    if(!o) return {origem:'novo', lavouraId:'', areas:{}, marcadas:null, talhaoAvulsoId: diarioPreTalhaoId || '', produtos:[{produtoId:'', dose:'', quantidade:'', qtdManual:false}], maquinas:[]};
+    var aps = aplicacoesDaOperacao(o);
+    var sf0 = aps[0] && aps[0].safraId ? state.safras.find(function(x){ return x.id === aps[0].safraId; }) : null;
+    var areas = {}, marcadas = [];
+    aps.forEach(function(a){ if(a.safraId){ areas[a.safraId] = a.area; marcadas.push(a.safraId); } });
+    return {
+      origem: o.id, lavouraId: sf0 ? sf0.lavouraId : '', areas: areas, marcadas: marcadas.length ? marcadas : null,
+      talhaoAvulsoId: !sf0 && aps[0] ? aps[0].talhaoId : '',
+      produtos: produtosDaOperacao(o).map(function(p){ return {produtoId: p.produtoId, dose: p.dose || '', quantidade: p.quantidade || '', qtdManual: !p.dose}; }).concat(produtosDaOperacao(o).length ? [] : [{produtoId:'', dose:'', quantidade:'', qtdManual:false}]),
+      maquinas: (o.maquinas || []).map(function(m){ return {patrimonioId: m.patrimonioId, horas: m.horas}; })
+    };
+  }
+  function areaAplicadaRascunho(r){
+    if(r.lavouraId){
+      return safrasDaLavoura(r.lavouraId).filter(function(sf){ return !r.marcadas || r.marcadas.indexOf(sf.id) !== -1; })
+        .reduce(function(s, sf){ var a = r.areas[sf.id]; return s + (a !== undefined && a !== '' ? (Number(a) || 0) : areaPlantadaSafra(sf)); }, 0);
+    }
+    var t = state.talhoes.find(function(x){ return x.id === r.talhaoAvulsoId; });
+    return t ? (Number(t.area) || 0) : 0;
+  }
+  function quantidadeProdutoRascunho(p, area){
+    if(p.qtdManual) return Number(p.quantidade) || 0;
+    return Math.round((Number(p.dose) || 0) * area * 1000) / 1000;
+  }
+  function lerRascunhoDiarioDoDom(){
+    var cont = document.getElementById('diario-dinamico');
+    if(!cont || !diarioRascunho) return;
+    var r = diarioRascunho;
+    var selLav = cont.querySelector('[name="diarioLavouraId"]');
+    if(selLav){
+      if(selLav.value !== r.lavouraId){ r.lavouraId = selLav.value; r.marcadas = null; r.areas = {}; }
+      else {
+        var cbs = cont.querySelectorAll('input[name="diarioSafraIds"]');
+        if(cbs.length){ r.marcadas = []; cbs.forEach(function(cb){ if(cb.checked) r.marcadas.push(cb.value); }); }
+        cont.querySelectorAll('input[data-area-safra]').forEach(function(inp){ r.areas[inp.dataset.areaSafra] = inp.value; });
+      }
+    }
+    var selT = cont.querySelector('[name="talhaoId"]');
+    if(selT) r.talhaoAvulsoId = selT.value;
+    cont.querySelectorAll('[data-prod-idx]').forEach(function(row){
+      var i = Number(row.dataset.prodIdx); var p = r.produtos[i]; if(!p) return;
+      var sel = row.querySelector('select'); var dose = row.querySelector('[data-campo="dose"]'); var qtd = row.querySelector('[data-campo="quantidade"]');
+      if(sel && sel.value !== p.produtoId){ p.produtoId = sel.value; }
+      if(dose) p.dose = dose.value;
+      if(qtd) p.quantidade = qtd.value;
+    });
+    cont.querySelectorAll('[data-maq-idx]').forEach(function(row){
+      var i = Number(row.dataset.maqIdx); var m = r.maquinas[i]; if(!m) return;
+      var sel = row.querySelector('select'); var h = row.querySelector('input');
+      if(sel) m.patrimonioId = sel.value;
+      if(h) m.horas = h.value;
+    });
+  }
+  function renderDiarioDinamico(){
+    var cont = document.getElementById('diario-dinamico');
+    if(!cont || !diarioRascunho) return;
+    var r = diarioRascunho;
+    var estiloSel = 'width:100%; padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;';
+    var estiloNum = 'width:100%; padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;';
+    var tituloSecao = function(t){ return '<div style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin:14px 0 6px;">' + t + '</div>'; };
+    var html = '';
+
+    // ---- Onde: lavoura e talhões ----
+    html += tituloSecao('🌱 Onde foi feito');
+    html += '<div class="field" style="margin:0; max-width:460px;"><label>Lavoura</label><select name="diarioLavouraId" style="' + estiloSel + '"><option value="">— Sem lavoura (só o talhão) —</option>';
+    lavourasSelecionaveis(r.lavouraId).forEach(function(l){ html += '<option value="' + l.id + '"' + (l.id === r.lavouraId ? ' selected' : '') + '>' + escapeHtml(lavouraLabel(l.id)) + (statusLavoura(l) === 'andamento' ? ' ● em andamento' : '') + '</option>'; });
+    html += '</select></div>';
+    if(r.lavouraId){
+      var sfsL = safrasDaLavoura(r.lavouraId);
+      html += '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:8px; margin-top:8px;">';
+      sfsL.forEach(function(sf){
+        var mk = !r.marcadas || r.marcadas.indexOf(sf.id) !== -1;
+        var areaV = r.areas[sf.id] !== undefined && r.areas[sf.id] !== '' ? r.areas[sf.id] : areaPlantadaSafra(sf);
+        html += '<div style="display:flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid ' + (mk ? 'var(--accent)' : 'var(--paper-line)') + '; border-radius:6px; background:' + (mk ? '#F1E0BC' : '#FBF7EC') + ';">';
+        html += '<label style="display:flex; align-items:center; gap:6px; font-size:12.5px; flex:1; cursor:pointer;"><input type="checkbox" name="diarioSafraIds" value="' + sf.id + '"' + (mk ? ' checked' : '') + '> ' + escapeHtml(talhaoNome(sf.talhaoId)) + '</label>';
+        html += '<input type="number" data-area-safra="' + sf.id + '" value="' + areaV + '" step="0.01" min="0" title="Área aplicada (ha)" style="width:78px; padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; font-size:12px;"' + (mk ? '' : ' disabled') + '> <span style="font-size:11px; color:var(--ink-soft);">ha</span>';
+        html += '</div>';
+      });
+      html += '</div>';
+    } else {
+      html += '<div class="field" style="margin:8px 0 0; max-width:320px;"><label>Talhão</label><select name="talhaoId" id="f-talhaoId" style="' + estiloSel + '"><option value="">—</option>';
+      state.talhoes.forEach(function(t){ html += '<option value="' + t.id + '"' + (t.id === r.talhaoAvulsoId ? ' selected' : '') + '>' + escapeHtml(t.nome) + '</option>'; });
+      html += '</select></div>';
+    }
+    var areaTot = areaAplicadaRascunho(r);
+    html += '<p style="font-size:12px; margin:8px 0 0;">Área aplicada: <strong id="diario-area-total">' + fmtHa(areaTot) + '</strong></p>';
+
+    // ---- Produtos (receituário) ----
+    html += tituloSecao('🧪 Produtos aplicados (receituário)');
+    var custoProdTotal = 0;
+    html += '<div class="table-wrap"><table class="sem-ordenacao"><thead><tr><th>Produto</th><th>Dose por ha</th><th>Quantidade total</th><th>Estoque</th><th>Custo médio</th><th>Custo</th><th></th></tr></thead><tbody>';
+    r.produtos.forEach(function(p, i){
+      var un = unidadeProduto(p.produtoId);
+      var qtd = quantidadeProdutoRascunho(p, areaTot);
+      var cm = p.produtoId ? custoMedioProduto(p.produtoId) : 0;
+      var prodObj = state.produtos.find(function(x){ return x.id === p.produtoId; });
+      var estoqueDisp = prodObj ? (Number(prodObj.estoqueAtual) || 0) : 0;
+      var registroOriginal = r.origem !== 'novo' ? state.operacoes.find(function(o){ return o.id === r.origem; }) : null;
+      if(registroOriginal && registroOriginal.estoqueBaixado){ produtosDaOperacao(registroOriginal).forEach(function(po){ if(po.produtoId === p.produtoId) estoqueDisp += Number(po.quantidade) || 0; }); }
+      custoProdTotal += qtd * cm;
+      html += '<tr data-prod-idx="' + i + '">';
+      html += '<td style="min-width:200px;"><select style="' + estiloSel + '"><option value="">— escolha —</option>';
+      state.produtos.slice().sort(function(a,b){ return (a.nome||'').localeCompare(b.nome||'', 'pt-BR'); }).forEach(function(pp){ html += '<option value="' + pp.id + '"' + (pp.id === p.produtoId ? ' selected' : '') + '>' + escapeHtml(pp.nome) + '</option>'; });
+      html += '</select></td>';
+      html += '<td style="min-width:120px;"><div style="display:flex; align-items:center; gap:4px;"><input type="number" data-campo="dose" value="' + (p.dose === undefined ? '' : p.dose) + '" step="0.001" min="0" style="' + estiloNum + '"><span style="font-size:11px; color:var(--ink-soft); white-space:nowrap;">' + escapeHtml(un || 'un') + '/ha</span></div></td>';
+      html += '<td style="min-width:120px;"><div style="display:flex; align-items:center; gap:4px;"><input type="number" data-campo="quantidade" value="' + (qtd || '') + '" step="0.001" min="0" style="' + estiloNum + (p.qtdManual ? '' : ' background:#EFE6C8;') + '" title="Calculada: dose × área. Digite para usar outro valor."><span style="font-size:11px; color:var(--ink-soft);">' + escapeHtml(un) + '</span></div></td>';
+      html += '<td class="num" style="' + (p.produtoId && qtd > estoqueDisp ? 'color:var(--cost-dark); font-weight:600;' : '') + '">' + (p.produtoId ? fmtNum(estoqueDisp) + ' ' + escapeHtml(un) : '—') + '</td>';
+      html += '<td class="num">' + (p.produtoId ? (cm > 0 ? fmtBRL(cm) : '<span title="Sem compra registrada desse produto" style="color:var(--cost-dark);">sem preço</span>') : '—') + '</td>';
+      html += '<td class="num cost">' + (p.produtoId ? fmtBRL(qtd * cm) : '—') + '</td>';
+      html += '<td><button type="button" class="btn-del" data-action="diario-remover-produto" data-idx="' + i + '" title="Tirar esse produto">✕</button></td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+    html += '<button type="button" class="btn-add-inline" data-action="diario-add-produto" style="width:auto; height:auto; padding:6px 12px; font-size:12.5px; margin-top:6px;">+ Adicionar produto</button>';
+    if(r.produtos.some(function(p){ var po = state.produtos.find(function(x){ return x.id === p.produtoId; }); return po && quantidadeProdutoRascunho(p, areaTot) > (Number(po.estoqueAtual) || 0) && r.origem === 'novo'; })){
+      html += '<p style="font-size:11.5px; color:var(--cost-dark); margin:6px 0 0;">Algum produto está com quantidade maior que o estoque. Dá para salvar mesmo assim (o estoque fica negativo até você registrar a compra).</p>';
+    }
+
+    // ---- Máquinas ----
+    html += tituloSecao('🚜 Máquinas e equipamentos usados');
+    var custoMaqTotal = 0;
+    if(r.maquinas.length){
+      html += '<div class="table-wrap"><table class="sem-ordenacao"><thead><tr><th>Máquina / equipamento</th><th>Horas</th><th>Custo/hora atual</th><th>Custo estimado</th><th></th></tr></thead><tbody>';
+      var opOriginalMaq = r.origem !== 'novo' ? state.operacoes.find(function(o){ return o.id === r.origem; }) : null;
+      // custo/hora projetado: custos da máquina ÷ (horas já registradas fora desta atividade + horas desta atividade)
+      var custoHoraProjetado = function(mid){
+        if(!mid) return 0;
+        var horasOutras = horasTotaisMaquina(mid) - (opOriginalMaq ? (opOriginalMaq.maquinas || []).filter(function(x){ return x.patrimonioId === mid; }).reduce(function(sm, x){ return sm + (Number(x.horas) || 0); }, 0) : 0);
+        var horasAqui = r.maquinas.filter(function(x){ return x.patrimonioId === mid; }).reduce(function(sm, x){ return sm + (Number(x.horas) || 0); }, 0);
+        var tot = horasOutras + horasAqui;
+        return tot > 0 ? custosDaMaquina(mid).valor / tot : 0;
+      };
+      r.maquinas.forEach(function(m, i){
+        var ch = custoHoraProjetado(m.patrimonioId);
+        custoMaqTotal += (Number(m.horas) || 0) * ch;
+        html += '<tr data-maq-idx="' + i + '"><td style="min-width:220px;"><select style="' + estiloSel + '"><option value="">— escolha —</option>';
+        patrimonioParaDestino().filter(function(it){ return it.categoria !== 'Benfeitoria'; }).forEach(function(it){ html += '<option value="' + it.id + '"' + (it.id === m.patrimonioId ? ' selected' : '') + '>' + escapeHtml(it.nome) + '</option>'; });
+        html += '</select></td>';
+        html += '<td style="width:110px;"><input type="number" value="' + (m.horas === undefined ? '' : m.horas) + '" step="0.1" min="0" style="' + estiloNum + '"></td>';
+        html += '<td class="num">' + (m.patrimonioId ? (ch > 0 ? fmtBRL(ch) : '<span title="Ainda não há despesas lançadas nessa máquina (destino Máquina / equipamento)" style="color:var(--ink-soft);">sem despesas</span>') : '—') + '</td>';
+        html += '<td class="num cost">' + (m.patrimonioId && ch > 0 ? fmtBRL((Number(m.horas) || 0) * ch) : '—') + '</td>';
+        html += '<td><button type="button" class="btn-del" data-action="diario-remover-maquina" data-idx="' + i + '" title="Tirar essa máquina">✕</button></td></tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+    html += '<button type="button" class="btn-add-inline" data-action="diario-add-maquina" style="width:auto; height:auto; padding:6px 12px; font-size:12.5px; margin-top:6px;">+ Adicionar máquina</button>';
+    html += '<p style="font-size:11px; color:var(--ink-soft); margin:6px 0 0;">O custo da máquina é o custo real: tudo que foi lançado nela (destino "Máquina / equipamento") dividido pelas horas registradas aqui e na Colheita. Por isso o valor por hora vai se ajustando conforme você registra horas e despesas.</p>';
+
+    html += '<div class="paper note-box" style="margin:12px 0 0;">Custo estimado desta atividade: produtos <strong>' + fmtBRL(custoProdTotal) + '</strong> + máquinas <strong>' + fmtBRL(custoMaqTotal) + '</strong> = <strong>' + fmtBRL(custoProdTotal + custoMaqTotal) + '</strong>' + (areaTot > 0 ? ' (' + fmtBRL((custoProdTotal + custoMaqTotal) / areaTot) + '/ha)' : '') + '</div>';
+    cont.innerHTML = html;
+  }
+
   function renderOperacoes(){
     var el = document.getElementById('tab-operacoes');
     var tiposDisponiveis = state.tiposAtividade.filter(function(t){ return t.nome !== 'Colheita' && t.nome !== 'Venda'; });
@@ -3831,16 +4054,20 @@
       html += '<div style="flex:1;">' + selectField('tipo', 'Tipo', tiposDisponiveis.map(function(t){ return {value:t.nome, label:t.nome}; }), editingRecord ? editingRecord.tipo : undefined) + '</div>';
       html += '<button type="button" class="btn-add-inline" data-action="open-tipo-modal" title="Novo tipo de atividade">+</button>';
       html += '</div>';
-      html += selectField('talhaoId', 'Talhão (opcional)', [{value:'', label:'—'}].concat(state.talhoes.map(function(t){ return {value:t.id, label:t.nome}; })), editingRecord ? editingRecord.talhaoId : undefined);
-      html += selectField('safraId', 'Safra (opcional)', [{value:'', label:'—'}].concat(safraOptionsAtivas(editingRecord ? editingRecord.safraId : null)), editingRecord ? editingRecord.safraId : undefined);
-      html += selectField('produtoId', 'Produto (opcional)', [{value:'', label:'—'}].concat(state.produtos.map(function(p){ return {value:p.id, label:p.nome}; })), editingRecord ? editingRecord.produtoId : undefined);
-      html += field('number', 'quantidade', 'Quantidade', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.quantidade : undefined);
-      html += field('text', 'unidade', 'Unidade', false, 'Ex: kg, L, sc', {}, editingRecord ? editingRecord.unidade : undefined);
+      html += field('date', 'data', 'Data', false, '', {}, editingRecord ? editingRecord.data : undefined);
       html += selectField('parceiroId', 'Parceiro (opcional)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })), editingRecord ? editingRecord.parceiroId : undefined);
       html += selectField('responsavelId', 'Responsável (opcional)', [{value:'', label:'—'}].concat(state.equipe.map(function(m){ return {value:m.id, label:m.nome}; })), editingRecord ? editingRecord.responsavelId : undefined);
-      html += field('date', 'data', 'Data', false, '', {}, editingRecord ? editingRecord.data : undefined);
+      html += '<div id="diario-dinamico" style="grid-column: 1 / -1; border-top:1px dashed var(--paper-line); margin-top:4px;"></div>';
+      html += '<div style="grid-column:1/-1; font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin:8px 0 -4px;">📋 Dados do receituário (opcional)</div>';
+      html += field('text', 'alvo', 'Alvo (praga, doença ou planta daninha)', false, 'Ex: Ferrugem, buva', {}, editingRecord ? editingRecord.alvo : undefined);
+      html += field('number', 'volumeCalda', 'Volume de calda (L/ha)', false, '0', {step:'1', min:'0'}, editingRecord ? editingRecord.volumeCalda : undefined);
+      html += field('text', 'receituario', 'Nº do receituário agronômico', false, '', {}, editingRecord ? editingRecord.receituario : undefined);
+      html += field('text', 'responsavelTecnico', 'Responsável técnico (agrônomo)', false, '', {}, editingRecord ? editingRecord.responsavelTecnico : undefined);
+      html += '<label style="grid-column:1/-1; display:flex; align-items:center; gap:6px; font-size:12.5px;"><input type="checkbox" name="custear"' + (editingRecord && editingRecord.custear === false ? '' : ' checked') + '> Somar o custo dos produtos na safra <span style="font-size:11px; color:var(--ink-soft);">(desmarque se a compra desses produtos já foi lançada direto na lavoura, pra não contar duas vezes)</span></label>';
       html += '<div class="field" style="grid-column: 1 / -1;"><label for="f-observacao">Observação</label><textarea id="f-observacao" name="observacao" rows="5" placeholder="Ex: Aplicação pós-chuva, recomendação agronômica, condições observadas...">' + (editingRecord && editingRecord.observacao ? escapeHtml(editingRecord.observacao) : '') + '</textarea></div>';
       html += '<button type="submit" class="btn">' + (editingRecord ? 'Salvar alterações' : 'Registrar atividade') + '</button>';
+      var origemRasc = editingRecord ? editingRecord.id : 'novo';
+      if(!diarioRascunho || diarioRascunho.origem !== origemRasc) diarioRascunho = rascunhoDiarioDoRegistro(editingRecord);
       if(editingRecord) html += '<button type="button" class="btn-cancel" data-action="cancel-edit">Cancelar</button>';
       html += '</form>';
     }
@@ -3851,15 +4078,20 @@
       html += '<div class="empty-state">Nenhuma atividade registrada ainda.</div>';
     } else {
       html += '<div style="padding:14px 18px 0;"><input type="text" id="search-operacoes" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
-      html += '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Talhão</th><th>Produto</th><th>Qtd.</th><th>Parceiro</th><th>Responsável</th><th>Obs.</th><th></th></tr></thead><tbody>';
+      html += '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Lavoura / talhões</th><th>Produtos</th><th>Máquinas</th><th>Custo</th><th>Responsável</th><th>Obs.</th><th></th></tr></thead><tbody>';
       state.operacoes.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(o){
         html += '<tr>';
         html += '<td>' + fmtDate(o.data) + '</td>';
         html += '<td><span class="badge" style="background:' + tipoAtividadeCor(o.tipo) + '; color:#1B1508">' + escapeHtml(o.tipo) + '</span></td>';
-        html += '<td>' + (o.talhaoId ? escapeHtml(talhaoNome(o.talhaoId)) : '—') + '</td>';
-        html += '<td>' + (o.produtoId ? escapeHtml(produtoNome(o.produtoId)) : '—') + '</td>';
-        html += '<td class="num">' + (o.quantidade ? o.quantidade + (o.unidade ? ' ' + escapeHtml(o.unidade) : '') : '—') + '</td>';
-        html += '<td>' + (o.parceiroId ? escapeHtml(parceiroNome(o.parceiroId)) : '—') + '</td>';
+        var apsO = aplicacoesDaOperacao(o);
+        var sfO = apsO[0] && apsO[0].safraId ? state.safras.find(function(x){ return x.id === apsO[0].safraId; }) : null;
+        html += '<td style="font-size:12px;">' + (sfO ? '<strong>' + escapeHtml(lavouraLabel(sfO.lavouraId)) + '</strong><br>' : '') + (apsO.length ? escapeHtml(apsO.map(function(a){ return talhaoNome(a.talhaoId); }).join(', ')) + ' · ' + fmtHa(areaTotalOperacao(o)) : '—') + '</td>';
+        var prodsO = produtosDaOperacao(o);
+        html += '<td style="font-size:12px;">' + (prodsO.length ? prodsO.map(function(pp){ var un = unidadeProduto(pp.produtoId) || pp.unidade || ''; return escapeHtml(produtoNome(pp.produtoId)) + ' — ' + fmtNum(pp.quantidade) + ' ' + escapeHtml(un) + (pp.dose ? ' (' + fmtNum(pp.dose) + ' ' + escapeHtml(un) + '/ha)' : ''); }).join('<br>') : '—') + '</td>';
+        html += '<td style="font-size:12px;">' + ((o.maquinas || []).length ? o.maquinas.map(function(m){ return escapeHtml(nomePatrimonio(m.patrimonioId)) + ' · ' + fmtNum(m.horas) + ' h'; }).join('<br>') : '—') + '</td>';
+        var custoProdO = o.custear === false ? 0 : prodsO.reduce(function(sm, pp){ return sm + (Number(pp.custoTotal) || 0); }, 0);
+        var custoMaqO = (o.maquinas || []).reduce(function(sm, m){ return sm + (Number(m.horas) || 0) * custoHoraMaquina(m.patrimonioId); }, 0);
+        html += '<td class="num cost">' + (custoProdO + custoMaqO > 0 ? fmtBRL(custoProdO + custoMaqO) : '—') + '</td>';
         html += '<td>' + (o.responsavelId ? escapeHtml(membroNome(o.responsavelId)) : '—') + '</td>';
         html += '<td style="max-width:220px;" title="' + escapeHtml(o.observacao || '') + '">' + (o.observacao ? escapeHtml(o.observacao.length > 60 ? o.observacao.slice(0,60) + '…' : o.observacao) : '—') + '</td>';
         html += '<td><button class="btn-edit" data-action="edit-operacao" data-id="' + o.id + '">Editar</button><button class="btn-del" data-action="del-operacao" data-id="' + o.id + '">Remover</button></td>';
@@ -3869,6 +4101,7 @@
     }
     html += '</div>';
     el.innerHTML = html;
+    renderDiarioDinamico();
   }
 
   /* ---------------- Financeiro ---------------- */
@@ -4613,17 +4846,30 @@
         html += '<div class="paper" style="padding:16px;">';
         html += '<p style="font-size:13px; margin:0 0 12px;"><strong>' + escapeHtml(safraLabel(safraRastreio.id)) + '</strong> — Talhão ' + escapeHtml(talhaoNome(safraRastreio.talhaoId)) + ', Cultura ' + escapeHtml(culturaNome(safraRastreio.culturaId)) + (safraRastreio.dataPlantio ? ', plantada em ' + fmtDate(safraRastreio.dataPlantio) : '') + '</p>';
 
-        var insumosRastreio = state.operacoes.filter(function(o){ return o.safraId === safraRastreio.id && o.produtoId; });
-        html += '<p style="font-size:12.5px; font-weight:600; margin:14px 0 6px;">Insumos aplicados (' + insumosRastreio.length + ')</p>';
-        if(!insumosRastreio.length){
+        var linhasInsumos = [];
+        state.operacoes.forEach(function(o){
+          var fr = fracaoOperacaoNaSafra(o, safraRastreio.id);
+          if(!fr) return;
+          var apSafra = aplicacoesDaOperacao(o).filter(function(ap){ return ap.safraId === safraRastreio.id; });
+          var areaSafraOp = apSafra.reduce(function(sm, ap){ return sm + (Number(ap.area) || 0); }, 0);
+          produtosDaOperacao(o).forEach(function(pp){
+            linhasInsumos.push({data: o.data, tipo: o.tipo, produtoId: pp.produtoId, dose: pp.dose, qtd: (Number(pp.quantidade) || 0) * fr, un: unidadeProduto(pp.produtoId) || pp.unidade || '', area: areaSafraOp, alvo: o.alvo || '', receituario: o.receituario || '', maquinas: (o.maquinas || []).map(function(m){ return nomePatrimonio(m.patrimonioId); }).join(', '), custo: o.custear === false ? 0 : (Number(pp.custoTotal) || 0) * fr});
+          });
+        });
+        html += '<p style="font-size:12.5px; font-weight:600; margin:14px 0 6px;">Insumos aplicados (' + linhasInsumos.length + ')</p>';
+        if(!linhasInsumos.length){
           html += '<p style="font-size:12px; color:var(--ink-soft);">Nenhum insumo vinculado a essa safra no Diário de Campo.</p>';
         } else {
-          html += '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Atividade</th><th>Produto</th><th>Quantidade</th></tr></thead><tbody>';
-          insumosRastreio.slice().sort(function(a,b){ return (a.data||'').localeCompare(b.data||''); }).forEach(function(o){
-            html += '<tr><td>' + fmtDate(o.data) + '</td><td>' + escapeHtml(o.tipo) + '</td><td>' + escapeHtml(produtoNome(o.produtoId)) + '</td><td class="num">' + (o.quantidade||0) + (o.unidade ? ' ' + escapeHtml(o.unidade) : '') + '</td></tr>';
+          html += '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Atividade</th><th>Produto</th><th>Dose/ha</th><th>Quantidade</th><th>Área</th><th>Alvo</th><th>Receituário</th><th>Máquinas</th><th>Custo</th></tr></thead><tbody>';
+          linhasInsumos.sort(function(a,b){ return (a.data||'').localeCompare(b.data||''); }).forEach(function(li){
+            html += '<tr><td>' + fmtDate(li.data) + '</td><td>' + escapeHtml(li.tipo) + '</td><td>' + escapeHtml(produtoNome(li.produtoId)) + '</td>';
+            html += '<td class="num">' + (li.dose ? fmtNum(li.dose) + ' ' + escapeHtml(li.un) : '—') + '</td><td class="num">' + fmtNum(Math.round(li.qtd * 1000) / 1000) + ' ' + escapeHtml(li.un) + '</td>';
+            html += '<td class="num">' + (li.area ? fmtHa(li.area) : '—') + '</td><td>' + escapeHtml(li.alvo || '—') + '</td><td>' + escapeHtml(li.receituario || '—') + '</td><td style="font-size:12px;">' + escapeHtml(li.maquinas || '—') + '</td><td class="num cost">' + (li.custo ? fmtBRL(li.custo) : '—') + '</td></tr>';
           });
           html += '</tbody></table></div>';
         }
+        var custoInsR = custoInsumosSafra(safraRastreio.id), custoMaqR = custoMaquinasSafra(safraRastreio.id);
+        if(custoInsR || custoMaqR) html += '<p style="font-size:11.5px; margin:6px 0 0;">Custo de insumos aplicados: <strong>' + fmtBRL(custoInsR) + '</strong> · Máquinas (horas × custo/hora): <strong>' + fmtBRL(custoMaqR) + '</strong> — já incluídos no resumo financeiro abaixo.</p>';
 
         var entradasRastreio = state.producao.filter(function(p){ return p.safraId === safraRastreio.id && p.tipo === 'entrada'; });
         html += '<p style="font-size:12.5px; font-weight:600; margin:14px 0 6px;">Colheita (' + entradasRastreio.length + ' registro(s))</p>';
@@ -4836,7 +5082,7 @@
   function custoDiretoSafra(safraId){
     var fin = state.financeiro.filter(function(f){ return f.tipo === 'custo' && (f.status || 'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + valorDaSafraNoLancamento(f, safraId); }, 0);
     var cp = state.contasPagar.filter(function(c){ return c.status === 'Pago'; }).reduce(function(s,c){ return s + valorDaSafraNoLancamento(c, safraId); }, 0);
-    return fin + cp;
+    return fin + cp + custoInsumosSafra(safraId) + custoMaquinasSafra(safraId);
   }
   function receitaDiretaSafra(safraId){
     var fin = state.financeiro.filter(function(f){ return f.tipo === 'receita' && (f.status || 'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + valorDaSafraNoLancamento(f, safraId); }, 0);
@@ -4844,7 +5090,7 @@
     return fin + cr;
   }
   function qtdLancamentosSafra(safraId){
-    return state.financeiro.filter(function(f){ return lancamentoTemSafra(f, safraId); }).length + state.contasPagar.filter(function(c){ return lancamentoTemSafra(c, safraId); }).length;
+    return state.operacoes.filter(function(o){ return fracaoOperacaoNaSafra(o, safraId) > 0 && (produtosDaOperacao(o).length || (o.maquinas || []).length); }).length + state.financeiro.filter(function(f){ return lancamentoTemSafra(f, safraId); }).length + state.contasPagar.filter(function(c){ return lancamentoTemSafra(c, safraId); }).length;
   }
   // Custos pagos do talhão que ainda não têm destino definido (nem safra, nem "só talhão", nem "geral")
   function custosSemDestinoDoTalhao(talhaoId){
@@ -4907,9 +5153,18 @@
     var mapa = mapaSafrasAtivasPorMes();
     var porSafra = {}, naoAlocado = 0;
     var itens = [];
-    var ehGeralOuMaquina = function(r){ var d = destinoEfetivo(r); return d === 'geral' || d === 'maquina'; };
-    state.financeiro.forEach(function(f){ if(f.tipo === 'custo' && (f.status||'Pago') !== 'Pendente' && ehGeralOuMaquina(f)) itens.push({valor: Number(f.valor)||0, data: f.data || f.vencimento || ''}); });
-    state.contasPagar.forEach(function(c){ if(c.status === 'Pago' && ehGeralOuMaquina(c)) itens.push({valor: Number(c.valor)||0, data: c.dataPagamento || c.vencimento || ''}); });
+    // custos gerais entram inteiros; de máquina, só a parte de máquinas SEM horas registradas
+    // (máquinas com horas já entram na safra pelo custo/hora real, via Diário de Campo e Colheita)
+    var valorRateavel = function(r){
+      var d = destinoEfetivo(r);
+      if(d === 'geral') return Number(r.valor) || 0;
+      if(d !== 'maquina') return 0;
+      var ms = r.maquinasIds || [];
+      if(!ms.length) return 0;
+      return ms.filter(function(mid){ return horasTotaisMaquina(mid) <= 0; }).length * (Number(r.valor) || 0) / ms.length;
+    };
+    state.financeiro.forEach(function(f){ if(f.tipo === 'custo' && (f.status||'Pago') !== 'Pendente'){ var v = valorRateavel(f); if(v) itens.push({valor: v, data: f.data || f.vencimento || ''}); } });
+    state.contasPagar.forEach(function(c){ if(c.status === 'Pago'){ var v = valorRateavel(c); if(v) itens.push({valor: v, data: c.dataPagamento || c.vencimento || ''}); } });
     itens.forEach(function(it){
       var ativas = it.data ? (mapa[it.data.slice(0,7)] || []) : [];
       var areaAtiva = ativas.reduce(function(s,a){ return s + a.area; }, 0);
@@ -5134,12 +5389,12 @@
       html += '</tbody></table></div>';
     }
 
-    var maquinasComCusto = state.patrimonio.map(function(it){ var c = custosDaMaquina(it.id); return {it: it, valor: c.valor, qtd: c.qtd, horas: horasUsoTotais(it.id)}; }).filter(function(x){ return x.qtd > 0; });
+    var maquinasComCusto = state.patrimonio.map(function(it){ var c = custosDaMaquina(it.id); return {it: it, valor: c.valor, qtd: c.qtd, horas: horasTotaisMaquina(it.id)}; }).filter(function(x){ return x.qtd > 0 || x.horas > 0; });
     html += '<div class="section-title">Por máquina / equipamento</div>';
     if(!maquinasComCusto.length){
       html += '<div class="paper empty-state">Nenhum custo lançado com destino "Máquina / equipamento" ainda.</div>';
     } else {
-      html += '<div class="paper table-wrap"><table><thead><tr><th>Máquina / equipamento</th><th>Categoria</th><th>Lançamentos</th><th>Custos pagos</th><th>Horas de uso</th><th>Custo/hora</th></tr></thead><tbody>';
+      html += '<div class="paper table-wrap"><table><thead><tr><th>Máquina / equipamento</th><th>Categoria</th><th>Lançamentos</th><th>Custos pagos</th><th>Horas de uso (Diário + Colheita)</th><th>Custo/hora</th></tr></thead><tbody>';
       maquinasComCusto.sort(function(a,b){ return b.valor - a.valor; }).forEach(function(x){
         html += '<tr><td>' + escapeHtml(x.it.nome) + '</td><td>' + escapeHtml(x.it.categoria || '—') + '</td><td class="num">' + x.qtd + '</td><td class="num cost">' + fmtBRL(x.valor) + '</td>';
         html += '<td class="num">' + (x.horas > 0 ? fmtNum(x.horas) + ' h' : '—') + '</td><td class="num">' + (x.horas > 0 ? fmtBRL(x.valor / x.horas) : '—') + '</td></tr>';
@@ -5883,7 +6138,18 @@
     addSheet('Equipe', state.equipe.map(function(m){ return {Nome:m.nome, Funcao:m.papel}; }));
     addSheet('Patrimonio', state.patrimonio.map(function(p){ return {Nome:p.nome, Categoria:p.categoria, Status:p.status, ValorCompra:p.valor, ValorAtual: Math.round(calcDepreciacao(p)*100)/100}; }));
     addSheet('EstoqueColheita', state.producao.map(function(p){ return {Movimento:p.tipo, Safra:safraLabel(p.safraId), Quantidade:p.quantidade, Unidade:p.unidade, PrecoUnitario:p.precoUnitario, Data:p.data}; }));
-    addSheet('DiarioDeCampo', state.operacoes.map(function(o){ return {Data:o.data, Tipo:o.tipo, Talhao: o.talhaoId?talhaoNome(o.talhaoId):'', Produto: o.produtoId?produtoNome(o.produtoId):'', Quantidade:o.quantidade, Unidade:o.unidade, Parceiro: o.parceiroId?parceiroNome(o.parceiroId):'', Responsavel: o.responsavelId?membroNome(o.responsavelId):''}; }));
+    var linhasDiario = [];
+    state.operacoes.forEach(function(o){
+      var aps = aplicacoesDaOperacao(o);
+      var sfX = aps[0] && aps[0].safraId ? state.safras.find(function(x){ return x.id === aps[0].safraId; }) : null;
+      var base = {Data:o.data, Tipo:o.tipo, Lavoura: sfX ? lavouraLabel(sfX.lavouraId) : '', Talhoes: aps.map(function(a){ return talhaoNome(a.talhaoId); }).join(', '), 'Area (ha)': areaTotalOperacao(o),
+        Maquinas: (o.maquinas || []).map(function(m){ return nomePatrimonio(m.patrimonioId) + ' (' + m.horas + ' h)'; }).join(', '), Alvo: o.alvo || '', Receituario: o.receituario || '',
+        Parceiro: o.parceiroId?parceiroNome(o.parceiroId):'', Responsavel: o.responsavelId?membroNome(o.responsavelId):''};
+      var prods = produtosDaOperacao(o);
+      if(!prods.length){ linhasDiario.push(base); return; }
+      prods.forEach(function(pp){ var l = {}; Object.keys(base).forEach(function(k){ l[k] = base[k]; }); l.Produto = produtoNome(pp.produtoId); l['Dose/ha'] = pp.dose || ''; l.Quantidade = pp.quantidade; l.Unidade = unidadeProduto(pp.produtoId) || pp.unidade || ''; l.Custo = pp.custoTotal || 0; linhasDiario.push(l); });
+    });
+    addSheet('DiarioDeCampo', linhasDiario);
     addSheet('Subgrupos', state.subgruposFinanceiro.map(function(s){ return {Nome:s.nome, Tipo: s.tipo==='custo'?'Despesa':'Receita'}; }));
     addSheet('ContasFinanceiro', state.contasFinanceiro.map(function(c){ return {Conta:c.nome, Subgrupo: subgrupoNome(c.subgrupoId)}; }));
     addSheet('Financeiro', state.financeiro.map(function(f){ return {Data:f.data, Vencimento:f.vencimento, Status:f.status||'Pago', Tipo:f.tipo, Subgrupo: f.contaId?subgrupoNome((state.contasFinanceiro.find(function(c){return c.id===f.contaId;})||{}).subgrupoId):'', Conta: f.contaId?contaNome(f.contaId):f.categoria, Quantidade:f.quantidade, ValorUnitario:f.valorUnitario, Unidade:f.unidade, Talhoes: talhoesDoLancamento(f).map(talhaoNome).join(', '), Descricao:f.descricao, Valor:f.valor}; }));
@@ -6070,6 +6336,9 @@
   });
 
   document.addEventListener('change', function(e){
+    if(e.target && e.target.type === 'number' && e.target.closest && e.target.closest('#diario-dinamico') && diarioRascunho){
+      lerRascunhoDiarioDoDom(); renderDiarioDinamico(); return;
+    }
     if(e.target && e.target.id === 'backup-file-input'){
       var file = e.target.files && e.target.files[0];
       if(file) importarBackupJSON(file);
@@ -6508,6 +6777,20 @@
       renderEfetivarVendaModal();
       return;
     }
+    if(e.target && e.target.closest && e.target.closest('#diario-dinamico') && diarioRascunho){
+      var campoD = e.target.dataset ? e.target.dataset.campo : '';
+      var linhaD = e.target.closest('[data-prod-idx]');
+      lerRascunhoDiarioDoDom();
+      if(linhaD && diarioRascunho.produtos[Number(linhaD.dataset.prodIdx)]){
+        var pD = diarioRascunho.produtos[Number(linhaD.dataset.prodIdx)];
+        if(campoD === 'quantidade') pD.qtdManual = e.target.value !== '';
+        if(campoD === 'dose') pD.qtdManual = false;
+      }
+      // números: só redesenha quando sai do campo (evento change), pra não perder o foco enquanto digita
+      if(e.type === 'input' && e.target.type === 'number') return;
+      renderDiarioDinamico();
+      return;
+    }
     if(e.target && e.target.id === 'sefaz-resumos-todos'){
       document.querySelectorAll('.sefaz-resumo-cb').forEach(function(cb){ cb.checked = e.target.checked; });
       return;
@@ -6925,12 +7208,54 @@
 
     if(form.id === 'form-operacao'){
       var opEditingId = form.dataset.editingId;
+      lerRascunhoDiarioDoDom();
+      var rsc = diarioRascunho || rascunhoDiarioDoRegistro(null);
+      var aplicacoesOp = [];
+      if(rsc.lavouraId){
+        safrasDaLavoura(rsc.lavouraId).forEach(function(sf){
+          if(rsc.marcadas && rsc.marcadas.indexOf(sf.id) === -1) return;
+          var aV = rsc.areas[sf.id]; aV = (aV !== undefined && aV !== '') ? (Number(aV) || 0) : areaPlantadaSafra(sf);
+          aplicacoesOp.push({safraId: sf.id, talhaoId: sf.talhaoId, area: aV});
+        });
+        if(!aplicacoesOp.length){ alert('Marque pelo menos um talhão da lavoura.'); return; }
+      } else if(rsc.talhaoAvulsoId){
+        var tAv = state.talhoes.find(function(x){ return x.id === rsc.talhaoAvulsoId; });
+        aplicacoesOp.push({safraId: '', talhaoId: rsc.talhaoAvulsoId, area: tAv ? (Number(tAv.area) || 0) : 0});
+      }
+      var areaOp = aplicacoesOp.reduce(function(sm, a){ return sm + a.area; }, 0);
+      var produtosOp = rsc.produtos.filter(function(pp){ return pp.produtoId; }).map(function(pp){
+        var q = quantidadeProdutoRascunho(pp, areaOp);
+        var cm = custoMedioProduto(pp.produtoId);
+        return {produtoId: pp.produtoId, dose: pp.qtdManual ? (areaOp > 0 ? Math.round(q / areaOp * 1000) / 1000 : 0) : (Number(pp.dose) || 0), quantidade: q, unidade: unidadeProduto(pp.produtoId), custoUnit: cm, custoTotal: Math.round(q * cm * 100) / 100};
+      });
+      if(produtosOp.some(function(pp){ return !(pp.quantidade > 0); })){ alert('Falta a dose ou a quantidade de algum produto.'); return; }
+      var maquinasOp = rsc.maquinas.filter(function(m){ return m.patrimonioId; }).map(function(m){ return {patrimonioId: m.patrimonioId, horas: Number(m.horas) || 0}; });
+      var sf1 = aplicacoesOp.length === 1 ? aplicacoesOp[0] : null;
       var opFields = {
-        tipo: data.get('tipo'), talhaoId: data.get('talhaoId') || '', safraId: data.get('safraId') || '',
-        produtoId: data.get('produtoId') || '', quantidade: parseFloat(data.get('quantidade')) || 0, unidade: (data.get('unidade')||'').trim(),
-        parceiroId: data.get('parceiroId') || '', responsavelId: data.get('responsavelId') || '', data: data.get('data') || '',
-        observacao: (data.get('observacao')||'').trim()
+        tipo: data.get('tipo'), data: data.get('data') || '',
+        aplicacoes: aplicacoesOp, produtos: produtosOp, maquinas: maquinasOp,
+        // campos antigos, mantidos para telas e exportações que ainda os usam
+        talhaoId: aplicacoesOp.length ? aplicacoesOp[0].talhaoId : '', safraId: sf1 ? sf1.safraId : '',
+        produtoId: produtosOp.length ? produtosOp[0].produtoId : '', quantidade: produtosOp.length ? produtosOp[0].quantidade : 0, unidade: produtosOp.length ? produtosOp[0].unidade : '',
+        alvo: (data.get('alvo') || '').trim(), volumeCalda: parseFloat(data.get('volumeCalda')) || 0,
+        receituario: (data.get('receituario') || '').trim(), responsavelTecnico: (data.get('responsavelTecnico') || '').trim(),
+        custear: !!form.querySelector('input[name="custear"]:checked'),
+        parceiroId: data.get('parceiroId') || '', responsavelId: data.get('responsavelId') || '',
+        observacao: (data.get('observacao')||'').trim(), estoqueBaixado: true
       };
+      // estoque: devolve o que a versão anterior tinha tirado e tira o novo
+      var ajusteEstoque = {};
+      if(opEditingId){
+        var anterior = state.operacoes.find(function(o){ return o.id === opEditingId; });
+        if(anterior && anterior.estoqueBaixado) produtosDaOperacao(anterior).forEach(function(pp){ ajusteEstoque[pp.produtoId] = (ajusteEstoque[pp.produtoId] || 0) + (Number(pp.quantidade) || 0); });
+      }
+      produtosOp.forEach(function(pp){ ajusteEstoque[pp.produtoId] = (ajusteEstoque[pp.produtoId] || 0) - pp.quantidade; });
+      var mudouEstoque = false;
+      Object.keys(ajusteEstoque).forEach(function(pid){
+        if(!ajusteEstoque[pid]) return;
+        var prod = state.produtos.find(function(x){ return x.id === pid; });
+        if(prod){ prod.estoqueAtual = Math.round(((Number(prod.estoqueAtual) || 0) + ajusteEstoque[pid]) * 1000) / 1000; mudouEstoque = true; }
+      });
       if(opEditingId){
         var opIdx = state.operacoes.findIndex(function(o){ return o.id === opEditingId; });
         if(opIdx !== -1){ Object.keys(opFields).forEach(function(k){ state.operacoes[opIdx][k] = opFields[k]; }); }
@@ -6939,7 +7264,8 @@
         state.operacoes.push(opFields);
       }
       saveKey('operacoes', state.operacoes);
-      editState = null;
+      if(mudouEstoque) saveKey('produtos', state.produtos);
+      editState = null; diarioRascunho = null; diarioPreTalhaoId = '';
       form.reset(); renderAll(); return;
     }
 
@@ -7096,9 +7422,11 @@
     var plotBtn = e.target.closest('.plot[data-talhao-id]');
     if(plotBtn){
       var talhaoId = plotBtn.dataset.talhaoId;
+      diarioPreTalhaoId = talhaoId;
+      diarioRascunho = null;
+      var sfPre = state.safras.filter(function(sx){ return sx.talhaoId === talhaoId && sx.ativa !== false; }).sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).find(function(sx){ var lv = lavouraPorId(sx.lavouraId); return lv && !lv.encerrada; });
       switchTab('operacoes');
-      var sel = document.getElementById('f-talhaoId');
-      if(sel) sel.value = talhaoId;
+      if(diarioRascunho && sfPre){ diarioRascunho.lavouraId = sfPre.lavouraId; diarioRascunho.marcadas = [sfPre.id]; renderDiarioDinamico(); }
       var formEl = document.getElementById('form-operacao');
       if(formEl) formEl.scrollIntoView({behavior:'smooth', block:'start'});
       return;
@@ -7725,8 +8053,19 @@
       if(f4) f4.scrollIntoView({behavior:'smooth', block:'start'});
       return;
     }
-    if(action === 'del-operacao'){ state.operacoes = state.operacoes.filter(function(o){ return o.id !== id; }); saveKey('operacoes', state.operacoes); renderAll(); return; }
-    if(action === 'edit-operacao'){ editState = {scope:'operacoes', id: id}; renderAll(); var f1 = document.getElementById('form-operacao'); if(f1) f1.scrollIntoView({behavior:'smooth', block:'start'}); return; }
+    if(action === 'del-operacao'){
+      var opDel = state.operacoes.find(function(o){ return o.id === id; });
+      if(opDel && opDel.estoqueBaixado){
+        produtosDaOperacao(opDel).forEach(function(pp){ var prod = state.produtos.find(function(x){ return x.id === pp.produtoId; }); if(prod) prod.estoqueAtual = Math.round(((Number(prod.estoqueAtual) || 0) + (Number(pp.quantidade) || 0)) * 1000) / 1000; });
+        saveKey('produtos', state.produtos);
+      }
+      state.operacoes = state.operacoes.filter(function(o){ return o.id !== id; }); saveKey('operacoes', state.operacoes); renderAll(); return;
+    }
+    if(action === 'diario-add-produto'){ lerRascunhoDiarioDoDom(); diarioRascunho.produtos.push({produtoId:'', dose:'', quantidade:'', qtdManual:false}); renderDiarioDinamico(); return; }
+    if(action === 'diario-remover-produto'){ lerRascunhoDiarioDoDom(); diarioRascunho.produtos.splice(Number(btn.dataset.idx), 1); renderDiarioDinamico(); return; }
+    if(action === 'diario-add-maquina'){ lerRascunhoDiarioDoDom(); diarioRascunho.maquinas.push({patrimonioId:'', horas:''}); renderDiarioDinamico(); return; }
+    if(action === 'diario-remover-maquina'){ lerRascunhoDiarioDoDom(); diarioRascunho.maquinas.splice(Number(btn.dataset.idx), 1); renderDiarioDinamico(); return; }
+    if(action === 'edit-operacao'){ editState = {scope:'operacoes', id: id}; diarioRascunho = null; renderAll(); var f1 = document.getElementById('form-operacao'); if(f1) f1.scrollIntoView({behavior:'smooth', block:'start'}); return; }
     if(action === 'del-financeiro'){
       var finParaExcluir = state.financeiro.find(function(f){ return f.id === id; });
       if(finParaExcluir && lancamentoEstaFechado(finParaExcluir)){ alert('Este lançamento está num período fechado. Reabra o período antes de excluir.'); return; }
@@ -7853,7 +8192,7 @@
     Array.prototype.forEach.call(document.querySelectorAll('table'), function(table){
       if(table.dataset.ordPreparada) return;
       table.dataset.ordPreparada = '1';
-      if(table.querySelector('th[data-action="sort-generic-table"]')) return;
+      if(table.querySelector('th[data-action="sort-generic-table"]') || table.classList.contains('sem-ordenacao')) return;
       var ths = table.querySelectorAll('thead tr:last-child th');
       if(!ths.length || !table.tBodies[0]) return;
       Array.prototype.forEach.call(ths, function(th, i){
