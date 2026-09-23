@@ -450,7 +450,7 @@
 (function(){
   "use strict";
 
-  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas','sefazNotasPendentes','sefazItensRevisao','sefazProgresso','analisesSolo','imagensCampo','importsAplicados','lavouras'];
+  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas','sefazNotasPendentes','sefazItensRevisao','sefazProgresso','analisesSolo','imagensCampo','importsAplicados','lavouras','sefazResumos'];
   var state = {};
   var editState = null; // {scope:'generic', entityKey, id} ou {scope:'talhoes'|'safras'|'operacoes'|'financeiro'|'producao', id}
   ALL_KEYS.forEach(function(k){ state[k] = []; });
@@ -2815,7 +2815,7 @@
     } // fim da seção xml
 
     if(nfeSecaoAtiva === 'sefaz'){
-    html += '<div class="paper form-card"><h3>Testar consulta na SEFAZ</h3>';
+    html += '<div class="paper form-card"><h3>Consultar notas na SEFAZ</h3>';
     html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 12px;">✅ A conexão e a leitura do certificado já foram validadas — a SEFAZ respondeu certinho. Se testou em Homologação e veio "Nenhum documento localizado", é esperado (ambiente de testes, normalmente vazio) — escolha <strong>Produção</strong> pra ver suas notas de verdade.</p>';
     if(state.sefazProgresso && state.sefazProgresso[0] && state.sefazProgresso[0].ultNSU){
       var progressoNsu = state.sefazProgresso[0];
@@ -2834,7 +2834,7 @@
       html += '<p style="grid-column:1/-1; font-size:11px; color:var(--cost-dark); margin:0;">Não consegui ler a UF/documento direto do certificado — preencha manualmente (isso pode acontecer dependendo de como a certificadora emitiu o certificado).</p>';
     }
     html += field('text', 'sefaz-ultnsu', 'Último NSU (deixe 0 na primeira vez)', false, '0', {}, sefazUltimaResposta && sefazUltimaResposta.ultNSU ? sefazUltimaResposta.ultNSU.replace(/^0+(?=\d)/, '') : undefined);
-    html += '<button type="button" class="btn" data-action="testar-sefaz" style="align-self:end;">Testar consulta</button>';
+    html += '<button type="button" class="btn" data-action="testar-sefaz" style="align-self:end;">Consultar SEFAZ</button>';
     html += '</div>';
     if(sefazDocumentosAcumulados.length){
       html += '<div style="display:flex; align-items:flex-end; gap:8px; margin-top:12px; flex-wrap:wrap;">';
@@ -2845,11 +2845,47 @@
     } else {
       html += '<button type="button" id="sefaz-trazer-notas-btn" class="btn" data-action="trazer-notas-sefaz" style="margin-top:12px; display:none;">Trazer notas completas pra revisão</button>';
     }
-    html += '<p style="font-size:11px; color:var(--ink-soft); margin-top:6px;">As notas completas encontradas ficam guardadas aqui mesmo que uma consulta seguinte dê erro (ex: bloqueio de "consumo indevido") — não somem. Notas que <strong>já foram trazidas pro sistema antes</strong> são ignoradas automaticamente nesta busca — não aparecem de novo. Se ainda tiver mais notas (maxNSU maior que o último NSU buscado), o campo "Último NSU" acima já vem atualizado — é só clicar em "Testar consulta" de novo pra buscar o próximo lote.</p>';
+    html += '<p style="font-size:11px; color:var(--ink-soft); margin-top:6px;">As notas completas encontradas ficam guardadas aqui mesmo que uma consulta seguinte dê erro (ex: bloqueio de "consumo indevido") — não somem. Notas que <strong>já foram trazidas pro sistema antes</strong> são ignoradas automaticamente nesta busca — não aparecem de novo. Se ainda tiver mais notas (maxNSU maior que o último NSU buscado), o campo "Último NSU" acima já vem atualizado — é só clicar em "Consultar SEFAZ" de novo pra buscar o próximo lote.</p>';
     if(sefazIgnoradasNaUltimaConsulta > 0){
       html += '<p style="font-size:11px; color:var(--ink-soft); margin-top:4px;">A última consulta encontrou ' + sefazIgnoradasNaUltimaConsulta + ' nota(s) que já tinham sido importadas antes — foram ignoradas automaticamente.</p>';
     }
-    html += '<pre id="sefaz-resultado" style="white-space:pre-wrap; word-break:break-word; font-size:11.5px; background:#FBF7EC; border:1px solid var(--paper-line); border-radius:4px; padding:10px; margin-top:12px; max-height:400px; overflow-y:auto;' + (sefazUltimaResposta ? '' : ' display:none;') + '">' + (sefazUltimaResposta ? escapeHtml(JSON.stringify(sefazUltimaResposta, null, 2)) : '') + '</pre>';
+    if(sefazOperacaoEmAndamento) html += '<div class="paper note-box" style="margin-top:12px;">⏳ ' + escapeHtml(sefazOperacaoEmAndamento) + '</div>';
+    if(sefazUltimaResposta && (sefazUltimaResposta.cStat || sefazUltimaResposta.error || sefazUltimaResposta.erro)){
+      var ur = sefazUltimaResposta;
+      var linhasRes = [];
+      if(ur.error || ur.erro) linhasRes.push('⚠️ ' + (ur.error || ur.erro));
+      if(ur.cStat) linhasRes.push('SEFAZ: ' + ur.cStat + ' — ' + (ur.xMotivo || ''));
+      if(sefazContagemUltima) linhasRes.push('Recebidos: ' + sefazContagemUltima.completas + ' nota(s) completa(s) nova(s) · ' + sefazContagemUltima.resumos + ' resumo(s) (precisam de ciência) · ' + sefazContagemUltima.jaImportadas + ' já importada(s) · ' + sefazContagemUltima.eventos + ' evento(s)');
+      if(ur.ultNSU) linhasRes.push('NSU: parou em ' + String(ur.ultNSU).replace(/^0+(?=\d)/, '') + (ur.maxNSU ? ' de ' + String(ur.maxNSU).replace(/^0+(?=\d)/, '') : ''));
+      html += '<div class="paper note-box" style="margin-top:12px; font-size:12.5px;">' + linhasRes.map(escapeHtml).join('<br>') + '</div>';
+    }
+    html += '</div>';
+
+    // ---- Notas que chegaram só como resumo ----
+    var resumosLista = (state.sefazResumos || []).slice().sort(function(a,b){ return (b.dataEmissao || '').localeCompare(a.dataEmissao || ''); });
+    html += '<div class="paper form-card"><h3>Notas que chegaram só como resumo' + (resumosLista.length ? ' (' + resumosLista.length + ')' : '') + '</h3>';
+    html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 10px;">Quando você é o destinatário, a SEFAZ manda primeiro só um <strong>resumo</strong> da nota (emitente, valor, data). O XML completo, com os itens, só é liberado depois que você registra a <strong>Ciência da Operação</strong>. Marque as notas e clique em "Dar ciência e baixar".</p>';
+    if(!resumosLista.length){
+      html += '<p style="font-size:12px; margin:0;">Nenhum resumo guardado. Versões anteriores do sistema descartavam esses resumos — para recuperá-los, consulte de novo com <strong>Último NSU = 0</strong> (a SEFAZ guarda os últimos 90 dias). <button type="button" class="btn-add-inline" data-action="sefaz-nsu-zero" style="width:auto; height:auto; padding:5px 12px; font-size:12px; margin-left:6px;">Colocar NSU em 0</button></p>';
+    } else {
+      html += '<div class="table-wrap"><table><thead><tr><th><input type="checkbox" id="sefaz-resumos-todos" title="Marcar todos"></th><th>Emissão</th><th>Emitente</th><th>Valor</th><th>Situação</th><th>Chave</th></tr></thead><tbody>';
+      var ROTULO_RESUMO = {aguardando:'Aguardando ciência', ciencia:'Ciência registrada — falta baixar', erro:'Erro', cancelada:'Cancelada pelo emitente', denegada:'Denegada'};
+      var COR_RESUMO = {aguardando:'#DFA84E', ciencia:'#3B6EA5', erro:'#A23E2E', cancelada:'#8B8368', denegada:'#8B8368'};
+      resumosLista.forEach(function(r){
+        html += '<tr><td>' + (r.status === 'cancelada' || r.status === 'denegada' ? '' : '<input type="checkbox" class="sefaz-resumo-cb" value="' + r.chave + '">') + '</td>';
+        html += '<td>' + (r.dataEmissao ? fmtDate(r.dataEmissao) : '—') + '</td>';
+        html += '<td>' + escapeHtml(r.emitente || '—') + '</td>';
+        html += '<td class="num">' + fmtBRL(r.valor) + '</td>';
+        html += '<td><span class="badge" style="background:' + (COR_RESUMO[r.status] || '#C9C3A4') + '; color:#fff; white-space:nowrap;">' + (ROTULO_RESUMO[r.status] || r.status) + '</span>' + (r.mensagem ? '<br><span style="font-size:11px; color:var(--ink-soft);">' + escapeHtml(r.mensagem) + '</span>' : '') + '</td>';
+        html += '<td style="font-size:10.5px; font-family:monospace;">' + escapeHtml(r.chave) + '</td></tr>';
+      });
+      html += '</tbody></table></div>';
+      html += '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">';
+      html += '<button type="button" class="btn" data-action="dar-ciencia-resumos"' + (sefazOperacaoEmAndamento ? ' disabled' : '') + '>📝 Dar ciência e baixar as marcadas</button>';
+      html += '<button type="button" class="btn-cancel" data-action="baixar-resumos"' + (sefazOperacaoEmAndamento ? ' disabled' : '') + '>⬇️ Baixar XML de novo (já com ciência)</button>';
+      html += '<button type="button" class="btn-cancel" data-action="remover-resumos">Remover marcadas da lista</button>';
+      html += '</div>';
+    }
     html += '</div>';
     } // fim da seção sefaz
 
@@ -2869,10 +2905,13 @@
 
       if(!notaEmDetalheChave || !gruposMap[notaEmDetalheChave]) notaEmDetalheChave = ordemChaves[0];
 
-      html += '<div style="margin-top:16px; padding-top:14px; border-top:1px dashed var(--paper-line);">';
+      html += '<div class="paper form-card" style="margin-top:16px;"><h3>Revisar notas antes de importar</h3>';
       html += '<p style="font-size:13px; margin:0 0 10px;"><strong>' + nfeImportada.itens.length + ' item(ns)</strong> de <strong>' + ordemChaves.length + ' nota(s)</strong> prontos pra revisar — clique numa nota da lista pra ver os itens dela.</p>';
       if(state.contasFinanceiro.length){
-        html += selectField('nfe-import-conta', 'Conta (para itens marcados como Compra)', state.contasFinanceiro.map(function(c){ return {value:c.id, label: contaLabel(c.id)}; }));
+        // padrão: uma conta de custo (de preferência "Insumos"), nunca uma de receita
+        var contasCustoNfe = state.contasFinanceiro.filter(function(c){ return contaTipo(c.id) === 'custo'; });
+        var contaPadraoNfe = contasCustoNfe.find(function(c){ return /^insumos?$/i.test((c.nome || '').trim()); }) || contasCustoNfe[0];
+        html += selectField('nfe-import-conta', 'Conta (para itens marcados como Compra)', contasCustoNfe.concat(state.contasFinanceiro.filter(function(c){ return contaTipo(c.id) !== 'custo'; })).map(function(c){ return {value:c.id, label: contaLabel(c.id)}; }), contaPadraoNfe ? contaPadraoNfe.id : undefined);
       } else {
         html += '<p style="font-size:12px; color:var(--ink-soft);">Sem uma Conta financeira cadastrada, os itens vão entrar no estoque, mas não vão gerar despesa no Financeiro.</p>';
       }
@@ -3064,7 +3103,8 @@
     if(!documento){ alert('Digite o CPF ou CNPJ (só números).'); return; }
     var avisoAmbiente = ambiente === 'producao' ? 'PRODUÇÃO (dados reais)' : 'HOMOLOGAÇÃO (testes)';
     if(!window.confirm('Isso vai consultar a SEFAZ em ambiente de ' + avisoAmbiente + ' usando o certificado guardado. Confirma?')) return;
-    if(resultadoEl){ resultadoEl.style.display = 'block'; resultadoEl.textContent = 'Consultando a SEFAZ, aguarde…'; }
+    sefazOperacaoEmAndamento = 'Consultando a SEFAZ, aguarde…';
+    renderCompras();
     fetch('/.netlify/functions/sefaz-consulta', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ambiente: ambiente, uf: uf, documento: documento, ultNSU: ultNSU})
@@ -3073,19 +3113,36 @@
       .then(function(data){
         sefazUltimaResposta = data;
         sefazIgnoradasNaUltimaConsulta = 0;
+        sefazContagemUltima = {completas:0, resumos:0, eventos:0, jaImportadas:0};
         if(data.documentos && data.documentos.length){
           var nsusJaTemos = sefazDocumentosAcumulados.map(function(d){ return d.nsu; });
           var chavesJaImportadas = state.notasFiscaisImportadas.map(function(n){ return n.chave; });
           data.documentos.forEach(function(doc){
-            if(!doc.schema || doc.schema.indexOf('procNFe') === -1) return;
+            var schemaDoc = doc.schema || '';
+            if(schemaDoc.indexOf('resNFe') !== -1){
+              // Só o resumo: a nota completa só vem depois da "Ciência da Operação"
+              var resumo = parseResumoNFe(doc.xml);
+              if(!resumo || !resumo.chave) return;
+              if(chavesJaImportadas.indexOf(resumo.chave) !== -1){ sefazContagemUltima.jaImportadas++; return; }
+              if(chaveJaAcumulada(resumo.chave)) return;
+              sefazContagemUltima.resumos++;
+              guardarResumoSefaz(resumo);
+              return;
+            }
+            if(schemaDoc.indexOf('procNFe') === -1){ sefazContagemUltima.eventos++; return; }
             if(nsusJaTemos.indexOf(doc.nsu) !== -1) return;
             var parsedRapido = parseNFeXML(doc.xml);
             if(parsedRapido && parsedRapido.chave && chavesJaImportadas.indexOf(parsedRapido.chave) !== -1){
               sefazIgnoradasNaUltimaConsulta++;
+              sefazContagemUltima.jaImportadas++;
               return;
             }
+            if(parsedRapido && parsedRapido.chave && chaveJaAcumulada(parsedRapido.chave)) return;
+            sefazContagemUltima.completas++;
             sefazDocumentosAcumulados.push(doc);
+            if(parsedRapido && parsedRapido.chave) removerResumoSefaz(parsedRapido.chave);
           });
+          saveKey('sefazResumos', state.sefazResumos);
         }
         if(data.cStat === '656'){
           sefazProximoTesteLiberadoEm = Date.now() + 60 * 60 * 1000;
@@ -3098,12 +3155,140 @@
           state.sefazProgresso = [{ultNSU: data.ultNSU, maxNSU: data.maxNSU || '', atualizadoEm: new Date().toISOString()}];
           saveKey('sefazProgresso', state.sefazProgresso);
         }
+        sefazOperacaoEmAndamento = '';
         renderCompras();
       })
       .catch(function(err){
         sefazUltimaResposta = { erro: String(err) };
+        sefazOperacaoEmAndamento = '';
         renderCompras();
       });
+  }
+
+  /* ---------- Resumos de NF-e (resNFe) e Ciência da Operação ---------- */
+  function parseResumoNFe(xmlText){
+    try{
+      var docR = new DOMParser().parseFromString(xmlText, 'text/xml');
+      var tg = function(nome){ var el = docR.getElementsByTagName(nome)[0]; return el ? el.textContent.trim() : ''; };
+      var chave = tg('chNFe');
+      if(!chave) return null;
+      return {chave: chave, emitente: tg('xNome'), docEmitente: tg('CNPJ') || tg('CPF'), dataEmissao: (tg('dhEmi') || '').slice(0,10),
+        valor: parseFloat(tg('vNF')) || 0, situacao: tg('cSitNFe') || '1', tipo: tg('tpNF')};
+    }catch(e){ return null; }
+  }
+  function chaveJaAcumulada(chave){
+    return sefazDocumentosAcumulados.some(function(d){ return d.chave === chave || (d.xml && d.xml.indexOf(chave) !== -1); });
+  }
+  function guardarResumoSefaz(resumo){
+    if(!Array.isArray(state.sefazResumos)) state.sefazResumos = [];
+    var existente = state.sefazResumos.find(function(r){ return r.chave === resumo.chave; });
+    if(existente){ Object.keys(resumo).forEach(function(k){ existente[k] = resumo[k]; }); return; }
+    resumo.status = resumo.situacao === '3' ? 'cancelada' : (resumo.situacao === '2' ? 'denegada' : 'aguardando');
+    resumo.recebidoEm = new Date().toISOString();
+    state.sefazResumos.push(resumo);
+  }
+  function removerResumoSefaz(chave){
+    state.sefazResumos = (state.sefazResumos || []).filter(function(r){ return r.chave !== chave; });
+  }
+  function dadosConsultaSefaz(){
+    var ambienteInput = document.getElementById('f-sefaz-ambiente');
+    var ufInput = document.getElementById('f-sefaz-uf');
+    var docInput = document.getElementById('f-sefaz-documento');
+    return {ambiente: ambienteInput ? ambienteInput.value : 'producao', uf: ufInput ? ufInput.value : 'PR', documento: docInput ? docInput.value.replace(/\D/g, '') : ''};
+  }
+  function postSefaz(funcao, corpo){
+    return fetch('/.netlify/functions/' + funcao, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(corpo)})
+      .then(function(r){ return r.json(); });
+  }
+  function emLotes(lista, tamanho){ var out = []; for(var i = 0; i < lista.length; i += tamanho) out.push(lista.slice(i, i + tamanho)); return out; }
+  function chavesResumosMarcados(){
+    var ch = [];
+    document.querySelectorAll('.sefaz-resumo-cb:checked').forEach(function(cb){ ch.push(cb.value); });
+    return ch;
+  }
+  // Baixa o XML completo por chave (depois da ciência). Devolve uma Promise.
+  function baixarResumosPorChave(chaves, dados){
+    dados = dados || dadosConsultaSefaz();
+    var baixadas = 0;
+    var lotes = emLotes(chaves, 5);
+    var seq = Promise.resolve();
+    lotes.forEach(function(lote, iL){
+      seq = seq.then(function(){
+        sefazOperacaoEmAndamento = 'Baixando XML completo… (' + Math.min((iL + 1) * 5, chaves.length) + ' de ' + chaves.length + ')';
+        renderCompras();
+        return postSefaz('sefaz-consulta', {ambiente: dados.ambiente, uf: dados.uf, documento: dados.documento, chaves: lote}).then(function(resp){
+          if(resp.error) throw new Error(resp.error);
+          (resp.documentos || []).forEach(function(doc){
+            var parsedB = parseNFeXML(doc.xml);
+            var chaveB = parsedB && parsedB.chave;
+            if(chaveB && chaveJaAcumulada(chaveB)) return;
+            doc.chave = chaveB || '';
+            doc.nsu = doc.nsu || ('chave-' + chaveB);
+            sefazDocumentosAcumulados.push(doc);
+            if(chaveB) removerResumoSefaz(chaveB);
+            baixadas++;
+          });
+          (resp.resultados || []).forEach(function(res){
+            if(res.baixou) return;
+            var rs = (state.sefazResumos || []).find(function(r){ return r.chave === res.chave; });
+            if(rs){ rs.mensagem = 'Download: ' + (res.cStat ? res.cStat + ' — ' : '') + (res.xMotivo || 'XML ainda não disponível'); }
+          });
+        });
+      });
+    });
+    return seq.then(function(){
+      state.sefazNotasPendentes = sefazDocumentosAcumulados;
+      saveKey('sefazNotasPendentes', state.sefazNotasPendentes);
+      saveKey('sefazResumos', state.sefazResumos);
+      return baixadas;
+    });
+  }
+  function darCienciaEBaixar(chaves){
+    var dados = dadosConsultaSefaz();
+    if(!dados.documento){ alert('Preencha o CPF ou CNPJ lá em cima.'); return; }
+    var aptas = chaves.filter(function(ch){ var r = (state.sefazResumos || []).find(function(x){ return x.chave === ch; }); return r && r.status !== 'cancelada' && r.status !== 'denegada'; });
+    if(!aptas.length){ alert('Nenhuma das notas marcadas pode receber ciência (canceladas ou denegadas ficam de fora).'); return; }
+    if(!window.confirm('Registrar "Ciência da Operação" na SEFAZ (' + (dados.ambiente === 'producao' ? 'PRODUÇÃO' : 'homologação') + ') para ' + aptas.length + ' nota(s) e baixar o XML completo?\n\nA ciência só informa que você tomou conhecimento da nota — não confirma nem recusa a operação. Depois você ainda pode confirmar ou desconhecer, se precisar.')) return;
+    var sucesso = [];
+    var seq = Promise.resolve();
+    emLotes(aptas, 20).forEach(function(lote, iL){
+      seq = seq.then(function(){
+        sefazOperacaoEmAndamento = 'Registrando ciência na SEFAZ… (' + Math.min((iL + 1) * 20, aptas.length) + ' de ' + aptas.length + ')';
+        renderCompras();
+        return postSefaz('sefaz-manifestar', {ambiente: dados.ambiente, documento: dados.documento, chaves: lote}).then(function(resp){
+          if(resp.error) throw new Error(resp.error);
+          if(!resp.resultados || !resp.resultados.length) throw new Error('A SEFAZ não confirmou o evento' + (resp.cStat ? ' (' + resp.cStat + ' — ' + (resp.xMotivo || '') + ')' : '') + '.');
+          resp.resultados.forEach(function(res){
+            var rs = (state.sefazResumos || []).find(function(r){ return r.chave === res.chave; });
+            if(!rs) return;
+            if(res.sucesso){ rs.status = 'ciencia'; rs.cienciaEm = new Date().toISOString(); rs.mensagem = ''; sucesso.push(res.chave); }
+            else { rs.status = 'erro'; rs.mensagem = 'Ciência: ' + res.cStat + ' — ' + (res.xMotivo || ''); }
+          });
+          saveKey('sefazResumos', state.sefazResumos);
+        });
+      });
+    });
+    seq.then(function(){ return sucesso.length ? baixarResumosPorChave(sucesso, dados) : 0; })
+      .then(function(baixadas){
+        sefazOperacaoEmAndamento = '';
+        renderCompras();
+        alert('Ciência registrada em ' + sucesso.length + ' nota(s). XML completo baixado de ' + baixadas + '.' + (baixadas < sucesso.length ? '\n\nAs que ainda não vieram costumam ficar disponíveis em alguns minutos — use "Baixar XML de novo" depois.' : '') + (baixadas ? '\n\nAgora é só clicar em "Trazer as notas completas" para revisar e importar.' : ''));
+      })
+      .catch(function(err){
+        sefazOperacaoEmAndamento = '';
+        saveKey('sefazResumos', state.sefazResumos);
+        renderCompras();
+        alert('Não foi possível concluir: ' + (err && err.message ? err.message : err));
+      });
+  }
+  function baixarNovamenteResumos(chaves){
+    if(!chaves.length){ alert('Marque as notas.'); return; }
+    var dadosB = dadosConsultaSefaz();
+    if(!dadosB.documento){ alert('Preencha o CPF ou CNPJ lá em cima.'); return; }
+    baixarResumosPorChave(chaves, dadosB).then(function(baixadas){
+      sefazOperacaoEmAndamento = ''; renderCompras();
+      alert(baixadas ? baixadas + ' nota(s) baixada(s). Clique em "Trazer as notas completas" para revisar.' : 'Nenhum XML disponível ainda para essas notas. Veja a mensagem de cada uma na lista.');
+    }).catch(function(err){ sefazOperacaoEmAndamento = ''; renderCompras(); alert('Não foi possível baixar: ' + (err && err.message ? err.message : err)); });
   }
 
   function persistirRevisaoNFe(){
@@ -5571,6 +5756,8 @@
   var chuvaMapaPropriedadeId = null;
   var notaEmDetalheChave = null; // qual nota está aberta no painel de detalhe (mestre-detalhe)
   var sefazUltimaResposta = null;
+  var sefazContagemUltima = null;
+  var sefazOperacaoEmAndamento = '';
   var sefazDocumentosAcumulados = []; // notas completas (procNFe) já encontradas, mantidas mesmo se uma consulta seguinte falhar
   var sefazIgnoradasNaUltimaConsulta = 0; // quantas notas a última consulta encontrou mas já eram conhecidas (não duplicadas)
 
@@ -6321,6 +6508,10 @@
       renderEfetivarVendaModal();
       return;
     }
+    if(e.target && e.target.id === 'sefaz-resumos-todos'){
+      document.querySelectorAll('.sefaz-resumo-cb').forEach(function(cb){ cb.checked = e.target.checked; });
+      return;
+    }
     if(e.target && e.target.id === 'classif-todos'){
       document.querySelectorAll('.classif-cb').forEach(function(cb){ cb.checked = e.target.checked; });
       return;
@@ -7002,6 +7193,21 @@
     if(action === 'enviar-certificado'){ enviarCertificado(); return; }
     if(action === 'remover-certificado'){ removerCertificado(); return; }
     if(action === 'testar-sefaz'){ testarConsultaSefaz(); return; }
+    if(action === 'dar-ciencia-resumos'){ var chCi = chavesResumosMarcados(); if(!chCi.length){ alert('Marque as notas na lista de resumos.'); return; } darCienciaEBaixar(chCi); return; }
+    if(action === 'baixar-resumos'){ baixarNovamenteResumos(chavesResumosMarcados()); return; }
+    if(action === 'remover-resumos'){
+      var chRem = chavesResumosMarcados();
+      if(!chRem.length){ alert('Marque as notas.'); return; }
+      if(!window.confirm('Tirar ' + chRem.length + ' resumo(s) da lista? Eles voltam se aparecerem de novo numa consulta a partir do NSU 0.')) return;
+      state.sefazResumos = (state.sefazResumos || []).filter(function(r){ return chRem.indexOf(r.chave) === -1; });
+      saveKey('sefazResumos', state.sefazResumos); renderCompras(); return;
+    }
+    if(action === 'sefaz-nsu-zero'){
+      var nsuInp = document.getElementById('f-sefaz-ultnsu'); if(nsuInp) nsuInp.value = '0';
+      sefazUltimaResposta = null; state.sefazProgresso = []; saveKey('sefazProgresso', state.sefazProgresso);
+      renderCompras(); var nsuInp2 = document.getElementById('f-sefaz-ultnsu'); if(nsuInp2){ nsuInp2.value = '0'; nsuInp2.focus(); }
+      return;
+    }
     if(action === 'trazer-notas-sefaz'){ trazerNotasSefaz(); return; }
     if(action === 'ver-nota-detalhe'){
       notaEmDetalheChave = btn.dataset.chave;
