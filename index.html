@@ -174,6 +174,8 @@
   /* ---------- Tables ---------- */
   table{width:100%; border-collapse:collapse; font-size:13px;}
   thead th{text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-soft); border-bottom:1px solid var(--paper-line); padding:8px 10px; font-weight:600;}
+  thead th.th-ordenavel{cursor:pointer; user-select:none;}
+  thead th.th-ordenavel:hover{color:var(--ink);}
   tbody td{padding:9px 10px; border-bottom:1px solid var(--paper-2);}
   tbody tr:last-child td{border-bottom:none;}
   .num{font-family:'JetBrains Mono', monospace;}
@@ -3906,6 +3908,7 @@
     if(!state.contasPagar.length){
       html += '<div class="paper empty-state">Nenhuma conta a pagar cadastrada ainda.</div>';
     } else {
+      html += '<div class="paper">';
       html += '<div class="table-wrap"><table><thead><tr><th>Descrição</th><th>Categoria</th><th>Parceiro</th><th>Talhão(ões)</th><th>Destino</th><th>Valor</th><th>Vencimento</th><th>Status</th><th></th></tr></thead><tbody>';
       state.contasPagar.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(c){
         html += '<tr>';
@@ -3922,6 +3925,7 @@
         html += '</tr>';
       });
       html += '</tbody></table></div>';
+      html += '</div>';
     }
     html += '<div class="paper note-box">Estes lançamentos alimentam o Fluxo de Caixa. Quando vinculados a um talhão e marcados como "Pago", também entram nos custos da Rentabilidade.</div>';
     el.innerHTML = html;
@@ -7518,6 +7522,91 @@
       return;
     }
   });
+
+  /* ---------------- Ordenação por coluna em todas as tabelas ---------------- */
+  // Clicar no cabeçalho ordena crescente/alfabética (▲); clicar de novo inverte (▼). A escolha fica guardada
+  // e é reaplicada quando a tela é redesenhada. Tabelas genéricas já têm ordenação própria e ficam de fora.
+  var ordenacoesTabelas = {};
+  function valorOrdenacaoCelula(cell){
+    if(!cell) return {vazio:true};
+    var t = (cell.innerText || cell.textContent || '').split('\n')[0].trim();
+    if(!t || t === '—' || t === '-' || t === '–') return {vazio:true};
+    var d = t.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    if(d) return {num: Number(d[3] + d[2] + d[1]), texto: t};
+    // "− R$ 100" / "+ R$ 100" (sinal com espaço) só indicam custo/receita: ordena pelo valor. "-R$ 100" é negativo de verdade.
+    var negativo = /^[−-](R\$|\d)/.test(t);
+    var limpo = t.replace(/^[+−-]\s*/, '').replace(/R\$|\bha\b|%|\bsc\b|\s/g, '');
+    if(/^-?\d{1,3}(\.\d{3})*(,\d+)?$/.test(limpo) || /^-?\d+(,\d+)?$/.test(limpo)){
+      var n = Number(limpo.replace(/\./g, '').replace(',', '.'));
+      if(!isNaN(n)) return {num: negativo ? -Math.abs(n) : n, texto: t};
+    }
+    return {texto: t};
+  }
+  function chaveTabelaOrdenacao(table){
+    var tab = table.closest('[id^="tab-"]') || table.closest('[id]');
+    var escopo = tab ? tab.id : 'doc';
+    var todas = tab ? tab.querySelectorAll('table') : document.querySelectorAll('table');
+    var idx = Array.prototype.indexOf.call(todas, table);
+    var cab = Array.prototype.map.call(table.querySelectorAll('thead th'), function(th){ return (th.dataset.rotulo || th.textContent || '').trim(); }).join('|');
+    return escopo + '#' + idx + '#' + cab;
+  }
+  function ordenarTabela(table, col, dir){
+    var tbody = table.tBodies[0];
+    if(!tbody) return;
+    var linhas = Array.prototype.slice.call(tbody.rows);
+    if(linhas.some(function(r){ return r.querySelector('td[colspan]'); })) return;
+    var vals = linhas.map(function(r, i){ return {r: r, v: valorOrdenacaoCelula(r.cells[col]), i: i}; });
+    var todosNumeros = vals.every(function(x){ return x.v.vazio || x.v.num !== undefined; });
+    vals.sort(function(a, b){
+      if(a.v.vazio && b.v.vazio) return a.i - b.i;
+      if(a.v.vazio) return 1;
+      if(b.v.vazio) return -1;
+      var c = todosNumeros ? (a.v.num - b.v.num) : a.v.texto.localeCompare(b.v.texto, 'pt-BR', {numeric:true, sensitivity:'base'});
+      if(c === 0) return a.i - b.i;
+      return dir === 'desc' ? -c : c;
+    });
+    vals.forEach(function(x){ tbody.appendChild(x.r); });
+    Array.prototype.forEach.call(table.querySelectorAll('thead th.th-ordenavel'), function(th){
+      var seta = th.querySelector('.seta-ordem');
+      if(seta) seta.textContent = (Number(th.dataset.col) === col) ? (dir === 'desc' ? ' ▼' : ' ▲') : '';
+    });
+  }
+  function prepararTabelasOrdenaveis(){
+    Array.prototype.forEach.call(document.querySelectorAll('table'), function(table){
+      if(table.dataset.ordPreparada) return;
+      table.dataset.ordPreparada = '1';
+      if(table.querySelector('th[data-action="sort-generic-table"]')) return;
+      var ths = table.querySelectorAll('thead tr:last-child th');
+      if(!ths.length || !table.tBodies[0]) return;
+      Array.prototype.forEach.call(ths, function(th, i){
+        if(th.dataset.action || th.querySelector('input,select,button') || !th.textContent.trim() || th.colSpan > 1) return;
+        th.dataset.rotulo = th.textContent.trim();
+        th.dataset.col = i;
+        th.classList.add('th-ordenavel');
+        th.title = 'Clique para ordenar';
+        var seta = document.createElement('span'); seta.className = 'seta-ordem'; th.appendChild(seta);
+      });
+      var salvo = ordenacoesTabelas[chaveTabelaOrdenacao(table)];
+      if(salvo) ordenarTabela(table, salvo.col, salvo.dir);
+    });
+  }
+  document.addEventListener('click', function(e){
+    var th = e.target && e.target.closest ? e.target.closest('th.th-ordenavel') : null;
+    if(!th) return;
+    var table = th.closest('table');
+    var chave = chaveTabelaOrdenacao(table);
+    var col = Number(th.dataset.col);
+    var atual = ordenacoesTabelas[chave];
+    var dir = (atual && atual.col === col && atual.dir === 'asc') ? 'desc' : 'asc';
+    ordenacoesTabelas[chave] = {col: col, dir: dir};
+    ordenarTabela(table, col, dir);
+  });
+  var agendouPrepararTabelas = false;
+  new MutationObserver(function(){
+    if(agendouPrepararTabelas) return;
+    agendouPrepararTabelas = true;
+    setTimeout(function(){ agendouPrepararTabelas = false; prepararTabelasOrdenaveis(); }, 0);
+  }).observe(document.body, {childList:true, subtree:true});
 
   window.addEventListener('afterprint', function(){
     document.body.classList.remove('imprimindo-calagem');
