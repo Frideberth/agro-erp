@@ -450,7 +450,7 @@
 (function(){
   "use strict";
 
-  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas','sefazNotasPendentes','sefazItensRevisao','sefazProgresso','analisesSolo','imagensCampo','importsAplicados','lavouras','sefazResumos','ajustesEstoque'];
+  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas','sefazNotasPendentes','sefazItensRevisao','sefazProgresso','analisesSolo','imagensCampo','importsAplicados','lavouras','sefazResumos','ajustesEstoque','configUnidades'];
   var state = {};
   var editState = null; // {scope:'generic', entityKey, id} ou {scope:'talhoes'|'safras'|'operacoes'|'financeiro'|'producao', id}
   ALL_KEYS.forEach(function(k){ state[k] = []; });
@@ -2677,7 +2677,24 @@
   /* ---------------- Unidades e embalagens de produtos ---------------- */
   // Estoque, dose e custo ficam sempre na UNIDADE DE CONTROLE do produto (L, kg, un...).
   // Balde, galão, frasco, bag... são embalagens com um conteúdo fixo nessa unidade (ex.: Balde = 20 L).
-  var UNIDADES_CONTROLE = [{v:'L', l:'L (litro)'}, {v:'mL', l:'mL (mililitro)'}, {v:'kg', l:'kg (quilo)'}, {v:'g', l:'g (grama)'}, {v:'t', l:'t (tonelada)'}, {v:'un', l:'un (unidade)'}, {v:'sc', l:'sc (saca)'}, {v:'m', l:'m (metro)'}];
+  // Cadastro editável (aba Produtos → "Unidades e embalagens"): unidades com grandeza e fator, embalagens padrão e tamanho do alqueire
+  var UNIDADES_PADRAO = [
+    {sigla:'L', nome:'Litro', grandeza:'volume', fator:1}, {sigla:'mL', nome:'Mililitro', grandeza:'volume', fator:0.001},
+    {sigla:'kg', nome:'Quilo', grandeza:'massa', fator:1}, {sigla:'g', nome:'Grama', grandeza:'massa', fator:0.001}, {sigla:'t', nome:'Tonelada', grandeza:'massa', fator:1000},
+    {sigla:'un', nome:'Unidade', grandeza:'unidade', fator:1}, {sigla:'sc', nome:'Saca', grandeza:'saca', fator:1}, {sigla:'m', nome:'Metro', grandeza:'comprimento', fator:1}
+  ];
+  var EMBALAGENS_PADRAO = [
+    {nome:'Frasco', conteudo:1, unidade:'L'}, {nome:'Galão', conteudo:5, unidade:'L'}, {nome:'Galão 10', conteudo:10, unidade:'L'}, {nome:'Balde', conteudo:20, unidade:'L'},
+    {nome:'Tambor', conteudo:200, unidade:'L'}, {nome:'Pacote', conteudo:1, unidade:'kg'}, {nome:'Saco 5', conteudo:5, unidade:'kg'}, {nome:'Saco 25', conteudo:25, unidade:'kg'},
+    {nome:'Saco 50', conteudo:50, unidade:'kg'}, {nome:'Big bag', conteudo:1000, unidade:'kg'}
+  ];
+  function configUnidades(){
+    if(!Array.isArray(state.configUnidades) || !state.configUnidades[0]) state.configUnidades = [{unidades: UNIDADES_PADRAO.map(function(u){ return Object.assign({}, u); }), embalagens: EMBALAGENS_PADRAO.map(function(e){ return Object.assign({}, e); }), alqueireHa: 2.42}];
+    return state.configUnidades[0];
+  }
+  function unidadesCadastradas(){ return configUnidades().unidades || []; }
+  function unidadePorSigla(sig){ return unidadesCadastradas().find(function(u){ return u.sigla === sig; }) || null; }
+  function alqueireHa(){ return Number(configUnidades().alqueireHa) || 2.42; }
   function normUnidade(u){ return String(u || '').trim().toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Z0-9]/g, ''); }
   function unidadeBaseDeTexto(u){
     var n = normUnidade(u);
@@ -2689,7 +2706,8 @@
     if(['UN','UND','UNID','UNIDADE','UNIDADES','PC','PCS','PECA','PECAS'].indexOf(n) !== -1) return 'un';
     if(['SC','SACO','SACOS','SACA','SACAS'].indexOf(n) !== -1) return 'sc';
     if(['M','MT','MTS','METRO','METROS'].indexOf(n) !== -1) return 'm';
-    return '';
+    var cad = unidadesCadastradas().find(function(u){ return normUnidade(u.sigla) === n || normUnidade(u.nome) === n; });
+    return cad ? cad.sigla : '';
   }
   function unidadeControle(p){ if(!p) return ''; return unidadeBaseDeTexto(p.unidade) || (p.unidade || ''); }
   function embalagensDoProduto(p){ return (p && p.embalagens || []).filter(function(e){ return e && e.nome && Number(e.conteudo) > 0; }); }
@@ -2707,8 +2725,14 @@
   // Converte um valor de uma unidade de medida para outra compatível (mL→L, g→kg, kg→t...)
   function converterEntreUnidades(valor, de, para){
     if(de === para) return valor;
-    var tab = {'mL>L':0.001, 'L>mL':1000, 'g>kg':0.001, 'kg>g':1000, 'kg>t':0.001, 't>kg':1000, 'g>t':0.000001, 't>g':1000000};
-    return tab[de + '>' + para] !== undefined ? valor * tab[de + '>' + para] : null;
+    var ud = unidadePorSigla(de), up = unidadePorSigla(para);
+    if(!ud || !up || ud.grandeza !== up.grandeza || !(Number(up.fator) > 0)) return null;
+    return valor * Number(ud.fator) / Number(up.fator);
+  }
+  function unidadesCompativeis(sig){
+    var u = unidadePorSigla(sig);
+    if(!u) return sig ? [sig] : [];
+    return unidadesCadastradas().filter(function(x){ return x.grandeza === u.grandeza; }).map(function(x){ return x.sigla; });
   }
   // Sugere quantas unidades de controle cabem em 1 unidade da nota (ex.: 1 BD = 20 L)
   function sugerirFatorNfe(item, produto){
@@ -2732,6 +2756,126 @@
 
   var produtoEmbRascunho = null;
   var ajusteEstoqueProdutoId = null;
+  var unidadesPainelAberto = false;
+  var conversaoProdutoId = null;
+  // Recalcula o custo das aplicações do Diário de Campo de um produto com o custo médio atual
+  function recalcularCustoAplicacoesProduto(produtoId){
+    var cm = custoMedioProduto(produtoId), mudou = false;
+    state.operacoes.forEach(function(o){
+      (o.produtos || []).forEach(function(pp){
+        if(pp.produtoId !== produtoId) return;
+        pp.custoUnit = cm; pp.custoTotal = Math.round((Number(pp.quantidade) || 0) * cm * 100) / 100; mudou = true;
+      });
+    });
+    if(mudou) saveKey('operacoes', state.operacoes);
+  }
+  // Troca a unidade de controle multiplicando tudo pelo fator (1 unidade antiga = fator × unidade nova)
+  function converterUnidadeProduto(p, novaUnidade, fator, opcoes){
+    var r3 = function(v){ return Math.round(v * 1000000) / 1000000; };
+    if(opcoes.estoque) p.estoqueAtual = r3((Number(p.estoqueAtual) || 0) * fator);
+    p.estoqueMinimo = r3((Number(p.estoqueMinimo) || 0) * fator);
+    (p.embalagens || []).forEach(function(e){ e.conteudo = r3(Number(e.conteudo) * fator); });
+    if(opcoes.criarEmbalagem && opcoes.nomeEmbalagem && !(p.embalagens || []).some(function(e){ return e.nome === opcoes.nomeEmbalagem; })){
+      p.embalagens = (p.embalagens || []).concat([{nome: opcoes.nomeEmbalagem, conteudo: r3(fator)}]);
+    }
+    if(p.conversoesNota) Object.keys(p.conversoesNota).forEach(function(k){ p.conversoesNota[k] = r3(p.conversoesNota[k] * fator); });
+    state.compras.forEach(function(c){
+      if(c.produtoId !== p.id) return;
+      c.quantidade = r3((Number(c.quantidade) || 0) * fator);
+      c.valorUnitario = (Number(c.valorUnitario) || 0) / fator;
+      if(c.fatorConversao) c.fatorConversao = r3(c.fatorConversao * fator);
+    });
+    state.operacoes.forEach(function(o){
+      (o.produtos || []).forEach(function(pp){
+        if(pp.produtoId !== p.id) return;
+        pp.quantidade = r3((Number(pp.quantidade) || 0) * fator); pp.dose = r3((Number(pp.dose) || 0) * fator);
+        pp.custoUnit = (Number(pp.custoUnit) || 0) / fator; pp.unidade = novaUnidade;
+      });
+      if(o.produtoId === p.id && !(o.produtos || []).length){ o.quantidade = r3((Number(o.quantidade) || 0) * fator); o.unidade = novaUnidade; }
+    });
+    (state.ajustesEstoque || []).forEach(function(a){ if(a.produtoId !== p.id) return; a.anterior = r3(a.anterior * fator); a.novo = r3(a.novo * fator); a.diferenca = r3(a.diferenca * fator); });
+    p.unidade = novaUnidade;
+    ['produtos','compras','operacoes','ajustesEstoque'].forEach(function(k){ saveKey(k, state[k]); });
+  }
+  function renderConversaoProduto(){
+    var area = document.getElementById('conversao-produto-area');
+    var p = state.produtos.find(function(x){ return x.id === conversaoProdutoId; });
+    if(!area || !p) return;
+    var unVelha = unidadeControle(p);
+    var novaSel = (document.getElementById('cv-unidade') || {}).value;
+    var fatorTxt = (document.getElementById('cv-fator') || {}).value;
+    var est = 'padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;';
+    if(!novaSel){
+      // sugestão: pelo nome do produto (ex.: "HEAT 350GR" → g, 350)
+      var m = String(p.nome).match(/(\d+(?:[.,]\d+)?)\s*(L|LT|LTS|ML|KG|G|GR)\b/i);
+      novaSel = m ? unidadeBaseDeTexto(m[2]) : 'L';
+      if(fatorTxt === undefined && m && !unidadeBaseDeTexto(unVelha)) fatorTxt = m[1].replace(',', '.');
+    }
+    if(fatorTxt === undefined){ var cAuto = converterEntreUnidades(1, unVelha, novaSel); fatorTxt = cAuto !== null ? String(cAuto) : ''; }
+    var fator = parseFloat(fatorTxt) || 0;
+    var ehEmbalagem = !unidadeBaseDeTexto(unVelha) || ['un'].indexOf(unidadeBaseDeTexto(unVelha)) !== -1;
+    var chkEst = document.getElementById('cv-estoque'), chkEmb = document.getElementById('cv-embalagem');
+    var converterEstoque = chkEst ? chkEst.checked : true;
+    var criarEmb = chkEmb ? chkEmb.checked : ehEmbalagem;
+    var nCompras = state.compras.filter(function(c){ return c.produtoId === p.id; }).length;
+    var nAplic = state.operacoes.filter(function(o){ return (o.produtos || []).some(function(pp){ return pp.produtoId === p.id; }); }).length;
+    var h = '<div style="font-size:13px; margin-bottom:8px;"><strong>Converter a unidade de ' + escapeHtml(p.nome) + '</strong> — hoje em <strong>' + escapeHtml(unVelha || '?') + '</strong>, estoque ' + fmtNum(p.estoqueAtual) + ' ' + escapeHtml(unVelha) + ', ' + nCompras + ' compra(s), ' + nAplic + ' aplicação(ões)</div>';
+    h += '<div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;">';
+    h += '<div class="field" style="margin:0;"><label>Nova unidade de controle</label><select id="cv-unidade" style="' + est + '">' + unidadesCadastradas().map(function(u){ return '<option value="' + escapeHtml(u.sigla) + '"' + (u.sigla === novaSel ? ' selected' : '') + '>' + escapeHtml(u.sigla + ' (' + u.nome.toLowerCase() + ')') + '</option>'; }).join('') + '</select></div>';
+    h += '<div class="field" style="margin:0;"><label>1 ' + escapeHtml(unVelha || 'unidade antiga') + ' =</label><div style="display:flex; align-items:center; gap:6px;"><input type="number" id="cv-fator" step="any" min="0" value="' + escapeHtml(fatorTxt) + '" style="width:110px; ' + est + '"> <span>' + escapeHtml(novaSel) + '</span></div></div>';
+    h += '</div>';
+    h += '<label style="display:flex; align-items:center; gap:6px; font-size:12.5px; margin-top:10px;"><input type="checkbox" id="cv-estoque"' + (converterEstoque ? ' checked' : '') + '> Converter também o estoque atual (' + fmtNum(p.estoqueAtual) + ' ' + escapeHtml(unVelha) + (fator ? ' → ' + fmtNum(Math.round((Number(p.estoqueAtual) || 0) * fator * 1000) / 1000) + ' ' + escapeHtml(novaSel) : '') + '). <span style="color:var(--ink-soft);">Desmarque se o número do estoque já estiver na unidade nova.</span></label>';
+    if(ehEmbalagem) h += '<label style="display:flex; align-items:center; gap:6px; font-size:12.5px; margin-top:4px;"><input type="checkbox" id="cv-embalagem"' + (criarEmb ? ' checked' : '') + '> Guardar "' + escapeHtml(unVelha) + '" como embalagem desse produto (' + escapeHtml(unVelha) + ' = ' + fmtNum(fator) + ' ' + escapeHtml(novaSel) + ')</label>';
+    var cmAntes = custoMedioProduto(p.id);
+    h += '<p style="font-size:12.5px; margin:10px 0 0;">' + (fator > 0 ? 'Custo médio: ' + (cmAntes ? fmtBRL(cmAntes) + '/' + escapeHtml(unVelha) + ' → <strong>' + fmtBRL(cmAntes / fator) + '/' + escapeHtml(novaSel) + '</strong>. ' : '') + 'Compras, aplicações do Diário (quantidade e dose), ajustes e embalagens são convertidos junto; o valor em R$ de cada compra e aplicação não muda.' : 'Informe quanto 1 ' + escapeHtml(unVelha) + ' vale na unidade nova.') + '</p>';
+    h += '<div style="display:flex; gap:8px; margin-top:10px;"><button type="button" class="btn" data-action="salvar-conversao-produto">Converter</button><button type="button" class="btn-cancel" data-action="cancelar-conversao-produto">Cancelar</button></div>';
+    area.innerHTML = h;
+  }
+  function renderPainelUnidades(){
+    var cfg = configUnidades();
+    var est = 'padding:6px 8px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12.5px;';
+    var h = '<div class="paper form-card" style="margin-bottom:20px;"><h3 style="display:flex; justify-content:space-between; align-items:center;">📏 Unidades e embalagens <button type="button" class="btn-cancel" data-action="toggle-painel-unidades" style="font-size:12px; padding:5px 12px;">' + (unidadesPainelAberto ? '▲ Fechar' : '▼ Abrir') + '</button></h3>';
+    if(!unidadesPainelAberto){ h += '<p style="font-size:12px; color:var(--ink-soft); margin:0;">Unidades de medida (L, mL, kg, g...), embalagens padrão (Galão 5 L, Balde 20 L, Saco 25 kg...) e o tamanho do alqueire usado nas doses.</p></div>'; return h; }
+    h += '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:20px;">';
+    // unidades
+    h += '<div><div style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:6px;">Unidades de medida</div>';
+    h += '<table class="sem-ordenacao" style="width:100%;"><thead><tr><th>Sigla</th><th>Nome</th><th>Grandeza</th><th>Vale</th><th></th></tr></thead><tbody>';
+    cfg.unidades.forEach(function(u, i){
+      var ref = cfg.unidades.find(function(x){ return x.grandeza === u.grandeza && Number(x.fator) === 1; });
+      h += '<tr data-un-idx="' + i + '"><td><input data-campo="sigla" value="' + escapeHtml(u.sigla) + '" style="width:60px; ' + est + '"></td><td><input data-campo="nome" value="' + escapeHtml(u.nome) + '" style="width:110px; ' + est + '"></td>';
+      h += '<td><input data-campo="grandeza" list="lista-grandezas" value="' + escapeHtml(u.grandeza) + '" style="width:100px; ' + est + '"></td>';
+      h += '<td style="white-space:nowrap;"><input data-campo="fator" type="number" step="any" min="0" value="' + u.fator + '" style="width:80px; ' + est + '"> <span style="font-size:11.5px;">' + escapeHtml(ref && ref !== u ? ref.sigla : '(referência)') + '</span></td>';
+      h += '<td><button type="button" class="btn-del" data-action="unidade-remover" data-idx="' + i + '">✕</button></td></tr>';
+    });
+    h += '</tbody></table><datalist id="lista-grandezas"><option value="volume"><option value="massa"><option value="unidade"><option value="saca"><option value="comprimento"><option value="área"></datalist>';
+    h += '<button type="button" class="btn-add-inline" data-action="unidade-adicionar" style="width:auto; height:auto; padding:5px 12px; font-size:12px; margin-top:6px;">+ Unidade</button>';
+    h += '<p style="font-size:11px; color:var(--ink-soft); margin:6px 0 0;">Unidades da mesma grandeza se convertem entre si. "Vale" diz quanto 1 dessa unidade vale na unidade de referência (a que tem 1). Ex.: 1 mL = 0,001 L.</p></div>';
+    // embalagens padrão
+    h += '<div><div style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:6px;">Embalagens padrão</div>';
+    h += '<table class="sem-ordenacao" style="width:100%;"><thead><tr><th>Nome</th><th>Conteúdo</th><th>Unidade</th><th></th></tr></thead><tbody>';
+    cfg.embalagens.forEach(function(e, i){
+      h += '<tr data-embp-idx="' + i + '"><td><input data-campo="nome" value="' + escapeHtml(e.nome) + '" style="width:130px; ' + est + '"></td><td><input data-campo="conteudo" type="number" step="any" min="0" value="' + e.conteudo + '" style="width:80px; ' + est + '"></td>';
+      h += '<td><select data-campo="unidade" style="' + est + '">' + cfg.unidades.map(function(u){ return '<option' + (u.sigla === e.unidade ? ' selected' : '') + '>' + escapeHtml(u.sigla) + '</option>'; }).join('') + '</select></td>';
+      h += '<td><button type="button" class="btn-del" data-action="embalagem-padrao-remover" data-idx="' + i + '">✕</button></td></tr>';
+    });
+    h += '</tbody></table>';
+    h += '<button type="button" class="btn-add-inline" data-action="embalagem-padrao-adicionar" style="width:auto; height:auto; padding:5px 12px; font-size:12px; margin-top:6px;">+ Embalagem</button>';
+    h += '<p style="font-size:11px; color:var(--ink-soft); margin:6px 0 0;">Aparecem como sugestão ao cadastrar as embalagens de cada produto (o conteúdo já vem convertido para a unidade do produto).</p>';
+    h += '<div style="margin-top:14px; display:flex; align-items:center; gap:8px; font-size:12.5px;"><strong>1 alqueire =</strong> <input id="cfg-alqueire" type="number" step="any" min="0" value="' + alqueireHa() + '" style="width:80px; ' + est + '"> ha <span style="font-size:11px; color:var(--ink-soft);">(paulista 2,42 · mineiro 4,84 · baiano 9,68)</span></div></div>';
+    h += '</div>';
+    h += '<div style="display:flex; gap:8px; margin-top:14px;"><button type="button" class="btn" data-action="salvar-config-unidades">Salvar unidades e embalagens</button><button type="button" class="btn-cancel" data-action="restaurar-config-unidades">Restaurar padrão</button></div>';
+    h += '</div>';
+    return h;
+  }
+  function lerConfigUnidadesDoDom(){
+    var cfg = configUnidades();
+    document.querySelectorAll('[data-un-idx]').forEach(function(tr){ var u = cfg.unidades[Number(tr.dataset.unIdx)]; if(!u) return;
+      u.sigla = tr.querySelector('[data-campo="sigla"]').value.trim(); u.nome = tr.querySelector('[data-campo="nome"]').value.trim();
+      u.grandeza = tr.querySelector('[data-campo="grandeza"]').value.trim().toLowerCase(); u.fator = parseFloat(tr.querySelector('[data-campo="fator"]').value) || 0; });
+    document.querySelectorAll('[data-embp-idx]').forEach(function(tr){ var e = cfg.embalagens[Number(tr.dataset.embpIdx)]; if(!e) return;
+      e.nome = tr.querySelector('[data-campo="nome"]').value.trim(); e.conteudo = parseFloat(tr.querySelector('[data-campo="conteudo"]').value) || 0; e.unidade = tr.querySelector('[data-campo="unidade"]').value; });
+    var alq = document.getElementById('cfg-alqueire'); if(alq) cfg.alqueireHa = parseFloat(alq.value) || 2.42;
+  }
   var ajustesHistoricoAberto = false;
   var MOTIVOS_AJUSTE = ['Contagem / inventário', 'Perda ou quebra', 'Vencido / descartado', 'Devolução ao fornecedor', 'Correção de lançamento', 'Outro'];
   function renderAjusteEstoque(){
@@ -2796,17 +2940,18 @@
     if(!produtoEmbRascunho.itens.length) html += '<span style="font-size:12px; color:var(--ink-soft);">Nenhuma. Ex.: Balde = 20 ' + escapeHtml(un || 'L') + ', Galão = 5 ' + escapeHtml(un || 'L') + '.</span>';
     produtoEmbRascunho.itens.forEach(function(e, i){
       html += '<div data-emb-idx="' + i + '" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">';
-      html += '<input type="text" data-campo="nome" value="' + escapeHtml(e.nome || '') + '" placeholder="Ex: Balde" style="width:160px; padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">';
+      html += '<input type="text" data-campo="nome" list="lista-embalagens-padrao" value="' + escapeHtml(e.nome || '') + '" placeholder="Ex: Balde" style="width:160px; padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">';
       html += '<span style="font-size:12.5px;">=</span><input type="number" data-campo="conteudo" value="' + (e.conteudo === undefined ? '' : e.conteudo) + '" step="0.001" min="0" placeholder="20" style="width:100px; padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">';
       html += '<span style="font-size:12.5px;">' + escapeHtml(un || '(unidade)') + '</span>';
       html += '<button type="button" class="btn-del" data-action="produto-remover-embalagem" data-idx="' + i + '">✕</button></div>';
     });
+    html += '<datalist id="lista-embalagens-padrao">' + (configUnidades().embalagens || []).map(function(ep){ return '<option value="' + escapeHtml(ep.nome) + '">' + escapeHtml(ep.nome + ' — ' + fmtNum(ep.conteudo) + ' ' + ep.unidade) + '</option>'; }).join('') + '</datalist>';
     html += '<button type="button" class="btn-add-inline" data-action="produto-add-embalagem" style="width:auto; height:auto; padding:6px 12px; font-size:12.5px; align-self:flex-start;">+ Adicionar embalagem</button>';
     cont.innerHTML = html;
   }
   function renderProdutos(){
     var editingRecord = (editState && editState.scope === 'produtos') ? state.produtos.find(function(x){ return x.id === editState.id; }) : null;
-    var html = '';
+    var html = renderPainelUnidades();
     html += '<div class="paper form-card"><h3>' + (editingRecord ? 'Editar produto' : 'Novo produto') + '</h3>';
     html += '<form class="entry-form" id="form-produto"' + (editingRecord ? ' data-editing-id="' + editingRecord.id + '"' : '') + '>';
     html += field('text', 'nome', 'Nome', true, 'Ex: Adubo NPK', {}, editingRecord ? editingRecord.nome : undefined);
@@ -2815,8 +2960,8 @@
     html += '<button type="button" class="btn-add-inline" data-action="open-cat-modal" title="Nova categoria">+</button>';
     html += '</div>';
     var unAtual = editingRecord ? (unidadeBaseDeTexto(editingRecord.unidade) || editingRecord.unidade || '') : 'L';
-    var opcoesUn = UNIDADES_CONTROLE.map(function(u){ return {value:u.v, label:u.l}; });
-    if(unAtual && !UNIDADES_CONTROLE.some(function(u){ return u.v === unAtual; })) opcoesUn.push({value: unAtual, label: unAtual + ' (atual)'});
+    var opcoesUn = unidadesCadastradas().map(function(u){ return {value:u.sigla, label:u.sigla + ' (' + u.nome.toLowerCase() + ')'}; });
+    if(unAtual && !unidadesCadastradas().some(function(u){ return u.sigla === unAtual; })) opcoesUn.push({value: unAtual, label: unAtual + ' (atual — use "🔁 Unidade" na lista para converter)'});
     html += selectField('unidade', 'Unidade de controle (estoque, dose e custo)', opcoesUn, unAtual);
     if(editingRecord){
       html += '<div class="field"><label>Estoque atual</label><input type="text" value="' + fmtNum(editingRecord.estoqueAtual) + ' ' + escapeHtml(unidadeControle(editingRecord)) + '" readonly style="background:#E8DCB9;"><span style="font-size:10.5px; color:var(--ink-soft);">Para mudar, use "⚖️ Ajustar" na lista (fica registrado)</span></div>';
@@ -2851,9 +2996,10 @@
         var cmP = custoMedioProduto(p.id);
         html += '<td class="num">' + (cmP > 0 ? fmtBRL(cmP) + '/' + escapeHtml(unP) : '—') + '</td>';
         html += '<td class="num">' + fmtNum(p.estoqueMinimo) + '</td>';
-        html += '<td style="white-space:nowrap;"><button class="btn-edit" data-action="abrir-ajuste-estoque" data-id="' + p.id + '">⚖️ Ajustar</button><button class="btn-edit" data-action="edit-produto" data-id="' + p.id + '">Editar</button><button class="btn-del" data-action="del-produto" data-id="' + p.id + '">Remover</button></td>';
+        html += '<td style="white-space:nowrap;"><button class="btn-edit" data-action="abrir-ajuste-estoque" data-id="' + p.id + '">⚖️ Ajustar</button><button class="btn-edit" data-action="abrir-conversao-produto" data-id="' + p.id + '" title="Trocar a unidade de controle convertendo estoque, compras e aplicações">🔁 Unidade</button><button class="btn-edit" data-action="edit-produto" data-id="' + p.id + '">Editar</button><button class="btn-del" data-action="del-produto" data-id="' + p.id + '">Remover</button></td>';
         html += '</tr>';
         if(ajusteEstoqueProdutoId === p.id) html += '<tr style="background:#EFE6C8;"><td colspan="9" style="padding:12px 14px;" id="ajuste-estoque-area"></td></tr>';
+        if(conversaoProdutoId === p.id) html += '<tr style="background:#EFE6C8;"><td colspan="9" style="padding:12px 14px;" id="conversao-produto-area"></td></tr>';
       });
       html += '</tbody></table></div>';
     }
@@ -2873,6 +3019,7 @@
     }
     document.getElementById('tab-produtos').innerHTML = html;
     renderAjusteEstoque();
+    renderConversaoProduto();
     renderEmbalagensProduto();
   }
 
@@ -3192,7 +3339,7 @@
       html += '</tbody></table></div>';
     }
     html += '</div>';
-    html += '<div class="paper note-box">Compras marcadas como "Recebido" somam automaticamente no estoque (aba Produtos) e criam uma despesa "Pago" no Financeiro no momento em que são criadas. Editar ou remover uma compra depois não desfaz esses efeitos automaticamente — ajuste o estoque e o lançamento financeiro manualmente se precisar corrigir algo.</div>';
+    html += '<div class="paper note-box">Compras marcadas como "Recebido" somam automaticamente no estoque (aba Produtos) e criam uma despesa "Pago" no Financeiro no momento em que são criadas. Editar uma compra corrige o estoque pela diferença e recalcula o custo das aplicações desse produto no Diário de Campo; o lançamento no Financeiro não muda — ajuste lá se o valor mudou.</div>';
     } // fim do "if(!nfeTelaFocoAtiva)" da lista de compras
     el.innerHTML = html;
     var compraEdit = editingRecord;
@@ -4107,7 +4254,7 @@
     return {
       origem: o.id, lavouraId: sf0 ? sf0.lavouraId : '', areas: areas, marcadas: marcadas.length ? marcadas : null,
       talhaoAvulsoId: !sf0 && aps[0] ? aps[0].talhaoId : '',
-      produtos: produtosDaOperacao(o).map(function(p){ return {produtoId: p.produtoId, dose: p.dose || '', quantidade: p.quantidade || '', qtdManual: !p.dose}; }).concat(produtosDaOperacao(o).length ? [] : [{produtoId:'', dose:'', quantidade:'', qtdManual:false}]),
+      produtos: produtosDaOperacao(o).map(function(p){ var di = p.doseInformada; return {produtoId: p.produtoId, dose: di ? di.valor : (p.dose || ''), doseUn: di ? di.unidade : unidadeProduto(p.produtoId), dosePor: di ? di.por : 'ha', quantidade: p.quantidade || '', qtdManual: !p.dose}; }).concat(produtosDaOperacao(o).length ? [] : [{produtoId:'', dose:'', quantidade:'', qtdManual:false}]),
       maquinas: (o.maquinas || []).map(function(m){ return {patrimonioId: m.patrimonioId, horas: m.horas}; })
     };
   }
@@ -4119,9 +4266,18 @@
     var t = state.talhoes.find(function(x){ return x.id === r.talhaoAvulsoId; });
     return t ? (Number(t.area) || 0) : 0;
   }
+  // Dose digitada (em qualquer unidade compatível, por ha ou por alqueire) → dose por ha na unidade do produto
+  function doseHaNaUnidadeProduto(p){
+    var prodUn = unidadeProduto(p.produtoId);
+    var d = Number(p.dose) || 0;
+    var conv = converterEntreUnidades(d, p.doseUn || prodUn, prodUn);
+    if(conv === null) conv = d;
+    if(p.dosePor === 'alq') conv = conv / alqueireHa();
+    return conv;
+  }
   function quantidadeProdutoRascunho(p, area){
     if(p.qtdManual) return Number(p.quantidade) || 0;
-    return Math.round((Number(p.dose) || 0) * area * 1000) / 1000;
+    return Math.round(doseHaNaUnidadeProduto(p) * area * 1000) / 1000;
   }
   function lerRascunhoDiarioDoDom(){
     var cont = document.getElementById('diario-dinamico');
@@ -4140,8 +4296,11 @@
     if(selT) r.talhaoAvulsoId = selT.value;
     cont.querySelectorAll('[data-prod-idx]').forEach(function(row){
       var i = Number(row.dataset.prodIdx); var p = r.produtos[i]; if(!p) return;
-      var sel = row.querySelector('select'); var dose = row.querySelector('[data-campo="dose"]'); var qtd = row.querySelector('[data-campo="quantidade"]');
-      if(sel && sel.value !== p.produtoId){ p.produtoId = sel.value; }
+      var sel = row.querySelector('select[data-campo="produto"]'); var dose = row.querySelector('[data-campo="dose"]'); var qtd = row.querySelector('[data-campo="quantidade"]');
+      var selDu = row.querySelector('[data-campo="doseUn"]'), selDp = row.querySelector('[data-campo="dosePor"]');
+      if(sel && sel.value !== p.produtoId){ p.produtoId = sel.value; p.doseUn = unidadeProduto(p.produtoId); }
+      else { if(selDu) p.doseUn = selDu.value; }
+      if(selDp) p.dosePor = selDp.value;
       if(dose) p.dose = dose.value;
       if(qtd) p.quantidade = qtd.value;
     });
@@ -4189,7 +4348,7 @@
     // ---- Produtos (receituário) ----
     html += tituloSecao('🧪 Produtos aplicados (receituário)');
     var custoProdTotal = 0;
-    html += '<div class="table-wrap"><table class="sem-ordenacao"><thead><tr><th>Produto</th><th>Dose por ha</th><th>Quantidade total</th><th>Estoque</th><th>Custo médio</th><th>Custo</th><th></th></tr></thead><tbody>';
+    html += '<div class="table-wrap"><table class="sem-ordenacao"><thead><tr><th>Produto</th><th>Dose (como na receita)</th><th>Quantidade total</th><th>Estoque</th><th>Custo médio</th><th>Custo</th><th></th></tr></thead><tbody>';
     r.produtos.forEach(function(p, i){
       var un = unidadeProduto(p.produtoId);
       var qtd = quantidadeProdutoRascunho(p, areaTot);
@@ -4200,10 +4359,16 @@
       if(registroOriginal && registroOriginal.estoqueBaixado){ produtosDaOperacao(registroOriginal).forEach(function(po){ if(po.produtoId === p.produtoId) estoqueDisp += Number(po.quantidade) || 0; }); }
       custoProdTotal += qtd * cm;
       html += '<tr data-prod-idx="' + i + '">';
-      html += '<td style="min-width:200px;"><select style="' + estiloSel + '"><option value="">— escolha —</option>';
+      html += '<td style="min-width:200px;"><select data-campo="produto" style="' + estiloSel + '"><option value="">— escolha —</option>';
       state.produtos.slice().sort(function(a,b){ return (a.nome||'').localeCompare(b.nome||'', 'pt-BR'); }).forEach(function(pp){ html += '<option value="' + pp.id + '"' + (pp.id === p.produtoId ? ' selected' : '') + '>' + escapeHtml(pp.nome) + '</option>'; });
       html += '</select></td>';
-      html += '<td style="min-width:120px;"><div style="display:flex; align-items:center; gap:4px;"><input type="number" data-campo="dose" value="' + (p.dose === undefined ? '' : p.dose) + '" step="0.001" min="0" style="' + estiloNum + '"><span style="font-size:11px; color:var(--ink-soft); white-space:nowrap;">' + escapeHtml(un || 'un') + '/ha</span></div></td>';
+      var doseUnAtual = p.doseUn && unidadesCompativeis(un).indexOf(p.doseUn) !== -1 ? p.doseUn : un;
+      var estiloMini = 'padding:6px 4px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12px;';
+      html += '<td style="min-width:230px;"><div style="display:flex; align-items:center; gap:4px;"><input type="number" data-campo="dose" value="' + (p.dose === undefined ? '' : p.dose) + '" step="any" min="0" style="' + estiloNum + ' min-width:70px;">';
+      html += '<select data-campo="doseUn" style="' + estiloMini + '">' + (unidadesCompativeis(un).length ? unidadesCompativeis(un) : [un || 'un']).map(function(u){ return '<option' + (u === doseUnAtual ? ' selected' : '') + '>' + escapeHtml(u) + '</option>'; }).join('') + '</select>';
+      html += '<select data-campo="dosePor" style="' + estiloMini + '"><option value="ha"' + (p.dosePor !== 'alq' ? ' selected' : '') + '>/ha</option><option value="alq"' + (p.dosePor === 'alq' ? ' selected' : '') + '>/alq</option></select></div>';
+      if(p.produtoId && p.dose !== '' && p.dose !== undefined && (doseUnAtual !== un || p.dosePor === 'alq')) html += '<div style="font-size:10.5px; color:var(--ink-soft);">= ' + fmtNum(Math.round(doseHaNaUnidadeProduto(p) * 100000) / 100000) + ' ' + escapeHtml(un) + '/ha</div>';
+      html += '</td>';
       html += '<td style="min-width:120px;"><div style="display:flex; align-items:center; gap:4px;"><input type="number" data-campo="quantidade" value="' + (qtd || '') + '" step="0.001" min="0" style="' + estiloNum + (p.qtdManual ? '' : ' background:#EFE6C8;') + '" title="Calculada: dose × área. Digite para usar outro valor."><span style="font-size:11px; color:var(--ink-soft);">' + escapeHtml(un) + '</span></div>' + (p.produtoId && qtd > 0 && descreverEmEmbalagens(p.produtoId, qtd) ? '<div style="font-size:10.5px; color:var(--ink-soft);">≈ ' + escapeHtml(descreverEmEmbalagens(p.produtoId, qtd)) + '</div>' : '') + '</td>';
       var embEst = p.produtoId ? descreverEmEmbalagens(p.produtoId, estoqueDisp) : '';
       html += '<td class="num" style="' + (p.produtoId && qtd > estoqueDisp ? 'color:var(--cost-dark); font-weight:600;' : '') + '">' + (p.produtoId ? fmtNum(estoqueDisp) + ' ' + escapeHtml(un) + (embEst ? '<br><span style="font-size:10.5px; color:var(--ink-soft); font-weight:400;">' + escapeHtml(embEst) + '</span>' : '') : '—') + '</td>';
@@ -4301,7 +4466,7 @@
         var sfO = apsO[0] && apsO[0].safraId ? state.safras.find(function(x){ return x.id === apsO[0].safraId; }) : null;
         html += '<td style="font-size:12px;">' + (sfO ? '<strong>' + escapeHtml(lavouraLabel(sfO.lavouraId)) + '</strong><br>' : '') + (apsO.length ? escapeHtml(apsO.map(function(a){ return talhaoNome(a.talhaoId); }).join(', ')) + ' · ' + fmtHa(areaTotalOperacao(o)) : '—') + '</td>';
         var prodsO = produtosDaOperacao(o);
-        html += '<td style="font-size:12px;">' + (prodsO.length ? prodsO.map(function(pp){ var un = unidadeProduto(pp.produtoId) || pp.unidade || ''; return escapeHtml(produtoNome(pp.produtoId)) + ' — ' + fmtNum(pp.quantidade) + ' ' + escapeHtml(un) + (pp.dose ? ' (' + fmtNum(pp.dose) + ' ' + escapeHtml(un) + '/ha)' : ''); }).join('<br>') : '—') + '</td>';
+        html += '<td style="font-size:12px;">' + (prodsO.length ? prodsO.map(function(pp){ var un = unidadeProduto(pp.produtoId) || pp.unidade || ''; return escapeHtml(produtoNome(pp.produtoId)) + ' — ' + fmtNum(pp.quantidade) + ' ' + escapeHtml(un) + (pp.doseInformada ? ' (' + fmtNum(pp.doseInformada.valor) + ' ' + escapeHtml(pp.doseInformada.unidade) + '/' + (pp.doseInformada.por === 'alq' ? 'alq' : 'ha') + ')' : (pp.dose ? ' (' + fmtNum(pp.dose) + ' ' + escapeHtml(un) + '/ha)' : '')); }).join('<br>') : '—') + '</td>';
         html += '<td style="font-size:12px;">' + ((o.maquinas || []).length ? o.maquinas.map(function(m){ return escapeHtml(nomePatrimonio(m.patrimonioId)) + ' · ' + fmtNum(m.horas) + ' h'; }).join('<br>') : '—') + '</td>';
         var custoProdO = o.custear === false ? 0 : prodsO.reduce(function(sm, pp){ return sm + (Number(pp.custoTotal) || 0); }, 0);
         var custoMaqO = (o.maquinas || []).reduce(function(sm, m){ return sm + (Number(m.horas) || 0) * custoHoraMaquina(m.patrimonioId); }, 0);
@@ -6639,7 +6804,20 @@
     if(e.target && e.target.closest && e.target.closest('#form-compra') && (e.target.name === 'produtoId' || e.target.name === 'embalagem' || e.target.name === 'quantidade' || e.target.name === 'valorUnitario')){
       if(e.target.name === 'produtoId') atualizarCampoEmbalagemCompra(); else atualizarConversaoCompra();
     }
-    if(e.target && e.target.closest && e.target.closest('#produto-embalagens')){ lerEmbalagensDoDom(); }
+    if(e.target && e.target.closest && e.target.closest('#produto-embalagens')){
+      // escolheu uma embalagem padrão: preenche o conteúdo convertido para a unidade do produto
+      if(e.target.dataset.campo === 'nome'){
+        var ep = (configUnidades().embalagens || []).find(function(x){ return x.nome === e.target.value; });
+        var linhaEmb = e.target.closest('[data-emb-idx]');
+        var unProdForm = (document.querySelector('#form-produto [name="unidade"]') || {}).value || '';
+        if(ep && linhaEmb){
+          var conteudoConv = converterEntreUnidades(Number(ep.conteudo), ep.unidade, unProdForm);
+          var inpC = linhaEmb.querySelector('[data-campo="conteudo"]');
+          if(inpC && conteudoConv !== null && !inpC.value) inpC.value = Math.round(conteudoConv * 1000000) / 1000000;
+        }
+      }
+      lerEmbalagensDoDom();
+    }
     if(e.target && e.target.name === 'unidade' && e.target.closest && e.target.closest('#form-produto')){ lerEmbalagensDoDom(); renderEmbalagensProduto(); }
     if(e.target && e.target.id && e.target.id.indexOf('nfe-item-safra-') === 0){
       var idxSafraNfe = parseInt(e.target.id.replace('nfe-item-safra-', ''), 10);
@@ -7003,6 +7181,13 @@
   }
 
   document.addEventListener('input', function(e){
+    if(e.target && e.target.closest && e.target.closest('#conversao-produto-area')){
+      var focoCv = e.target.id;
+      if(focoCv === 'cv-unidade'){ var fx = document.getElementById('cv-fator'); var pX = state.produtos.find(function(x){ return x.id === conversaoProdutoId; }); var cX = pX ? converterEntreUnidades(1, unidadeControle(pX), e.target.value) : null; if(fx && cX !== null) fx.value = cX; }
+      renderConversaoProduto();
+      var elF = document.getElementById(focoCv); if(elF && elF.type === 'number'){ elF.focus(); var vF = elF.value; elF.value = ''; elF.value = vF; }
+      return;
+    }
     if(e.target && e.target.closest && e.target.closest('#ajuste-estoque-area') && e.target.id !== 'aj-obs'){
       var focoId = e.target.id; renderAjusteEstoque();
       var el2 = document.getElementById(focoId); if(el2 && el2.type !== 'select-one'){ el2.focus(); try{ var v = el2.value; el2.value = ''; el2.value = v; }catch(err){} }
@@ -7055,7 +7240,7 @@
       if(linhaD && diarioRascunho.produtos[Number(linhaD.dataset.prodIdx)]){
         var pD = diarioRascunho.produtos[Number(linhaD.dataset.prodIdx)];
         if(campoD === 'quantidade') pD.qtdManual = e.target.value !== '';
-        if(campoD === 'dose') pD.qtdManual = false;
+        if(campoD === 'dose' || campoD === 'doseUn' || campoD === 'dosePor') pD.qtdManual = false;
       }
       // números: só redesenha quando sai do campo (evento change), pra não perder o foco enquanto digita
       if(e.type === 'input' && e.target.type === 'number') return;
@@ -7194,7 +7379,18 @@
       };
       if(comEditingId){
         var comIdx = state.compras.findIndex(function(c){ return c.id === comEditingId; });
-        if(comIdx !== -1){ Object.keys(comFields).forEach(function(k){ state.compras[comIdx][k] = comFields[k]; }); }
+        if(comIdx !== -1){
+          var comAnt = state.compras[comIdx];
+          // corrige o estoque pela diferença (tira o que a compra antiga tinha somado, soma o novo)
+          var ajEst = {};
+          if(comAnt.status === 'Recebido') ajEst[comAnt.produtoId] = (ajEst[comAnt.produtoId] || 0) - (Number(comAnt.quantidade) || 0);
+          if(comFields.status === 'Recebido') ajEst[comFields.produtoId] = (ajEst[comFields.produtoId] || 0) + comQtd;
+          Object.keys(ajEst).forEach(function(pid){ var pr = state.produtos.find(function(x){ return x.id === pid; }); if(pr && ajEst[pid]) pr.estoqueAtual = Math.round(((Number(pr.estoqueAtual) || 0) + ajEst[pid]) * 1000) / 1000; });
+          var prodsAfetados = [comAnt.produtoId, comFields.produtoId];
+          Object.keys(comFields).forEach(function(k){ comAnt[k] = comFields[k]; });
+          saveKey('produtos', state.produtos);
+          prodsAfetados.filter(function(v,i,a){ return v && a.indexOf(v) === i; }).forEach(recalcularCustoAplicacoesProduto);
+        }
       } else {
         comFields.id = uid(); comFields.criadoEm = Date.now();
         state.compras.push(comFields);
@@ -7508,7 +7704,9 @@
       var produtosOp = rsc.produtos.filter(function(pp){ return pp.produtoId; }).map(function(pp){
         var q = quantidadeProdutoRascunho(pp, areaOp);
         var cm = custoMedioProduto(pp.produtoId);
-        return {produtoId: pp.produtoId, dose: pp.qtdManual ? (areaOp > 0 ? Math.round(q / areaOp * 1000) / 1000 : 0) : (Number(pp.dose) || 0), quantidade: q, unidade: unidadeProduto(pp.produtoId), custoUnit: cm, custoTotal: Math.round(q * cm * 100) / 100};
+        var doseHa = pp.qtdManual ? (areaOp > 0 ? q / areaOp : 0) : doseHaNaUnidadeProduto(pp);
+        return {produtoId: pp.produtoId, dose: Math.round(doseHa * 100000) / 100000, quantidade: q, unidade: unidadeProduto(pp.produtoId), custoUnit: cm, custoTotal: Math.round(q * cm * 100) / 100,
+          doseInformada: pp.qtdManual ? null : {valor: Number(pp.dose) || 0, unidade: pp.doseUn || unidadeProduto(pp.produtoId), por: pp.dosePor || 'ha'}};
       });
       if(produtosOp.some(function(pp){ return !(pp.quantidade > 0); })){ alert('Falta a dose ou a quantidade de algum produto.'); return; }
       var maquinasOp = rsc.maquinas.filter(function(m){ return m.patrimonioId; }).map(function(m){ return {patrimonioId: m.patrimonioId, horas: Number(m.horas) || 0}; });
@@ -7803,6 +8001,47 @@
     if(action === 'enviar-certificado'){ enviarCertificado(); return; }
     if(action === 'remover-certificado'){ removerCertificado(); return; }
     if(action === 'testar-sefaz'){ testarConsultaSefaz(); return; }
+    if(action === 'abrir-conversao-produto'){ conversaoProdutoId = id; ajusteEstoqueProdutoId = null; renderProdutos(); return; }
+    if(action === 'cancelar-conversao-produto'){ conversaoProdutoId = null; renderProdutos(); return; }
+    if(action === 'salvar-conversao-produto'){
+      var pCv = state.produtos.find(function(x){ return x.id === conversaoProdutoId; });
+      if(!pCv) return;
+      var novaUn = document.getElementById('cv-unidade').value;
+      var fatorCv = parseFloat(document.getElementById('cv-fator').value) || 0;
+      if(!(fatorCv > 0)){ alert('Informe quanto 1 unidade antiga vale na nova.'); return; }
+      var unVelhaCv = unidadeControle(pCv);
+      if(novaUn === unVelhaCv && fatorCv === 1){ alert('Nada a converter.'); return; }
+      var chkE = document.getElementById('cv-embalagem');
+      converterUnidadeProduto(pCv, novaUn, fatorCv, {estoque: document.getElementById('cv-estoque').checked, criarEmbalagem: chkE ? chkE.checked : false, nomeEmbalagem: unVelhaCv});
+      conversaoProdutoId = null;
+      renderAll();
+      alert(pCv.nome + ' agora está em ' + novaUn + '. Custo médio: ' + fmtBRL(custoMedioProduto(pCv.id)) + '/' + novaUn + '.');
+      return;
+    }
+    if(action === 'toggle-painel-unidades'){ if(unidadesPainelAberto) lerConfigUnidadesDoDom(); unidadesPainelAberto = !unidadesPainelAberto; renderProdutos(); return; }
+    if(action === 'unidade-adicionar'){ lerConfigUnidadesDoDom(); configUnidades().unidades.push({sigla:'', nome:'', grandeza:'volume', fator:1}); renderProdutos(); return; }
+    if(action === 'unidade-remover'){
+      lerConfigUnidadesDoDom();
+      var uRem = configUnidades().unidades[Number(btn.dataset.idx)];
+      if(uRem && state.produtos.some(function(pp){ return unidadeControle(pp) === uRem.sigla; })){ alert('Tem produto usando "' + uRem.sigla + '" como unidade de controle. Converta esses produtos antes de remover.'); return; }
+      configUnidades().unidades.splice(Number(btn.dataset.idx), 1); renderProdutos(); return;
+    }
+    if(action === 'embalagem-padrao-adicionar'){ lerConfigUnidadesDoDom(); configUnidades().embalagens.push({nome:'', conteudo:1, unidade:'L'}); renderProdutos(); return; }
+    if(action === 'embalagem-padrao-remover'){ lerConfigUnidadesDoDom(); configUnidades().embalagens.splice(Number(btn.dataset.idx), 1); renderProdutos(); return; }
+    if(action === 'salvar-config-unidades'){
+      lerConfigUnidadesDoDom();
+      var cfgS = configUnidades();
+      var siglas = cfgS.unidades.map(function(u){ return u.sigla; });
+      if(siglas.some(function(sg){ return !sg; })){ alert('Toda unidade precisa de uma sigla.'); return; }
+      if(siglas.some(function(sg, i){ return siglas.indexOf(sg) !== i; })){ alert('Tem sigla repetida.'); return; }
+      if(cfgS.unidades.some(function(u){ return !(u.fator > 0); })){ alert('O valor ("Vale") de cada unidade precisa ser maior que zero.'); return; }
+      cfgS.embalagens = cfgS.embalagens.filter(function(e){ return e.nome && e.conteudo > 0; });
+      saveKey('configUnidades', state.configUnidades); renderAll(); alert('Unidades e embalagens salvas.'); return;
+    }
+    if(action === 'restaurar-config-unidades'){
+      if(!window.confirm('Voltar unidades, embalagens padrão e alqueire para o padrão do sistema?')) return;
+      state.configUnidades = []; configUnidades(); saveKey('configUnidades', state.configUnidades); renderProdutos(); return;
+    }
     if(action === 'abrir-ajuste-estoque'){ ajusteEstoqueProdutoId = id; renderProdutos(); var qAj = document.getElementById('aj-qtd'); if(qAj) qAj.focus(); return; }
     if(action === 'cancelar-ajuste-estoque'){ ajusteEstoqueProdutoId = null; renderProdutos(); return; }
     if(action === 'toggle-ajustes-historico'){ ajustesHistoricoAberto = !ajustesHistoricoAberto; renderProdutos(); return; }
