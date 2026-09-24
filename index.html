@@ -450,7 +450,7 @@
 (function(){
   "use strict";
 
-  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas','sefazNotasPendentes','sefazItensRevisao','sefazProgresso','analisesSolo','imagensCampo','importsAplicados','lavouras','sefazResumos'];
+  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas','sefazNotasPendentes','sefazItensRevisao','sefazProgresso','analisesSolo','imagensCampo','importsAplicados','lavouras','sefazResumos','ajustesEstoque'];
   var state = {};
   var editState = null; // {scope:'generic', entityKey, id} ou {scope:'talhoes'|'safras'|'operacoes'|'financeiro'|'producao', id}
   ALL_KEYS.forEach(function(k){ state[k] = []; });
@@ -2673,6 +2673,137 @@
     document.getElementById('tab-patrimonio').innerHTML = html;
   }
 
+
+  /* ---------------- Unidades e embalagens de produtos ---------------- */
+  // Estoque, dose e custo ficam sempre na UNIDADE DE CONTROLE do produto (L, kg, un...).
+  // Balde, galão, frasco, bag... são embalagens com um conteúdo fixo nessa unidade (ex.: Balde = 20 L).
+  var UNIDADES_CONTROLE = [{v:'L', l:'L (litro)'}, {v:'mL', l:'mL (mililitro)'}, {v:'kg', l:'kg (quilo)'}, {v:'g', l:'g (grama)'}, {v:'t', l:'t (tonelada)'}, {v:'un', l:'un (unidade)'}, {v:'sc', l:'sc (saca)'}, {v:'m', l:'m (metro)'}];
+  function normUnidade(u){ return String(u || '').trim().toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Z0-9]/g, ''); }
+  function unidadeBaseDeTexto(u){
+    var n = normUnidade(u);
+    if(['L','LT','LTS','LTR','LITRO','LITROS'].indexOf(n) !== -1) return 'L';
+    if(['ML','MILILITRO','MILILITROS'].indexOf(n) !== -1) return 'mL';
+    if(['KG','KGS','QUILO','QUILOS','KILO','KILOS'].indexOf(n) !== -1) return 'kg';
+    if(['G','GR','GRS','GRAMA','GRAMAS'].indexOf(n) !== -1) return 'g';
+    if(['T','TON','TONS','TONELADA','TONELADAS'].indexOf(n) !== -1) return 't';
+    if(['UN','UND','UNID','UNIDADE','UNIDADES','PC','PCS','PECA','PECAS'].indexOf(n) !== -1) return 'un';
+    if(['SC','SACO','SACOS','SACA','SACAS'].indexOf(n) !== -1) return 'sc';
+    if(['M','MT','MTS','METRO','METROS'].indexOf(n) !== -1) return 'm';
+    return '';
+  }
+  function unidadeControle(p){ if(!p) return ''; return unidadeBaseDeTexto(p.unidade) || (p.unidade || ''); }
+  function embalagensDoProduto(p){ return (p && p.embalagens || []).filter(function(e){ return e && e.nome && Number(e.conteudo) > 0; }); }
+  // "45 L" → "2 Balde + 1 Galão" (maiores primeiro); vazio se o produto não tem embalagens
+  function descreverEmEmbalagens(produtoId, qtd){
+    var p = state.produtos.find(function(x){ return x.id === produtoId; });
+    var embs = embalagensDoProduto(p).slice().sort(function(a,b){ return b.conteudo - a.conteudo; });
+    qtd = Number(qtd) || 0;
+    if(!embs.length || qtd <= 0) return '';
+    var resto = qtd, partes = [];
+    embs.forEach(function(e){ var n = Math.floor((resto + 1e-9) / e.conteudo); if(n > 0){ partes.push(n + ' ' + e.nome); resto -= n * e.conteudo; } });
+    if(resto > 0.0005) partes.push(fmtNum(Math.round(resto * 1000) / 1000) + ' ' + unidadeControle(p));
+    return partes.join(' + ');
+  }
+  // Converte um valor de uma unidade de medida para outra compatível (mL→L, g→kg, kg→t...)
+  function converterEntreUnidades(valor, de, para){
+    if(de === para) return valor;
+    var tab = {'mL>L':0.001, 'L>mL':1000, 'g>kg':0.001, 'kg>g':1000, 'kg>t':0.001, 't>kg':1000, 'g>t':0.000001, 't>g':1000000};
+    return tab[de + '>' + para] !== undefined ? valor * tab[de + '>' + para] : null;
+  }
+  // Sugere quantas unidades de controle cabem em 1 unidade da nota (ex.: 1 BD = 20 L)
+  function sugerirFatorNfe(item, produto){
+    var uNota = normUnidade(item.uCom);
+    if(produto && produto.conversoesNota && produto.conversoesNota[uNota]) return {fator: produto.conversoesNota[uNota], fonte:'salvo', unidade: unidadeControle(produto)};
+    var baseNota = unidadeBaseDeTexto(item.uCom);
+    var m = String(item.xProd || '').match(/(\d+(?:[.,]\d+)?)\s*(L|LT|LTS|LITROS?|ML|KG|KGS?|G|GR|GRS)\b/i);
+    var baseDesc = m ? unidadeBaseDeTexto(m[2]) : '';
+    var baseProd = produto ? unidadeControle(produto) : (baseDesc && baseDesc !== 'mL' && baseDesc !== 'g' ? baseDesc : (baseDesc === 'mL' ? 'L' : (baseDesc === 'g' ? 'kg' : baseNota)));
+    if(baseNota && baseNota !== 'un'){
+      var c = converterEntreUnidades(1, baseNota, baseProd || baseNota);
+      if(c !== null) return {fator: c, fonte:'unidade da nota', unidade: baseProd || baseNota};
+    }
+    if(m && baseDesc){
+      var conteudo = parseFloat(m[1].replace(',', '.'));
+      var conv = converterEntreUnidades(conteudo, baseDesc, baseProd || baseDesc);
+      if(conv !== null && conv > 0) return {fator: conv, fonte:'descrição do produto', unidade: baseProd || baseDesc};
+    }
+    return {fator: 1, fonte:'confira', unidade: baseProd || baseNota || item.uCom || ''};
+  }
+
+  var produtoEmbRascunho = null;
+  var ajusteEstoqueProdutoId = null;
+  var ajustesHistoricoAberto = false;
+  var MOTIVOS_AJUSTE = ['Contagem / inventário', 'Perda ou quebra', 'Vencido / descartado', 'Devolução ao fornecedor', 'Correção de lançamento', 'Outro'];
+  function renderAjusteEstoque(){
+    var area = document.getElementById('ajuste-estoque-area');
+    var p = state.produtos.find(function(x){ return x.id === ajusteEstoqueProdutoId; });
+    if(!area || !p) return;
+    var un = unidadeControle(p);
+    var estAtual = Number(p.estoqueAtual) || 0;
+    var modo = (document.getElementById('aj-modo') || {}).value || 'contagem';
+    var embNome = (document.getElementById('aj-emb') || {}).value || '';
+    var qtdTxt = (document.getElementById('aj-qtd') || {}).value || '';
+    var motivo = (document.getElementById('aj-motivo') || {}).value || (modo === 'contagem' ? MOTIVOS_AJUSTE[0] : MOTIVOS_AJUSTE[1]);
+    var obs = (document.getElementById('aj-obs') || {}).value || '';
+    var dataAj = (document.getElementById('aj-data') || {}).value || new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10);
+    var estilo = 'padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;';
+    var h = '<div style="font-size:13px; margin-bottom:8px;"><strong>Ajustar estoque de ' + escapeHtml(p.nome) + '</strong> — hoje: ' + fmtNum(estAtual) + ' ' + escapeHtml(un) + (descreverEmEmbalagens(p.id, estAtual) ? ' (' + escapeHtml(descreverEmEmbalagens(p.id, estAtual)) + ')' : '') + '</div>';
+    h += '<div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;">';
+    h += '<div class="field" style="margin:0;"><label>Tipo de ajuste</label><select id="aj-modo" style="' + estilo + '">';
+    [['contagem','Contei — o estoque real é'],['saida','Saída (tirar do estoque)'],['entrada','Entrada (somar ao estoque)']].forEach(function(o){ h += '<option value="' + o[0] + '"' + (o[0] === modo ? ' selected' : '') + '>' + o[1] + '</option>'; });
+    h += '</select></div>';
+    h += '<div class="field" style="margin:0;"><label>Quantidade</label><input type="number" id="aj-qtd" value="' + escapeHtml(qtdTxt) + '" step="0.001" min="0" style="width:110px; ' + estilo + '"></div>';
+    var embs = embalagensDoProduto(p);
+    h += '<div class="field" style="margin:0;"><label>Em</label><select id="aj-emb" style="' + estilo + '"><option value="">' + escapeHtml(un || 'unidade') + '</option>';
+    embs.forEach(function(e){ h += '<option value="' + escapeHtml(e.nome) + '"' + (e.nome === embNome ? ' selected' : '') + '>' + escapeHtml(e.nome) + ' (' + fmtNum(e.conteudo) + ' ' + escapeHtml(un) + ')</option>'; });
+    h += '</select></div>';
+    h += '<div class="field" style="margin:0;"><label>Motivo</label><select id="aj-motivo" style="' + estilo + '">';
+    MOTIVOS_AJUSTE.forEach(function(m){ h += '<option' + (m === motivo ? ' selected' : '') + '>' + escapeHtml(m) + '</option>'; });
+    h += '</select></div>';
+    h += '<div class="field" style="margin:0;"><label>Data</label><input type="date" id="aj-data" value="' + dataAj + '" style="' + estilo + '"></div>';
+    h += '<div class="field" style="margin:0; flex:1; min-width:180px;"><label>Observação</label><input type="text" id="aj-obs" value="' + escapeHtml(obs) + '" placeholder="Opcional" style="width:100%; ' + estilo + '"></div>';
+    h += '</div>';
+    var calc = calcularAjusteEstoque(p, modo, qtdTxt, embNome);
+    h += '<p style="font-size:12.5px; margin:10px 0 0;">' + (calc ? 'Estoque vai de <strong>' + fmtNum(estAtual) + '</strong> para <strong>' + fmtNum(calc.novo) + ' ' + escapeHtml(un) + '</strong> (' + (calc.diferenca > 0 ? '+' : '') + fmtNum(calc.diferenca) + ' ' + escapeHtml(un) + ')' + (calc.novo < 0 ? ' — <span style="color:var(--cost-dark);">ficaria negativo</span>' : '') : 'Digite a quantidade.') + '</p>';
+    h += '<div style="display:flex; gap:8px; margin-top:10px;"><button type="button" class="btn" data-action="salvar-ajuste-estoque">Salvar ajuste</button><button type="button" class="btn-cancel" data-action="cancelar-ajuste-estoque">Cancelar</button></div>';
+    var hist = (state.ajustesEstoque || []).filter(function(a){ return a.produtoId === p.id; }).sort(function(a,b){ return (b.criadoEm||0) - (a.criadoEm||0); }).slice(0, 5);
+    if(hist.length) h += '<p style="font-size:11.5px; color:var(--ink-soft); margin:10px 0 0;">Últimos ajustes: ' + hist.map(function(a){ return fmtDate(a.data) + ' ' + (a.diferenca > 0 ? '+' : '') + fmtNum(a.diferenca) + ' ' + escapeHtml(un) + ' (' + escapeHtml(a.motivo) + ')'; }).join(' · ') + '</p>';
+    area.innerHTML = h;
+  }
+  function calcularAjusteEstoque(p, modo, qtdTxt, embNome){
+    if(qtdTxt === '' || isNaN(parseFloat(qtdTxt))) return null;
+    var emb = embalagensDoProduto(p).find(function(e){ return e.nome === embNome; });
+    var q = parseFloat(qtdTxt) * (emb ? Number(emb.conteudo) : 1);
+    var atual = Number(p.estoqueAtual) || 0;
+    var novo = modo === 'contagem' ? q : (modo === 'saida' ? atual - q : atual + q);
+    novo = Math.round(novo * 1000) / 1000;
+    return {novo: novo, diferenca: Math.round((novo - atual) * 1000) / 1000};
+  }
+  function lerEmbalagensDoDom(){
+    if(!produtoEmbRascunho) return;
+    document.querySelectorAll('#produto-embalagens [data-emb-idx]').forEach(function(row){
+      var e = produtoEmbRascunho.itens[Number(row.dataset.embIdx)]; if(!e) return;
+      e.nome = row.querySelector('[data-campo="nome"]').value;
+      e.conteudo = row.querySelector('[data-campo="conteudo"]').value;
+    });
+  }
+  function renderEmbalagensProduto(){
+    var cont = document.getElementById('produto-embalagens');
+    if(!cont || !produtoEmbRascunho) return;
+    var selU = document.querySelector('#form-produto [name="unidade"]');
+    var un = selU ? selU.value : '';
+    var html = '<label style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em;">Embalagens em que você compra esse produto</label>';
+    if(!produtoEmbRascunho.itens.length) html += '<span style="font-size:12px; color:var(--ink-soft);">Nenhuma. Ex.: Balde = 20 ' + escapeHtml(un || 'L') + ', Galão = 5 ' + escapeHtml(un || 'L') + '.</span>';
+    produtoEmbRascunho.itens.forEach(function(e, i){
+      html += '<div data-emb-idx="' + i + '" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">';
+      html += '<input type="text" data-campo="nome" value="' + escapeHtml(e.nome || '') + '" placeholder="Ex: Balde" style="width:160px; padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">';
+      html += '<span style="font-size:12.5px;">=</span><input type="number" data-campo="conteudo" value="' + (e.conteudo === undefined ? '' : e.conteudo) + '" step="0.001" min="0" placeholder="20" style="width:100px; padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">';
+      html += '<span style="font-size:12.5px;">' + escapeHtml(un || '(unidade)') + '</span>';
+      html += '<button type="button" class="btn-del" data-action="produto-remover-embalagem" data-idx="' + i + '">✕</button></div>';
+    });
+    html += '<button type="button" class="btn-add-inline" data-action="produto-add-embalagem" style="width:auto; height:auto; padding:6px 12px; font-size:12.5px; align-self:flex-start;">+ Adicionar embalagem</button>';
+    cont.innerHTML = html;
+  }
   function renderProdutos(){
     var editingRecord = (editState && editState.scope === 'produtos') ? state.produtos.find(function(x){ return x.id === editState.id; }) : null;
     var html = '';
@@ -2683,10 +2814,20 @@
     html += '<div style="flex:1;">' + selectField('categoria', 'Categoria', state.categoriasProduto.map(function(c){ return {value:c.nome, label:c.nome}; }), editingRecord ? editingRecord.categoria : undefined) + '</div>';
     html += '<button type="button" class="btn-add-inline" data-action="open-cat-modal" title="Nova categoria">+</button>';
     html += '</div>';
-    html += field('text', 'unidade', 'Unidade', false, 'Ex: kg, L, sc', {}, editingRecord ? editingRecord.unidade : undefined);
-    html += field('number', 'estoqueAtual', 'Estoque atual', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.estoqueAtual : undefined);
+    var unAtual = editingRecord ? (unidadeBaseDeTexto(editingRecord.unidade) || editingRecord.unidade || '') : 'L';
+    var opcoesUn = UNIDADES_CONTROLE.map(function(u){ return {value:u.v, label:u.l}; });
+    if(unAtual && !UNIDADES_CONTROLE.some(function(u){ return u.v === unAtual; })) opcoesUn.push({value: unAtual, label: unAtual + ' (atual)'});
+    html += selectField('unidade', 'Unidade de controle (estoque, dose e custo)', opcoesUn, unAtual);
+    if(editingRecord){
+      html += '<div class="field"><label>Estoque atual</label><input type="text" value="' + fmtNum(editingRecord.estoqueAtual) + ' ' + escapeHtml(unidadeControle(editingRecord)) + '" readonly style="background:#E8DCB9;"><span style="font-size:10.5px; color:var(--ink-soft);">Para mudar, use "⚖️ Ajustar" na lista (fica registrado)</span></div>';
+    } else {
+      html += field('number', 'estoqueAtual', 'Estoque inicial', false, '0', {step:'0.001', min:'0'});
+    }
     html += field('number', 'estoqueMinimo', 'Estoque mínimo', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.estoqueMinimo : undefined);
+    html += '<div id="produto-embalagens" style="grid-column:1/-1; display:flex; flex-direction:column; gap:6px; padding-top:6px; border-top:1px dashed var(--paper-line);"></div>';
     html += '<button type="submit" class="btn">' + (editingRecord ? 'Salvar alterações' : 'Adicionar') + '</button>';
+    var origemEmb = editingRecord ? editingRecord.id : 'novo';
+    if(!produtoEmbRascunho || produtoEmbRascunho.origem !== origemEmb) produtoEmbRascunho = {origem: origemEmb, itens: editingRecord ? embalagensDoProduto(editingRecord).map(function(e){ return {nome: e.nome, conteudo: e.conteudo}; }) : []};
     if(editingRecord) html += '<button type="button" class="btn-cancel" data-action="cancel-edit">Cancelar</button>';
     html += '</form></div>';
 
@@ -2697,21 +2838,42 @@
       if(state.produtos.length > 4){
         html += '<div style="padding:14px 18px 0;"><input type="text" id="search-produtos" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
       }
-      html += '<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Categoria</th><th>Unidade</th><th>Estoque</th><th>Mínimo</th><th></th></tr></thead><tbody>';
+      html += '<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Categoria</th><th>Unidade</th><th>Embalagens</th><th>Estoque</th><th>Custo médio</th><th>Mínimo</th><th></th></tr></thead><tbody>';
       state.produtos.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(p){
         html += '<tr>';
         html += '<td>' + escapeHtml(p.nome) + '</td>';
         html += '<td>' + escapeHtml(p.categoria || '—') + '</td>';
-        html += '<td>' + escapeHtml(p.unidade || '—') + '</td>';
-        html += '<td class="num">' + fmtNum(p.estoqueAtual) + '</td>';
+        var unP = unidadeControle(p);
+        html += '<td>' + escapeHtml(unP || '—') + '</td>';
+        html += '<td style="font-size:12px;">' + (embalagensDoProduto(p).length ? escapeHtml(embalagensDoProduto(p).map(function(e){ return e.nome + ' ' + fmtNum(e.conteudo) + ' ' + unP; }).join(' · ')) : '—') + '</td>';
+        var descEmb = descreverEmEmbalagens(p.id, p.estoqueAtual);
+        html += '<td class="num">' + fmtNum(p.estoqueAtual) + ' ' + escapeHtml(unP) + (descEmb ? '<br><span style="font-size:11px; color:var(--ink-soft);">' + escapeHtml(descEmb) + '</span>' : '') + '</td>';
+        var cmP = custoMedioProduto(p.id);
+        html += '<td class="num">' + (cmP > 0 ? fmtBRL(cmP) + '/' + escapeHtml(unP) : '—') + '</td>';
         html += '<td class="num">' + fmtNum(p.estoqueMinimo) + '</td>';
-        html += '<td><button class="btn-edit" data-action="edit-produto" data-id="' + p.id + '">Editar</button><button class="btn-del" data-action="del-produto" data-id="' + p.id + '">Remover</button></td>';
+        html += '<td style="white-space:nowrap;"><button class="btn-edit" data-action="abrir-ajuste-estoque" data-id="' + p.id + '">⚖️ Ajustar</button><button class="btn-edit" data-action="edit-produto" data-id="' + p.id + '">Editar</button><button class="btn-del" data-action="del-produto" data-id="' + p.id + '">Remover</button></td>';
         html += '</tr>';
+        if(ajusteEstoqueProdutoId === p.id) html += '<tr style="background:#EFE6C8;"><td colspan="9" style="padding:12px 14px;" id="ajuste-estoque-area"></td></tr>';
       });
       html += '</tbody></table></div>';
     }
     html += '</div>';
+    var ajustes = (state.ajustesEstoque || []).slice().sort(function(a,b){ return (b.criadoEm||0) - (a.criadoEm||0); });
+    if(ajustes.length){
+      html += '<div class="section-title">Histórico de ajustes de estoque</div>';
+      html += '<div class="paper table-wrap"><table><thead><tr><th>Data</th><th>Produto</th><th>Motivo</th><th>Antes</th><th>Depois</th><th>Diferença</th><th>Observação</th></tr></thead><tbody>';
+      ajustes.slice(0, ajustesHistoricoAberto ? ajustes.length : 10).forEach(function(a){
+        var unA = unidadeProduto(a.produtoId);
+        html += '<tr><td>' + fmtDate(a.data) + '</td><td>' + escapeHtml(produtoNome(a.produtoId)) + '</td><td>' + escapeHtml(a.motivo || '—') + '</td>';
+        html += '<td class="num">' + fmtNum(a.anterior) + ' ' + escapeHtml(unA) + '</td><td class="num">' + fmtNum(a.novo) + ' ' + escapeHtml(unA) + '</td>';
+        html += '<td class="num ' + (a.diferenca < 0 ? 'cost' : 'growth') + '">' + (a.diferenca > 0 ? '+' : '') + fmtNum(a.diferenca) + ' ' + escapeHtml(unA) + '</td><td>' + escapeHtml(a.observacao || '—') + '</td></tr>';
+      });
+      html += '</tbody></table></div>';
+      if(ajustes.length > 10) html += '<button type="button" class="btn-cancel" data-action="toggle-ajustes-historico" style="margin-top:6px;">' + (ajustesHistoricoAberto ? '▲ Ver só os últimos 10' : '▼ Ver todos (' + ajustes.length + ')') + '</button>';
+    }
     document.getElementById('tab-produtos').innerHTML = html;
+    renderAjusteEstoque();
+    renderEmbalagensProduto();
   }
 
   /* ---------------- Compras (entrada de estoque + despesa automática) ---------------- */
@@ -2787,8 +2949,11 @@
       html += '<form class="entry-form" id="form-compra"' + (editingRecord ? ' data-editing-id="' + editingRecord.id + '"' : '') + '>';
       html += selectField('produtoId', 'Produto', state.produtos.map(function(p){ return {value:p.id, label:p.nome}; }), editingRecord ? editingRecord.produtoId : undefined);
       html += selectField('fornecedorId', 'Fornecedor (opcional)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })), editingRecord ? editingRecord.fornecedorId : undefined);
-      html += field('number', 'quantidade', 'Quantidade', true, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.quantidade : undefined);
-      html += field('number', 'valorUnitario', 'Valor unitário (R$)', true, '0,00', {step:'0.01', min:'0'}, editingRecord ? editingRecord.valorUnitario : undefined);
+      html += '<div id="compra-embalagem-campo" style="display:contents;"></div>';
+      var usouEmb = editingRecord && editingRecord.embalagemNome;
+      html += field('number', 'quantidade', 'Quantidade', true, '0', {step:'0.001', min:'0'}, editingRecord ? (usouEmb ? editingRecord.qtdEmbalagens : editingRecord.quantidade) : undefined);
+      html += field('number', 'valorUnitario', 'Valor unitário (R$)', true, '0,00', {step:'0.01', min:'0'}, editingRecord ? (usouEmb ? editingRecord.valorEmbalagem : editingRecord.valorUnitario) : undefined);
+      html += '<p id="compra-conversao" style="grid-column:1/-1; font-size:12px; margin:0; color:var(--ink-soft);"></p>';
       if(state.contasFinanceiro.length){
         html += selectField('contaId', 'Conta (p/ lançar a despesa)', state.contasFinanceiro.map(function(c){ return {value:c.id, label: contaLabel(c.id)}; }), editingRecord ? editingRecord.contaId : undefined);
       }
@@ -2945,7 +3110,7 @@
           html += '<p style="font-size:11.5px; color:var(--cost-dark); margin:0 0 8px;">Essa nota já foi trazida pro sistema antes (em ' + fmtDate((infoImportadaDetalhe.dataImportacao||'').slice(0,10)) + ') — os itens abaixo vêm <strong>desmarcados</strong> por padrão pra não duplicar. Só marque de propósito se quiser importar de novo.</p>';
         }
         html += '<p style="margin:0 0 8px;"><button type="button" data-action="marcar-todos-nota" data-chave="' + escapeHtml(notaEmDetalheChave) + '" style="background:none; border:none; color:var(--accent-dark); text-decoration:underline; cursor:pointer; font-size:11.5px; padding:0;">Marcar todos</button> · <button type="button" data-action="desmarcar-todos-nota" data-chave="' + escapeHtml(notaEmDetalheChave) + '" style="background:none; border:none; color:var(--accent-dark); text-decoration:underline; cursor:pointer; font-size:11.5px; padding:0;">Desmarcar todos</button></p>';
-        html += '<div class="table-wrap"><table><thead><tr><th></th><th>Produto</th><th>CFOP</th><th>Qtd</th><th>Valor unit.</th><th>Valor total</th><th>Destino</th><th>Produto / Safra</th></tr></thead><tbody>';
+        html += '<div class="table-wrap"><table><thead><tr><th></th><th>Produto</th><th>CFOP</th><th>Qtd</th><th>Valor unit.</th><th>Valor total</th><th>Destino</th><th>Produto / Safra</th><th>Conversão p/ estoque</th></tr></thead><tbody>';
         grupoDetalhe.indices.forEach(function(idx){
           var item = nfeImportada.itens[idx];
           html += '<tr>';
@@ -2980,6 +3145,19 @@
           }
           html += '</span>';
           html += '</td>';
+          // conversão da unidade da nota para a unidade de controle do produto (ex.: 1 BD = 20 L)
+          var prodNfe = item.produtoId ? state.produtos.find(function(x){ return x.id === item.produtoId; }) : null;
+          var sugNfe = sugerirFatorNfe(item, prodNfe);
+          var fatorNfe = item.fator !== undefined && item.fator !== '' ? Number(item.fator) : sugNfe.fator;
+          var unNfe = prodNfe ? unidadeControle(prodNfe) : sugNfe.unidade;
+          html += '<td style="min-width:190px;">';
+          if(item.destino === 'colheita'){ html += '<span style="font-size:11px; color:var(--ink-soft);">—</span>'; }
+          else {
+            html += '<div style="display:flex; align-items:center; gap:4px; font-size:12px; white-space:nowrap;">1 ' + escapeHtml(item.uCom || 'un') + ' = <input type="number" id="nfe-item-fator-' + idx + '" value="' + fatorNfe + '" step="0.001" min="0" style="width:74px; padding:4px 6px; border:1px solid ' + (sugNfe.fonte === 'confira' && item.fator === undefined ? 'var(--cost-dark)' : 'var(--paper-line)') + '; border-radius:4px; background:#FBF7EC; font-size:12px;"> ' + escapeHtml(unNfe) + '</div>';
+            html += '<div style="font-size:11px; color:var(--ink-soft);">= ' + fmtNum(Math.round(item.qCom * fatorNfe * 1000) / 1000) + ' ' + escapeHtml(unNfe) + (fatorNfe > 0 ? ' · ' + fmtBRL(item.vUnCom / fatorNfe) + '/' + escapeHtml(unNfe) : '') + '</div>';
+            if(item.fator === undefined) html += '<div style="font-size:10.5px; color:' + (sugNfe.fonte === 'confira' ? 'var(--cost-dark)' : 'var(--ink-soft)') + ';">' + (sugNfe.fonte === 'salvo' ? '✓ conversão já usada antes' : (sugNfe.fonte === 'confira' ? '⚠️ confira a conversão' : 'sugerido pela ' + sugNfe.fonte)) + '</div>';
+          }
+          html += '</td>';
           html += '</tr>';
         });
         html += '</tbody></table></div>';
@@ -3004,7 +3182,7 @@
         html += '<td>' + fmtDate(c.data) + '</td>';
         html += '<td>' + (produto ? escapeHtml(produto.nome) : '—') + '</td>';
         html += '<td>' + (c.fornecedorId ? escapeHtml(parceiroNome(c.fornecedorId)) : '—') + '</td>';
-        html += '<td class="num">' + fmtNum(c.quantidade) + (produto && produto.unidade ? ' ' + escapeHtml(produto.unidade) : '') + '</td>';
+        html += '<td class="num">' + fmtNum(c.quantidade) + (produto ? ' ' + escapeHtml(unidadeControle(produto)) : '') + (c.embalagemNome ? '<br><span style="font-size:11px; color:var(--ink-soft);">' + fmtNum(c.qtdEmbalagens) + ' ' + escapeHtml(c.embalagemNome) + '</span>' : '') + '</td>';
         html += '<td class="num">' + fmtBRL(c.valorUnitario) + '</td>';
         html += '<td class="num cost">' + fmtBRL(c.valorTotal) + '</td>';
         html += '<td><span class="badge" style="background:' + (c.status === 'Recebido' ? '#7FA36D' : '#DFA84E') + '; color:#1B1508">' + c.status + '</span></td>';
@@ -3017,6 +3195,41 @@
     html += '<div class="paper note-box">Compras marcadas como "Recebido" somam automaticamente no estoque (aba Produtos) e criam uma despesa "Pago" no Financeiro no momento em que são criadas. Editar ou remover uma compra depois não desfaz esses efeitos automaticamente — ajuste o estoque e o lançamento financeiro manualmente se precisar corrigir algo.</div>';
     } // fim do "if(!nfeTelaFocoAtiva)" da lista de compras
     el.innerHTML = html;
+    var compraEdit = editingRecord;
+    atualizarCampoEmbalagemCompra(compraEdit ? (compraEdit.embalagemNome || '') : undefined);
+  }
+
+  // Compra manual: escolhe se a quantidade é na unidade de controle ou em embalagens (Balde, Galão...)
+  function atualizarCampoEmbalagemCompra(manterSelecao){
+    var form = document.getElementById('form-compra');
+    var cont = document.getElementById('compra-embalagem-campo');
+    if(!form || !cont) return;
+    var prod = state.produtos.find(function(x){ return x.id === (form.querySelector('[name="produtoId"]') || {}).value; });
+    var un = unidadeControle(prod);
+    var atual = manterSelecao !== undefined ? manterSelecao : ((form.querySelector('[name="embalagem"]') || {}).value || '');
+    var embs = embalagensDoProduto(prod);
+    if(atual && !embs.some(function(e){ return e.nome === atual; })) atual = '';
+    var html = '<div class="field"><label for="f-embalagem">Comprado em</label><select id="f-embalagem" name="embalagem"><option value="">' + escapeHtml(un || 'unidade do produto') + '</option>';
+    embs.forEach(function(e){ html += '<option value="' + escapeHtml(e.nome) + '"' + (e.nome === atual ? ' selected' : '') + '>' + escapeHtml(e.nome) + ' (' + fmtNum(e.conteudo) + ' ' + escapeHtml(un) + ')</option>'; });
+    html += '</select></div>';
+    cont.innerHTML = html;
+    atualizarConversaoCompra();
+  }
+  function atualizarConversaoCompra(){
+    var form = document.getElementById('form-compra');
+    var el = document.getElementById('compra-conversao');
+    if(!form || !el) return;
+    var prod = state.produtos.find(function(x){ return x.id === (form.querySelector('[name="produtoId"]') || {}).value; });
+    var un = unidadeControle(prod);
+    var embNome = (form.querySelector('[name="embalagem"]') || {}).value || '';
+    var emb = embalagensDoProduto(prod).find(function(e){ return e.nome === embNome; });
+    var qtdLbl = form.querySelector('label[for="f-quantidade"]'), valLbl = form.querySelector('label[for="f-valorUnitario"]');
+    if(qtdLbl) qtdLbl.textContent = emb ? 'Quantidade de ' + emb.nome.toLowerCase() + '(s)' : 'Quantidade (' + (un || 'unidade') + ')';
+    if(valLbl) valLbl.textContent = emb ? 'Valor por ' + emb.nome.toLowerCase() + ' (R$)' : 'Valor por ' + (un || 'unidade') + ' (R$)';
+    var q = parseFloat((form.querySelector('[name="quantidade"]') || {}).value) || 0;
+    var v = parseFloat((form.querySelector('[name="valorUnitario"]') || {}).value) || 0;
+    var fator = emb ? Number(emb.conteudo) : 1;
+    el.innerHTML = (q > 0 ? 'Entra no estoque: <strong>' + fmtNum(Math.round(q * fator * 1000) / 1000) + ' ' + escapeHtml(un) + '</strong>' + (v > 0 ? ' · ' + fmtBRL(v / fator) + '/' + escapeHtml(un) + ' · total ' + fmtBRL(q * v) : '') : '') + (prod && !embalagensDoProduto(prod).length ? (q > 0 ? '<br>' : '') + 'Esse produto não tem embalagens cadastradas (Balde, Galão...). Cadastre na aba Produtos, se comprar em embalagens.' : '');
   }
 
   function verificarStatusCertificado(){
@@ -3828,7 +4041,7 @@
     });
     return qtd > 0 ? valor / qtd : 0;
   }
-  function unidadeProduto(produtoId){ var p = state.produtos.find(function(x){ return x.id === produtoId; }); return p ? (p.unidade || '') : ''; }
+  function unidadeProduto(produtoId){ var p = state.produtos.find(function(x){ return x.id === produtoId; }); return p ? unidadeControle(p) : ''; }
   // Aplicações (onde) de uma atividade: [{safraId, talhaoId, area}]. Atividades antigas usam talhaoId/safraId soltos.
   function aplicacoesDaOperacao(o){
     if(o.aplicacoes && o.aplicacoes.length) return o.aplicacoes;
@@ -3991,8 +4204,9 @@
       state.produtos.slice().sort(function(a,b){ return (a.nome||'').localeCompare(b.nome||'', 'pt-BR'); }).forEach(function(pp){ html += '<option value="' + pp.id + '"' + (pp.id === p.produtoId ? ' selected' : '') + '>' + escapeHtml(pp.nome) + '</option>'; });
       html += '</select></td>';
       html += '<td style="min-width:120px;"><div style="display:flex; align-items:center; gap:4px;"><input type="number" data-campo="dose" value="' + (p.dose === undefined ? '' : p.dose) + '" step="0.001" min="0" style="' + estiloNum + '"><span style="font-size:11px; color:var(--ink-soft); white-space:nowrap;">' + escapeHtml(un || 'un') + '/ha</span></div></td>';
-      html += '<td style="min-width:120px;"><div style="display:flex; align-items:center; gap:4px;"><input type="number" data-campo="quantidade" value="' + (qtd || '') + '" step="0.001" min="0" style="' + estiloNum + (p.qtdManual ? '' : ' background:#EFE6C8;') + '" title="Calculada: dose × área. Digite para usar outro valor."><span style="font-size:11px; color:var(--ink-soft);">' + escapeHtml(un) + '</span></div></td>';
-      html += '<td class="num" style="' + (p.produtoId && qtd > estoqueDisp ? 'color:var(--cost-dark); font-weight:600;' : '') + '">' + (p.produtoId ? fmtNum(estoqueDisp) + ' ' + escapeHtml(un) : '—') + '</td>';
+      html += '<td style="min-width:120px;"><div style="display:flex; align-items:center; gap:4px;"><input type="number" data-campo="quantidade" value="' + (qtd || '') + '" step="0.001" min="0" style="' + estiloNum + (p.qtdManual ? '' : ' background:#EFE6C8;') + '" title="Calculada: dose × área. Digite para usar outro valor."><span style="font-size:11px; color:var(--ink-soft);">' + escapeHtml(un) + '</span></div>' + (p.produtoId && qtd > 0 && descreverEmEmbalagens(p.produtoId, qtd) ? '<div style="font-size:10.5px; color:var(--ink-soft);">≈ ' + escapeHtml(descreverEmEmbalagens(p.produtoId, qtd)) + '</div>' : '') + '</td>';
+      var embEst = p.produtoId ? descreverEmEmbalagens(p.produtoId, estoqueDisp) : '';
+      html += '<td class="num" style="' + (p.produtoId && qtd > estoqueDisp ? 'color:var(--cost-dark); font-weight:600;' : '') + '">' + (p.produtoId ? fmtNum(estoqueDisp) + ' ' + escapeHtml(un) + (embEst ? '<br><span style="font-size:10.5px; color:var(--ink-soft); font-weight:400;">' + escapeHtml(embEst) + '</span>' : '') : '—') + '</td>';
       html += '<td class="num">' + (p.produtoId ? (cm > 0 ? fmtBRL(cm) : '<span title="Sem compra registrada desse produto" style="color:var(--cost-dark);">sem preço</span>') : '—') + '</td>';
       html += '<td class="num cost">' + (p.produtoId ? fmtBRL(qtd * cm) : '—') + '</td>';
       html += '<td><button type="button" class="btn-del" data-action="diario-remover-produto" data-idx="' + i + '" title="Tirar esse produto">✕</button></td>';
@@ -4302,6 +4516,30 @@
   }
 
   /* ---------------- Contas a Pagar / Contas a Receber ---------------- */
+  var cpPagandoId = null;
+  // Paga uma conta (inteira ou em parte). Pagamento parcial: a conta vira "Pago" com o valor pago e a diferença vira uma conta nova pendente.
+  function pagarContaPagar(id, dataPag, valorPago){
+    var c = state.contasPagar.find(function(x){ return x.id === id; });
+    if(!c) return;
+    var total = Number(c.valor) || 0;
+    var resto = Math.round((total - valorPago) * 100) / 100;
+    var escalarPartes = function(reg, novoValor){
+      if(!reg.partes || !reg.partes.length || !total) return;
+      var fracoes = reg.partes.map(function(pt){ return (Number(pt.valor) || 0) / total; });
+      var vals = dividirValor(novoValor, fracoes);
+      reg.partes = reg.partes.map(function(pt, i){ return {talhaoId: pt.talhaoId, safraId: pt.safraId, valor: vals[i]}; });
+    };
+    if(resto > 0.004){
+      var restante = JSON.parse(JSON.stringify(c));
+      restante.id = uid(); restante.criadoEm = Date.now(); restante.valor = resto; restante.status = 'Pendente'; restante.dataPagamento = '';
+      restante.descricao = (c.descricao || '') + ' (saldo restante)';
+      escalarPartes(restante, resto);
+      state.contasPagar.push(restante);
+    }
+    escalarPartes(c, valorPago);
+    c.valor = valorPago; c.status = 'Pago'; c.dataPagamento = dataPag;
+    saveKey('contasPagar', state.contasPagar);
+  }
   function renderContasPagar(){
     var el = document.getElementById('tab-contasPagar');
     var pendente = state.contasPagar.filter(function(c){ return c.status === 'Pendente'; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0);
@@ -4344,9 +4582,23 @@
         html += '<td class="num">' + fmtBRL(c.valor) + '</td>';
         html += '<td>' + fmtDate(c.vencimento) + '</td>';
         html += '<td><span class="badge" style="background:' + (c.status === 'Pago' ? '#7FA36D' : '#DFA84E') + '; color:#1B1508">' + c.status + '</span></td>';
-        html += '<td><button class="btn-edit" data-action="edit-generic" data-entity="contasPagar" data-id="' + c.id + '">Editar</button>';
+        html += '<td style="white-space:nowrap;">' + (c.status !== 'Pago' ? '<button class="btn" data-action="cp-abrir-pagamento" data-id="' + c.id + '" style="padding:5px 12px; font-size:12px; margin-right:4px;">💰 Pagar</button>' : '');
+        html += '<button class="btn-edit" data-action="edit-generic" data-entity="contasPagar" data-id="' + c.id + '">Editar</button>';
         html += '<button class="btn-del" data-action="del-generic" data-entity="contasPagar" data-id="' + c.id + '">Remover</button></td>';
         html += '</tr>';
+        if(cpPagandoId === c.id){
+          var hojeCp = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10);
+          html += '<tr style="background:#EFE6C8;"><td colspan="9" style="padding:12px 14px;">';
+          html += '<div style="display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;">';
+          html += '<div class="field" style="margin:0;"><label>Data do pagamento</label><input type="date" id="cp-pag-data" value="' + hojeCp + '" style="padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+          html += '<div class="field" style="margin:0;"><label>Valor pago (R$)</label><input type="number" id="cp-pag-valor" value="' + (Number(c.valor) || 0) + '" step="0.01" min="0" style="width:140px; padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+          html += '<button type="button" class="btn" data-action="cp-confirmar-pagamento" data-id="' + c.id + '">Confirmar pagamento</button>';
+          html += '<button type="button" class="btn-cancel" data-action="cp-cancelar-pagamento">Cancelar</button>';
+          html += '</div>';
+          html += '<p style="font-size:11.5px; color:var(--ink-soft); margin:8px 0 0;">Se pagar menos que ' + fmtBRL(c.valor) + ', a diferença continua pendente numa conta nova, com o mesmo vencimento e destino.</p>';
+          if(destinoEfetivo(c) === 'classificar') html += '<p style="font-size:11.5px; color:var(--cost-dark); margin:4px 0 0;">⚠️ Essa conta ainda não tem destino (lavoura, talhão, máquina ou geral). Depois de pagar, use "Editar" para escolher — senão o custo não entra em nenhuma lavoura.</p>';
+          html += '</td></tr>';
+        }
       });
       html += '</tbody></table></div>';
       html += '</div>';
@@ -6372,10 +6624,23 @@
     }
     if(e.target && e.target.id && e.target.id.indexOf('nfe-item-produto-') === 0){
       var idxProd = parseInt(e.target.id.replace('nfe-item-produto-', ''), 10);
-      if(nfeImportada && nfeImportada.itens[idxProd]) nfeImportada.itens[idxProd].produtoId = e.target.value;
+      if(nfeImportada && nfeImportada.itens[idxProd]){ nfeImportada.itens[idxProd].produtoId = e.target.value; delete nfeImportada.itens[idxProd].fator; }
       persistirRevisaoNFe();
+      renderCompras();
       return;
     }
+    if(e.target && e.target.id && e.target.id.indexOf('nfe-item-fator-') === 0){
+      var idxFator = parseInt(e.target.id.replace('nfe-item-fator-', ''), 10);
+      if(nfeImportada && nfeImportada.itens[idxFator]) nfeImportada.itens[idxFator].fator = parseFloat(e.target.value) || 0;
+      persistirRevisaoNFe();
+      if(e.type === 'change') renderCompras();
+      return;
+    }
+    if(e.target && e.target.closest && e.target.closest('#form-compra') && (e.target.name === 'produtoId' || e.target.name === 'embalagem' || e.target.name === 'quantidade' || e.target.name === 'valorUnitario')){
+      if(e.target.name === 'produtoId') atualizarCampoEmbalagemCompra(); else atualizarConversaoCompra();
+    }
+    if(e.target && e.target.closest && e.target.closest('#produto-embalagens')){ lerEmbalagensDoDom(); }
+    if(e.target && e.target.name === 'unidade' && e.target.closest && e.target.closest('#form-produto')){ lerEmbalagensDoDom(); renderEmbalagensProduto(); }
     if(e.target && e.target.id && e.target.id.indexOf('nfe-item-safra-') === 0){
       var idxSafraNfe = parseInt(e.target.id.replace('nfe-item-safra-', ''), 10);
       if(nfeImportada && nfeImportada.itens[idxSafraNfe]) nfeImportada.itens[idxSafraNfe].safraId = e.target.value;
@@ -6738,6 +7003,12 @@
   }
 
   document.addEventListener('input', function(e){
+    if(e.target && e.target.closest && e.target.closest('#ajuste-estoque-area') && e.target.id !== 'aj-obs'){
+      var focoId = e.target.id; renderAjusteEstoque();
+      var el2 = document.getElementById(focoId); if(el2 && el2.type !== 'select-one'){ el2.focus(); try{ var v = el2.value; el2.value = ''; el2.value = v; }catch(err){} }
+      return;
+    }
+    if(e.target && e.target.closest && e.target.closest('#form-compra') && (e.target.name === 'quantidade' || e.target.name === 'valorUnitario')) atualizarConversaoCompra();
     if(e.target && (e.target.id === 'f-horasExtras' || e.target.id === 'f-valorHoraExtra')){
       var hint = document.getElementById('hora-extra-hint');
       if(hint){
@@ -6888,6 +7159,10 @@
         unidade: (data.get('unidade')||'').trim(),
         estoqueAtual: parseFloat(data.get('estoqueAtual')) || 0, estoqueMinimo: parseFloat(data.get('estoqueMinimo')) || 0
       };
+      if(prodEditingId) delete prodFields.estoqueAtual; // estoque só muda por compra, aplicação ou ajuste registrado
+      lerEmbalagensDoDom();
+      prodFields.embalagens = (produtoEmbRascunho ? produtoEmbRascunho.itens : []).map(function(e){ return {nome: String(e.nome || '').trim(), conteudo: parseFloat(e.conteudo) || 0}; }).filter(function(e){ return e.nome && e.conteudo > 0; });
+      produtoEmbRascunho = null;
       if(prodEditingId){
         var prodIdx = state.produtos.findIndex(function(p){ return p.id === prodEditingId; });
         if(prodIdx !== -1){ Object.keys(prodFields).forEach(function(k){ state.produtos[prodIdx][k] = prodFields[k]; }); }
@@ -6902,11 +7177,18 @@
 
     if(form.id === 'form-compra'){
       var comEditingId = form.dataset.editingId;
-      var comQtd = parseFloat(data.get('quantidade')) || 0;
-      var comValorUnit = parseFloat(data.get('valorUnitario')) || 0;
+      var comProdSel = state.produtos.find(function(x){ return x.id === data.get('produtoId'); });
+      var comEmb = embalagensDoProduto(comProdSel).find(function(e){ return e.nome === (data.get('embalagem') || ''); });
+      var comFator = comEmb ? Number(comEmb.conteudo) : 1;
+      var comQtdDigitada = parseFloat(data.get('quantidade')) || 0;
+      var comValorDigitado = parseFloat(data.get('valorUnitario')) || 0;
+      // estoque e custo sempre na unidade de controle do produto
+      var comQtd = Math.round(comQtdDigitada * comFator * 1000) / 1000;
+      var comValorUnit = comValorDigitado / comFator;
       var comFields = {
         produtoId: data.get('produtoId'), fornecedorId: data.get('fornecedorId') || '',
-        quantidade: comQtd, valorUnitario: comValorUnit, valorTotal: Math.round(comQtd * comValorUnit * 100) / 100,
+        quantidade: comQtd, valorUnitario: comValorUnit, valorTotal: Math.round(comQtdDigitada * comValorDigitado * 100) / 100,
+        embalagemNome: comEmb ? comEmb.nome : '', qtdEmbalagens: comEmb ? comQtdDigitada : 0, valorEmbalagem: comEmb ? comValorDigitado : 0,
         contaId: data.get('contaId') || '', notaFiscal: (data.get('notaFiscal')||'').trim(),
         data: data.get('data') || '', status: data.get('status') || 'Recebido', observacao: (data.get('observacao')||'').trim()
       };
@@ -7521,6 +7803,44 @@
     if(action === 'enviar-certificado'){ enviarCertificado(); return; }
     if(action === 'remover-certificado'){ removerCertificado(); return; }
     if(action === 'testar-sefaz'){ testarConsultaSefaz(); return; }
+    if(action === 'abrir-ajuste-estoque'){ ajusteEstoqueProdutoId = id; renderProdutos(); var qAj = document.getElementById('aj-qtd'); if(qAj) qAj.focus(); return; }
+    if(action === 'cancelar-ajuste-estoque'){ ajusteEstoqueProdutoId = null; renderProdutos(); return; }
+    if(action === 'toggle-ajustes-historico'){ ajustesHistoricoAberto = !ajustesHistoricoAberto; renderProdutos(); return; }
+    if(action === 'salvar-ajuste-estoque'){
+      var pAj = state.produtos.find(function(x){ return x.id === ajusteEstoqueProdutoId; });
+      if(!pAj) return;
+      var calcAj = calcularAjusteEstoque(pAj, document.getElementById('aj-modo').value, document.getElementById('aj-qtd').value, document.getElementById('aj-emb').value);
+      if(!calcAj){ alert('Digite a quantidade.'); return; }
+      if(!calcAj.diferenca){ alert('O estoque já está nesse valor — nada a ajustar.'); return; }
+      if(calcAj.novo < 0 && !window.confirm('O estoque vai ficar negativo (' + fmtNum(calcAj.novo) + '). Salvar mesmo assim?')) return;
+      if(!Array.isArray(state.ajustesEstoque)) state.ajustesEstoque = [];
+      state.ajustesEstoque.push({id: uid(), produtoId: pAj.id, data: document.getElementById('aj-data').value || '', anterior: Number(pAj.estoqueAtual) || 0, novo: calcAj.novo, diferenca: calcAj.diferenca,
+        motivo: document.getElementById('aj-motivo').value, observacao: (document.getElementById('aj-obs').value || '').trim(), criadoEm: Date.now()});
+      pAj.estoqueAtual = calcAj.novo;
+      saveKey('ajustesEstoque', state.ajustesEstoque);
+      saveKey('produtos', state.produtos);
+      ajusteEstoqueProdutoId = null;
+      renderAll();
+      return;
+    }
+    if(action === 'produto-add-embalagem'){ lerEmbalagensDoDom(); produtoEmbRascunho.itens.push({nome:'', conteudo:''}); renderEmbalagensProduto(); return; }
+    if(action === 'produto-remover-embalagem'){ lerEmbalagensDoDom(); produtoEmbRascunho.itens.splice(Number(btn.dataset.idx), 1); renderEmbalagensProduto(); return; }
+    if(action === 'cp-abrir-pagamento'){ cpPagandoId = id; renderContasPagar(); var dt = document.getElementById('cp-pag-data'); if(dt) dt.focus(); return; }
+    if(action === 'cp-cancelar-pagamento'){ cpPagandoId = null; renderContasPagar(); return; }
+    if(action === 'cp-confirmar-pagamento'){
+      var cpPag = state.contasPagar.find(function(x){ return x.id === id; });
+      if(!cpPag) return;
+      var dataPg = (document.getElementById('cp-pag-data') || {}).value || '';
+      var valorPg = parseFloat((document.getElementById('cp-pag-valor') || {}).value) || 0;
+      if(!dataPg){ alert('Informe a data do pagamento.'); return; }
+      if(periodoFechado(dataPg)){ alert('O período ' + dataPg.slice(0,7) + ' está fechado. Reabra-o na aba Financeiro antes.'); return; }
+      if(valorPg <= 0){ alert('Informe o valor pago.'); return; }
+      if(valorPg > (Number(cpPag.valor) || 0) + 0.004 && !window.confirm('O valor pago (' + fmtBRL(valorPg) + ') é maior que o da conta (' + fmtBRL(cpPag.valor) + '). Registrar mesmo assim (juros/multa)?')) return;
+      pagarContaPagar(id, dataPg, valorPg);
+      cpPagandoId = null;
+      renderAll();
+      return;
+    }
     if(action === 'dar-ciencia-resumos'){ var chCi = chavesResumosMarcados(); if(!chCi.length){ alert('Marque as notas na lista de resumos.'); return; } darCienciaEBaixar(chCi); return; }
     if(action === 'baixar-resumos'){ baixarNovamenteResumos(chavesResumosMarcados()); return; }
     if(action === 'remover-resumos'){
@@ -7639,19 +7959,28 @@
         }
         var fornecedorId = resolverFornecedor(item.fornecedorNomeNota);
         var produtoId = item.produtoId;
+        var prodExistente = produtoId ? state.produtos.find(function(p){ return p.id === produtoId; }) : null;
+        var sugImp = sugerirFatorNfe(item, prodExistente);
+        var fatorImp = item.fator !== undefined && item.fator !== '' && Number(item.fator) > 0 ? Number(item.fator) : (sugImp.fator || 1);
         if(!produtoId){
-          var novoProduto = {id: uid(), nome: item.xProd, categoria: '', unidade: item.uCom || '', estoqueAtual: 0, estoqueMinimo: 0, criadoEm: Date.now() + idx};
+          var novoProduto = {id: uid(), nome: item.xProd, categoria: '', unidade: sugImp.unidade || item.uCom || '', estoqueAtual: 0, estoqueMinimo: 0, criadoEm: Date.now() + idx};
           state.produtos.push(novoProduto);
           produtoId = novoProduto.id;
         }
+        var qtdControle = Math.round((Number(item.qCom) || 0) * fatorImp * 1000) / 1000;
         var compraFields = {
-          id: uid(), produtoId: produtoId, fornecedorId: fornecedorId, quantidade: item.qCom, valorUnitario: item.vUnCom,
+          id: uid(), produtoId: produtoId, fornecedorId: fornecedorId, quantidade: qtdControle, valorUnitario: (Number(item.vUnCom) || 0) / fatorImp,
           valorTotal: item.vProd, contaId: contaEscolhida, notaFiscal: item.numeroNota,
+          qtdNota: item.qCom, unidadeNota: item.uCom || '', fatorConversao: fatorImp,
           data: item.dataEmissaoNota, status: 'Recebido', observacao: 'Importado de NF-e', criadoEm: Date.now() + idx
         };
         state.compras.push(compraFields);
         var prodIdx = state.produtos.findIndex(function(p){ return p.id === produtoId; });
-        if(prodIdx !== -1) state.produtos[prodIdx].estoqueAtual = (Number(state.produtos[prodIdx].estoqueAtual) || 0) + item.qCom;
+        if(prodIdx !== -1){
+          state.produtos[prodIdx].estoqueAtual = Math.round(((Number(state.produtos[prodIdx].estoqueAtual) || 0) + qtdControle) * 1000) / 1000;
+          // lembra a conversão para as próximas notas desse produto
+          if(item.uCom){ state.produtos[prodIdx].conversoesNota = state.produtos[prodIdx].conversoesNota || {}; state.produtos[prodIdx].conversoesNota[normUnidade(item.uCom)] = fatorImp; }
+        }
         if(item.duplicatasNota && item.duplicatasNota.length){
           if(!notasComVencimentoParaContasPagar[item.chaveNota]){
             notasComVencimentoParaContasPagar[item.chaveNota] = {duplicatas: item.duplicatasNota, itensDescricao: [], numeroNota: item.numeroNota, fornecedorId: fornecedorId, categoria: (function(){ var c = state.contasFinanceiro.find(function(c){ return c.id === contaEscolhida; }); return c ? c.nome : 'Fornecedor'; })()};
