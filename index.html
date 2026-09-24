@@ -2774,6 +2774,7 @@
     var r3 = function(v){ return Math.round(v * 1000000) / 1000000; };
     if(opcoes.estoque) p.estoqueAtual = r3((Number(p.estoqueAtual) || 0) * fator);
     p.estoqueMinimo = r3((Number(p.estoqueMinimo) || 0) * fator);
+    if(Number(p.custoManual) > 0) p.custoManual = Number(p.custoManual) / fator;
     (p.embalagens || []).forEach(function(e){ e.conteudo = r3(Number(e.conteudo) * fator); });
     if(opcoes.criarEmbalagem && opcoes.nomeEmbalagem && !(p.embalagens || []).some(function(e){ return e.nome === opcoes.nomeEmbalagem; })){
       p.embalagens = (p.embalagens || []).concat([{nome: opcoes.nomeEmbalagem, conteudo: r3(fator)}]);
@@ -2969,6 +2970,9 @@
       html += field('number', 'estoqueAtual', 'Estoque inicial', false, '0', {step:'0.001', min:'0'});
     }
     html += field('number', 'estoqueMinimo', 'Estoque mínimo', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.estoqueMinimo : undefined);
+    var cmCompras = editingRecord ? custoMedioComprasProduto(editingRecord.id) : 0;
+    html += field('number', 'custoManual', 'Custo por ' + (editingRecord ? unidadeControle(editingRecord) || 'unidade' : 'unidade') + ' (R$) — opcional', false, cmCompras > 0 ? 'Compras: ' + cmCompras.toFixed(2) : '0,00', {step:'0.0001', min:'0'}, editingRecord && Number(editingRecord.custoManual) > 0 ? editingRecord.custoManual : undefined);
+    html += '<p style="grid-column:1/-1; font-size:11px; color:var(--ink-soft); margin:-6px 0 0;">Deixe em branco para usar o custo médio das compras' + (cmCompras > 0 ? ' (hoje ' + fmtBRL(cmCompras) + ' por ' + escapeHtml(unidadeControle(editingRecord)) + ')' : '') + '. Preenchido, esse valor passa a valer para o custo das aplicações no Diário de Campo — as já lançadas são recalculadas ao salvar.</p>';
     html += '<div id="produto-embalagens" style="grid-column:1/-1; display:flex; flex-direction:column; gap:6px; padding-top:6px; border-top:1px dashed var(--paper-line);"></div>';
     html += '<button type="submit" class="btn">' + (editingRecord ? 'Salvar alterações' : 'Adicionar') + '</button>';
     var origemEmb = editingRecord ? editingRecord.id : 'novo';
@@ -2994,7 +2998,7 @@
         var descEmb = descreverEmEmbalagens(p.id, p.estoqueAtual);
         html += '<td class="num">' + fmtNum(p.estoqueAtual) + ' ' + escapeHtml(unP) + (descEmb ? '<br><span style="font-size:11px; color:var(--ink-soft);">' + escapeHtml(descEmb) + '</span>' : '') + '</td>';
         var cmP = custoMedioProduto(p.id);
-        html += '<td class="num">' + (cmP > 0 ? fmtBRL(cmP) + '/' + escapeHtml(unP) : '—') + '</td>';
+        html += '<td class="num">' + (cmP > 0 ? fmtBRL(cmP) + '/' + escapeHtml(unP) + (Number(p.custoManual) > 0 ? '<br><span style="font-size:10.5px; color:var(--ink-soft);">manual</span>' : '') : '—') + '</td>';
         html += '<td class="num">' + fmtNum(p.estoqueMinimo) + '</td>';
         html += '<td style="white-space:nowrap;"><button class="btn-edit" data-action="abrir-ajuste-estoque" data-id="' + p.id + '">⚖️ Ajustar</button><button class="btn-edit" data-action="abrir-conversao-produto" data-id="' + p.id + '" title="Trocar a unidade de controle convertendo estoque, compras e aplicações">🔁 Unidade</button><button class="btn-edit" data-action="edit-produto" data-id="' + p.id + '">Editar</button><button class="btn-del" data-action="del-produto" data-id="' + p.id + '">Remover</button></td>';
         html += '</tr>';
@@ -4179,6 +4183,11 @@
   var diarioRascunho = null;
   var diarioPreTalhaoId = '';
   function custoMedioProduto(produtoId){
+    var prodCm = state.produtos.find(function(x){ return x.id === produtoId; });
+    if(prodCm && Number(prodCm.custoManual) > 0) return Number(prodCm.custoManual);
+    return custoMedioComprasProduto(produtoId);
+  }
+  function custoMedioComprasProduto(produtoId){
     var qtd = 0, valor = 0;
     state.compras.forEach(function(c){
       if(c.produtoId !== produtoId) return;
@@ -7344,13 +7353,18 @@
         unidade: (data.get('unidade')||'').trim(),
         estoqueAtual: parseFloat(data.get('estoqueAtual')) || 0, estoqueMinimo: parseFloat(data.get('estoqueMinimo')) || 0
       };
+      prodFields.custoManual = parseFloat(data.get('custoManual')) || 0;
       if(prodEditingId) delete prodFields.estoqueAtual; // estoque só muda por compra, aplicação ou ajuste registrado
       lerEmbalagensDoDom();
       prodFields.embalagens = (produtoEmbRascunho ? produtoEmbRascunho.itens : []).map(function(e){ return {nome: String(e.nome || '').trim(), conteudo: parseFloat(e.conteudo) || 0}; }).filter(function(e){ return e.nome && e.conteudo > 0; });
       produtoEmbRascunho = null;
       if(prodEditingId){
         var prodIdx = state.produtos.findIndex(function(p){ return p.id === prodEditingId; });
-        if(prodIdx !== -1){ Object.keys(prodFields).forEach(function(k){ state.produtos[prodIdx][k] = prodFields[k]; }); }
+        if(prodIdx !== -1){
+          var custoAntes = custoMedioProduto(prodEditingId);
+          Object.keys(prodFields).forEach(function(k){ state.produtos[prodIdx][k] = prodFields[k]; });
+          if(Math.abs(custoMedioProduto(prodEditingId) - custoAntes) > 0.00001) recalcularCustoAplicacoesProduto(prodEditingId);
+        }
       } else {
         prodFields.id = uid(); prodFields.criadoEm = Date.now();
         state.produtos.push(prodFields);
