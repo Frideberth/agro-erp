@@ -580,6 +580,31 @@
     return qtd * (Number(item.valor) || 0);
   }
   function safraOptionsFn(incluirId){ return safraOptionsAtivas(incluirId); }
+  // Venda antecipada: pode sair do estoque geral de uma cultura/lavoura (dividido na entrega) ou de uma safra específica
+  function opcoesOrigemVendaAntecipada(incluirId){
+    var ops = [];
+    state.culturas.forEach(function(c){
+      var n = state.safras.filter(function(sf){ return sf.culturaId === c.id; }).length;
+      if(n) ops.push({value:'cul:' + c.id, label:'Estoque geral — ' + c.nome + ' (todas as safras)'});
+    });
+    (state.lavouras || []).forEach(function(l){
+      if(safrasDaLavoura(l.id).length > 1 && (!l.encerrada || incluirId === 'lav:' + l.id)) ops.push({value:'lav:' + l.id, label:'Estoque geral — lavoura ' + lavouraLabel(l.id)});
+    });
+    return ops.concat(safraOptionsAtivas(incluirId));
+  }
+  // Safras (com saldo) de onde sai uma entrega do estoque geral, proporcional ao saldo de cada uma
+  function safrasDoEstoqueGeral(origem, unidade){
+    var est = estoquePorSafra();
+    var candidatas = state.safras.filter(function(sf){
+      if(origem.indexOf('cul:') === 0) return sf.culturaId === origem.slice(4);
+      if(origem.indexOf('lav:') === 0) return sf.lavouraId === origem.slice(4);
+      return false;
+    }).map(function(sf){ var e = est[sf.id]; return {safraId: sf.id, saldo: e ? e.entrada - e.saida : 0, unidade: e ? (e.unidade || '').trim() : ''}; })
+      .filter(function(x){ return x.saldo > 0.0005; });
+    var un = (unidade || '').trim().toLowerCase();
+    var mesmaUn = candidatas.filter(function(x){ return !un || !x.unidade || x.unidade.toLowerCase() === un; });
+    return mesmaUn.length ? mesmaUn : candidatas;
+  }
   function safraOptionsAtivas(incluirId){
     return state.safras.filter(function(s){ return s.ativa !== false || s.id === incluirId; }).map(function(s){ return {value:s.id, label: safraLabel(s.id) + (s.ativa === false ? ' (inativa)' : '')}; });
   }
@@ -742,7 +767,7 @@
     vendasAntecipadas: {
       label: 'venda antecipada',
       fields: [
-        {name:'safraId', type:'select', label:'Safra', optionsFn: safraOptionsFn},
+        {name:'safraId', type:'select', label:'Sai de (estoque geral ou safra)', optionsFn: opcoesOrigemVendaAntecipada},
         {name:'quantidade', type:'number', label:'Quantidade contratada', required:true, extra:{step:'0.01', min:'0'}, placeholder:'0'},
         {name:'unidade', type:'text', label:'Unidade', placeholder:'Ex: sc, kg, ton'},
         {name:'precoFixado', type:'number', label:'Preço fixado (R$/unid.)', required:true, extra:{step:'0.01', min:'0'}, placeholder:'0,00'},
@@ -1947,7 +1972,7 @@
             if(f.safraId) return;
             if(f.origem === 'vendaAntecipada'){
               var v = state.vendasAntecipadas.find(function(x){ return x.financeiroId === f.id; });
-              if(v && v.safraId){ f.safraId = v.safraId; mudouVendas = true; }
+              if(v && v.safraId && state.safras.some(function(sx){ return sx.id === v.safraId; })){ f.safraId = v.safraId; mudouVendas = true; }
             } else if(f.origem === 'colheitaVenda' && f.talhaoId){
               var sfV = state.safras.find(function(sx){ return sx.talhaoId === f.talhaoId && (f.descricao || '').slice(-(safraLabel(sx.id).length + 3)) === ' — ' + safraLabel(sx.id); });
               if(sfV){ f.safraId = sfV.id; mudouVendas = true; }
@@ -2022,6 +2047,11 @@
 
     var html = '<h3 style="margin:0 0 4px; font-family:\'Zilla Slab\',serif; font-size:18px;">Efetivar Venda Antecipada</h3>';
     html += '<div style="font-size:13px; color:var(--ink-soft); margin-bottom:14px;">' + escapeHtml(safraLabel(venda.safraId)) + ' · Contratado: ' + fmtNum(venda.quantidade) + ' ' + escapeHtml(venda.unidade || '') + ' a ' + fmtBRL(venda.precoFixado) + (venda.compradorId ? ' · ' + escapeHtml(parceiroNome(venda.compradorId)) : '') + '</div>';
+    if(String(venda.safraId || '').indexOf('cul:') === 0 || String(venda.safraId || '').indexOf('lav:') === 0){
+      var fontesPrev = safrasDoEstoqueGeral(venda.safraId, venda.unidade);
+      var saldoPrev = fontesPrev.reduce(function(sm, x){ return sm + x.saldo; }, 0);
+      html += '<div class="paper note-box" style="margin:0 0 14px; font-size:12px;">' + (fontesPrev.length ? 'Sai do estoque geral, dividido pelo saldo de cada talhão: ' + fontesPrev.map(function(x){ return escapeHtml(safraLabel(x.safraId)) + ' ' + fmtNum(Math.round(qtdEntregue * x.saldo / saldoPrev * 100) / 100); }).join(' · ') + ' (saldo total ' + fmtNum(Math.round(saldoPrev * 100) / 100) + ')' : '⚠️ Ainda não há saldo em estoque para essa cultura — registre a colheita antes de efetivar.') + '</div>';
+    }
 
     html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">';
     html += '<div class="field" style="margin:0;"><label>Quantidade entregue</label><input type="number" id="efv-qtd-entregue" value="' + (venda.quantidade || 0) + '" min="0" step="0.01" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
@@ -2103,6 +2133,8 @@
     return t && COLOR_PALETTE[t.cor] ? COLOR_PALETTE[t.cor] : '#C9C3A4';
   }
   function safraLabel(id){
+    if(typeof id === 'string' && id.indexOf('cul:') === 0) return 'Estoque geral — ' + culturaNome(id.slice(4));
+    if(typeof id === 'string' && id.indexOf('lav:') === 0) return 'Estoque geral — lavoura ' + lavouraLabel(id.slice(4));
     var s = state.safras.find(function(s){ return s.id === id; });
     if(!s) return '—';
     return talhaoNome(s.talhaoId) + ' · ' + culturaNome(s.culturaId) + (s.anoAgricola ? ' (' + s.anoAgricola + ')' : '');
@@ -8637,29 +8669,53 @@
       var valorTotalDescontosFinal = valorBrutoFinal * (totalDescontoPctFinal / 100);
       var valorLiquidoFinal = valorBrutoFinal - valorTotalDescontosFinal;
 
-      var producaoIdGerado = uid();
-      state.producao.push({
-        id: producaoIdGerado, safraId: vendaEfetivar.safraId, tipo: 'saida',
-        quantidade: qtdEntregueFinal, unidade: vendaEfetivar.unidade || '', precoUnitario: vendaEfetivar.precoFixado || 0,
-        data: dataEntregaFinal, parceiroId: vendaEfetivar.compradorId || '',
-        observacao: 'Entrega de Venda Antecipada' + (vendaEfetivar.observacao ? ' — ' + vendaEfetivar.observacao : ''),
-        criadoEm: Date.now()
+      var origemGeral = String(vendaEfetivar.safraId || '');
+      var ehEstoqueGeral = origemGeral.indexOf('cul:') === 0 || origemGeral.indexOf('lav:') === 0;
+      var fatiasEntrega = [{safraId: vendaEfetivar.safraId, fracao: 1}];
+      if(ehEstoqueGeral){
+        var fontes = safrasDoEstoqueGeral(origemGeral, vendaEfetivar.unidade);
+        var saldoTotal = fontes.reduce(function(sm, x){ return sm + x.saldo; }, 0);
+        if(!fontes.length){ alert('Não há saldo em estoque para ' + safraLabel(origemGeral).replace('Estoque geral — ', '') + '. Registre a colheita antes de efetivar a entrega.'); return; }
+        if(qtdEntregueFinal > saldoTotal + 0.0005 && !window.confirm('A entrega (' + fmtNum(qtdEntregueFinal) + ') é maior que o saldo em estoque (' + fmtNum(saldoTotal) + '). O estoque vai ficar negativo. Continuar?')) return;
+        fatiasEntrega = fontes.map(function(x){ return {safraId: x.safraId, fracao: x.saldo / saldoTotal}; });
+      }
+      var qtdsEntrega = dividirValor(qtdEntregueFinal, fatiasEntrega.map(function(f){ return f.fracao; }));
+      var producaoIdsGerados = [];
+      fatiasEntrega.forEach(function(fx, i){
+        var pid = uid(); producaoIdsGerados.push(pid);
+        state.producao.push({
+          id: pid, safraId: fx.safraId, tipo: 'saida',
+          quantidade: qtdsEntrega[i], unidade: vendaEfetivar.unidade || '', precoUnitario: vendaEfetivar.precoFixado || 0,
+          data: dataEntregaFinal, parceiroId: vendaEfetivar.compradorId || '',
+          observacao: 'Entrega de Venda Antecipada' + (ehEstoqueGeral ? ' (estoque geral)' : '') + (vendaEfetivar.observacao ? ' — ' + vendaEfetivar.observacao : ''),
+          criadoEm: Date.now() + i
+        });
       });
+      var producaoIdGerado = producaoIdsGerados[0];
       saveKey('producao', state.producao);
 
       var contaVendaAntecipada = state.contasFinanceiro.find(function(c){ return c.nome === 'Venda Antecipada'; });
       var descricaoDescontos = descontosChaves.filter(function(c){ return descontosFinal[c] > 0; }).map(function(c){ return descontosLabelsFinal[c] + ' ' + fmtNum(descontosFinal[c]) + '%'; }).join(', ');
       var financeiroIdGerado = uid();
+      var valoresPartesEntrega = dividirValor(Math.round(valorLiquidoFinal * 100) / 100, fatiasEntrega.map(function(f){ return f.fracao; }));
+      var safrasEntregaObjs = fatiasEntrega.map(function(fx){ return state.safras.find(function(s){ return s.id === fx.safraId; }) || null; });
       state.financeiro.push({
         id: financeiroIdGerado, origem: 'vendaAntecipada', contaId: contaVendaAntecipada ? contaVendaAntecipada.id : 'ct-venda-colheita',
         tipo: 'receita', categoria: 'Venda Antecipada', valor: valorLiquidoFinal, data: dataPagamentoFinal,
         quantidade: qtdEntregueFinal, unidade: vendaEfetivar.unidade || '', status: 'Pago',
         talhaoId: vendaEfetivar.safraId ? (state.safras.find(function(s){ return s.id === vendaEfetivar.safraId; }) || {}).talhaoId || '' : '',
         safraId: vendaEfetivar.safraId || '', destino: vendaEfetivar.safraId ? 'lavoura' : '',
-        parceiroId: vendaEfetivar.compradorId || '', membroId: '',
+        parceiroId: vendaEfetivar.compradorId || '', membroId: '', grupoVendaId: ehEstoqueGeral ? financeiroIdGerado : undefined,
         descricao: 'Venda Antecipada — ' + safraLabel(vendaEfetivar.safraId) + ' (bruto ' + fmtBRL(valorBrutoFinal) + ', descontos: ' + (descricaoDescontos || 'nenhum') + ' = ' + fmtBRL(valorTotalDescontosFinal) + '; entregue em ' + fmtDate(dataEntregaFinal) + ')',
         criadoEm: Date.now()
       });
+      // estoque geral: um lançamento só, com a receita dividida entre as safras de onde saiu o produto
+      var finGerado = state.financeiro[state.financeiro.length - 1];
+      if(ehEstoqueGeral){
+        finGerado.talhoesIds = safrasEntregaObjs.map(function(sf){ return sf ? sf.talhaoId : ''; }).filter(function(v, i, a){ return v && a.indexOf(v) === i; });
+        if(fatiasEntrega.length === 1){ finGerado.safraId = fatiasEntrega[0].safraId; finGerado.talhaoId = safrasEntregaObjs[0] ? safrasEntregaObjs[0].talhaoId : ''; }
+        else { finGerado.safraId = ''; finGerado.talhaoId = ''; finGerado.partes = fatiasEntrega.map(function(fx, i){ return {talhaoId: safrasEntregaObjs[i] ? safrasEntregaObjs[i].talhaoId : '', safraId: fx.safraId, valor: valoresPartesEntrega[i]}; }); }
+      }
       saveKey('financeiro', state.financeiro);
 
       var idxVendaEfetivar = state.vendasAntecipadas.findIndex(function(v){ return v.id === efetivarVendaId; });
@@ -8672,6 +8728,7 @@
         state.vendasAntecipadas[idxVendaEfetivar].valorBruto = valorBrutoFinal;
         state.vendasAntecipadas[idxVendaEfetivar].valorLiquido = valorLiquidoFinal;
         state.vendasAntecipadas[idxVendaEfetivar].producaoId = producaoIdGerado;
+        state.vendasAntecipadas[idxVendaEfetivar].producaoIds = producaoIdsGerados;
         state.vendasAntecipadas[idxVendaEfetivar].financeiroId = financeiroIdGerado;
       }
       saveKey('vendasAntecipadas', state.vendasAntecipadas);
