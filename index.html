@@ -2122,6 +2122,29 @@
     });
     return map;
   }
+  // Estoque de colheita agrupado (por cultura ou por lavoura) para vender "do estoque geral"
+  function gruposEstoqueVenda(){
+    var est = estoquePorSafra();
+    var grupos = {};
+    state.safras.forEach(function(sf){
+      var e = est[sf.id]; if(!e) return;
+      var saldo = e.entrada - e.saida; if(saldo <= 0.0005) return;
+      var un = (e.unidade || '').trim();
+      [['cul', sf.culturaId, culturaNome(sf.culturaId)], ['lav', sf.lavouraId, lavouraLabel(sf.lavouraId)]].forEach(function(g){
+        if(!g[1]) return;
+        var chave = g[0] + ':' + g[1] + ':' + un;
+        if(!grupos[chave]) grupos[chave] = {chave: chave, tipo: g[0], nome: g[2], unidade: un, safras: [], saldo: 0};
+        grupos[chave].safras.push({safraId: sf.id, saldo: saldo});
+        grupos[chave].saldo += saldo;
+      });
+    });
+    var lista = Object.keys(grupos).map(function(k){ return grupos[k]; });
+    var assinatura = function(g){ return g.safras.map(function(x){ return x.safraId; }).sort().join(',') + '|' + g.unidade; };
+    var assinaturasCultura = lista.filter(function(g){ return g.tipo === 'cul'; }).map(assinatura);
+    // lavoura só aparece se for diferente do "todo o estoque da cultura" (ex.: dois anos de milho em estoque)
+    return lista.filter(function(g){ return g.tipo === 'cul' || (g.safras.length > 1 && assinaturasCultura.indexOf(assinatura(g)) === -1); })
+      .sort(function(a,b){ return (a.tipo === b.tipo ? a.nome.localeCompare(b.nome, 'pt-BR') : (a.tipo === 'cul' ? -1 : 1)); });
+  }
   function estoqueResumo(){
     var estoque = estoquePorSafra();
     var total = 0;
@@ -4090,7 +4113,20 @@
 
       html += '<div class="paper form-card"><h3>' + (editingVenda ? 'Editar venda' : 'Registrar venda (saída do estoque)') + '</h3>';
       html += '<form class="entry-form" id="form-colheita-venda"' + (editingVenda ? ' data-editing-id="' + editingVenda.id + '"' : '') + '>';
-      html += selectField('safraId', 'Safra', safraOptionsAtivas(editingVenda ? editingVenda.safraId : null), editingVenda ? editingVenda.safraId : undefined);
+      if(editingVenda){
+        html += selectField('safraId', 'Safra', safraOptionsAtivas(editingVenda.safraId), editingVenda.safraId);
+      } else {
+        var gruposV = gruposEstoqueVenda();
+        html += '<div class="field"><label for="f-safraId">Sai de</label><select id="f-safraId" name="safraId">';
+        if(gruposV.length){
+          html += '<optgroup label="Estoque geral (divide entre os talhões pelo saldo de cada um)">';
+          gruposV.forEach(function(g){ html += '<option value="grupo:' + escapeHtml(g.chave) + '">' + escapeHtml((g.tipo === 'cul' ? 'Todo o ' : 'Lavoura ') + g.nome + ' — ' + fmtNum(Math.round(g.saldo * 100) / 100) + (g.unidade ? ' ' + g.unidade : '') + ' em ' + g.safras.length + ' talhão(ões)') + '</option>'; });
+          html += '</optgroup>';
+        }
+        html += '<optgroup label="Safra específica (um talhão)">';
+        safraOptionsAtivas(null).forEach(function(o){ html += '<option value="' + escapeHtml(o.value) + '">' + escapeHtml(o.label) + '</option>'; });
+        html += '</optgroup></select></div>';
+      }
       html += field('number', 'quantidade', 'Quantidade vendida', true, '0', {step:'0.01', min:'0'}, editingVenda ? editingVenda.quantidade : undefined);
       html += field('text', 'unidade', 'Unidade', false, 'Ex: sc, kg, ton', {}, editingVenda ? editingVenda.unidade : undefined);
       html += field('number', 'precoUnitario', 'Preço de venda (R$/unid.)', false, '0,00', {step:'0.01', min:'0'}, editingVenda ? editingVenda.precoUnitario : undefined);
@@ -7665,6 +7701,36 @@
       form.reset(); renderAll(); return;
     }
 
+    if(form.id === 'form-colheita-venda' && !form.dataset.editingId && String(data.get('safraId') || '').indexOf('grupo:') === 0){
+      // Venda do estoque geral: divide a quantidade entre as safras do grupo, proporcional ao saldo de cada uma
+      var gChave = String(data.get('safraId')).slice(6);
+      var grupoV = gruposEstoqueVenda().find(function(g){ return g.chave === gChave; });
+      var gQtd = parseFloat(data.get('quantidade')) || 0, gPreco = parseFloat(data.get('precoUnitario')) || 0;
+      if(!grupoV){ alert('Esse estoque não tem mais saldo.'); return; }
+      if(gQtd <= 0){ alert('Informe a quantidade vendida.'); return; }
+      if(gQtd > grupoV.saldo + 0.0005 && !window.confirm('A venda (' + fmtNum(gQtd) + ') é maior que o saldo em estoque (' + fmtNum(grupoV.saldo) + '). O estoque vai ficar negativo. Continuar?')) return;
+      var gUn = (data.get('unidade') || '').trim() || grupoV.unidade;
+      var gQtds = dividirValor(gQtd, grupoV.safras.map(function(x){ return x.saldo / grupoV.saldo; }));
+      var gValores = dividirValor(Math.round(gQtd * gPreco * 100) / 100, grupoV.safras.map(function(x){ return x.saldo / grupoV.saldo; }));
+      var gData = data.get('data') || '', gParc = data.get('parceiroId') || '', gObs = (data.get('observacao') || '').trim(), gGrupoId = uid();
+      grupoV.safras.forEach(function(x, i){
+        state.producao.push({id: uid(), tipo:'saida', safraId: x.safraId, quantidade: gQtds[i], unidade: gUn, precoUnitario: gPreco, parceiroId: gParc, data: gData,
+          observacao: (gObs ? gObs + ' · ' : '') + 'venda do estoque geral (' + grupoV.nome + ')', grupoVendaId: gGrupoId, criadoEm: Date.now() + i});
+      });
+      var gFin = {id: uid(), origem: 'colheitaVenda', contaId:'ct-venda-colheita', tipo:'receita', categoria:'Venda de Colheita', valor: Math.round(gQtd * gPreco * 100) / 100, data: gData,
+        quantidade: gQtd, peso:0, unidade: gUn, status:'Pago', parceiroId: gParc, membroId:'', grupoVendaId: gGrupoId,
+        descricao: 'Venda de ' + fmtNum(gQtd) + (gUn ? ' ' + gUn : '') + ' — estoque geral ' + grupoV.nome, criadoEm: Date.now()};
+      var gSafraObjs = grupoV.safras.map(function(x){ return state.safras.find(function(sf){ return sf.id === x.safraId; }); });
+      gFin.destino = 'lavoura';
+      gFin.talhoesIds = gSafraObjs.map(function(sf){ return sf ? sf.talhaoId : ''; }).filter(function(v, i, a){ return v && a.indexOf(v) === i; });
+      if(grupoV.safras.length === 1){ gFin.safraId = grupoV.safras[0].safraId; gFin.talhaoId = gSafraObjs[0] ? gSafraObjs[0].talhaoId : ''; }
+      else { gFin.talhaoId = ''; gFin.safraId = ''; gFin.partes = grupoV.safras.map(function(x, i){ return {talhaoId: gSafraObjs[i] ? gSafraObjs[i].talhaoId : '', safraId: x.safraId, valor: gValores[i]}; }); }
+      state.financeiro.push(gFin);
+      saveKey('financeiro', state.financeiro); saveKey('producao', state.producao);
+      editState = null; form.reset(); renderAll();
+      alert('Venda registrada: ' + fmtNum(gQtd) + (gUn ? ' ' + gUn : '') + ' saíram de ' + grupoV.safras.length + ' talhão(ões), proporcional ao saldo de cada um.');
+      return;
+    }
     if(form.id === 'form-colheita-venda'){
       var cvEditingId = form.dataset.editingId;
       var cvSafraId = data.get('safraId');
