@@ -1982,6 +1982,51 @@
           marcarImportAplicado('backfill-safra-vendas-v1');
         })();
         sincronizarLavouras();
+        (function(){
+          if(importJaAplicado('redistribuir-entregas-negativas-v1')) return;
+          var est = estoquePorSafra();
+          var negativas = state.safras.filter(function(sf){ var e = est[sf.id]; return e && e.entrada - e.saida < -0.0005; });
+          var mudou = false;
+          negativas.forEach(function(sfNeg){
+            var entregas = state.producao.filter(function(p){ return p.tipo === 'saida' && p.safraId === sfNeg.id && !p.grupoVendaId && /^Entrega de Venda Antecipada/.test(p.observacao || ''); })
+              .sort(function(a,b){ return (a.criadoEm||0) - (b.criadoEm||0); });
+            if(!entregas.length) return;
+            // saldo de cada safra da mesma cultura sem essas entregas
+            var saldos = {};
+            state.safras.filter(function(sf){ return sf.culturaId === sfNeg.culturaId; }).forEach(function(sf){ var e = est[sf.id]; saldos[sf.id] = e ? e.entrada - e.saida : 0; });
+            entregas.forEach(function(p){ saldos[p.safraId] += Number(p.quantidade) || 0; });
+            entregas.forEach(function(p){
+              var fontes = Object.keys(saldos).filter(function(id){ return saldos[id] > 0.0005; });
+              var total = fontes.reduce(function(sm, id){ return sm + saldos[id]; }, 0);
+              if(total <= 0) return;
+              var fracs = fontes.map(function(id){ return saldos[id] / total; });
+              var qtds = dividirValor(Number(p.quantidade) || 0, fracs);
+              var novosIds = [];
+              fontes.forEach(function(id, i){
+                var reg;
+                if(i === 0){ reg = p; } else { reg = JSON.parse(JSON.stringify(p)); reg.id = uid(); reg.criadoEm = (p.criadoEm || Date.now()) + i; state.producao.push(reg); }
+                reg.safraId = id; reg.quantidade = qtds[i]; reg.observacao = 'Entrega de Venda Antecipada (estoque geral — redistribuída)' + (p.observacao && p.observacao.indexOf(' — ') !== -1 ? p.observacao.slice(p.observacao.indexOf(' — ')) : '');
+                saldos[id] -= qtds[i]; novosIds.push(reg.id);
+              });
+              var va = state.vendasAntecipadas.find(function(v){ return v.producaoId === p.id; });
+              if(va){
+                va.safraId = 'cul:' + sfNeg.culturaId; va.producaoIds = novosIds;
+                var fin = state.financeiro.find(function(f){ return f.id === va.financeiroId; });
+                if(fin){
+                  var vals = dividirValor(Number(fin.valor) || 0, fracs);
+                  var sfObjs = fontes.map(function(id){ return state.safras.find(function(x){ return x.id === id; }); });
+                  fin.safraId = ''; fin.talhaoId = ''; fin.destino = 'lavoura'; fin.grupoVendaId = fin.id;
+                  fin.talhoesIds = sfObjs.map(function(x){ return x ? x.talhaoId : ''; }).filter(function(v, i, a){ return v && a.indexOf(v) === i; });
+                  fin.partes = fontes.map(function(id, i){ return {talhaoId: sfObjs[i] ? sfObjs[i].talhaoId : '', safraId: id, valor: vals[i]}; });
+                  fin.descricao = (fin.descricao || '').replace(/Venda Antecipada — [^(]*\(/, 'Venda Antecipada — Estoque geral — ' + culturaNome(sfNeg.culturaId) + ' (');
+                }
+              }
+              mudou = true;
+            });
+          });
+          if(mudou){ saveKey('producao', state.producao); saveKey('vendasAntecipadas', state.vendasAntecipadas); saveKey('financeiro', state.financeiro); }
+          marcarImportAplicado('redistribuir-entregas-negativas-v1');
+        })();
         if(hasCloudStorage || hasLocalStorage || hasNetlifyBlobs) loading.classList.add('hidden');
         renderAll();
       })
@@ -2187,9 +2232,10 @@
       var e = est[sf.id]; if(!e) return;
       var saldo = e.entrada - e.saida; if(saldo <= 0.0005) return;
       var un = (e.unidade || '').trim();
+      var unChave = un.toLowerCase();
       [['cul', sf.culturaId, culturaNome(sf.culturaId)], ['lav', sf.lavouraId, lavouraLabel(sf.lavouraId)]].forEach(function(g){
         if(!g[1]) return;
-        var chave = g[0] + ':' + g[1] + ':' + un;
+        var chave = g[0] + ':' + g[1] + ':' + unChave;
         if(!grupos[chave]) grupos[chave] = {chave: chave, tipo: g[0], nome: g[2], unidade: un, safras: [], saldo: 0};
         grupos[chave].safras.push({safraId: sf.id, saldo: saldo});
         grupos[chave].saldo += saldo;
@@ -2217,6 +2263,16 @@
   }
   var KG_POR_SACA = 60;
   var HA_POR_ALQUEIRE = 2.42;
+  var raioxAberto = {};
+  // Quantidade de um lançamento de colheita/venda em sacas (60 kg); null se a unidade não for saca, kg ou t
+  function sacasDeProducao(p){
+    var q = Number(p.quantidade) || 0;
+    var u = normUnidade(p.unidade);
+    if(!u || ['SC','SACA','SACAS','SACO','SACOS','SCS'].indexOf(u) !== -1) return q;
+    if(['KG','KGS','QUILO','QUILOS'].indexOf(u) !== -1) return q / KG_POR_SACA;
+    if(['T','TON','TONS','TONELADA','TONELADAS'].indexOf(u) !== -1) return q * 1000 / KG_POR_SACA;
+    return null;
+  }
   function converterKgSc(qtd, unidade){
     var u = String(unidade || '').trim().toLowerCase();
     if(u === 'kg'){ return {kg: qtd, sc: qtd / KG_POR_SACA}; }
@@ -4216,40 +4272,71 @@
       html += '</tbody></table></div>';
     }
 
-    html += '<div class="section-title">Produtividade por talhão</div>';
-    var safrasComColheita = state.safras.filter(function(s){
-      return state.producao.some(function(p){ return p.safraId === s.id && p.tipo === 'entrada'; });
-    });
-    if(!safrasComColheita.length){
-      html += '<div class="paper empty-state">Registre uma colheita pra ver a produtividade por talhão aqui.</div>';
+    html += '<div class="section-title">Raio-x por talhão</div>';
+    var linhasRaiox = state.safras.filter(function(sf){ return state.producao.some(function(p){ return p.safraId === sf.id && p.tipo === 'entrada'; }); });
+    if(!linhasRaiox.length){
+      html += '<div class="paper empty-state">Registre uma colheita pra ver o raio-x dos talhões aqui.</div>';
     } else {
-      html += '<div class="paper table-wrap"><table><thead><tr><th>Talhão / Safra</th><th>Área (ha)</th><th>Área (alq)</th><th>Total colhido</th><th>Produtiv. real (sc/ha)</th><th>Produtiv. esperada (sc/ha)</th><th>% do esperado</th><th>Valor total</th><th>Umidade média</th></tr></thead><tbody>';
-      safrasComColheita.forEach(function(s){
-        var talhao = state.talhoes.find(function(t){ return t.id === s.talhaoId; });
-        var area = talhao ? Number(talhao.area) || 0 : 0;
-        var areaAlqueires = area / HA_POR_ALQUEIRE;
-        var entradasSafra = state.producao.filter(function(p){ return p.safraId === s.id && p.tipo === 'entrada'; });
-        var totalColhido = entradasSafra.reduce(function(sum,p){ return sum + (Number(p.quantidade)||0); }, 0);
-        var valorTotal = entradasSafra.reduce(function(sum,p){ return sum + (Number(p.quantidade)||0) * (Number(p.precoUnitario)||0); }, 0);
-        var entradasComUmidade = entradasSafra.filter(function(p){ return Number(p.umidade) > 0; });
-        var umidadeMedia = entradasComUmidade.length ? entradasComUmidade.reduce(function(sum,p){ return sum + Number(p.umidade); }, 0) / entradasComUmidade.length : null;
-        var produtividadeReal = area > 0 ? totalColhido / area : null;
-        var esperada = Number(s.produtividadeEsperada) || 0;
-        var pct = esperada > 0 && produtividadeReal !== null ? (produtividadeReal / esperada * 100) : null;
-        html += '<tr>';
-        html += '<td>' + escapeHtml(safraLabel(s.id)) + '</td>';
-        html += '<td class="num">' + (area ? fmtHa(area) : '—') + '</td>';
-        html += '<td class="num">' + (area ? areaAlqueires.toLocaleString('pt-BR', {maximumFractionDigits:2}) + ' alq' : '—') + '</td>';
-        html += '<td class="num">' + fmtNum(totalColhido) + '</td>';
-        html += '<td class="num">' + (produtividadeReal !== null ? fmtNum(produtividadeReal) : '—') + '</td>';
-        html += '<td class="num">' + (esperada ? fmtNum(esperada) : '—') + '</td>';
-        html += '<td class="num">' + (pct !== null ? '<span class="badge" style="background:' + (pct >= 100 ? '#7FA36D' : (pct >= 80 ? '#DFA84E' : '#A23E2E')) + '; color:#fff;">' + pct.toFixed(0) + '%</span>' : '—') + '</td>';
-        html += '<td class="num growth">' + (valorTotal ? fmtBRL(valorTotal) : '—') + '</td>';
-        html += '<td class="num">' + (umidadeMedia !== null ? umidadeMedia.toLocaleString('pt-BR', {maximumFractionDigits:1}) + '%' : '—') + '</td>';
-        html += '</tr>';
+      var porLavoura = {};
+      linhasRaiox.forEach(function(sf){ (porLavoura[sf.lavouraId || 'sem'] = porLavoura[sf.lavouraId || 'sem'] || []).push(sf); });
+      var ordemLav = Object.keys(porLavoura).sort(function(x, y){
+        var lx = lavouraPorId(x), ly = lavouraPorId(y);
+        return ((ly && ly.anoAgricola) || '').localeCompare((lx && lx.anoAgricola) || '') || lavouraLabel(x).localeCompare(lavouraLabel(y), 'pt-BR');
+      });
+      var cab = '<th>Talhão</th><th>Área plantada</th><th>Colhido (sc)</th><th>sc/ha</th><th>sc/alq</th><th>% esperado</th><th>Vendido (sc)</th><th>Em estoque (sc)</th><th>Custo/ha</th><th>Custo/saca</th><th>Receita</th><th>Resultado</th>';
+      html += '<div class="paper table-wrap"><table class="sem-ordenacao"><thead><tr>' + cab + '</tr></thead><tbody>';
+      var celulasRaiox = function(r, negrito){
+        var st = negrito ? ' style="font-weight:700;"' : '';
+        var h = '<td class="num"' + st + '>' + (r.area ? fmtHa(r.area) : '—') + '</td>';
+        h += '<td class="num"' + st + '>' + fmtNum(Math.round(r.colhido * 100) / 100) + '</td>';
+        h += '<td class="num"' + st + '>' + (r.area ? fmtNum(Math.round(r.colhido / r.area * 100) / 100) : '—') + '</td>';
+        h += '<td class="num"' + st + '>' + (r.area ? fmtNum(Math.round(r.colhido / r.area * alqueireHa() * 100) / 100) : '—') + '</td>';
+        var pct = r.esperadaSc > 0 ? r.colhido / r.esperadaSc * 100 : null;
+        h += '<td class="num">' + (pct !== null ? '<span class="badge" style="background:' + (pct >= 100 ? '#7FA36D' : (pct >= 80 ? '#DFA84E' : '#A23E2E')) + '; color:#fff;">' + pct.toFixed(0) + '%</span>' : '—') + '</td>';
+        h += '<td class="num"' + st + '>' + fmtNum(Math.round(r.vendido * 100) / 100) + '</td>';
+        h += '<td class="num"' + st + '>' + fmtNum(Math.round((r.colhido - r.vendido) * 100) / 100) + '</td>';
+        h += '<td class="num"' + st + '>' + (r.area ? fmtBRL(r.custo / r.area) : '—') + '</td>';
+        h += '<td class="num"' + st + '>' + (r.colhido > 0 ? fmtBRL(r.custo / r.colhido) : '—') + '</td>';
+        h += '<td class="num growth"' + st + '>' + fmtBRL(r.receita) + '</td>';
+        var res = r.receita + r.estoqueValor - r.custo;
+        h += '<td class="num ' + (res >= 0 ? 'growth' : 'cost') + '"' + st + ' title="Receita + estoque a preço estimado (' + fmtBRL(r.estoqueValor) + ') − custos (' + fmtBRL(r.custo) + ')">' + fmtBRL(res) + '</td>';
+        return h;
+      };
+      var avisoUnidade = false;
+      ordemLav.forEach(function(lavId){
+        var sfs = porLavoura[lavId];
+        var tot = {area:0, colhido:0, vendido:0, custo:0, receita:0, estoqueValor:0, esperadaSc:0};
+        var linhasHtml = '';
+        sfs.sort(function(x, y){ return talhaoNome(x.talhaoId).localeCompare(talhaoNome(y.talhaoId), 'pt-BR'); }).forEach(function(sf){
+          var r = {area: areaPlantadaSafra(sf), colhido:0, vendido:0, custo: custoDiretoSafra(sf.id), receita: receitaDiretaSafra(sf.id), estoqueValor: estoqueValorPorSafraIds([sf.id]), esperadaSc: 0};
+          var entradas = [], saidas = [];
+          state.producao.forEach(function(p){
+            if(p.safraId !== sf.id) return;
+            var scP = sacasDeProducao(p);
+            if(scP === null){ avisoUnidade = true; scP = Number(p.quantidade) || 0; }
+            if(p.tipo === 'entrada'){ r.colhido += scP; entradas.push({p:p, sc:scP}); } else { r.vendido += scP; saidas.push({p:p, sc:scP}); }
+          });
+          r.esperadaSc = (Number(sf.produtividadeEsperada) || 0) * r.area;
+          Object.keys(tot).forEach(function(k){ tot[k] += r[k]; });
+          var aberto = !!raioxAberto[sf.id];
+          linhasHtml += '<tr data-action="toggle-raiox" data-id="' + sf.id + '" style="cursor:pointer;" title="Clique para ver as cargas e as vendas"><td>' + (aberto ? '▾ ' : '▸ ') + escapeHtml(talhaoNome(sf.talhaoId)) + '</td>' + celulasRaiox(r, false) + '</tr>';
+          if(aberto){
+            var det = '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px,1fr)); gap:16px;">';
+            det += '<div><strong style="font-size:12px;">Cargas colhidas (' + entradas.length + ')</strong><table style="width:100%; margin-top:4px;"><thead><tr><th>Data</th><th>Quantidade</th><th>Sacas</th><th>Umidade</th><th>Local</th></tr></thead><tbody>';
+            entradas.sort(function(x,y){ return (x.p.data||'').localeCompare(y.p.data||''); }).forEach(function(e){ det += '<tr><td>' + fmtDate(e.p.data) + '</td><td class="num">' + fmtNum(e.p.quantidade) + ' ' + escapeHtml(e.p.unidade || '') + '</td><td class="num">' + fmtNum(Math.round(e.sc * 100) / 100) + '</td><td class="num">' + (Number(e.p.umidade) ? fmtNum(e.p.umidade) + '%' : '—') + '</td><td>' + escapeHtml(e.p.localArmazenagem || '—') + '</td></tr>'; });
+            det += '</tbody></table></div>';
+            det += '<div><strong style="font-size:12px;">Saídas / vendas (' + saidas.length + ')</strong><table style="width:100%; margin-top:4px;"><thead><tr><th>Data</th><th>Sacas</th><th>Preço</th><th>Comprador</th><th>Obs.</th></tr></thead><tbody>';
+            if(!saidas.length) det += '<tr><td colspan="5" style="color:var(--ink-soft);">Nenhuma saída ainda.</td></tr>';
+            saidas.sort(function(x,y){ return (x.p.data||'').localeCompare(y.p.data||''); }).forEach(function(e){ det += '<tr><td>' + fmtDate(e.p.data) + '</td><td class="num">' + fmtNum(Math.round(e.sc * 100) / 100) + '</td><td class="num">' + (Number(e.p.precoUnitario) ? fmtBRL(e.p.precoUnitario) : '—') + '</td><td>' + (e.p.parceiroId ? escapeHtml(parceiroNome(e.p.parceiroId)) : '—') + '</td><td style="font-size:11.5px;">' + escapeHtml((e.p.observacao || '').slice(0, 60)) + '</td></tr>'; });
+            det += '</tbody></table></div></div>';
+            linhasHtml += '<tr style="background:#F6EFDC;"><td colspan="12" style="padding:10px 14px;">' + det + '</td></tr>';
+          }
+        });
+        html += '<tr style="background:#EFE6C8;"><td style="font-weight:700;">' + escapeHtml(lavId === 'sem' ? 'Sem lavoura' : lavouraLabel(lavId)) + (sfs.length > 1 ? ' <span style="font-weight:400; font-size:11px;">(' + sfs.length + ' talhões)</span>' : '') + '</td>' + celulasRaiox(tot, true) + '</tr>';
+        html += linhasHtml;
       });
       html += '</tbody></table></div>';
-      html += '<div class="paper note-box">"Produtividade esperada" é definida no cadastro da Safra. Sem ela, dá pra ver a produtividade real, mas não a comparação em %. "Valor total" soma quantidade × preço estimado de cada entrada de colheita. "Umidade média" considera só as entradas onde a umidade foi informada (1 alqueire = 2,42 ha).</div>';
+      html += '<div class="paper note-box">Tudo em sacas de ' + KG_POR_SACA + ' kg: lançamentos em kg ou t são convertidos; "SC", "Sc", "Sacos" ou sem unidade contam como sacas.' + (avisoUnidade ? ' <strong>Atenção:</strong> alguma colheita/venda tem unidade que não é saca, kg ou t — ela foi somada como se fosse saca.' : '') + ' Área = área plantada da safra. % esperado usa a produtividade esperada do cadastro da safra. Custo = lançamentos da lavoura + insumos aplicados no Diário + horas de máquina (os custos gerais não entram aqui). Resultado = receita + estoque a preço estimado − custo. Clique num talhão para ver as cargas e as vendas.</div>';
     }
 
     html += '<div class="section-title">Movimentações</div>';
@@ -8156,6 +8243,7 @@
     if(action === 'enviar-certificado'){ enviarCertificado(); return; }
     if(action === 'remover-certificado'){ removerCertificado(); return; }
     if(action === 'testar-sefaz'){ testarConsultaSefaz(); return; }
+    if(action === 'toggle-raiox'){ raioxAberto[id] = !raioxAberto[id]; renderProducao(); return; }
     if(action === 'abrir-conversao-produto'){ conversaoProdutoId = id; ajusteEstoqueProdutoId = null; renderProdutos(); return; }
     if(action === 'cancelar-conversao-produto'){ conversaoProdutoId = null; renderProdutos(); return; }
     if(action === 'salvar-conversao-produto'){
@@ -8671,6 +8759,14 @@
 
       var origemGeral = String(vendaEfetivar.safraId || '');
       var ehEstoqueGeral = origemGeral.indexOf('cul:') === 0 || origemGeral.indexOf('lav:') === 0;
+      if(!ehEstoqueGeral && vendaEfetivar.safraId){
+        var estSafraV = estoquePorSafra()[vendaEfetivar.safraId];
+        var saldoSafraV = estSafraV ? estSafraV.entrada - estSafraV.saida : 0;
+        var sfV = state.safras.find(function(x){ return x.id === vendaEfetivar.safraId; });
+        if(sfV && qtdEntregueFinal > saldoSafraV + 0.0005 && window.confirm(safraLabel(vendaEfetivar.safraId) + ' só tem ' + fmtNum(Math.max(saldoSafraV, 0)) + ' em estoque, e a entrega é de ' + fmtNum(qtdEntregueFinal) + '.\n\nOK = tirar do estoque geral de ' + culturaNome(sfV.culturaId) + ' (dividido entre os talhões pelo saldo de cada um)\nCancelar = tirar só desse talhão mesmo (o estoque dele fica negativo)')){
+          origemGeral = 'cul:' + sfV.culturaId; ehEstoqueGeral = true; vendaEfetivar.safraId = origemGeral;
+        }
+      }
       var fatiasEntrega = [{safraId: vendaEfetivar.safraId, fracao: 1}];
       if(ehEstoqueGeral){
         var fontes = safrasDoEstoqueGeral(origemGeral, vendaEfetivar.unidade);
