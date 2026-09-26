@@ -2122,6 +2122,31 @@
     });
     return map;
   }
+  // Descontos na venda de produção (mesmos da Venda Antecipada); os últimos valores usados ficam lembrados
+  var DESCONTOS_VENDA = [{chave:'retencao', label:'Retenção'}, {chave:'fam', label:'FAM'}, {chave:'senar', label:'SENAR'}, {chave:'inss', label:'INSS'}, {chave:'gilrat', label:'GILRAT'}];
+  var vendaDescontosPct = {retencao: 1.00, fam: 0.10, senar: 0.20, inss: 1.32, gilrat: 0.11};
+  function lerDescontosVenda(form){
+    var d = {};
+    DESCONTOS_VENDA.forEach(function(x){ var el = form.querySelector('[name="desc_' + x.chave + '"]'); d[x.chave] = el ? (parseFloat(el.value) || 0) : (vendaDescontosPct[x.chave] || 0); });
+    return d;
+  }
+  function calcularVendaLiquida(bruto, descontos){
+    var pct = DESCONTOS_VENDA.reduce(function(sm, x){ return sm + (Number(descontos[x.chave]) || 0); }, 0);
+    var totalDesc = Math.round(bruto * pct) / 100;
+    return {pct: pct, totalDesconto: totalDesc, liquido: Math.round((bruto - totalDesc) * 100) / 100};
+  }
+  function descricaoDescontosVenda(descontos){
+    return DESCONTOS_VENDA.filter(function(x){ return Number(descontos[x.chave]) > 0; }).map(function(x){ return x.label + ' ' + fmtNum(descontos[x.chave]) + '%'; }).join(', ');
+  }
+  function atualizarPreviaVenda(){
+    var form = document.getElementById('form-colheita-venda'); var el = document.getElementById('venda-previa');
+    if(!form || !el) return;
+    var q = parseFloat((form.querySelector('[name="quantidade"]') || {}).value) || 0, pr = parseFloat((form.querySelector('[name="precoUnitario"]') || {}).value) || 0;
+    var bruto = Math.round(q * pr * 100) / 100;
+    var c = calcularVendaLiquida(bruto, lerDescontosVenda(form));
+    el.innerHTML = bruto > 0 ? 'Bruto <strong>' + fmtBRL(bruto) + '</strong> − descontos <strong>' + fmtBRL(c.totalDesconto) + '</strong> (' + fmtNum(Math.round(c.pct * 100) / 100) + '%) = líquido <strong style="color:var(--growth-dark);">' + fmtBRL(c.liquido) + '</strong> — é o líquido que entra no Financeiro.' : 'Preencha quantidade e preço para ver o valor líquido.';
+  }
+
   // Estoque de colheita agrupado (por cultura ou por lavoura) para vender "do estoque geral"
   function gruposEstoqueVenda(){
     var est = estoquePorSafra();
@@ -4131,6 +4156,13 @@
       html += field('text', 'unidade', 'Unidade', false, 'Ex: sc, kg, ton', {}, editingVenda ? editingVenda.unidade : undefined);
       html += field('number', 'precoUnitario', 'Preço de venda (R$/unid.)', false, '0,00', {step:'0.01', min:'0'}, editingVenda ? editingVenda.precoUnitario : undefined);
       html += selectField('parceiroId', 'Comprador (opcional)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })), editingVenda ? editingVenda.parceiroId : undefined);
+      if(!editingVenda){
+        html += '<div style="grid-column:1/-1; font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin:6px 0 -4px;">Descontos sobre o valor bruto (%)</div>';
+        html += '<div style="grid-column:1/-1; display:flex; flex-wrap:wrap; gap:10px;">';
+        DESCONTOS_VENDA.forEach(function(x){ html += '<div class="field" style="margin:0; width:110px;"><label>' + x.label + '</label><input type="number" name="desc_' + x.chave + '" value="' + vendaDescontosPct[x.chave] + '" step="0.01" min="0"></div>'; });
+        html += '</div>';
+        html += '<p id="venda-previa" style="grid-column:1/-1; font-size:12.5px; margin:0;"></p>';
+      }
       html += field('date', 'data', 'Data', false, '', {}, editingVenda ? editingVenda.data : undefined);
       html += field('text', 'observacao', 'Observação', false, '', {}, editingVenda ? editingVenda.observacao : undefined);
       html += '<button type="submit" class="btn">' + (editingVenda ? 'Salvar alterações' : 'Registrar venda') + '</button>';
@@ -4138,7 +4170,7 @@
       html += '</form></div>';
 
       html += '</div>';
-      html += '<div class="paper note-box">Toda venda registrada aqui gera automaticamente um lançamento de receita em Financeiro (categoria "Venda de colheita"), então não é preciso lançar de novo lá.</div>';
+      html += '<div class="paper note-box">Toda venda registrada aqui gera automaticamente um lançamento de receita em Financeiro (categoria "Venda de colheita") com o valor <strong>líquido</strong> (bruto menos Retenção, FAM, SENAR, INSS e GILRAT), então não é preciso lançar de novo lá. Zere os descontos que não se aplicam àquela venda.</div>';
     }
 
     html += '<div class="section-title">Estoque atual por safra</div>';
@@ -4212,6 +4244,7 @@
       html += '</tbody></table></div>';
     }
     el.innerHTML = html;
+    atualizarPreviaVenda();
   }
 
   /* ---------------- Diário de Campo (Operações) ---------------- */
@@ -7226,6 +7259,10 @@
   }
 
   document.addEventListener('input', function(e){
+    if(e.target && e.target.closest && e.target.closest('#form-colheita-venda')){
+      if(e.target.name && e.target.name.indexOf('desc_') === 0) vendaDescontosPct[e.target.name.slice(5)] = parseFloat(e.target.value) || 0;
+      atualizarPreviaVenda();
+    }
     if(e.target && e.target.closest && e.target.closest('#conversao-produto-area')){
       var focoCv = e.target.id;
       if(focoCv === 'cv-unidade'){ var fx = document.getElementById('cv-fator'); var pX = state.produtos.find(function(x){ return x.id === conversaoProdutoId; }); var cX = pX ? converterEntreUnidades(1, unidadeControle(pX), e.target.value) : null; if(fx && cX !== null) fx.value = cX; }
@@ -7711,15 +7748,18 @@
       if(gQtd > grupoV.saldo + 0.0005 && !window.confirm('A venda (' + fmtNum(gQtd) + ') é maior que o saldo em estoque (' + fmtNum(grupoV.saldo) + '). O estoque vai ficar negativo. Continuar?')) return;
       var gUn = (data.get('unidade') || '').trim() || grupoV.unidade;
       var gQtds = dividirValor(gQtd, grupoV.safras.map(function(x){ return x.saldo / grupoV.saldo; }));
-      var gValores = dividirValor(Math.round(gQtd * gPreco * 100) / 100, grupoV.safras.map(function(x){ return x.saldo / grupoV.saldo; }));
+      var gDesc = lerDescontosVenda(form);
+      var gBruto = Math.round(gQtd * gPreco * 100) / 100;
+      var gCalc = calcularVendaLiquida(gBruto, gDesc);
+      var gValores = dividirValor(gCalc.liquido, grupoV.safras.map(function(x){ return x.saldo / grupoV.saldo; }));
       var gData = data.get('data') || '', gParc = data.get('parceiroId') || '', gObs = (data.get('observacao') || '').trim(), gGrupoId = uid();
       grupoV.safras.forEach(function(x, i){
         state.producao.push({id: uid(), tipo:'saida', safraId: x.safraId, quantidade: gQtds[i], unidade: gUn, precoUnitario: gPreco, parceiroId: gParc, data: gData,
           observacao: (gObs ? gObs + ' · ' : '') + 'venda do estoque geral (' + grupoV.nome + ')', grupoVendaId: gGrupoId, criadoEm: Date.now() + i});
       });
-      var gFin = {id: uid(), origem: 'colheitaVenda', contaId:'ct-venda-colheita', tipo:'receita', categoria:'Venda de Colheita', valor: Math.round(gQtd * gPreco * 100) / 100, data: gData,
+      var gFin = {id: uid(), origem: 'colheitaVenda', contaId:'ct-venda-colheita', tipo:'receita', categoria:'Venda de Colheita', valor: gCalc.liquido, valorBruto: gBruto, descontosPct: gDesc, valorDescontos: gCalc.totalDesconto, data: gData,
         quantidade: gQtd, peso:0, unidade: gUn, status:'Pago', parceiroId: gParc, membroId:'', grupoVendaId: gGrupoId,
-        descricao: 'Venda de ' + fmtNum(gQtd) + (gUn ? ' ' + gUn : '') + ' — estoque geral ' + grupoV.nome, criadoEm: Date.now()};
+        descricao: 'Venda de ' + fmtNum(gQtd) + (gUn ? ' ' + gUn : '') + ' — estoque geral ' + grupoV.nome + (gCalc.totalDesconto ? ' (bruto ' + fmtBRL(gBruto) + ', descontos: ' + descricaoDescontosVenda(gDesc) + ')' : ''), criadoEm: Date.now()};
       var gSafraObjs = grupoV.safras.map(function(x){ return state.safras.find(function(sf){ return sf.id === x.safraId; }); });
       gFin.destino = 'lavoura';
       gFin.talhoesIds = gSafraObjs.map(function(sf){ return sf ? sf.talhaoId : ''; }).filter(function(v, i, a){ return v && a.indexOf(v) === i; });
@@ -7728,7 +7768,7 @@
       state.financeiro.push(gFin);
       saveKey('financeiro', state.financeiro); saveKey('producao', state.producao);
       editState = null; form.reset(); renderAll();
-      alert('Venda registrada: ' + fmtNum(gQtd) + (gUn ? ' ' + gUn : '') + ' saíram de ' + grupoV.safras.length + ' talhão(ões), proporcional ao saldo de cada um.');
+      alert('Venda registrada: ' + fmtNum(gQtd) + (gUn ? ' ' + gUn : '') + ' saíram de ' + grupoV.safras.length + ' talhão(ões), proporcional ao saldo de cada um. Líquido no Financeiro: ' + fmtBRL(gCalc.liquido) + '.');
       return;
     }
     if(form.id === 'form-colheita-venda'){
@@ -7750,11 +7790,14 @@
       } else {
         cvFields.id = uid(); cvFields.criadoEm = Date.now();
         state.producao.push(cvFields);
+        var cvDesc = lerDescontosVenda(form);
+        var cvBruto = Math.round(cvQtd * cvPreco * 100) / 100;
+        var cvCalc = calcularVendaLiquida(cvBruto, cvDesc);
         state.financeiro.push({
-          id: uid(), origem: 'colheitaVenda', contaId:'ct-venda-colheita', tipo:'receita', categoria:'Venda de Colheita', valor: cvQtd * cvPreco, data: cvData,
+          id: uid(), origem: 'colheitaVenda', contaId:'ct-venda-colheita', tipo:'receita', categoria:'Venda de Colheita', valor: cvCalc.liquido, valorBruto: cvBruto, descontosPct: cvDesc, valorDescontos: cvCalc.totalDesconto, data: cvData,
           quantidade: cvQtd, peso:0, unidade: data.get('unidade') || '', status:'Pago',
           talhaoId: cvSafra ? cvSafra.talhaoId : '', safraId: cvSafraId || '', destino: cvSafraId ? 'lavoura' : '', parceiroId: cvParceiroId, membroId:'',
-          descricao: 'Venda de ' + cvQtd + (data.get('unidade') ? ' ' + data.get('unidade') : '') + ' — ' + safraLabel(cvSafraId),
+          descricao: 'Venda de ' + cvQtd + (data.get('unidade') ? ' ' + data.get('unidade') : '') + ' — ' + safraLabel(cvSafraId) + (cvCalc.totalDesconto ? ' (bruto ' + fmtBRL(cvBruto) + ', descontos: ' + descricaoDescontosVenda(cvDesc) + ')' : ''),
           criadoEm: Date.now()
         });
         saveKey('financeiro', state.financeiro);
