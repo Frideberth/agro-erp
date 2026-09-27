@@ -1,6 +1,7 @@
 import { getStore } from "@netlify/blobs";
 import crypto from "node:crypto";
 import forge from "node-forge";
+import { exigirLogin, naoAutorizado } from "../lib/auth-comum.mjs";
 
 // Netlify Function que guarda o certificado digital A1 (arquivo .pfx +
 // senha) de forma CRIPTOGRAFADA no Netlify Blobs — nunca em texto puro.
@@ -59,12 +60,13 @@ export default async (req) => {
   const cors = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type"
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Auth-Token"
   };
 
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: cors });
   }
+  if (!(await exigirLogin(req))) return naoAutorizado();
 
   const store = getStore({ name: STORE_NAME, consistency: "strong" });
   const key = getEncryptionKey();

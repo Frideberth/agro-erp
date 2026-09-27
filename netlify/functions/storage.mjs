@@ -1,4 +1,9 @@
 import { getStore } from "@netlify/blobs";
+import { exigirLogin, naoAutorizado, CORS } from "../lib/auth-comum.mjs";
+
+// Chaves liberadas sem login: a página pública de chuva da comunidade e o teste de conexão
+const chavePublica = (k) => typeof k === "string" && (k.indexOf("comunidade-chuva::") === 0 || k === "__ping__");
+const chaveBloqueada = (k) => k === "global::app-password";
 
 // Netlify Function que expõe um armazenamento simples de chave/valor
 // (Netlify Blobs) para o app "Minha Fazenda". O app HTML fala com esta
@@ -10,11 +15,7 @@ import { getStore } from "@netlify/blobs";
 export default async (req) => {
   const store = getStore({ name: "fazenda-dados", consistency: "strong" });
 
-  const cors = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type"
-  };
+  const cors = CORS;
 
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: cors });
@@ -23,6 +24,9 @@ export default async (req) => {
   if (req.method === "GET") {
     const url = new URL(req.url);
     const key = url.searchParams.get("key");
+    if (key === "__ping__") return new Response(JSON.stringify(null), { headers: { "content-type": "application/json", ...cors } });
+    if (chaveBloqueada(key)) return new Response(JSON.stringify(null), { status: 403, headers: { "content-type": "application/json", ...cors } });
+    if (!chavePublica(key) && !(await exigirLogin(req))) return naoAutorizado();
     if (!key) {
       return new Response(JSON.stringify(null), {
         headers: { "content-type": "application/json", ...cors }
@@ -44,6 +48,8 @@ export default async (req) => {
     try {
       const body = await req.json();
       const { key, value } = body || {};
+      if (chaveBloqueada(key)) return new Response(JSON.stringify({ error: "chave protegida" }), { status: 403, headers: { "content-type": "application/json", ...cors } });
+      if (!chavePublica(key) && !(await exigirLogin(req))) return naoAutorizado();
       if (!key) {
         return new Response(JSON.stringify({ error: "chave ausente" }), {
           status: 400,

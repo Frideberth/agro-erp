@@ -1,4 +1,5 @@
 import { lerCertificadoDescriptografado } from "./certificado.mjs";
+import { exigirLogin, naoAutorizado } from "../lib/auth-comum.mjs";
 import { UF_CODIGO, abrirPfx, chamarSoap, extrairTag, respostaJson, assinarElemento, dataHoraBrasilia } from "../lib/sefaz-comum.mjs";
 
 // Registra o evento "Ciência da Operação" (210210) nas notas em que você é o destinatário.
@@ -35,6 +36,7 @@ export function montarEnvEvento({ tpAmb, documento, chaves, key, certBase64, dhE
 export default async (req) => {
   if (req.method === "OPTIONS") return respostaJson({}, 204);
   if (req.method !== "POST") return respostaJson({ error: "Method Not Allowed" }, 405);
+  if (!(await exigirLogin(req))) return naoAutorizado();
   try {
     const { ambiente, documento, chaves } = (await req.json()) || {};
     const doc = String(documento || "").replace(/\D/g, "");

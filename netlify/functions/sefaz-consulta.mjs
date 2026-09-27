@@ -1,4 +1,5 @@
 import { lerCertificadoDescriptografado } from "./certificado.mjs";
+import { exigirLogin, naoAutorizado } from "../lib/auth-comum.mjs";
 import { UF_CODIGO, abrirPfx, chamarSoap, extrairTag, descompactarDocZips, respostaJson } from "../lib/sefaz-comum.mjs";
 
 // Consulta o webservice NFeDistribuicaoDFe da SEFAZ (Ambiente Nacional) com o certificado A1 guardado.
@@ -40,6 +41,7 @@ function montarEnvelopeSoap({ tpAmb, cUFAutor, documento, ultNSU, chave }) {
 export default async (req) => {
   if (req.method === "OPTIONS") return respostaJson({}, 204);
   if (req.method !== "POST") return respostaJson({ error: "Method Not Allowed" }, 405);
+  if (!(await exigirLogin(req))) return naoAutorizado();
 
   try {
     const { ambiente, uf, documento, ultNSU, chaves } = (await req.json()) || {};
