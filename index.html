@@ -600,6 +600,7 @@
   // Cronograma: [{n, vencimento, amortizacao, juros, parcela, saldo, paga, pagamento}]
   function cronogramaFinanciamento(f){
     var venc = vencimentosFinanciamento(f), n = venc.length;
+    if(f.sistemaAmortizacao === 'Contrato') venc = venc.map(function(v, i){ var pc = (f.parcelasContrato || [])[i]; return pc && pc.vencimento ? pc.vencimento : v; });
     if(!n) return [];
     var P = Number(f.valorTotal) || 0, taxa = (Number(f.taxaJuros) || 0) / 100, sist = f.sistemaAmortizacao || 'Informado';
     var passo = MESES_PERIODICIDADE[f.periodicidade || 'Anual'] || 12;
@@ -618,6 +619,12 @@
       var S0 = saldo;
       venc.forEach(function(v, i){ var a = pmt - saldo * iPer; saldo -= a; var aP = a * P / S0; linhas.push({n: i + 1, vencimento: v, amortizacao: aP, juros: pmt - aP, parcela: pmt, saldo: Math.max(saldo, 0)}); });
       if(fatorCar > 1) linhas.jurosCarencia = S0 - P;
+    } else if(sist === 'Contrato'){
+      // valores digitados parcela a parcela; se a soma passar do valor financiado, a diferença é tratada como juros (proporcional)
+      var valsC = venc.map(function(v, i){ var pc = (f.parcelasContrato || [])[i]; return pc ? Number(pc.valor) || 0 : 0; });
+      var somaC = valsC.reduce(function(a, b){ return a + b; }, 0);
+      var jurosTot = Math.max(somaC - P, 0);
+      venc.forEach(function(v, i){ var j = somaC > 0 ? jurosTot * valsC[i] / somaC : 0; var a = valsC[i] - j; saldo -= a; linhas.push({n: i + 1, vencimento: v, amortizacao: a, juros: j, parcela: valsC[i], saldo: Math.max(saldo, 0)}); });
     } else {
       var vp = Number(f.valorParcela) || 0, amI = P / n;
       venc.forEach(function(v, i){ saldo -= amI; linhas.push({n: i + 1, vencimento: v, amortizacao: amI, juros: Math.max(vp - amI, 0), parcela: vp, saldo: Math.max(saldo, 0)}); });
@@ -630,7 +637,15 @@
     });
     return linhas;
   }
-  function financiamentoTemCronograma(f){ return (f.sistemaAmortizacao && f.sistemaAmortizacao !== 'Informado') || Number(f.valorParcela) > 0; }
+  function financiamentoTemCronograma(f){
+    if(f.sistemaAmortizacao === 'Contrato') return (f.parcelasContrato || []).some(function(pc){ return Number(pc.valor) > 0; });
+    return (f.sistemaAmortizacao && f.sistemaAmortizacao !== 'Informado') || Number(f.valorParcela) > 0;
+  }
+  function parcelasDaObservacao(txt){
+    var lista = [], re = /parcela\s*\d+\s*[=:\-]?\s*(?:R\$\s*)?([\d.]+,\d{2}|\d+(?:\.\d{1,2})?)/gi, m;
+    while((m = re.exec(txt || ''))){ var t = m[1]; lista.push(t.indexOf(',') !== -1 ? parseFloat(t.replace(/\./g, '').replace(',', '.')) : parseFloat(t)); }
+    return lista.filter(function(v){ return v > 0; });
+  }
   function proximaParcelaFinanciamento(f){
     if(!financiamentoTemCronograma(f)) return null;
     return cronogramaFinanciamento(f).find(function(l){ return !l.paga; }) || null;
@@ -778,9 +793,11 @@
         {name:'dataContratacao', type:'date', label:'Data de contratação'},
         {name:'dataFinal', type:'date', label:'Data final do contrato (opcional)'},
         {name:'numeroParcelas', type:'number', label:'Nº de parcelas', extra:{step:'1', min:'1'}, placeholder:'12'},
-        {name:'sistemaAmortizacao', type:'select', label:'Sistema das parcelas', options:[{value:'Informado', label:'Parcela informada (valor do contrato)'}, {value:'SAC', label:'SAC — amortização constante'}, {value:'PRICE', label:'PRICE — parcelas iguais'}]},
+        {name:'sistemaAmortizacao', type:'select', label:'Sistema das parcelas', options:[{value:'Informado', label:'Parcela informada (valor do contrato)'}, {value:'SAC', label:'SAC — amortização constante'}, {value:'PRICE', label:'PRICE — parcelas iguais'}, {value:'Contrato', label:'Parcelas do contrato (valor de cada uma)'}]},
         {name:'periodicidade', type:'select', label:'Parcelas a cada', options:[{value:'Anual', label:'Ano'}, {value:'Semestral', label:'Semestre'}, {value:'Mensal', label:'Mês'}]},
         {name:'primeiroVencimento', type:'date', label:'1º vencimento (opcional)'},
+        {name:'valorEntrada', type:'number', label:'Entrada paga (R$, opcional)', extra:{step:'0.01', min:'0'}, placeholder:'0,00'},
+        {name:'dataEntrada', type:'date', label:'Data da entrada'},
         {name:'valorParcela', type:'number', label:'Valor da parcela (R$) — só p/ "parcela informada"', extra:{step:'0.01', min:'0'}, placeholder:'0,00'},
         {name:'parcelasPagas', type:'number', label:'Parcelas já pagas', extra:{step:'1', min:'0'}, placeholder:'0'},
         {name:'taxaJuros', type:'number', label:'Taxa de juros (% a.a., opcional)', extra:{step:'0.01', min:'0'}, placeholder:'0'},
@@ -1530,6 +1547,22 @@
         })();
         sincronizarLavouras();
         (function(){
+          // Trator MF 3407 (Banco DLL 826949): parcelas decrescentes do contrato + entrada
+          if(importJaAplicado('fin-dll-826949-parcelas-v1')) return;
+          var fDll = state.financiamentos.find(function(f){ return f.numeroContrato === '826949' && !f.parcelasContrato; });
+          if(fDll){
+            var valsDll = parcelasDaObservacao(fDll.observacao);
+            if(valsDll.length === (parseInt(fDll.numeroParcelas, 10) || 0)){
+              fDll.sistemaAmortizacao = 'Contrato';
+              var vDll = vencimentosFinanciamento(fDll);
+              fDll.parcelasContrato = valsDll.map(function(v, i){ return {vencimento: vDll[i] || '', valor: v}; });
+              if(!fDll.valorEntrada){ fDll.valorEntrada = 28266.38; fDll.dataEntrada = fDll.dataContratacao || ''; }
+              saveKey('financiamentos', state.financiamentos);
+            }
+          }
+          marcarImportAplicado('fin-dll-826949-parcelas-v1');
+        })();
+        (function(){
           // CP/CR antigos: categoria de texto → conta do plano de contas (quando o nome bate)
           if(importJaAplicado('cp-cr-plano-contas-v1')) return;
           var mudouCp = false, mudouCr = false;
@@ -2065,7 +2098,7 @@
     contasPagar: {t:'Contas a Pagar', txt:'Contas futuras, com conta do plano de contas e destino. "💰 Pagar" pede data e valor; pagando menos, o saldo continua pendente. Contas de NF-e com duplicatas são criadas sozinhas na importação.'},
     contasReceber: {t:'Contas a Receber', txt:'Valores a receber, com desconto opcional. "💵 Receber" marca como recebido. Vendas de colheita já geram receita sozinhas — não lance a mesma venda aqui.'},
     compras: {t:'Compras e NF-e', txt:'Três caminhos: compra manual, importar XML ou importar notas da SEFAZ (precisa do certificado A1). Notas que chegam só como resumo precisam de "ciência" para liberar os itens. Na revisão, cada item vira compra (estoque + despesa) ou entrada de colheita. Remover uma compra tira do estoque e apaga a despesa ligada.'},
-    financiamentos: {t:'Financiamentos', txt:'Cadastre o contrato com valor, taxa ao ano, número de parcelas, periodicidade e 1º vencimento. Escolha o sistema: <b>parcela informada</b> (valor do contrato), <b>SAC</b> ou <b>PRICE</b>. "📅 Parcelas" mostra o cronograma com amortização, juros e saldo, e imprime. "Pagar parcela" dá baixa e lança a despesa no Financeiro.'},
+    financiamentos: {t:'Financiamentos', txt:'Cadastre o contrato com valor, taxa ao ano, número de parcelas, periodicidade e 1º vencimento. Escolha o sistema: <b>parcela informada</b> (um valor só), <b>parcelas do contrato</b> (valor e data de cada uma, digitados em 📅 Parcelas), <b>SAC</b> ou <b>PRICE</b>. Se deu entrada, informe o valor e a data. "📅 Parcelas" mostra o cronograma com amortização, juros e saldo, e imprime. "Pagar parcela" dá baixa e lança a despesa no Financeiro.'},
     arrendamentos: {t:'Arrendamentos', txt:'Contratos de arrendamento de terra pagos ou recebidos, com valores e vencimentos.'},
     servicosPrestados: {t:'Serviços', txt:'Serviços que você contratou (colheita, frete…) ou prestou a outros. Com uma conta escolhida, o valor (quantidade × valor unitário) vai para o Financeiro automaticamente.'},
     rentabilidade: {t:'Rentabilidade', txt:'Resultado por lavoura, por cultura, por máquina e por talhão. As caixas no topo incluem custos gerais rateados, depreciação e custo de oportunidade. 📄 PDF gera o relatório de custo de produção da lavoura (por talhão, insumos, máquinas e contas).'},
@@ -4764,19 +4797,34 @@
     if(!f) return '';
     var cr = cronogramaFinanciamento(f), hoje = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10);
     var h = paraImpressao ? '' : '<div class="paper form-card" style="margin-top:16px;"><h3 style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">📅 Parcelas — ' + escapeHtml(f.banco || '') + (f.numeroContrato ? ' · contrato ' + escapeHtml(f.numeroContrato) : '') + '<span><button type="button" class="btn-edit" data-action="imprimir-cronograma-financiamento">📄 Imprimir / PDF</button> <button type="button" class="btn-cancel" data-action="fechar-cronograma-financiamento">Fechar</button></span></h3>';
-    h += '<p style="font-size:12px; margin:0 0 8px;">Valor financiado ' + fmtBRL(f.valorTotal) + ' · ' + (f.sistemaAmortizacao || 'Parcela informada').replace('Informado', 'Parcela informada') + ' · ' + (Number(f.taxaJuros) ? fmtNum(f.taxaJuros) + '% a.a.' : 'sem taxa informada') + ' · ' + (f.numeroParcelas || 0) + ' parcela(s) ' + ({Anual:'anuais', Semestral:'semestrais', Mensal:'mensais'}[f.periodicidade || 'Anual']) + '</p>';
+    var ehContrato = f.sistemaAmortizacao === 'Contrato', editavel = ehContrato && !paraImpressao;
+    var entrada = Number(f.valorEntrada) || 0;
+    if(entrada > 0) h += '<p style="font-size:12.5px; margin:0 0 6px;"><strong>Entrada</strong> ' + fmtBRL(entrada) + (f.dataEntrada ? ' paga em ' + fmtDate(f.dataEntrada) : '') + ' + financiado ' + fmtBRL(f.valorTotal) + ' = <strong>' + fmtBRL(entrada + (Number(f.valorTotal) || 0)) + '</strong> no total' + (f.entradaFinanceiroId ? ' · ✅ entrada lançada no Financeiro' : (paraImpressao ? '' : ' <button type="button" class="btn-edit" data-action="lancar-entrada-financiamento" style="font-size:11.5px;">Lançar entrada no Financeiro</button>')) + '</p>';
+    h += '<p style="font-size:12px; margin:0 0 8px;">Valor financiado ' + fmtBRL(f.valorTotal) + ' · ' + (f.sistemaAmortizacao || 'Parcela informada').replace('Informado', 'Parcela informada').replace('Contrato', 'Parcelas do contrato') + ' · ' + (Number(f.taxaJuros) ? fmtNum(f.taxaJuros) + '% a.a.' : 'sem taxa informada') + ' · ' + (f.numeroParcelas || 0) + ' parcela(s) ' + ({Anual:'anuais', Semestral:'semestrais', Mensal:'mensais'}[f.periodicidade || 'Anual']) + '</p>';
     if(!cr.length){ return h + '<p style="font-size:12.5px;">Informe o número de parcelas e as datas (contratação, 1º vencimento ou data final) para montar o cronograma.</p>' + (paraImpressao ? '' : '</div>'); }
     if(cr.jurosCarencia) h += '<p style="font-size:12px; margin:0 0 8px;">Os juros da carência (' + fmtBRL(cr.jurosCarencia) + ') foram somados ao saldo e são pagos junto com as parcelas — por isso o saldo começa maior que o valor financiado.</p>';
-    if(!financiamentoTemCronograma(f)) h += '<p style="font-size:12px; color:var(--cost-dark);">⚠️ Sem valor de parcela: escolha SAC ou PRICE, ou informe o valor da parcela do contrato (Editar).</p>';
+    if(!financiamentoTemCronograma(f)) h += '<p style="font-size:12px; color:var(--cost-dark);">⚠️ ' + (ehContrato ? 'Digite o valor de cada parcela na tabela e clique em "Salvar parcelas".' : 'Sem valor de parcela: escolha SAC ou PRICE, ou informe o valor da parcela do contrato (Editar).') + '</p>';
+    if(editavel) h += '<p style="font-size:12px; margin:0 0 8px;">Digite o vencimento e o valor de cada parcela como estão no contrato e clique em <strong>Salvar parcelas</strong>' + (parcelasDaObservacao(f.observacao).length ? ', ou use <strong>Ler da observação</strong>' : '') + '.</p>';
     h += '<div class="table-wrap"><table class="sem-ordenacao"><thead><tr><th>#</th><th>Vencimento</th><th>Amortização</th><th>Juros</th><th>Parcela</th><th>Saldo depois</th><th>Situação</th></tr></thead><tbody>';
     var tA = 0, tJ = 0, tP = 0;
     cr.forEach(function(l){
       var situ = l.paga ? '✅ Paga' + (l.pagamento ? ' em ' + fmtDate(l.pagamento.data) + (Math.abs((Number(l.pagamento.valor) || 0) - l.parcela) > 0.01 ? ' (' + fmtBRL(l.pagamento.valor) + ')' : '') : '') : (l.vencimento && l.vencimento < hoje ? '⚠️ Vencida' : 'A vencer');
       tA += l.amortizacao; tJ += l.juros + (l.jurosCarencia || 0); tP += l.parcela;
+      var estIn = 'padding:4px 6px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12.5px;';
+      if(editavel && !l.paga){
+        h += '<tr><td>' + l.n + '</td><td><input type="date" class="pc-venc" data-n="' + l.n + '" value="' + (l.vencimento || '') + '" style="' + estIn + '"></td><td class="num">' + fmtBRL(l.amortizacao) + '</td><td class="num">' + fmtBRL(l.juros) + '</td><td class="num"><input type="number" step="0.01" min="0" class="pc-valor" data-n="' + l.n + '" value="' + (l.parcela ? Math.round(l.parcela * 100) / 100 : '') + '" style="width:120px; text-align:right; ' + estIn + '"></td><td class="num">' + fmtBRL(l.saldo) + '</td><td>' + situ + '</td></tr>';
+        return;
+      }
       h += '<tr' + (l.paga ? ' style="opacity:0.65;"' : '') + '><td>' + l.n + '</td><td>' + (l.vencimento ? fmtDate(l.vencimento) : '—') + '</td><td class="num">' + fmtBRL(l.amortizacao) + '</td><td class="num">' + fmtBRL(l.juros + (l.jurosCarencia || 0)) + (l.jurosCarencia ? '<br><span style="font-size:10.5px;">inclui ' + fmtBRL(l.jurosCarencia) + ' da carência</span>' : '') + '</td><td class="num"><strong>' + fmtBRL(l.parcela) + '</strong></td><td class="num">' + fmtBRL(l.saldo) + '</td><td>' + situ + '</td></tr>';
     });
     h += '<tr style="font-weight:600;"><td colspan="2">Total</td><td class="num">' + fmtBRL(tA) + '</td><td class="num">' + fmtBRL(tJ) + '</td><td class="num">' + fmtBRL(tP) + '</td><td></td><td></td></tr>';
     h += '</tbody></table></div>';
+    if(editavel){
+      h += '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;"><button type="button" class="btn" data-action="salvar-parcelas-contrato">Salvar parcelas</button>';
+      if(parcelasDaObservacao(f.observacao).length) h += '<button type="button" class="btn-edit" data-action="ler-parcelas-observacao">Ler da observação</button>';
+      h += '</div>';
+      if(Math.abs(tP - (Number(f.valorTotal) || 0)) > 0.01 && tP > 0) h += '<p style="font-size:11.5px; color:var(--ink-soft); margin:6px 0 0;">Soma das parcelas: ' + fmtBRL(tP) + ' · valor financiado: ' + fmtBRL(f.valorTotal) + (tP > (Number(f.valorTotal) || 0) ? ' — a diferença aparece como juros.' : ' — as parcelas somam menos que o financiado; confira.') + '</p>';
+    }
     return h + (paraImpressao ? '' : '</div>');
   }
   function renderFinanciamentos(){
@@ -4799,7 +4847,7 @@
     html += buildGenericFormHtml('financiamentos');
     html += buildGenericTableHtml('financiamentos');
     html += cronogramaFinanciamentoHtml(false);
-    html += '<div class="paper note-box">📅 <strong>Parcelas</strong> mostra o cronograma de cada contrato (vencimento, amortização, juros, saldo). Escolha o sistema: <strong>Parcela informada</strong> usa o valor da parcela que está no contrato; <strong>SAC</strong> (amortização constante, juros sobre o saldo — comum no crédito rural) e <strong>PRICE</strong> (parcelas iguais) calculam as parcelas pela taxa ao ano, número de parcelas e datas. As datas das parcelas saem do 1º vencimento (ou, se vazio, contando para trás da data final). "Pagar parcela" dá baixa na próxima, lança a despesa no Financeiro (a conta do financiamento precisa estar escolhida) e guarda o valor e a data realmente pagos.</div>';
+    html += '<div class="paper note-box">📅 <strong>Parcelas</strong> mostra o cronograma de cada contrato (vencimento, amortização, juros, saldo). Escolha o sistema: <strong>Parcela informada</strong> usa um valor único de parcela; <strong>Parcelas do contrato</strong> deixa digitar o vencimento e o valor de cada parcela (em 📅 Parcelas); <strong>SAC</strong> (amortização constante, juros sobre o saldo — comum no crédito rural) e <strong>PRICE</strong> (parcelas iguais) calculam as parcelas pela taxa ao ano, número de parcelas e datas. As datas das parcelas saem do 1º vencimento (ou, se vazio, contando para trás da data final). "Pagar parcela" dá baixa na próxima, lança a despesa no Financeiro (a conta do financiamento precisa estar escolhida) e guarda o valor e a data realmente pagos.</div>';
     el.innerHTML = html;
   }
 
@@ -8535,6 +8583,38 @@
     }
     if(action === 'receituario-operacao'){ imprimirReceituario(id); return; }
     if(action === 'ver-cronograma-financiamento'){ financiamentoCronogramaId = financiamentoCronogramaId === id ? null : id; renderFinanciamentos(); var crEl = document.querySelector('[data-action="fechar-cronograma-financiamento"]'); if(crEl) crEl.scrollIntoView({behavior:'smooth', block:'center'}); return; }
+    if(action === 'salvar-parcelas-contrato' || action === 'ler-parcelas-observacao'){
+      var fPc = state.financiamentos.find(function(x){ return x.id === financiamentoCronogramaId; });
+      if(!fPc) return;
+      var nPc = parseInt(fPc.numeroParcelas, 10) || 0;
+      var vencPad = vencimentosFinanciamento(fPc);
+      var novas = [];
+      if(action === 'ler-parcelas-observacao'){
+        var lidas = parcelasDaObservacao(fPc.observacao);
+        if(nPc && lidas.length !== nPc && !window.confirm('Achei ' + lidas.length + ' valor(es) na observação, mas o contrato tem ' + nPc + ' parcela(s). Usar mesmo assim (o nº de parcelas passa a ser ' + lidas.length + ')?')) return;
+        fPc.numeroParcelas = lidas.length; vencPad = vencimentosFinanciamento(fPc);
+        novas = lidas.map(function(v, i){ var ant = (fPc.parcelasContrato || [])[i]; return {vencimento: ant && ant.vencimento ? ant.vencimento : (vencPad[i] || ''), valor: v}; });
+      } else {
+        for(var iPc = 0; iPc < nPc; iPc++){
+          var antPc = (fPc.parcelasContrato || [])[iPc] || {};
+          var inV = document.querySelector('.pc-venc[data-n="' + (iPc + 1) + '"]'), inR = document.querySelector('.pc-valor[data-n="' + (iPc + 1) + '"]');
+          novas.push({vencimento: inV ? inV.value : (antPc.vencimento || vencPad[iPc] || ''), valor: inR ? (parseFloat(inR.value) || 0) : (Number(antPc.valor) || 0)});
+        }
+      }
+      fPc.parcelasContrato = novas;
+      saveKey('financiamentos', state.financiamentos); renderAll(); return;
+    }
+    if(action === 'lancar-entrada-financiamento'){
+      var fEn = state.financiamentos.find(function(x){ return x.id === financiamentoCronogramaId; });
+      if(!fEn || !(Number(fEn.valorEntrada) > 0)) return;
+      if(!fEn.contaId){ alert('Edite o financiamento e escolha a "Conta" antes — é nela que a entrada vai ser lançada.'); return; }
+      var dEn = fEn.dataEntrada || fEn.dataContratacao || '';
+      if(!window.confirm('Lançar a entrada de ' + fmtBRL(fEn.valorEntrada) + (dEn ? ' em ' + fmtDate(dEn) : '') + ' como despesa paga no Financeiro (conta ' + contaLabel(fEn.contaId) + ')?\n\nNão lance se ela já estiver no Financeiro.')) return;
+      var ctEn = state.contasFinanceiro.find(function(c){ return c.id === fEn.contaId; });
+      fEn.entradaFinanceiroId = uid();
+      state.financeiro.push({id: fEn.entradaFinanceiroId, origem: 'financiamento', contaId: fEn.contaId, tipo: contaTipo(fEn.contaId), categoria: ctEn ? ctEn.nome : '', valor: Number(fEn.valorEntrada), quantidade: 0, peso: 0, unidade: '', status: 'Pago', data: dEn, vencimento: '', talhoesIds: [], talhaoId: '', parceiroId: '', membroId: '', descricao: 'Entrada - ' + fEn.banco + (fEn.numeroContrato ? ' - Contrato ' + fEn.numeroContrato : '') + (fEn.observacao ? ' (' + fEn.observacao.split(' Parcela')[0].slice(0, 40) + ')' : ''), criadoEm: Date.now()});
+      saveKey('financeiro', state.financeiro); saveKey('financiamentos', state.financiamentos); renderAll(); return;
+    }
     if(action === 'fechar-cronograma-financiamento'){ financiamentoCronogramaId = null; renderFinanciamentos(); return; }
     if(action === 'imprimir-cronograma-financiamento'){
       var fImp = state.financiamentos.find(function(x){ return x.id === financiamentoCronogramaId; });
