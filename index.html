@@ -756,7 +756,11 @@
         {key:'magnesio', label:'Mg (cmolc/dm³)'},
         {key:'ctc', label:'CTC (cmolc/dm³)'},
         {key:'saturacaoBases', label:'V (%)'}
-      ]
+      ],
+      extraRowAction: function(item){
+        var rs = item.recomendacoes || [], pend = rs.filter(function(r){ return r.status !== 'Aplicada'; }).length;
+        return '<button type="button" class="btn-edit" data-action="abrir-recom-solo" data-id="' + item.id + '" title="Recomendações de calagem, fosfatagem, potassagem, gesso…">🧪 Recomendações' + (rs.length ? ' (' + rs.length + (pend && pend < rs.length ? ', ' + pend + ' pendente' + (pend > 1 ? 's' : '') : '') + ')' : '') + '</button>';
+      }
     },
     arrendamentos: {
       label: 'arrendamento',
@@ -3842,6 +3846,51 @@
   var agro50SecaoAtiva = null;
   var genericAvancadoAberto = {};
   var soloTalhaoFiltro = '';
+  var soloRecomId = null, soloRecomRascunho = null;
+  var TIPOS_RECOM_SOLO = ['Calagem', 'Fosfatagem', 'Potassagem', 'Gessagem', 'Adubação', 'Micronutrientes', 'Outra'];
+  var FONTE_PADRAO_RECOM = {Calagem:'Calcário dolomítico', Fosfatagem:'Super Fosfato Simples', Potassagem:'Cloreto de Potássio', Gessagem:'Gesso Agrícola'};
+  function lerRecomSoloDoDom(){
+    if(!soloRecomRascunho) return;
+    document.querySelectorAll('#recom-solo-tabela tr[data-idx]').forEach(function(tr){
+      var r = soloRecomRascunho[Number(tr.dataset.idx)]; if(!r) return;
+      tr.querySelectorAll('[data-campo]').forEach(function(inp){
+        var c = inp.dataset.campo, v = inp.value;
+        r[c] = ['doseMedia','doseMin','doseMax','area'].indexOf(c) !== -1 ? (v === '' ? '' : parseFloat(v)) : v;
+      });
+    });
+  }
+  function recomendacoesSoloHtml(){
+    var a = state.analisesSolo.find(function(x){ return x.id === soloRecomId; });
+    if(!a) return '';
+    if(!soloRecomRascunho) soloRecomRascunho = JSON.parse(JSON.stringify(a.recomendacoes || []));
+    var t = state.talhoes.find(function(x){ return x.id === a.talhaoId; });
+    var est = 'padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12.5px;';
+    var h = '<div class="paper form-card" style="margin-top:16px;"><h3 style="display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; align-items:center;">🧪 Recomendações — ' + escapeHtml(talhaoNome(a.talhaoId)) + ' · ' + fmtDate(a.dataColeta) + '<button type="button" class="btn-cancel" data-action="fechar-recom-solo">Fechar</button></h3>';
+    h += '<p style="font-size:12px; margin:0 0 10px;">Doses em kg/ha. Em agricultura de precisão, use a <b>média</b> e anote mínimo e máximo do mapa. O total é dose média × área' + (t ? ' (área do talhão: ' + fmtHa(t.area) + ', mude se o relatório usou outra)' : '') + '.</p>';
+    h += '<datalist id="recom-fontes">' + Object.keys(FONTE_PADRAO_RECOM).map(function(k){ return '<option value="' + FONTE_PADRAO_RECOM[k] + '">'; }).join('') + '<option value="Calcário calcítico"><option value="MAP"><option value="KCl"></datalist>';
+    h += '<div class="table-wrap"><table class="sem-ordenacao" id="recom-solo-tabela"><thead><tr><th>Tipo</th><th>Fonte / produto</th><th>Dose média</th><th>Mín</th><th>Máx</th><th>Área (ha)</th><th>Total</th><th>Critério / observação</th><th>Situação</th><th></th></tr></thead><tbody>';
+    if(!soloRecomRascunho.length) h += '<tr><td colspan="10" style="font-size:12.5px; color:var(--ink-soft);">Nenhuma recomendação ainda. Clique em "+ Recomendação".</td></tr>';
+    soloRecomRascunho.forEach(function(r, i){
+      var area = r.area === '' || r.area === undefined ? (t ? Number(t.area) || 0 : 0) : Number(r.area) || 0;
+      var total = (Number(r.doseMedia) || 0) * area / 1000;
+      h += '<tr data-idx="' + i + '">';
+      h += '<td><select data-campo="tipo" style="' + est + '">' + TIPOS_RECOM_SOLO.map(function(tp){ return '<option' + (tp === r.tipo ? ' selected' : '') + '>' + tp + '</option>'; }).join('') + '</select></td>';
+      h += '<td><input data-campo="fonte" list="recom-fontes" value="' + escapeHtml(r.fonte || '') + '" style="width:170px; ' + est + '"></td>';
+      ['doseMedia','doseMin','doseMax'].forEach(function(c){ h += '<td><input data-campo="' + c + '" type="number" step="any" min="0" value="' + (r[c] === '' || r[c] === undefined || r[c] === null ? '' : r[c]) + '" style="width:84px; ' + est + '"></td>'; });
+      h += '<td><input data-campo="area" type="number" step="any" min="0" value="' + (r.area === '' || r.area === undefined ? '' : r.area) + '" placeholder="' + (t ? t.area : '') + '" style="width:72px; ' + est + '"></td>';
+      h += '<td class="num" style="white-space:nowrap;">' + (total ? fmtNum(Math.round(total * 100) / 100) + ' t' : '—') + '</td>';
+      h += '<td><input data-campo="observacao" value="' + escapeHtml(r.observacao || '') + '" placeholder="Ex: V% 70, PRNT 90" style="width:190px; ' + est + '"></td>';
+      h += '<td><select data-campo="status" style="' + est + '">' + ['Recomendada','Aplicada'].map(function(st){ return '<option' + (st === (r.status || 'Recomendada') ? ' selected' : '') + '>' + st + '</option>'; }).join('') + '</select></td>';
+      h += '<td><button type="button" class="btn-del" data-action="recom-remover" data-idx="' + i + '">✕</button></td></tr>';
+    });
+    h += '</tbody></table></div>';
+    h += '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;"><button type="button" class="btn-edit" data-action="recom-adicionar">+ Recomendação</button><button type="button" class="btn" data-action="recom-salvar">Salvar recomendações</button></div>';
+    var totais = {};
+    soloRecomRascunho.forEach(function(r){ if(r.status === 'Aplicada') return; var area = r.area === '' || r.area === undefined ? (t ? Number(t.area) || 0 : 0) : Number(r.area) || 0; var k = (r.fonte || r.tipo); totais[k] = (totais[k] || 0) + (Number(r.doseMedia) || 0) * area / 1000; });
+    var ks = Object.keys(totais).filter(function(k){ return totais[k] > 0; });
+    if(ks.length) h += '<p style="font-size:12.5px; margin:10px 0 0;"><b>A comprar/aplicar (pendentes):</b> ' + ks.map(function(k){ return escapeHtml(k) + ' ' + fmtNum(Math.round(totais[k] * 100) / 100) + ' t'; }).join(' · ') + '</p>';
+    return h + '</div>';
+  }
   var safraMapaAnoSelecionado = null;
 
   function renderSafras(){
@@ -5015,6 +5064,7 @@
       state.analisesSolo = analisesFiltradas.slice().sort(function(a,b){ return (b.dataColeta||'').localeCompare(a.dataColeta||''); });
       html += buildGenericTableHtml('analisesSolo');
       state.analisesSolo = originalList;
+      html += recomendacoesSoloHtml();
     }
     html += '<div class="paper note-box">Faixas de referência variam bastante por cultura, região e método do laboratório — não existe um "valor ideal" único. A seta de tendência compara a Saturação por Bases (V%) da análise mais recente com a anterior do mesmo talhão — não é diagnóstico, só um indicativo visual rápido. Use o histórico por talhão pra acompanhar a evolução ao longo do tempo, e compare com a recomendação do seu agrônomo pra cada cultura específica.</div>';
     return html;
@@ -8701,6 +8751,18 @@
       document.body.classList.add('imprimindo-calagem');
       window.print();
       return;
+    }
+    if(action === 'abrir-recom-solo'){ soloRecomId = soloRecomId === id ? null : id; soloRecomRascunho = null; renderAgro50(); var rcEl = document.querySelector('[data-action="fechar-recom-solo"]'); if(rcEl) rcEl.scrollIntoView({behavior:'smooth', block:'center'}); return; }
+    if(action === 'fechar-recom-solo'){ soloRecomId = null; soloRecomRascunho = null; renderAgro50(); return; }
+    if(action === 'recom-adicionar'){ lerRecomSoloDoDom(); soloRecomRascunho.push({tipo:'Calagem', fonte:'', doseMedia:'', doseMin:'', doseMax:'', area:'', observacao:'', status:'Recomendada'}); renderAgro50(); return; }
+    if(action === 'recom-remover'){ lerRecomSoloDoDom(); soloRecomRascunho.splice(Number(btn.dataset.idx), 1); renderAgro50(); return; }
+    if(action === 'recom-salvar'){
+      lerRecomSoloDoDom();
+      var aRec = state.analisesSolo.find(function(x){ return x.id === soloRecomId; });
+      if(!aRec) return;
+      aRec.recomendacoes = soloRecomRascunho.filter(function(r){ return r.tipo; }).map(function(r){ if(!r.fonte && FONTE_PADRAO_RECOM[r.tipo]) r.fonte = FONTE_PADRAO_RECOM[r.tipo]; return r; });
+      saveKey('analisesSolo', state.analisesSolo);
+      soloRecomRascunho = null; renderAgro50(); return;
     }
     if(action === 'filtrar-perfil-solo'){
       soloTalhaoFiltro = (soloTalhaoFiltro === id) ? '' : id;
