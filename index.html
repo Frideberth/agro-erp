@@ -3875,7 +3875,6 @@
   var safrasAnoFiltro = '';
   var financeiroMesFiltro = '';
   var financeiroSoSemSafra = false;
-  var financeiroMostrarMaisOpcoes = false;
   var dashboardMaisDetalhesAberto = false;
   var agro50SecaoAtiva = null;
   var genericAvancadoAberto = {};
@@ -4649,9 +4648,6 @@
     var estoque = estoqueResumo();
     var saldoProjetado = saldo + estoque.total;
     var editingRecord = (editState && editState.scope === 'financeiro') ? state.financeiro.find(function(x){ return x.id === editState.id; }) : null;
-    if(editingRecord && (Number(editingRecord.quantidade) || Number(editingRecord.valorUnitario) || editingRecord.parceiroId || editingRecord.temAnexo || (editingRecord.talhoesIds && editingRecord.talhoesIds.length))){
-      financeiroMostrarMaisOpcoes = true;
-    }
 
     var html = '';
     if(mesesDisponiveis.length){
@@ -4686,13 +4682,17 @@
       html += '<button type="button" class="btn-add-inline" data-action="open-conta-modal" title="Nova conta">+</button>';
       html += '</div>';
       var mostrarDiariaJaAqui = editingRecord && editingRecord.contaId && contaNome(editingRecord.contaId) === 'Diária';
-      html += field('number', 'valor', 'Valor total (R$)', true, '0,00', mostrarDiariaJaAqui ? {step:'0.01', min:'0', readonly:'readonly', style:'background:#E8DCB9;'} : {step:'0.01', min:'0'}, editingRecord ? editingRecord.valor : undefined);
-      html += selectField('status', 'Status', [{value:'Pago', label:'Pago / recebido'}, {value:'Pendente', label:'Pendente (a pagar ou a receber)'}], editingRecord ? (editingRecord.status || 'Pago') : 'Pago');
-      html += field('date', 'data', 'Data (se já pago/recebido)', false, '', {}, editingRecord ? editingRecord.data : undefined);
-      html += field('date', 'vencimento', 'Vencimento (se pendente/parcelado)', false, '', {}, editingRecord ? editingRecord.vencimento : undefined);
-      html += selectField('membroId', 'Funcionário (opcional)', [{value:'', label:'—'}].concat(state.equipe.map(function(m){ return {value:m.id, label:m.nome}; })), editingRecord ? editingRecord.membroId : undefined);
       html += field('text', 'descricao', 'Descrição / Documento', false, 'Ex: DOC 137832 - Cooperativa', {}, editingRecord ? editingRecord.descricao : undefined);
-      html += '<div id="destino-financeiro" data-destino-widget="1" style="grid-column: 1 / -1; display:flex; flex-direction:column; gap:8px; padding:10px 0 6px; border-top:1px dashed var(--paper-line); border-bottom:1px dashed var(--paper-line); margin:4px 0;"></div>';
+
+      var mostrarQtdValorUnit = !mostrarDiariaJaAqui;
+      html += '<div id="campos-padrao-financeiro" style="display:' + (mostrarQtdValorUnit ? 'contents' : 'none') + ';">';
+      html += field('number', 'quantidade', 'Quantidade (opcional)', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.quantidade : undefined);
+      html += field('number', 'valorUnitario', 'Valor unitário (opcional)', false, '0,00', {step:'0.01', min:'0'}, editingRecord ? editingRecord.valorUnitario : undefined);
+      html += field('text', 'unidade', 'Unidade (opcional)', false, 'Ex: SC, kg, L', {}, editingRecord ? (mostrarDiariaJaAqui ? 'diárias' : editingRecord.unidade) : undefined);
+      html += '</div>';
+
+      html += field('number', 'valor', 'Valor total (R$)', true, '0,00', mostrarDiariaJaAqui ? {step:'0.01', min:'0', readonly:'readonly', style:'background:#E8DCB9;'} : {step:'0.01', min:'0'}, editingRecord ? editingRecord.valor : undefined);
+      html += '<span id="qtd-valorunit-hint" style="display:' + (mostrarQtdValorUnit ? 'block' : 'none') + '; grid-column: 1 / -1; font-size:11.5px; color:var(--ink-soft);">Preenchendo Quantidade e Valor unitário acima, este valor é calculado automaticamente (Quantidade × Valor unitário) — você ainda pode digitar por cima, se preferir.</span>';
 
       var mostrarHoraExtra = editingRecord && editingRecord.contaId && contaNome(editingRecord.contaId) === 'Salário';
       html += '<div id="campos-hora-extra" style="grid-column: 1 / -1; display:' + (mostrarHoraExtra ? 'grid' : 'none') + '; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:12px; padding-top:4px; border-top:1px dashed var(--paper-line); margin-top:4px;">';
@@ -4708,18 +4708,12 @@
       html += '<span id="diaria-hint" style="grid-column: 1 / -1; font-size:11.5px; color:var(--ink-soft);">O "Valor total (R$)" acima é calculado automaticamente (Nº de diárias × Valor por diária).</span>';
       html += '</div>';
 
-      html += '<button type="button" class="btn-add-inline" data-action="toggle-financeiro-mais-opcoes" style="grid-column: 1 / -1; width:fit-content; margin-top:6px;">' + (financeiroMostrarMaisOpcoes ? '▲ Ocultar mais opções' : '▼ Mostrar mais opções (quantidade, parcelamento, recorrência, parceiro, comprovante)') + '</button>';
+      html += selectField('status', 'Status', [{value:'Pago', label:'Pago / recebido'}, {value:'Pendente', label:'Pendente (a pagar ou a receber)'}], editingRecord ? (editingRecord.status || 'Pago') : 'Pago');
+      html += field('date', 'data', 'Data (se já pago/recebido)', false, '', {}, editingRecord ? editingRecord.data : undefined);
+      html += field('date', 'vencimento', 'Vencimento (se pendente/parcelado)', false, '', {}, editingRecord ? editingRecord.vencimento : undefined);
+      html += '<div id="destino-financeiro" data-destino-widget="1" style="grid-column: 1 / -1; display:flex; flex-direction:column; gap:8px; padding:10px 0 6px; border-top:1px dashed var(--paper-line); border-bottom:1px dashed var(--paper-line); margin:4px 0;"></div>';
+      html += selectField('membroId', 'Funcionário (opcional)', [{value:'', label:'—'}].concat(state.equipe.map(function(m){ return {value:m.id, label:m.nome}; })), editingRecord ? editingRecord.membroId : undefined);
 
-      html += '<div id="financeiro-mais-opcoes" style="display:' + (financeiroMostrarMaisOpcoes ? 'contents' : 'none') + ';">';
-      var mostrarQtdValorUnit = !mostrarDiariaJaAqui;
-      html += '<div id="campos-padrao-financeiro" style="display:' + (mostrarQtdValorUnit ? 'contents' : 'none') + ';">';
-      html += field('number', 'quantidade', 'Quantidade (opcional)', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.quantidade : undefined);
-      html += field('number', 'valorUnitario', 'Valor unitário (opcional)', false, '0,00', {step:'0.01', min:'0'}, editingRecord ? editingRecord.valorUnitario : undefined);
-      html += '</div>';
-      html += '<div id="campos-padrao-financeiro-2" style="display:' + (mostrarQtdValorUnit ? 'contents' : 'none') + ';">';
-      html += field('text', 'unidade', 'Unidade (opcional)', false, 'Ex: SC, kg, L', {}, editingRecord ? (mostrarDiariaJaAqui ? 'diárias' : editingRecord.unidade) : undefined);
-      html += '<span id="qtd-valorunit-hint" style="grid-column: 1 / -1; font-size:11.5px; color:var(--ink-soft);">Preenchendo Quantidade e Valor unitário, o "Valor total (R$)" acima é calculado automaticamente (Quantidade × Valor unitário) — você ainda pode digitar o Valor total direto por cima, se preferir.</span>';
-      html += '</div>';
       if(!editingRecord){
         html += field('number', 'parcelas', 'Parcelar em quantas vezes? (opcional)', false, '1', {step:'1', min:'1'});
         html += '<div class="field"><label>Repetir automaticamente? (opcional)</label>';
@@ -4736,7 +4730,6 @@
       if(editingRecord && editingRecord.temAnexo){
         html += '<div class="field" style="justify-content:flex-end;"><button type="button" class="btn-edit" data-action="ver-anexo" data-id="' + editingRecord.id + '" style="width:100%;">Ver comprovante atual</button></div>';
       }
-      html += '</div>';
 
       html += '<button type="submit" class="btn">' + (editingRecord ? 'Salvar alterações' : 'Adicionar lançamento') + '</button>';
       if(editingRecord) html += '<button type="button" class="btn-cancel" data-action="cancel-edit">Cancelar</button>';
@@ -9162,11 +9155,6 @@
       switchTab(btn.dataset.tab); renderAll(); window.scrollTo(0, 0); return;
     }
     if(action === 'filtrar-ano-safras'){ safrasAnoFiltro = btn.dataset.ano || ''; renderSafras(); return; }
-    if(action === 'toggle-financeiro-mais-opcoes'){
-      financeiroMostrarMaisOpcoes = !financeiroMostrarMaisOpcoes;
-      renderFinanceiro();
-      return;
-    }
     if(action === 'aplicar-classificacao'){
       var destSel = (document.getElementById('classif-destino') || {}).value || '';
       var idsMarcados = [];
