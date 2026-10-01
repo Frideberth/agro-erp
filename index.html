@@ -1567,14 +1567,16 @@
               a.recomRelatorioV1 = true; mudouRec = true;
             } else if((nomeT.indexOf('pivo') !== -1 || nomeT.indexOf('pivô') !== -1) && n(a.ph, 5.10, 0.011) && n(a.fosforo, 8.59, 0.011) && n(a.ctc, 12.05, 0.011)){
               a.recomendacoes = [
-                {tipo:'Calagem', fonte:'Calcário', doseMedia:385.08, doseMin:'', doseMax:'', area:33.88, observacao:'Relatório: 13,05 t na área. Tipo de calcário a confirmar no mapa de calagem', status:'Recomendada'},
-                {tipo:'Calagem', fonte:'Calcário', doseMedia:376.03, doseMin:'', doseMax:'', area:33.88, observacao:'Relatório: 12,74 t na área. Tipo de calcário a confirmar no mapa de calagem', status:'Recomendada'},
-                {tipo:'Fosfatagem', fonte:'Super Fosfato Simples', doseMedia:501.98, doseMin:73.42, doseMax:673.42, area:33.88, observacao:'P esperado 15 mg/dm³, eficiência 30%', status:'Recomendada'},
-                {tipo:'Potassagem', fonte:'Cloreto de Potássio', doseMedia:495.66, doseMin:0, doseMax:770.63, area:33.88, observacao:'K esperado 4% da CTC, eficiência 70%', status:'Recomendada'},
-                {tipo:'Gessagem', fonte:'Gesso Agrícola', doseMedia:623.92, doseMin:392.68, doseMax:786.70, area:33.88, observacao:'S esperado 15 mg/dm³ + 40 kg/ha de exportação', status:'Recomendada'}];
+                {tipo:'Calagem', fonte:'Calcário', doseMedia:385.08, doseMin:'', doseMax:'', area:'', observacao:'Tipo de calcário a confirmar no mapa de calagem', status:'Recomendada'},
+                {tipo:'Calagem', fonte:'Calcário', doseMedia:376.03, doseMin:'', doseMax:'', area:'', observacao:'Tipo de calcário a confirmar no mapa de calagem', status:'Recomendada'},
+                {tipo:'Fosfatagem', fonte:'Super Fosfato Simples', doseMedia:501.98, doseMin:73.42, doseMax:673.42, area:'', observacao:'P esperado 15 mg/dm³, eficiência 30%', status:'Recomendada'},
+                {tipo:'Potassagem', fonte:'Cloreto de Potássio', doseMedia:495.66, doseMin:0, doseMax:770.63, area:'', observacao:'K esperado 4% da CTC, eficiência 70%', status:'Recomendada'},
+                {tipo:'Gessagem', fonte:'Gesso Agrícola', doseMedia:623.92, doseMin:392.68, doseMax:786.70, area:'', observacao:'S esperado 15 mg/dm³ + 40 kg/ha de exportação', status:'Recomendada'}];
               a.recomRelatorioV1 = true; mudouRec = true;
             }
           });
+          // correção: no Pivo a área é a do talhão (25 ha), não os 33,88 ha do mapa
+          state.analisesSolo.forEach(function(a){ (a.recomendacoes || []).forEach(function(r){ if(a.recomRelatorioV1 && Number(r.area) === 33.88){ r.area = ''; mudouRec = true; } }); });
           if(mudouRec) saveKey('analisesSolo', state.analisesSolo);
         })();
         (function(){
@@ -3878,7 +3880,7 @@
   var agro50SecaoAtiva = null;
   var genericAvancadoAberto = {};
   var soloTalhaoFiltro = '';
-  var soloRecomId = null, soloRecomRascunho = null, soloRecomOrigem = 'agro50';
+  var soloRecomId = null, soloRecomRascunho = null, soloRecomOrigem = 'agro50', soloRecomAutoPreenchido = false;
   function rerenderRecomSolo(){ if(soloRecomOrigem === 'talhoes') renderTalhoes(); else renderAgro50(); }
   function recomendacoesDoTalhao(talhaoId){
     var lista = [];
@@ -3886,12 +3888,64 @@
     return lista.sort(function(x, y){ return (y.analise.dataColeta || '').localeCompare(x.analise.dataColeta || ''); });
   }
   function areaDaRecomendacao(r, talhaoId){ if(r.area !== '' && r.area !== undefined && r.area !== null) return Number(r.area) || 0; var t = state.talhoes.find(function(x){ return x.id === talhaoId; }); return t ? Number(t.area) || 0 : 0; }
+  // Critérios das recomendações automáticas (editáveis; ficam salvos junto com a configuração de unidades)
+  var CRITERIOS_RECOM_PADRAO = {vDesejado:70, prnt:85, pDesejado:15, efP:30, p2o5Fonte:18, kPctCtc:4, efK:70, k2oFonte:60, sDesejado:15, sExport:40, sFonte:15};
+  function criteriosRecom(){ var c = configUnidades(); c.criteriosRecom = Object.assign({}, CRITERIOS_RECOM_PADRAO, c.criteriosRecom || {}); return c.criteriosRecom; }
+  var temValor = function(v){ return v !== null && v !== undefined && v !== '' && !isNaN(Number(v)); };
+  // Recomendações calculadas pela análise (kg do produto por ha, camada 0-20 cm: mg/dm³ × 2 = kg/ha)
+  function recomendacoesCalculadas(a){
+    var c = criteriosRecom(), lista = [], r2 = function(v){ return Math.round(v); };
+    if(temValor(a.ctc) && temValor(a.saturacaoBases)){
+      var nc = calcularNecessidadeCalagem(Number(a.ctc), Number(a.saturacaoBases), c.vDesejado, c.prnt);
+      if(nc > 0) lista.push({tipo:'Calagem', fonte:'Calcário (PRNT ' + c.prnt + '%)', doseMedia: r2(nc * 1000), observacao:'Calculado: V% ' + fmtNum(a.saturacaoBases) + ' → ' + c.vDesejado + ', CTC ' + fmtNum(a.ctc)});
+    }
+    if(temValor(a.fosforo) && Number(a.fosforo) < c.pDesejado){
+      var p2o5 = (c.pDesejado - Number(a.fosforo)) * 2 * 2.291 / (c.efP / 100);
+      lista.push({tipo:'Fosfatagem', fonte:'Super Fosfato Simples', doseMedia: r2(p2o5 / (c.p2o5Fonte / 100)), observacao:'Calculado: P ' + fmtNum(a.fosforo) + ' → ' + c.pDesejado + ' mg/dm³, eficiência ' + c.efP + '% (' + r2(p2o5) + ' kg P₂O₅/ha)'});
+    }
+    if(temValor(a.potassio) && temValor(a.ctc)){
+      var kAt = Number(a.potassio) / 391, kDes = Number(a.ctc) * c.kPctCtc / 100;
+      if(kAt < kDes){
+        var k2o = (kDes - kAt) * 391 * 2 * 1.205 / (c.efK / 100);
+        lista.push({tipo:'Potassagem', fonte:'Cloreto de Potássio', doseMedia: r2(k2o / (c.k2oFonte / 100)), observacao:'Calculado: K ' + fmtNum(kAt) + ' → ' + fmtNum(kDes) + ' cmolc/dm³ (' + c.kPctCtc + '% da CTC), eficiência ' + c.efK + '% (' + r2(k2o) + ' kg K₂O/ha)'});
+      }
+    }
+    if(temValor(a.enxofre)){
+      var sKg = Math.max(c.sDesejado - Number(a.enxofre), 0) * 2 + c.sExport;
+      if(sKg > 0) lista.push({tipo:'Gessagem', fonte:'Gesso Agrícola', doseMedia: r2(sKg / (c.sFonte / 100)), observacao:'Calculado: S ' + fmtNum(a.enxofre) + ' → ' + c.sDesejado + ' mg/dm³ + ' + c.sExport + ' kg/ha de exportação, gesso com ' + c.sFonte + '% de S (' + r2(sKg) + ' kg S/ha)'});
+    }
+    return lista.map(function(x){ return Object.assign({doseMin:'', doseMax:'', area:'', status:'Recomendada', calculada:true}, x); });
+  }
+  function criteriosRecomHtml(){
+    var c = criteriosRecom(), est = 'width:62px; padding:4px 6px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12px;';
+    var campo = function(k, rot){ return '<label style="display:inline-flex; gap:4px; align-items:center; margin:0 10px 6px 0;">' + rot + ' <input type="number" step="any" class="crit-recom" data-k="' + k + '" value="' + c[k] + '" style="' + est + '"></label>'; };
+    return '<details style="font-size:12px; margin:8px 18px 12px;"><summary style="cursor:pointer;">⚙️ Critérios do cálculo automático</summary><div style="margin-top:8px;">'
+      + '<div><b>Calagem:</b> ' + campo('vDesejado','V% desejado') + campo('prnt','PRNT %') + '</div>'
+      + '<div><b>Fosfatagem:</b> ' + campo('pDesejado','P desejado mg/dm³') + campo('efP','eficiência %') + campo('p2o5Fonte','P₂O₅ da fonte %') + '</div>'
+      + '<div><b>Potassagem:</b> ' + campo('kPctCtc','K % da CTC') + campo('efK','eficiência %') + campo('k2oFonte','K₂O da fonte %') + '</div>'
+      + '<div><b>Gessagem:</b> ' + campo('sDesejado','S desejado mg/dm³') + campo('sExport','exportação kg/ha') + campo('sFonte','S no gesso %') + '</div>'
+      + '<button type="button" class="btn-edit" data-action="salvar-criterios-recom">Salvar critérios</button>'
+      + '<p style="margin:6px 0 0; color:var(--ink-soft);">Fórmulas para a camada 0-20 cm (mg/dm³ × 2 = kg/ha). São estimativas pela média da análise: o relatório de agricultura de precisão calcula ponto a ponto e pode dar valores diferentes. Confirme com o agrônomo.</p></div></details>';
+  }
+  function gerarRecomendacoesTodos(){
+    var n = 0, talh = 0;
+    state.talhoes.forEach(function(t){
+      if(recomendacoesDoTalhao(t.id).some(function(x){ return x.rec.status !== 'Aplicada'; })) return;
+      var a = ultimaAnaliseSoloDoTalhao(t.id); if(!a) return;
+      var calc = recomendacoesCalculadas(a); if(!calc.length) return;
+      a.recomendacoes = (a.recomendacoes || []).concat(calc); n += calc.length; talh++;
+    });
+    if(n) saveKey('analisesSolo', state.analisesSolo);
+    return {n: n, talhoes: talh};
+  }
   function recomendacoesPendentesFazendaHtml(){
     var linhas = [];
     state.talhoes.forEach(function(t){ recomendacoesDoTalhao(t.id).forEach(function(x){ if(x.rec.status !== 'Aplicada') linhas.push(x); }); });
-    if(!linhas.length) return '';
+    var semRec = state.talhoes.filter(function(t){ return ultimaAnaliseSoloDoTalhao(t.id) && !recomendacoesDoTalhao(t.id).some(function(x){ return x.rec.status !== 'Aplicada'; }); });
+    var cab = '<div class="section-title" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">Recomendações de solo pendentes' + (semRec.length ? ' <button type="button" class="btn-edit" data-action="gerar-recom-todos" title="Calcula calagem, fosfatagem, potassagem e gesso pela análise mais recente">🧮 Calcular para ' + semRec.length + ' talhão(ões) sem recomendação</button>' : '') + '</div>';
+    if(!linhas.length) return cab + '<div class="paper" style="padding:2px 0;">' + '<p style="font-size:12.5px; margin:12px 18px 4px;">Nenhuma recomendação pendente.</p>' + criteriosRecomHtml() + '</div>';
     var totais = {};
-    var h = '<div class="section-title">Recomendações de solo pendentes</div><div class="paper"><div class="table-wrap"><table><thead><tr><th>Talhão</th><th>Análise</th><th>Tipo</th><th>Fonte</th><th>Dose média (kg/ha)</th><th>Faixa no mapa</th><th>Área</th><th>Total</th><th>Critério</th><th></th></tr></thead><tbody>';
+    var h = cab + '<div class="paper"><div class="table-wrap"><table><thead><tr><th>Talhão</th><th>Análise</th><th>Tipo</th><th>Fonte</th><th>Dose média (kg/ha)</th><th>Faixa no mapa</th><th>Área</th><th>Total</th><th>Critério</th><th></th></tr></thead><tbody>';
     linhas.forEach(function(x){
       var r = x.rec, area = areaDaRecomendacao(r, x.analise.talhaoId), tot = (Number(r.doseMedia) || 0) * area / 1000, k = r.fonte || r.tipo;
       totais[k] = (totais[k] || 0) + tot;
@@ -3901,8 +3955,8 @@
     });
     h += '</tbody></table></div>';
     var ks = Object.keys(totais).filter(function(k){ return totais[k] > 0; });
-    if(ks.length) h += '<p style="font-size:12.5px; margin:10px 18px 14px;"><b>Total a comprar/aplicar na fazenda:</b> ' + ks.map(function(k){ return escapeHtml(k) + ' ' + fmtNum(Math.round(totais[k] * 100) / 100) + ' t'; }).join(' · ') + '</p>';
-    return h + '</div>';
+    if(ks.length) h += '<p style="font-size:12.5px; margin:10px 18px 4px;"><b>Total a comprar/aplicar na fazenda:</b> ' + ks.map(function(k){ return escapeHtml(k) + ' ' + fmtNum(Math.round(totais[k] * 100) / 100) + ' t'; }).join(' · ') + '</p>';
+    return h + criteriosRecomHtml() + '</div>';
   }
   var TIPOS_RECOM_SOLO = ['Calagem', 'Fosfatagem', 'Potassagem', 'Gessagem', 'Adubação', 'Micronutrientes', 'Outra'];
   var FONTE_PADRAO_RECOM = {Calagem:'Calcário dolomítico', Fosfatagem:'Super Fosfato Simples', Potassagem:'Cloreto de Potássio', Gessagem:'Gesso Agrícola'};
@@ -3919,16 +3973,21 @@
   function recomendacoesSoloHtml(){
     var a = state.analisesSolo.find(function(x){ return x.id === soloRecomId; });
     if(!a) return '';
-    if(!soloRecomRascunho) soloRecomRascunho = JSON.parse(JSON.stringify(a.recomendacoes || []));
+    if(!soloRecomRascunho){
+      soloRecomRascunho = JSON.parse(JSON.stringify(a.recomendacoes || []));
+      soloRecomAutoPreenchido = false;
+      if(!soloRecomRascunho.length){ soloRecomRascunho = recomendacoesCalculadas(a); soloRecomAutoPreenchido = soloRecomRascunho.length > 0; }
+    }
     var t = state.talhoes.find(function(x){ return x.id === a.talhaoId; });
     var est = 'padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12.5px;';
     var h = '<div class="paper form-card" style="margin-top:16px;"><h3 style="display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; align-items:center;">🧪 Recomendações — ' + escapeHtml(talhaoNome(a.talhaoId)) + ' · ' + fmtDate(a.dataColeta) + '<button type="button" class="btn-cancel" data-action="fechar-recom-solo">Fechar</button></h3>';
     var outrasAn = state.analisesSolo.filter(function(x){ return x.talhaoId === a.talhaoId; }).sort(function(x, y){ return (y.dataColeta || '').localeCompare(x.dataColeta || ''); });
     if(outrasAn.length > 1) h += '<div style="display:flex; flex-wrap:wrap; gap:6px; margin:0 0 10px; font-size:12px; align-items:center;">Análises deste talhão: ' + outrasAn.map(function(x){ var nr = (x.recomendacoes || []).length; return '<button type="button" data-action="recom-trocar-analise" data-id="' + x.id + '" style="font-family:inherit; font-size:12px; padding:3px 10px; border-radius:12px; cursor:pointer; border:1px solid ' + (x.id === a.id ? 'var(--accent)' : 'var(--paper-line)') + '; background:' + (x.id === a.id ? 'var(--accent)' : 'var(--paper)') + '; color:' + (x.id === a.id ? '#fff' : 'var(--ink)') + ';">' + fmtDate(x.dataColeta) + (nr ? ' (' + nr + ')' : '') + '</button>'; }).join('') + '</div>';
+    if(soloRecomAutoPreenchido) h += '<p style="font-size:12.5px; margin:0 0 8px; padding:8px 10px; background:#EFE6C8; border-radius:4px;">✏️ Preenchido pelo sistema a partir desta análise. Confira, ajuste as doses se o agrônomo recomendou outras, e clique em <b>Salvar recomendações</b>.</p>';
     h += '<p style="font-size:12px; margin:0 0 10px;">Doses em kg/ha. Em agricultura de precisão, use a <b>média</b> e anote mínimo e máximo do mapa. O total é dose média × área' + (t ? ' (área do talhão: ' + fmtHa(t.area) + ', mude se o relatório usou outra)' : '') + '.</p>';
     h += '<datalist id="recom-fontes">' + Object.keys(FONTE_PADRAO_RECOM).map(function(k){ return '<option value="' + FONTE_PADRAO_RECOM[k] + '">'; }).join('') + '<option value="Calcário calcítico"><option value="MAP"><option value="KCl"></datalist>';
     h += '<div class="table-wrap"><table class="sem-ordenacao" id="recom-solo-tabela"><thead><tr><th>Tipo</th><th>Fonte / produto</th><th>Dose média</th><th>Mín</th><th>Máx</th><th>Área (ha)</th><th>Total</th><th>Critério / observação</th><th>Situação</th><th></th></tr></thead><tbody>';
-    if(!soloRecomRascunho.length) h += '<tr><td colspan="10" style="font-size:12.5px; color:var(--ink-soft);">Nenhuma recomendação cadastrada nesta análise (' + fmtDate(a.dataColeta) + '). Digite as do relatório do agrônomo com "+ Recomendação", ou use "Sugerir calagem" para o sistema calcular pela saturação por bases.</td></tr>';
+    if(!soloRecomRascunho.length) h += '<tr><td colspan="10" style="font-size:12.5px; color:var(--ink-soft);">Nenhuma recomendação cadastrada nesta análise (' + fmtDate(a.dataColeta) + '). Digite as do relatório do agrônomo com "+ Recomendação", ou use "Calcular pela análise".</td></tr>';
     soloRecomRascunho.forEach(function(r, i){
       var area = r.area === '' || r.area === undefined ? (t ? Number(t.area) || 0 : 0) : Number(r.area) || 0;
       var total = (Number(r.doseMedia) || 0) * area / 1000;
@@ -3943,7 +4002,7 @@
       h += '<td><button type="button" class="btn-del" data-action="recom-remover" data-idx="' + i + '">✕</button></td></tr>';
     });
     h += '</tbody></table></div>';
-    h += '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;"><button type="button" class="btn-edit" data-action="recom-adicionar">+ Recomendação</button>' + (a.ctc && a.saturacaoBases !== null && a.saturacaoBases !== undefined ? '<button type="button" class="btn-edit" data-action="recom-sugerir-calagem" title="NC (t/ha) = CTC × (V desejado − V atual) ÷ PRNT">🧮 Sugerir calagem (V% ' + calagemVDesejado + ', PRNT ' + calagemPrnt + '%)</button>' : '') + '<button type="button" class="btn" data-action="recom-salvar">Salvar recomendações</button></div>';
+    h += '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;"><button type="button" class="btn-edit" data-action="recom-adicionar">+ Recomendação</button>' + '<button type="button" class="btn-edit" data-action="recom-sugerir-calagem" title="Calagem, fosfatagem, potassagem e gesso pelos critérios (aba Talhões → ⚙️ Critérios)">🧮 Calcular pela análise</button>' + '<button type="button" class="btn" data-action="recom-salvar">Salvar recomendações</button></div>';
     var totais = {};
     soloRecomRascunho.forEach(function(r){ if(r.status === 'Aplicada') return; var area = r.area === '' || r.area === undefined ? (t ? Number(t.area) || 0 : 0) : Number(r.area) || 0; var k = (r.fonte || r.tipo); totais[k] = (totais[k] || 0) + (Number(r.doseMedia) || 0) * area / 1000; });
     var ks = Object.keys(totais).filter(function(k){ return totais[k] > 0; });
@@ -8796,7 +8855,7 @@
       return;
     }
     if(action === 'abrir-calagem'){
-      calagemModalTalhaoId = id;
+      calagemModalTalhaoId = id; calagemVDesejado = criteriosRecom().vDesejado; calagemPrnt = criteriosRecom().prnt;
       renderCalagemModal();
       document.getElementById('calagem-modal-overlay').style.display = 'flex';
       return;
@@ -8838,14 +8897,28 @@
     }
     if(action === 'fechar-recom-solo'){ soloRecomId = null; soloRecomRascunho = null; rerenderRecomSolo(); return; }
     if(action === 'recom-adicionar'){ lerRecomSoloDoDom(); soloRecomRascunho.push({tipo:'Calagem', fonte:'', doseMedia:'', doseMin:'', doseMax:'', area:'', observacao:'', status:'Recomendada'}); rerenderRecomSolo(); return; }
+    if(action === 'gerar-recom-todos'){
+      var resG = gerarRecomendacoesTodos();
+      renderAll();
+      alert(resG.n ? resG.n + ' recomendação(ões) calculada(s) para ' + resG.talhoes + ' talhão(ões), pela análise mais recente de cada um. Confira em "📋 Recomendações" de cada talhão.' : 'Nenhuma recomendação a calcular (talhões sem análise, ou a análise não pede correção).');
+      return;
+    }
+    if(action === 'salvar-criterios-recom'){
+      var cr = criteriosRecom();
+      document.querySelectorAll('.crit-recom').forEach(function(inp){ var v = parseFloat(inp.value); if(v > 0 || (v === 0 && inp.dataset.k === 'sExport')) cr[inp.dataset.k] = v; });
+      calagemVDesejado = cr.vDesejado; calagemPrnt = cr.prnt;
+      saveKey('configUnidades', state.configUnidades); soloRecomRascunho = null; renderAll(); alert('Critérios salvos. Valem para os próximos cálculos — as recomendações já salvas não mudam.'); return;
+    }
     if(action === 'recom-trocar-analise'){ soloRecomId = id; soloRecomRascunho = null; rerenderRecomSolo(); return; }
     if(action === 'recom-sugerir-calagem'){
       lerRecomSoloDoDom();
       var aSg = state.analisesSolo.find(function(x){ return x.id === soloRecomId; }); if(!aSg) return;
-      var ncSg = calcularNecessidadeCalagem(aSg.ctc, aSg.saturacaoBases, calagemVDesejado, calagemPrnt);
-      if(!(ncSg > 0)){ alert('Pela saturação por bases (V% atual ' + fmtNum(aSg.saturacaoBases) + ', desejado ' + calagemVDesejado + '), não há necessidade de calcário.'); return; }
-      soloRecomRascunho.push({tipo:'Calagem', fonte:'Calcário', doseMedia: Math.round(ncSg * 1000), doseMin:'', doseMax:'', area:'', observacao:'Cálculo do sistema: V% ' + fmtNum(aSg.saturacaoBases) + ' → ' + calagemVDesejado + ', PRNT ' + calagemPrnt + '%', status:'Recomendada'});
-      rerenderRecomSolo(); return;
+      var calcSg = recomendacoesCalculadas(aSg);
+      var jaTem = soloRecomRascunho.map(function(r){ return r.tipo; });
+      var novasSg = calcSg.filter(function(r){ return jaTem.indexOf(r.tipo) === -1; });
+      if(!calcSg.length){ alert('Pelos critérios, esta análise não pede correção (ou faltam CTC, V%, P, K ou S).'); return; }
+      if(!novasSg.length){ alert('Os tipos calculados (' + calcSg.map(function(r){ return r.tipo; }).join(', ') + ') já estão na lista.'); return; }
+      soloRecomRascunho = soloRecomRascunho.concat(novasSg); rerenderRecomSolo(); return;
     }
     if(action === 'recom-remover'){ lerRecomSoloDoDom(); soloRecomRascunho.splice(Number(btn.dataset.idx), 1); rerenderRecomSolo(); return; }
     if(action === 'recom-salvar'){
