@@ -1021,7 +1021,8 @@
         {name:'valor', type:'number', label:'Valor de compra (R$)', extra:{step:'0.01', min:'0'}, placeholder:'0,00'},
         {name:'dataAquisicao', type:'date', label:'Data de aquisição'},
         {name:'vidaUtilAnos', type:'number', label:'Vida útil (anos)', extra:{step:'1', min:'1'}, placeholder:'10'},
-        {name:'percentualResidual', type:'number', label:'% Residual', extra:{step:'0.01', min:'0', max:'100'}, placeholder:'20'}
+        {name:'percentualResidual', type:'number', label:'% Residual', extra:{step:'0.01', min:'0', max:'100'}, placeholder:'20'},
+        {name:'custoHoraReferencia', type:'number', label:'Custo/hora de referência (R$/h, opcional)', extra:{step:'0.01', min:'0'}, placeholder:'Usado enquanto não houver custo real'}
       ],
       columns: [
         {key:'nome', label:'Nome'},
@@ -1030,8 +1031,14 @@
         {key:'valor', label:'Valor de compra', format:'brl'},
         {key:'percentualResidual', label:'% Residual', format:'num'},
         {key:'valorAtual', label:'Valor atual (depreciado)', format:'brl', compute: calcDepreciacao},
-        {key:'horasUso', label:'Horas de uso (colheita)', compute: function(item){ var h = horasUsoTotais(item.id); return h ? fmtNum(h) + 'h' : '—'; }}
-      ]
+        {key:'horasUso', label:'Horas', compute: function(item){ var hr = horasRegistradasMaquina(item.id), hh = horasHorimetro(item.id); if(!hr && !hh) return '—'; return (hr ? fmtNum(hr) + ' h registradas' : '') + (hh ? (hr ? ' · ' : '') + fmtNum(hh) + ' h horímetro' : ''); }},
+        {key:'custoHora', label:'Custo/hora', compute: function(item){ var ci = custoHoraMaquinaInfo(item.id); return ci.valor ? fmtBRL(ci.valor) + (ci.tipo === 'real' ? ' (real)' : ' (referência)') : '—'; }}
+      ],
+      extraRowAction: function(item){
+        if(item.categoria === 'Benfeitoria') return '';
+        var nl = (item.horimetro || []).length;
+        return '<button type="button" class="btn-edit" data-action="abrir-horimetro" data-id="' + item.id + '" title="Leituras do horímetro">⏱️ Horímetro' + (nl ? ' (' + nl + ')' : '') + '</button>';
+      }
     },
 
     contasPagar: {
@@ -1960,19 +1967,19 @@
     state.financeiro.forEach(function(f){
       if(f.status === 'Pendente' && f.vencimento){
         var d = new Date(f.vencimento);
-        if(d <= limite) lista.push({desc:(f.tipo==='custo'?'A pagar':'A receber') + ' · ' + (f.descricao || f.categoria), valor:Number(f.valor)||0, vencimento:f.vencimento, tipo: f.tipo==='receita'?'entrada':'saida', atrasado: d < hoje});
+        if(d <= limite) lista.push({desc:(f.tipo==='custo'?'A pagar':'A receber') + ' · ' + (f.descricao || f.categoria), valor:Number(f.valor)||0, vencimento:f.vencimento, tipo: f.tipo==='receita'?'entrada':'saida', atrasado: d < hoje, chave:'fin:' + f.id});
       }
     });
     state.contasPagar.forEach(function(c){
       if(c.status === 'Pendente' && c.vencimento){
         var d = new Date(c.vencimento);
-        if(d <= limite) lista.push({desc:'A pagar · ' + c.descricao, valor:Number(c.valor)||0, vencimento:c.vencimento, tipo:'saida', atrasado: d < hoje});
+        if(d <= limite) lista.push({desc:'A pagar · ' + c.descricao, valor:Number(c.valor)||0, vencimento:c.vencimento, tipo:'saida', atrasado: d < hoje, chave:'cp:' + c.id});
       }
     });
     state.contasReceber.forEach(function(c){
       if(c.status === 'Pendente' && c.vencimento){
         var d = new Date(c.vencimento);
-        if(d <= limite) lista.push({desc:'A receber · ' + c.descricao, valor:valorLiquidoContaReceber(c), vencimento:c.vencimento, tipo:'entrada', atrasado: d < hoje});
+        if(d <= limite) lista.push({desc:'A receber · ' + c.descricao, valor:valorLiquidoContaReceber(c), vencimento:c.vencimento, tipo:'entrada', atrasado: d < hoje, chave:'cr:' + c.id});
       }
     });
     lista.sort(function(a,b){ return new Date(a.vencimento) - new Date(b.vencimento); });
@@ -2147,7 +2154,7 @@
     produtos: {t:'Produtos e Estoque', txt:'Cada produto tem uma <b>unidade de controle</b> (L, kg, un…) — estoque e custo ficam sempre nela — e <b>embalagens</b> (galão, balde, saco…). O custo vem da média das compras, ou do "custo manual" se você preencher. "⚖️ Ajustar" corrige o estoque com motivo (fica no histórico). "🔁 Unidade" troca a unidade convertendo tudo. "🔗 Juntar produtos duplicados" une dois cadastros do mesmo produto. O painel 📏 Unidades e embalagens define as unidades, embalagens padrão e o tamanho do alqueire.'},
     parceiros: {t:'Parceiros', txt:'Fornecedores, clientes, prestadores e bancos.'},
     equipe: {t:'Funcionários', txt:'Equipe da propriedade; aparece como responsável no Diário e nos lançamentos de mão de obra.'},
-    patrimonio: {t:'Máquinas e Patrimônio', txt:'Máquinas, veículos e benfeitorias com valor, ano e vida útil (depreciação). Custos lançados com destino "Máquina" + horas do Diário e da Colheita dão o custo/hora real de cada máquina.'},
+    patrimonio: {t:'Máquinas e Patrimônio', txt:'Máquinas, veículos e benfeitorias com valor, ano e vida útil (depreciação). Custos lançados com destino "Máquina" + horas do Diário e da Colheita dão o custo/hora real de cada máquina. Sem custo lançado, vale o "Custo/hora de referência" do cadastro. "⏱️ Horímetro" guarda as leituras: o total de horas passa a ser o do horímetro, e as horas não registradas no Diário vão para o rateio geral.'},
     agro50: {t:'AGRO5.0', txt:'Chuva (pluviometria), análise hídrica, análises de solo, imagens de campo, alertas e rastreabilidade.'},
     configuracoes: {t:'Configurações', txt:'Troca de senha, backup completo (baixar e restaurar) e troca de propriedade/cliente.'}
   };
@@ -2317,8 +2324,20 @@
       html += '<div class="section-title">Contas a vencer (próximos 7 dias)</div>';
       html += '<div class="paper list-card">';
       vencendo.forEach(function(v){
-        html += '<div class="list-row"><span>' + escapeHtml(v.desc) + (v.atrasado ? '<span class="flag-late">Atrasado</span>' : '') + '</span>';
-        html += '<span class="num ' + (v.tipo==='entrada'?'growth':'cost') + '">' + (v.tipo==='entrada'?'+':'−') + ' ' + fmtBRL(v.valor) + ' · ' + fmtDate(v.vencimento) + '</span></div>';
+        var rotBtn = v.tipo === 'entrada' ? '💵 Receber' : '💰 Pagar';
+        html += '<div class="list-row" style="align-items:center; gap:10px;"><span style="flex:1;">' + escapeHtml(v.desc) + (v.atrasado ? '<span class="flag-late">Atrasado</span>' : '') + '</span>';
+        html += '<span class="num ' + (v.tipo==='entrada'?'growth':'cost') + '">' + (v.tipo==='entrada'?'+':'−') + ' ' + fmtBRL(v.valor) + ' · ' + fmtDate(v.vencimento) + '</span>';
+        html += '<button type="button" class="btn" data-action="dash-abrir-pagamento" data-chave="' + v.chave + '" style="padding:4px 12px; font-size:12px; white-space:nowrap;">' + rotBtn + '</button></div>';
+        if(dashPagandoChave === v.chave){
+          var hojeDp = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10);
+          var estDp = 'padding:6px 8px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;';
+          html += '<div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; padding:10px 14px; background:#EFE6C8; border-radius:4px; margin:4px 0 8px;">';
+          html += '<div class="field" style="margin:0;"><label>Data do ' + (v.tipo === 'entrada' ? 'recebimento' : 'pagamento') + '</label><input type="date" id="dash-pag-data" value="' + hojeDp + '" style="' + estDp + '"></div>';
+          html += '<div class="field" style="margin:0;"><label>Valor (R$)</label><input type="number" id="dash-pag-valor" step="0.01" min="0" value="' + (Math.round(v.valor * 100) / 100) + '" style="width:140px; ' + estDp + '"' + (v.chave.indexOf('cr:') === 0 ? ' readonly title="Para mudar o valor, edite a conta em Contas a Receber"' : '') + '></div>';
+          html += '<button type="button" class="btn" data-action="dash-confirmar-pagamento" data-chave="' + v.chave + '">Confirmar</button><button type="button" class="btn-cancel" data-action="dash-cancelar-pagamento">Cancelar</button>';
+          if(v.chave.indexOf('cp:') === 0) html += '<span style="font-size:11.5px; color:var(--ink-soft); flex-basis:100%;">Pagando menos que ' + fmtBRL(v.valor) + ', a diferença continua pendente numa conta nova.</span>';
+          html += '</div>';
+        }
       });
       html += '</div>';
     }
@@ -2375,8 +2394,7 @@
       html += '</div>';
     }
 
-    html += '<button type="button" class="btn-add-inline" data-action="toggle-dashboard-detalhes" style="margin:8px 0 16px;">' + (dashboardMaisDetalhesAberto ? '▲ Ocultar detalhes' : '▼ Ver mais detalhes (últimas atividades, estoque, cotações, lançamentos)') + '</button>';
-    html += '<div id="dashboard-mais-detalhes" style="display:' + (dashboardMaisDetalhesAberto ? 'block' : 'none') + ';">';
+    html += '<div id="dashboard-mais-detalhes" style="margin-top:16px;">';
 
     html += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin-top:8px;">';
 
@@ -2588,6 +2606,28 @@
     document.getElementById('tab-' + entityKey).innerHTML = buildGenericFormHtml(entityKey) + buildGenericTableHtml(entityKey);
   }
 
+  var patrimonioHorimetroId = null;
+  function horimetroHtml(){
+    var it = state.patrimonio.find(function(x){ return x.id === patrimonioHorimetroId; });
+    if(!it) return '';
+    var ls = leiturasHorimetro(it.id), est = 'padding:6px 8px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;';
+    var hoje = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10);
+    var h = '<div class="paper form-card" style="margin-top:16px;"><h3 style="display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; align-items:center;">⏱️ Horímetro — ' + escapeHtml(it.nome) + '<button type="button" class="btn-cancel" data-action="fechar-horimetro">Fechar</button></h3>';
+    h += '<div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin-bottom:12px;"><div class="field" style="margin:0;"><label>Data da leitura</label><input type="date" id="hor-data" value="' + hoje + '" style="' + est + '"></div><div class="field" style="margin:0;"><label>Leitura do horímetro (h)</label><input type="number" id="hor-leitura" step="0.1" min="0" placeholder="Ex: 4521,5" style="width:150px; ' + est + '"></div><button type="button" class="btn" data-action="horimetro-adicionar">Adicionar leitura</button></div>';
+    if(!ls.length) h += '<p style="font-size:12.5px; color:var(--ink-soft);">Nenhuma leitura ainda. Anote a leitura de hoje e, de tempos em tempos (por exemplo, no fim de cada mês ou safra), anote de novo. As horas trabalhadas são a diferença entre a primeira e a última leitura.</p>';
+    else {
+      h += '<div class="table-wrap"><table class="sem-ordenacao"><thead><tr><th>Data</th><th>Leitura</th><th>Horas desde a anterior</th><th></th></tr></thead><tbody>';
+      ls.forEach(function(l, i){ var dif = i ? Number(l.leitura) - Number(ls[i - 1].leitura) : null; h += '<tr><td>' + fmtDate(l.data) + '</td><td class="num">' + fmtNum(l.leitura) + ' h</td><td class="num">' + (dif === null ? '—' : (dif < 0 ? '<span style="color:var(--cost-dark);">⚠️ ' + fmtNum(dif) + ' h (menor que a anterior)</span>' : fmtNum(dif) + ' h')) + '</td><td><button type="button" class="btn-del" data-action="horimetro-remover" data-id="' + l.id + '">✕</button></td></tr>'; });
+      h += '</tbody></table></div>';
+    }
+    var hh = horasHorimetro(it.id), hr = horasRegistradasMaquina(it.id), ci = custoHoraMaquinaInfo(it.id), custos = custosDaMaquina(it.id).valor;
+    h += '<div style="font-size:12.5px; margin-top:10px; line-height:1.7;">';
+    h += 'Horas pelo horímetro: <b>' + (hh ? fmtNum(hh) + ' h' : '— (precisa de 2 leituras)') + '</b> · Horas registradas no Diário/Colheita: <b>' + fmtNum(hr) + ' h</b><br>';
+    h += 'Custos lançados na máquina: <b>' + fmtBRL(custos) + '</b> · Custo/hora: <b>' + (ci.valor ? fmtBRL(ci.valor) + (ci.tipo === 'real' ? ' (real)' : ' (referência do cadastro)') : '—') + '</b>';
+    if(ci.tipo === 'real' && hh > hr) h += '<br>' + fmtNum(hh - hr) + ' h não foram registradas em atividades: ' + fmtBRL(custos * (hh - hr) / hh) + ' do custo vai para o rateio geral (por área). Para levar ao talhão certo, registre as horas no Diário de Campo.';
+    h += '</div></div>';
+    return h;
+  }
   function renderPatrimonio(){
     var totalCompra = state.patrimonio.reduce(function(s,p){ return s + (Number(p.valor)||0); }, 0);
     var totalAtual = state.patrimonio.reduce(function(s,p){ return s + calcDepreciacao(p); }, 0);
@@ -2598,6 +2638,8 @@
     html += '</div>';
     html += buildGenericFormHtml('patrimonio');
     html += buildGenericTableHtml('patrimonio');
+    html += horimetroHtml();
+    html += '<div class="paper note-box"><b>Custo/hora das máquinas:</b> quando a máquina tem custos lançados (destino "Máquina / equipamento") e horas, o custo/hora é o <b>real</b> = custos ÷ horas. Sem isso, vale o <b>custo/hora de referência</b> do cadastro. As horas do Diário de Campo e da Colheita levam esse custo para as safras. Com o <b>horímetro</b>, o total de horas é o que ele marcou; as horas não registradas no Diário levam a parte delas do custo para o rateio geral. O custo/hora de referência não deve incluir a depreciação se você marca "Incluir depreciação" na Rentabilidade.</div>';
     document.getElementById('tab-patrimonio').innerHTML = html;
   }
 
@@ -3876,6 +3918,7 @@
   var financeiroMesFiltro = '';
   var financeiroSoSemSafra = false;
   var dashboardMaisDetalhesAberto = false;
+  var dashPagandoChave = null;
   var agro50SecaoAtiva = null;
   var genericAvancadoAberto = {};
   var soloTalhaoFiltro = '';
@@ -4375,15 +4418,40 @@
     state.producao.forEach(function(p){ if(p.maquinaId === patrimonioId && p.safraId === safraId) h += Number(p.horasUso) || 0; });
     return h;
   }
-  function horasTotaisMaquina(patrimonioId){
+  // Horas registradas nas atividades (Diário de Campo + Colheita) — são as que levam custo para as safras
+  function horasRegistradasMaquina(patrimonioId){
     var h = horasUsoTotais(patrimonioId);
     state.operacoes.forEach(function(o){ (o.maquinas || []).forEach(function(m){ if(m.patrimonioId === patrimonioId) h += Number(m.horas) || 0; }); });
     return h;
   }
-  // Custo/hora real = custos pagos lançados na máquina ÷ horas de uso registradas
-  function custoHoraMaquina(patrimonioId){
-    var horas = horasTotaisMaquina(patrimonioId);
-    return horas > 0 ? custosDaMaquina(patrimonioId).valor / horas : 0;
+  function leiturasHorimetro(patrimonioId){
+    var it = state.patrimonio.find(function(x){ return x.id === patrimonioId; });
+    return ((it && it.horimetro) || []).slice().sort(function(a, b){ return (a.data || '').localeCompare(b.data || '') || (Number(a.leitura) - Number(b.leitura)); });
+  }
+  // Horas trabalhadas pelo horímetro = última leitura − primeira (precisa de 2 leituras)
+  function horasHorimetro(patrimonioId){
+    var ls = leiturasHorimetro(patrimonioId);
+    if(ls.length < 2) return 0;
+    return Math.max(Number(ls[ls.length - 1].leitura) - Number(ls[0].leitura), 0);
+  }
+  // Total de horas da máquina: o horímetro (quando houver) ou as horas registradas, o que for maior
+  function horasTotaisMaquina(patrimonioId){ return Math.max(horasHorimetro(patrimonioId), horasRegistradasMaquina(patrimonioId)); }
+  function custoHoraReferencia(patrimonioId){ var it = state.patrimonio.find(function(x){ return x.id === patrimonioId; }); return it ? Number(it.custoHoraReferencia) || 0 : 0; }
+  // Custo/hora: real (custos lançados na máquina ÷ horas) quando existir; senão o valor de referência do cadastro
+  function custoHoraMaquinaInfo(patrimonioId){
+    var horas = horasTotaisMaquina(patrimonioId), custos = custosDaMaquina(patrimonioId).valor;
+    if(custos > 0 && horas > 0) return {valor: custos / horas, tipo: 'real'};
+    var ref = custoHoraReferencia(patrimonioId);
+    if(ref > 0) return {valor: ref, tipo: 'referencia'};
+    return {valor: 0, tipo: ''};
+  }
+  function custoHoraMaquina(patrimonioId){ return custoHoraMaquinaInfo(patrimonioId).valor; }
+  // Parte dos custos da máquina que não foi levada às safras pelas horas registradas (vai para o rateio geral)
+  function fracaoNaoAlocadaMaquina(patrimonioId){
+    var tot = horasTotaisMaquina(patrimonioId);
+    if(tot <= 0) return 1;
+    if(custoHoraMaquinaInfo(patrimonioId).tipo !== 'real') return 1;
+    return Math.max(0, 1 - horasRegistradasMaquina(patrimonioId) / tot);
   }
   function custoMaquinasSafra(safraId){
     var usadas = {};
@@ -4539,6 +4607,7 @@
       // custo/hora projetado: custos da máquina ÷ (horas já registradas fora desta atividade + horas desta atividade)
       var custoHoraProjetado = function(mid){
         if(!mid) return 0;
+        if(horasHorimetro(mid) > 0 || custoHoraMaquinaInfo(mid).tipo !== 'real') return custoHoraMaquina(mid);
         var horasOutras = horasTotaisMaquina(mid) - (opOriginalMaq ? (opOriginalMaq.maquinas || []).filter(function(x){ return x.patrimonioId === mid; }).reduce(function(sm, x){ return sm + (Number(x.horas) || 0); }, 0) : 0);
         var horasAqui = r.maquinas.filter(function(x){ return x.patrimonioId === mid; }).reduce(function(sm, x){ return sm + (Number(x.horas) || 0); }, 0);
         var tot = horasOutras + horasAqui;
@@ -5749,15 +5818,15 @@
     var mapa = mapaSafrasAtivasPorMes();
     var porSafra = {}, naoAlocado = 0;
     var itens = [];
-    // custos gerais entram inteiros; de máquina, só a parte de máquinas SEM horas registradas
-    // (máquinas com horas já entram na safra pelo custo/hora real, via Diário de Campo e Colheita)
+    // custos gerais entram inteiros; de máquina, só a parte que as horas registradas não levaram às safras
+    // (ex.: máquina sem horas no Diário, ou horímetro marcando mais horas do que as registradas)
     var valorRateavel = function(r){
       var d = destinoEfetivo(r);
       if(d === 'geral') return Number(r.valor) || 0;
       if(d !== 'maquina') return 0;
       var ms = r.maquinasIds || [];
       if(!ms.length) return 0;
-      return ms.filter(function(mid){ return horasTotaisMaquina(mid) <= 0; }).length * (Number(r.valor) || 0) / ms.length;
+      return ms.reduce(function(sm, mid){ return sm + fracaoNaoAlocadaMaquina(mid); }, 0) * (Number(r.valor) || 0) / ms.length;
     };
     state.financeiro.forEach(function(f){ if(f.tipo === 'custo' && (f.status||'Pago') !== 'Pendente'){ var v = valorRateavel(f); if(v) itens.push({valor: v, data: f.data || f.vencimento || ''}); } });
     state.contasPagar.forEach(function(c){ if(c.status === 'Pago'){ var v = valorRateavel(c); if(v) itens.push({valor: v, data: c.dataPagamento || c.vencimento || ''}); } });
@@ -6067,15 +6136,15 @@
       html += '</tbody></table></div>';
     }
 
-    var maquinasComCusto = state.patrimonio.map(function(it){ var c = custosDaMaquina(it.id); return {it: it, valor: c.valor, qtd: c.qtd, horas: horasTotaisMaquina(it.id)}; }).filter(function(x){ return x.qtd > 0 || x.horas > 0; });
+    var maquinasComCusto = state.patrimonio.map(function(it){ var c = custosDaMaquina(it.id); return {it: it, valor: c.valor, qtd: c.qtd, horas: horasTotaisMaquina(it.id), horasReg: horasRegistradasMaquina(it.id), horim: horasHorimetro(it.id), ci: custoHoraMaquinaInfo(it.id)}; }).filter(function(x){ return x.qtd > 0 || x.horas > 0 || x.ci.valor > 0; });
     html += '<div class="section-title">Por máquina / equipamento</div>';
     if(!maquinasComCusto.length){
       html += '<div class="paper empty-state">Nenhum custo lançado com destino "Máquina / equipamento" ainda.</div>';
     } else {
-      html += '<div class="paper table-wrap"><table><thead><tr><th>Máquina / equipamento</th><th>Categoria</th><th>Lançamentos</th><th>Custos pagos</th><th>Horas de uso (Diário + Colheita)</th><th>Custo/hora</th></tr></thead><tbody>';
+      html += '<div class="paper table-wrap"><table><thead><tr><th>Máquina / equipamento</th><th>Categoria</th><th>Lançamentos</th><th>Custos pagos</th><th>Horas registradas (Diário + Colheita)</th><th>Horímetro</th><th>Custo/hora</th><th>Levado às safras</th></tr></thead><tbody>';
       maquinasComCusto.sort(function(a,b){ return b.valor - a.valor; }).forEach(function(x){
         html += '<tr><td>' + escapeHtml(x.it.nome) + '</td><td>' + escapeHtml(x.it.categoria || '—') + '</td><td class="num">' + x.qtd + '</td><td class="num cost">' + fmtBRL(x.valor) + '</td>';
-        html += '<td class="num">' + (x.horas > 0 ? fmtNum(x.horas) + ' h' : '—') + '</td><td class="num">' + (x.horas > 0 ? fmtBRL(x.valor / x.horas) : '—') + '</td></tr>';
+        html += '<td class="num">' + (x.horasReg > 0 ? fmtNum(x.horasReg) + ' h' : '—') + '</td><td class="num">' + (x.horim > 0 ? fmtNum(x.horim) + ' h' : '—') + '</td><td class="num">' + (x.ci.valor ? fmtBRL(x.ci.valor) + '<br><span style="font-size:11px; color:var(--ink-soft);">' + (x.ci.tipo === 'real' ? 'real' : 'referência') + '</span>' : '—') + '</td><td class="num">' + (x.horasReg && x.ci.valor ? fmtBRL(x.horasReg * x.ci.valor) : '—') + '</td></tr>';
       });
       html += '</tbody></table></div>';
     }
@@ -7424,9 +7493,11 @@
 
 
   function recalcularValorPorQuantidade(){
-    var qtdEl = document.getElementById('f-quantidade');
-    var valorUnitEl = document.getElementById('f-valorUnitario');
-    var valorEl = document.getElementById('f-valor');
+    var formQ = document.getElementById('form-financeiro');
+    if(!formQ) return;
+    var qtdEl = formQ.querySelector('[name="quantidade"]');
+    var valorUnitEl = formQ.querySelector('[name="valorUnitario"]');
+    var valorEl = formQ.querySelector('[name="valor"]');
     if(!qtdEl || !valorUnitEl || !valorEl) return;
     var qtd = parseFloat(qtdEl.value) || 0;
     var valorUnit = parseFloat(valorUnitEl.value) || 0;
@@ -8902,6 +8973,24 @@
       calagemVDesejado = cr.vDesejado; calagemPrnt = cr.prnt;
       saveKey('configUnidades', state.configUnidades); soloRecomRascunho = null; renderAll(); alert('Critérios salvos. Valem para os próximos cálculos — as recomendações já salvas não mudam.'); return;
     }
+    if(action === 'abrir-horimetro'){ patrimonioHorimetroId = patrimonioHorimetroId === id ? null : id; renderPatrimonio(); var hEl = document.getElementById('hor-leitura'); if(hEl){ hEl.scrollIntoView({behavior:'smooth', block:'center'}); hEl.focus(); } return; }
+    if(action === 'fechar-horimetro'){ patrimonioHorimetroId = null; renderPatrimonio(); return; }
+    if(action === 'horimetro-adicionar'){
+      var itH = state.patrimonio.find(function(x){ return x.id === patrimonioHorimetroId; }); if(!itH) return;
+      var dH = (document.getElementById('hor-data') || {}).value || '', lH = parseFloat((document.getElementById('hor-leitura') || {}).value);
+      if(!dH){ alert('Informe a data.'); return; }
+      if(!(lH >= 0)){ alert('Informe a leitura do horímetro.'); return; }
+      var antH = leiturasHorimetro(itH.id).filter(function(l){ return (l.data || '') <= dH; }).pop();
+      if(antH && lH < Number(antH.leitura) && !window.confirm('A leitura (' + fmtNum(lH) + ' h) é menor que a de ' + fmtDate(antH.data) + ' (' + fmtNum(antH.leitura) + ' h). O horímetro foi trocado ou zerado? Salvar mesmo assim?')) return;
+      if(!Array.isArray(itH.horimetro)) itH.horimetro = [];
+      itH.horimetro.push({id: uid(), data: dH, leitura: lH});
+      saveKey('patrimonio', state.patrimonio); renderAll(); return;
+    }
+    if(action === 'horimetro-remover'){
+      var itR = state.patrimonio.find(function(x){ return x.id === patrimonioHorimetroId; }); if(!itR) return;
+      itR.horimetro = (itR.horimetro || []).filter(function(l){ return l.id !== id; });
+      saveKey('patrimonio', state.patrimonio); renderAll(); return;
+    }
     if(action === 'recom-trocar-analise'){ soloRecomId = id; soloRecomRascunho = null; rerenderRecomSolo(); return; }
     if(action === 'recom-sugerir-calagem'){
       lerRecomSoloDoDom();
@@ -9147,6 +9236,32 @@
       ['produtos','compras','operacoes','ajustesEstoque','sefazItensRevisao'].forEach(function(k){ saveKey(k, state[k]); });
       recalcularCustoAplicacoesProduto(idManter);
       renderAll(); alert('Produtos juntados.'); return;
+    }
+    if(action === 'dash-abrir-pagamento'){ dashPagandoChave = dashPagandoChave === btn.dataset.chave ? null : btn.dataset.chave; renderPainel(); var dpd = document.getElementById('dash-pag-data'); if(dpd) dpd.focus(); return; }
+    if(action === 'dash-cancelar-pagamento'){ dashPagandoChave = null; renderPainel(); return; }
+    if(action === 'dash-confirmar-pagamento'){
+      var chDp = btn.dataset.chave, tipoDp = chDp.split(':')[0], idDp = chDp.slice(tipoDp.length + 1);
+      var dataDp = (document.getElementById('dash-pag-data') || {}).value || '';
+      var valorDp = parseFloat((document.getElementById('dash-pag-valor') || {}).value) || 0;
+      if(!dataDp){ alert('Informe a data.'); return; }
+      if(periodoFechado(dataDp)){ alert('O período ' + dataDp.slice(0,7) + ' está fechado. Reabra-o na aba Financeiro antes.'); return; }
+      if(valorDp <= 0){ alert('Informe o valor.'); return; }
+      if(tipoDp === 'cp'){
+        var cpDp = state.contasPagar.find(function(x){ return x.id === idDp; }); if(!cpDp) return;
+        if(valorDp > (Number(cpDp.valor) || 0) + 0.004 && !window.confirm('O valor pago (' + fmtBRL(valorDp) + ') é maior que o da conta (' + fmtBRL(cpDp.valor) + '). Registrar mesmo assim (juros/multa)?')) return;
+        pagarContaPagar(idDp, dataDp, valorDp);
+      } else if(tipoDp === 'cr'){
+        var crDp = state.contasReceber.find(function(x){ return x.id === idDp; }); if(!crDp) return;
+        crDp.status = 'Recebido'; crDp.dataRecebimento = dataDp; saveKey('contasReceber', state.contasReceber);
+      } else if(tipoDp === 'fin'){
+        var fDp = state.financeiro.find(function(x){ return x.id === idDp; }); if(!fDp) return;
+        if(Math.abs(valorDp - (Number(fDp.valor) || 0)) > 0.004){
+          if(fDp.partes && fDp.partes.length && Number(fDp.valor) > 0){ var frDp = fDp.partes.map(function(pt){ return (Number(pt.valor) || 0) / Number(fDp.valor); }); var vsDp = dividirValor(valorDp, frDp); fDp.partes = fDp.partes.map(function(pt, i){ return Object.assign({}, pt, {valor: vsDp[i]}); }); }
+          fDp.valor = valorDp;
+        }
+        fDp.status = 'Pago'; fDp.data = dataDp; saveKey('financeiro', state.financeiro);
+      }
+      dashPagandoChave = null; renderAll(); return;
     }
     if(action === 'ir-pendencia'){
       var filtroPend = btn.dataset.filtro;
