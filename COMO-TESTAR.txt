@@ -1,0 +1,26 @@
+SITE DE TESTE DO AGRO-ERP
+=========================
+
+Para testar mudanças antes de publicar para todo mundo, o sistema tem um "site de teste".
+Ele usa os MESMOS arquivos, mas guarda os dados em um lugar separado: nada do que você
+fizer nele mexe nos dados reais (seus ou dos seus amigos).
+
+CONFIGURAR (uma vez só)
+-----------------------
+1. Rode o teste.bat uma vez (ele cria a branch "teste" no GitHub).
+2. No painel do Netlify: Site configuration > Build & deploy > Branches and deploy contexts
+   > Branch deploys > "Let me add individual branches" > escreva: teste > Save.
+3. Rode o teste.bat de novo. Em 1-2 minutos o site de teste fica em:
+      https://teste--NOME-DO-SEU-SITE.netlify.app
+   (o mesmo endereço do site, com "teste--" na frente)
+
+USAR NO DIA A DIA
+-----------------
+1. Depois de receber arquivos novos na pasta, rode o teste.bat.
+2. Abra o site de teste. Ele mostra uma faixa vermelha "SITE DE TESTE".
+   Na primeira vez ele está vazio: crie uma conta de administrador de teste
+   (pode ser o mesmo e-mail) e, se quiser, restaure um backup em Configurações
+   para testar com dados parecidos com os reais.
+3. Se estiver tudo certo, rode o up.bat para publicar no site de verdade.
+
+Observação: o certificado digital do site de teste também é separado.

@@ -1,5 +1,5 @@
 import { lerCertificadoDescriptografado } from "./certificado.mjs";
-import { exigirLogin, naoAutorizado } from "../lib/auth-comum.mjs";
+import { exigirLogin, naoAutorizado, configurarAmbiente } from "../lib/auth-comum.mjs";
 import { UF_CODIGO, abrirPfx, chamarSoap, extrairTag, respostaJson, assinarElemento, dataHoraBrasilia } from "../lib/sefaz-comum.mjs";
 
 // Registra o evento "Ciência da Operação" (210210) nas notas em que você é o destinatário.
@@ -33,10 +33,12 @@ export function montarEnvEvento({ tpAmb, documento, chaves, key, certBase64, dhE
   return `<envEvento xmlns="http://www.portalfiscal.inf.br/nfe" versao="1.00"><idLote>${idLote}</idLote>${eventos}</envEvento>`;
 }
 
-export default async (req) => {
+export default async (req, context) => {
+  configurarAmbiente(req, context);
   if (req.method === "OPTIONS") return respostaJson({}, 204);
   if (req.method !== "POST") return respostaJson({ error: "Method Not Allowed" }, 405);
-  if (!(await exigirLogin(req))) return naoAutorizado();
+  const usuarioLogado = await exigirLogin(req);
+  if (!usuarioLogado) return naoAutorizado();
   try {
     const { ambiente, documento, chaves } = (await req.json()) || {};
     const doc = String(documento || "").replace(/\D/g, "");
@@ -45,7 +47,7 @@ export default async (req) => {
     if (!lista.length) return respostaJson({ error: "Nenhuma chave de acesso válida (44 dígitos)." }, 400);
     if (lista.length > 20) return respostaJson({ error: "No máximo 20 notas por vez." }, 400);
 
-    const cert = await lerCertificadoDescriptografado();
+    const cert = await lerCertificadoDescriptografado(usuarioLogado);
     if (!cert) return respostaJson({ error: "Nenhum certificado configurado ainda." }, 400);
     let pfx;
     try { pfx = abrirPfx(Buffer.from(cert.certBase64, "base64"), cert.senha); }

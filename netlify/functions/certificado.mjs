@@ -1,7 +1,7 @@
 import { getStore } from "@netlify/blobs";
 import crypto from "node:crypto";
 import forge from "node-forge";
-import { exigirLogin, naoAutorizado } from "../lib/auth-comum.mjs";
+import { exigirLogin, naoAutorizado, configurarAmbiente, nomeStore, chaveCertificado } from "../lib/auth-comum.mjs";
 
 // Netlify Function que guarda o certificado digital A1 (arquivo .pfx +
 // senha) de forma CRIPTOGRAFADA no Netlify Blobs — nunca em texto puro.
@@ -20,7 +20,7 @@ import { exigirLogin, naoAutorizado } from "../lib/auth-comum.mjs";
 // DELETE /.netlify/functions/certificado         -> remove o certificado guardado
 
 const STORE_NAME = "certificados";
-const BLOB_KEY = "certificado-a1";
+// Cada conta tem o próprio certificado (chave por usuário — veja chaveCertificado)
 
 function getEncryptionKey() {
   const raw = process.env.CERT_ENCRYPTION_KEY;
@@ -56,7 +56,8 @@ function decrypt(payload, key) {
   return decrypted.toString("utf8");
 }
 
-export default async (req) => {
+export default async (req, context) => {
+  configurarAmbiente(req, context);
   const cors = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
@@ -66,9 +67,11 @@ export default async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: cors });
   }
-  if (!(await exigirLogin(req))) return naoAutorizado();
+  const usuarioLogado = await exigirLogin(req);
+  if (!usuarioLogado) return naoAutorizado();
+  const BLOB_KEY = chaveCertificado(usuarioLogado);
 
-  const store = getStore({ name: STORE_NAME, consistency: "strong" });
+  const store = getStore({ name: nomeStore(STORE_NAME), consistency: "strong" });
   const key = getEncryptionKey();
 
   if (req.method === "GET") {
@@ -156,11 +159,11 @@ export default async (req) => {
 // Exportada só para uso futuro (dentro de outra function server-side,
 // nunca chamada a partir do navegador): descriptografa o certificado
 // guardado, quando chegar a hora de falar de verdade com a SEFAZ.
-export async function lerCertificadoDescriptografado() {
+export async function lerCertificadoDescriptografado(usuario) {
   const key = getEncryptionKey();
   if (!key) throw new Error("CERT_ENCRYPTION_KEY não configurada.");
-  const store = getStore({ name: STORE_NAME, consistency: "strong" });
-  const registro = await store.get(BLOB_KEY, { type: "json" });
+  const store = getStore({ name: nomeStore(STORE_NAME), consistency: "strong" });
+  const registro = await store.get(chaveCertificado(usuario), { type: "json" });
   if (!registro) return null;
   const plano = decrypt(registro, key);
   return JSON.parse(plano); // { certBase64, senha }

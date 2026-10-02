@@ -397,12 +397,14 @@
       <button class="nav-btn" data-tab="ajuda">❓ Ajuda</button>
     </nav>
     <div class="sidebar-footer">
-      Dados compartilhados com quem acessa este app.<br>
+      <span id="usuario-logado"></span><br>
       <button type="button" class="auth-link" data-action="lock-app" style="color:#9FAE93;">Sair</button>
     </div>
   </aside>
 
   <main>
+    <div id="faixa-ambiente-teste" style="display:none; background:#A23E2E; color:#fff; padding:6px 14px; border-radius:6px; margin-bottom:10px; font-size:13px; font-weight:600;">🧪 SITE DE TESTE — os dados aqui são separados dos reais. Pode testar à vontade.</div>
+    <div id="faixa-compartilhada" style="display:none; background:#EFE6C8; border:1px solid var(--paper-line); padding:7px 14px; border-radius:6px; margin-bottom:10px; font-size:13px;"></div>
     <div class="topbar">
       <div>
         <h1 id="page-title" style="display:inline;">Dashboard</h1> <button type="button" id="btn-ajuda-tela" data-action="ajuda-tela" title="Como usar esta tela" style="vertical-align:middle; margin-left:6px; width:26px; height:26px; border-radius:50%; border:1px solid var(--paper-line); background:var(--paper); color:var(--ink); cursor:pointer; font-weight:700; font-family:inherit;">?</button>
@@ -1129,6 +1131,21 @@
   var AUTH_TOKEN_KEY = 'fazenda-auth-token';
   function lerToken(){ try{ return window.localStorage.getItem(AUTH_TOKEN_KEY) || ''; }catch(e){ return ''; } }
   function gravarToken(t){ try{ if(t) window.localStorage.setItem(AUTH_TOKEN_KEY, t); else window.localStorage.removeItem(AUTH_TOKEN_KEY); }catch(e){} }
+  var AUTH_PERFIL_KEY = 'fazenda-auth-perfil';
+  function lerPerfil(){ try{ return JSON.parse(window.localStorage.getItem(AUTH_PERFIL_KEY) || 'null'); }catch(e){ return null; } }
+  function gravarPerfil(p){ try{ if(p) window.localStorage.setItem(AUTH_PERFIL_KEY, JSON.stringify(p)); else window.localStorage.removeItem(AUTH_PERFIL_KEY); }catch(e){} }
+  function perfilEhAdmin(){ var p = lerPerfil(); return !hasNetlifyBlobs || !!(p && p.admin); }
+  function marcarAmbienteTeste(teste){
+    try{ if(teste) window.sessionStorage.setItem('fazenda-ambiente-teste', '1'); }catch(e){}
+    var ativo = teste; try{ ativo = ativo || window.sessionStorage.getItem('fazenda-ambiente-teste') === '1'; }catch(e){}
+    var f = document.getElementById('faixa-ambiente-teste'); if(f) f.style.display = ativo ? 'block' : 'none';
+    var g = document.querySelector('#gate-screen .auth-card'); if(ativo && g && !document.getElementById('gate-faixa-teste')){ var x = document.createElement('div'); x.id = 'gate-faixa-teste'; x.style.cssText = 'background:#A23E2E; color:#fff; padding:5px 10px; border-radius:6px; font-size:12px; font-weight:600; margin-bottom:10px; text-align:center;'; x.textContent = '🧪 SITE DE TESTE — dados separados dos reais'; g.parentNode.insertBefore(x, g); }
+  }
+  function mostrarUsuarioLogado(){
+    var el = document.getElementById('usuario-logado'); if(!el) return;
+    var p = hasNetlifyBlobs ? lerPerfil() : null;
+    el.innerHTML = p ? '👤 ' + escapeHtml(p.nome || p.email) + (p.admin ? ' · administrador' : '') + '<br><span style="font-size:10.5px;">' + escapeHtml(p.email) + '</span>' : 'Dados guardados neste navegador.';
+  }
   var sessaoExpiradaAvisada = false;
   // fetch para as functions do Netlify levando o token; se o servidor recusar (401), volta para a tela de login
   function apiFetch(url, opcoes){
@@ -1139,7 +1156,7 @@
     opcoes.headers = headers;
     return fetch(url, opcoes).then(function(res){
       if(res.status === 401 && url.indexOf('/functions/auth') === -1){
-        gravarToken('');
+        gravarToken(''); gravarPerfil(null);
         if(!sessaoExpiradaAvisada){ sessaoExpiradaAvisada = true; currentWorkspaceId = null; showGateScreen('Sua sessão expirou. Entre de novo.'); }
       }
       return res;
@@ -1231,7 +1248,24 @@
   function loadKey(key){
     return rawGet(currentWorkspaceId + '::' + key).then(function(v){ return v || []; });
   }
+  var CHAVES_PAPEL_CAMPO = ['operacoes', 'produtos', 'chuvas', 'imagensCampo'];
+  var currentWorkspaceInfo = null; // {id, nome, compartilhado, papel, dono}
+  var avisoSomenteLeitura = 0, carregandoWorkspace = false;
+  function papelAtual(){ return currentWorkspaceInfo && currentWorkspaceInfo.compartilhado ? currentWorkspaceInfo.papel : 'dono'; }
+  function podeGravarChave(key){
+    var pa = papelAtual();
+    if(pa === 'leitura') return false;
+    if(pa === 'campo') return CHAVES_PAPEL_CAMPO.indexOf(key) !== -1;
+    return true;
+  }
   function saveKey(key, arr){
+    if(!podeGravarChave(key)){
+      if(!carregandoWorkspace && Date.now() - avisoSomenteLeitura > 4000){
+        avisoSomenteLeitura = Date.now();
+        setTimeout(function(){ alert(papelAtual() === 'leitura' ? 'Você só pode visualizar esta propriedade — a alteração não foi salva.' : 'Nesta propriedade você só pode lançar no Diário de Campo — essa alteração não foi salva.'); }, 50);
+      }
+      return Promise.resolve();
+    }
     return rawSet(currentWorkspaceId + '::' + key, arr);
   }
 
@@ -1252,6 +1286,18 @@
   }
 
   function loadWorkspaces(){ return loadGlobal('workspaces').then(function(v){ return Array.isArray(v) ? v : []; }); }
+  var ROTULO_PAPEL = {editor:'pode editar tudo', campo:'só pode lançar no Diário de Campo', leitura:'só pode visualizar'};
+  // Propriedades próprias + as que outras pessoas compartilharam comigo
+  function loadWorkspacesComCompartilhadas(){
+    return loadWorkspaces().then(function(list){
+      if(!hasNetlifyBlobs) return list;
+      return authPost({acao:'compartilhados-comigo'}).then(function(d){
+        var sh = (d && d.compartilhados) || [];
+        return list.concat(sh.map(function(c){ return {id: 'sh:' + c.id, nome: c.wsNome, compartilhado: true, papel: c.papel, dono: c.dono}; }));
+      }).catch(function(){ return list; });
+    });
+  }
+  var listaWorkspacesAtual = [];
   function saveWorkspaces(list){ return saveGlobal('workspaces', list); }
 
   function migrateLegacyIfNeeded(){
@@ -1298,22 +1344,52 @@
   }
   function showGateScreen(errorMsg, modo){
     var erro = errorMsg ? '<div class="auth-error">' + escapeHtml(errorMsg) + '</div>' : '';
-    if(modo === 'recuperar'){
-      mostrarGateHtml('<h2>Recuperar acesso</h2><p>Digite o <strong>código de recuperação</strong> (é o valor da variável APP_RECOVERY_CODE — ou, se ela não existir, da CERT_ENCRYPTION_KEY — no painel do Netlify: Site configuration → Environment variables) e a nova senha.</p>'
-        + '<form id="form-gate" data-mode="recuperar"><div class="field"><label>Código de recuperação</label><input type="password" name="codigo" required></div>'
-        + '<div class="field"><label>Nova senha</label><input type="password" name="pass1" required></div><div class="field"><label>Confirmar nova senha</label><input type="password" name="pass2" required></div>'
+    var campo = function(rot, nome, tipo, extra){ return '<div class="field"><label>' + rot + '</label><input type="' + (tipo || 'text') + '" name="' + nome + '"' + (extra || '') + '></div>'; };
+    if(hasNetlifyBlobs && modo === 'recuperar'){
+      mostrarGateHtml('<h2>Recuperar acesso do administrador</h2><p>Digite seu e-mail de administrador, o <strong>código de recuperação</strong> (valor da variável APP_RECOVERY_CODE — ou, se ela não existir, da CERT_ENCRYPTION_KEY — no painel do Netlify: Site configuration → Environment variables) e a nova senha.</p>'
+        + '<form id="form-gate" data-mode="recuperar">' + campo('E-mail', 'email', 'email', ' required autocomplete="username"') + campo('Código de recuperação', 'codigo', 'password', ' required')
+        + campo('Nova senha (mínimo 6 caracteres)', 'pass1', 'password', ' required autocomplete="new-password"') + campo('Confirmar nova senha', 'pass2', 'password', ' required autocomplete="new-password"')
         + erro + '<button type="submit" class="btn">Trocar senha e entrar</button></form><button type="button" class="auth-link" data-action="gate-voltar-login">← Voltar</button>');
       return;
     }
-    var montar = function(configurada, servidor){
+    if(hasNetlifyBlobs && modo === 'esqueci'){
+      mostrarGateHtml('<h2>Esqueci a senha</h2><p>Peça ao administrador do sistema para criar uma senha nova para você.</p><p style="font-size:12.5px;">Se você é o administrador, use o código de recuperação do Netlify.</p>'
+        + '<button type="button" class="btn" data-action="gate-modo" data-modo="recuperar">Sou o administrador</button> <button type="button" class="auth-link" data-action="gate-voltar-login">← Voltar</button>');
+      return;
+    }
+    if(hasNetlifyBlobs && modo === 'cadastro'){
+      mostrarGateHtml('<h2>Criar minha conta</h2><p>Use o código de convite que você recebeu. Seus dados ficam separados dos de qualquer outra pessoa.</p>'
+        + '<form id="form-gate" data-mode="cadastro">' + campo('Código do convite', 'codigo', 'text', ' required placeholder="Ex: ABCD-2345" style="text-transform:uppercase;"')
+        + campo('Seu nome', 'nome', 'text', ' required autocomplete="name"') + campo('E-mail (vai ser seu login)', 'email', 'email', ' required autocomplete="username"')
+        + campo('Senha (mínimo 6 caracteres)', 'pass1', 'password', ' required autocomplete="new-password"') + campo('Confirmar senha', 'pass2', 'password', ' required autocomplete="new-password"')
+        + '<label style="display:flex; gap:8px; align-items:flex-start; font-size:12.5px; margin:4px 0 12px;"><input type="checkbox" name="aceite" value="1" required style="margin-top:2px;"> <span>Li e aceito os <a href="#" data-action="ver-termos">termos de uso e privacidade</a>.</span></label>'
+        + erro + '<button type="submit" class="btn">Criar conta e entrar</button></form><button type="button" class="auth-link" data-action="gate-voltar-login">← Já tenho conta</button>');
+      return;
+    }
+    var montar = function(info, servidor){
       var html = '';
-      if(!configurada){
-        html += '<h2>Defina uma senha de acesso</h2>';
-        html += '<p>' + (servidor ? 'A senha fica guardada só no servidor, criptografada. Todos que usam o sistema entram com ela.' : 'Modo sem servidor (só neste navegador): é apenas um filtro simples contra acessos casuais.') + '</p>';
-        html += '<form id="form-gate" data-mode="setup">';
-        html += '<div class="field"><label for="gate-pass1">Nova senha</label><input type="password" id="gate-pass1" name="pass1" required></div>';
-        html += '<div class="field"><label for="gate-pass2">Confirmar senha</label><input type="password" id="gate-pass2" name="pass2" required></div>';
-        html += erro + '<button type="submit" class="btn">Definir senha e entrar</button></form>';
+      if(!info.configurada){
+        if(servidor){
+          html += '<h2>Criar a conta do administrador</h2><p>Esta é a primeira conta do sistema. Depois você convida outras pessoas em Configurações.</p>';
+          html += '<form id="form-gate" data-mode="setup">' + campo('Seu nome', 'nome', 'text', ' required') + campo('E-mail (vai ser seu login)', 'email', 'email', ' required autocomplete="username"')
+            + campo('Senha (mínimo 6 caracteres)', 'pass1', 'password', ' required autocomplete="new-password"') + campo('Confirmar senha', 'pass2', 'password', ' required autocomplete="new-password"');
+          html += erro + '<button type="submit" class="btn">Criar conta e entrar</button></form>';
+        } else {
+          html += '<h2>Defina uma senha de acesso</h2><p>Modo sem servidor (só neste navegador): é apenas um filtro simples contra acessos casuais.</p>';
+          html += '<form id="form-gate" data-mode="setup">';
+          html += '<div class="field"><label for="gate-pass1">Nova senha</label><input type="password" id="gate-pass1" name="pass1" required></div>';
+          html += '<div class="field"><label for="gate-pass2">Confirmar senha</label><input type="password" id="gate-pass2" name="pass2" required></div>';
+          html += erro + '<button type="submit" class="btn">Definir senha e entrar</button></form>';
+        }
+      } else if(servidor){
+        html += '<h2>Minha Fazenda</h2>';
+        if(info.migrarSenhaUnica) html += '<p style="background:#EFE6C8; padding:8px 10px; border-radius:6px; font-size:12.5px;"><strong>Atualização:</strong> agora cada pessoa entra com e-mail e senha. Digite o <strong>seu e-mail</strong> (ele passa a ser o seu login) e a <strong>senha de sempre</strong>. Você vira o administrador e seus dados continuam todos aqui.</p>';
+        else html += '<p>Entre com seu e-mail e senha.</p>';
+        html += '<form id="form-gate" data-mode="login">' + (info.migrarSenhaUnica ? campo('Seu nome', 'nome', 'text', ' autocomplete="name"') : '')
+          + '<div class="field"><label for="gate-email">E-mail</label><input type="email" id="gate-email" name="email" required autocomplete="username"></div>'
+          + '<div class="field"><label for="gate-pass">Senha</label><input type="password" id="gate-pass" name="pass" required autocomplete="current-password"></div>';
+        html += erro + '<button type="submit" class="btn">Entrar</button></form>';
+        html += '<div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;"><button type="button" class="auth-link" data-action="reset-password">Esqueci a senha</button>' + (info.migrarSenhaUnica ? '' : '<button type="button" class="auth-link" data-action="gate-modo" data-modo="cadastro">Tenho um convite</button>') + '</div>';
       } else {
         html += '<h2>Minha Fazenda</h2><p>Digite a senha de acesso.</p>';
         html += '<form id="form-gate" data-mode="login"><div class="field"><label for="gate-pass">Senha</label><input type="password" id="gate-pass" name="pass" required autofocus></div>';
@@ -1321,12 +1397,13 @@
         html += '<button type="button" class="auth-link" data-action="reset-password">Esqueci a senha</button>';
       }
       mostrarGateHtml(html);
+      var foco = document.querySelector('#form-gate input'); if(foco) try{ foco.focus(); }catch(e){}
     };
     if(hasNetlifyBlobs){
-      fetch('/.netlify/functions/auth').then(function(r){ return r.json(); }).then(function(d){ montar(!!d.configurada, true); })
-        .catch(function(){ montar(true, true); });
+      fetch('/.netlify/functions/auth').then(function(r){ return r.json(); }).then(function(d){ marcarAmbienteTeste(d && d.ambienteTeste); montar(d || {configurada:true}, true); })
+        .catch(function(){ montar({configurada:true}, true); });
     } else {
-      loadGlobal(PASS_KEY).then(function(pwd){ montar(!!pwd, false); });
+      loadGlobal(PASS_KEY).then(function(pwd){ montar({configurada: !!pwd}, false); });
     }
   }
   function authPost(corpo){
@@ -1341,6 +1418,8 @@
 
   function migrarLocalParaNuvemSePreciso(){
     if(!hasNetlifyBlobs) return Promise.resolve();
+    var pf = lerPerfil();
+    if(!pf || !pf.admin) return Promise.resolve(); // dados antigos deste navegador só vão para a conta do administrador
     return blobsGet('global::workspaces').then(function(blobsWs){
       if(blobsWs && blobsWs.length) return;
       var lsWs = null;
@@ -1351,7 +1430,11 @@
   function afterUnlock(){
     document.getElementById('gate-screen').style.display = 'none';
     sessaoExpiradaAvisada = false;
-    migrarLocalParaNuvemSePreciso().then(function(){ return loadWorkspaces(); }).then(function(list){
+    mostrarUsuarioLogado();
+    if(hasNetlifyBlobs) fetch('/.netlify/functions/auth').then(function(r){ return r.json(); }).then(function(d){ marcarAmbienteTeste(d && d.ambienteTeste); }).catch(function(){});
+    if(hasNetlifyBlobs) authPost({acao:'eu'}).then(function(d){ if(d && d.usuario){ gravarPerfil(d.usuario); mostrarUsuarioLogado(); } }).catch(function(){});
+    migrarLocalParaNuvemSePreciso().then(function(){ return loadWorkspacesComCompartilhadas(); }).then(function(list){
+      listaWorkspacesAtual = list;
       if(list.length === 1){ selectWorkspace(list[0].id); return; }
       if(list.length > 1){ showWorkspaceScreen(list); return; }
       migrateLegacyIfNeeded().then(function(migratedId){
@@ -1364,8 +1447,9 @@
     var el = document.querySelector('#workspace-screen .auth-card');
     var html = '<h2>' + (list.length ? 'Selecione a propriedade' : 'Vamos começar') + '</h2>';
     html += '<p>' + (list.length ? 'Cada propriedade/cliente tem seus próprios dados, separados dos demais.' : 'Dê um nome para a primeira propriedade ou cliente que você vai gerenciar aqui.') + '</p>';
+    listaWorkspacesAtual = list;
     list.forEach(function(ws){
-      html += '<div class="workspace-item" data-action="select-workspace" data-id="' + ws.id + '">' + escapeHtml(ws.nome) + '</div>';
+      html += '<div class="workspace-item" data-action="select-workspace" data-id="' + escapeHtml(ws.id) + '">' + escapeHtml(ws.nome) + (ws.compartilhado ? '<br><span style="font-size:11.5px; color:var(--ink-soft);">compartilhada por ' + escapeHtml((ws.dono && (ws.dono.nome || ws.dono.email)) || '') + ' · ' + ROTULO_PAPEL[ws.papel] + '</span>' : '') + '</div>';
     });
     html += '<form id="form-workspace" style="margin-top:' + (list.length ? '16px' : '0') + ';">';
     html += '<div class="field"><label for="ws-nome">' + (list.length ? 'Nova propriedade/cliente' : 'Nome da propriedade/cliente') + '</label><input type="text" id="ws-nome" name="nome" placeholder="Ex: Fazenda Santa Luzia" required></div>';
@@ -1376,8 +1460,26 @@
     document.getElementById('app').style.display = 'none';
   }
 
+  function aplicarPapelNaTela(){
+    var pa = papelAtual(), info = currentWorkspaceInfo;
+    var faixa = document.getElementById('faixa-compartilhada');
+    if(faixa){
+      if(info && info.compartilhado){
+        faixa.style.display = 'block';
+        faixa.innerHTML = '🤝 Propriedade <strong>' + escapeHtml(info.nome) + '</strong>, compartilhada por ' + escapeHtml((info.dono && (info.dono.nome || info.dono.email)) || '') + ' — você ' + ROTULO_PAPEL[pa] + '.';
+      } else faixa.style.display = 'none';
+    }
+    // papel "campo": só Diário de Campo, Produtos (estoque) e Ajuda
+    var permitidasCampo = ['operacoes', 'produtos', 'ajuda', 'configuracoes'];
+    document.querySelectorAll('#nav .nav-btn').forEach(function(b){ b.style.display = (pa === 'campo' && permitidasCampo.indexOf(b.dataset.tab) === -1) ? 'none' : ''; });
+    document.querySelectorAll('#nav .nav-group-label').forEach(function(l){ l.style.visibility = pa === 'campo' ? 'hidden' : ''; });
+    if(pa === 'campo') switchTab('operacoes');
+  }
   function selectWorkspace(id){
     currentWorkspaceId = id;
+    currentWorkspaceInfo = (listaWorkspacesAtual || []).find(function(w){ return w.id === id; }) || {id: id, nome: '', compartilhado: id.indexOf('sh:') === 0, papel: 'leitura'};
+    carregandoWorkspace = true; // não avisar durante o carregamento (ajustes automáticos que só o dono grava)
+    setTimeout(aplicarPapelNaTela, 0);
     document.getElementById('workspace-screen').style.display = 'none';
     document.getElementById('app').style.display = 'grid';
     init();
@@ -1659,6 +1761,7 @@
         })();
         if(hasCloudStorage || hasLocalStorage || hasNetlifyBlobs) loading.classList.add('hidden');
         renderAll();
+        setTimeout(function(){ carregandoWorkspace = false; }, 300);
       })
       .catch(function(err){ console.error('Falha ao iniciar o app', err); renderAll(); });
   }
@@ -2124,8 +2227,8 @@
       'O botão 📄 PDF na Rentabilidade gera o relatório de custo de produção da lavoura para imprimir ou salvar.'
     ]},
     {id:'backup', titulo:'Backup e segurança', passos:[
-      'Os dados ficam na nuvem (Netlify) e só abrem com a senha. Em cada aparelho você entra uma vez; a sessão dura 30 dias.',
-      'Troque a senha em <b>Configurações</b>. Esqueceu? "Esqueci a senha" pede o código de recuperação (a chave guardada no painel da Netlify).',
+      'Os dados ficam na nuvem (Netlify), separados por conta: cada pessoa entra com o próprio e-mail e senha e só vê os próprios dados. Em cada aparelho você entra uma vez; a sessão dura 30 dias.',
+      'Troque a senha em <b>Configurações</b>. Esqueceu? O administrador cria uma nova; o próprio administrador usa "Esqueci a senha → Sou o administrador" com o código de recuperação do Netlify.',
       'Baixe um <b>backup completo (.json)</b> de vez em quando em Configurações e guarde fora do computador. Não coloque esse arquivo no GitHub.'
     ]}
   ];
@@ -2156,7 +2259,7 @@
     equipe: {t:'Funcionários', txt:'Equipe da propriedade; aparece como responsável no Diário e nos lançamentos de mão de obra.'},
     patrimonio: {t:'Máquinas e Patrimônio', txt:'Máquinas, veículos e benfeitorias com valor, ano e vida útil (depreciação). Custos lançados com destino "Máquina" + horas do Diário e da Colheita dão o custo/hora real de cada máquina. Sem custo lançado, vale o "Custo/hora de referência" do cadastro. "⏱️ Horímetro" guarda as leituras: o total de horas passa a ser o do horímetro, e as horas não registradas no Diário vão para o rateio geral.'},
     agro50: {t:'AGRO5.0', txt:'Chuva (pluviometria), análise hídrica, análises de solo, imagens de campo, alertas e rastreabilidade.'},
-    configuracoes: {t:'Configurações', txt:'Troca de senha, backup completo (baixar e restaurar) e troca de propriedade/cliente.'}
+    configuracoes: {t:'Configurações', txt:'Sua conta (nome, senha, termos e exclusão da conta), backup completo (baixar e restaurar), certificado digital para a SEFAZ, troca de propriedade e <b>Compartilhar esta propriedade</b>: dê acesso a outra pessoa que já tem conta, escolhendo se ela pode editar tudo, só lançar no Diário de Campo ou só visualizar. O administrador vê também <b>Usuários e convites</b>: gerar convite, desativar conta e criar senha provisória para quem esqueceu.'}
   };
   function renderAjuda(){
     var el = document.getElementById('tab-ajuda');
@@ -2231,6 +2334,29 @@
   }
 
   /* ---------------- Dashboard ---------------- */
+  function primeirosPassosHtml(){
+    if(papelAtual() !== 'dono') return '';
+    try{ if(window.localStorage.getItem('fazenda-onboarding-ok:' + currentWorkspaceId) === '1') return ''; }catch(e){}
+    var passos = [
+      {ok: state.propriedades.length > 0, tab:'propriedades', txt:'Cadastre a propriedade (nome e área)'},
+      {ok: state.talhoes.length > 0, tab:'talhoes', txt:'Cadastre os talhões com a área em hectares'},
+      {ok: state.culturas.length > 0, tab:'culturas', txt:'Cadastre as culturas', acao:'onboarding-culturas', rotAcao:'Adicionar soja, milho, café, trigo e feijão'},
+      {ok: state.patrimonio.length > 0, tab:'patrimonio', txt:'Cadastre máquinas e equipamentos (opcional)'},
+      {ok: state.produtos.length > 0, tab:'produtos', txt:'Cadastre os insumos ou importe uma nota (XML)'},
+      {ok: (state.lavouras || []).length > 0, tab:'safras', txt:'Crie a lavoura do ano (cultura + ano agrícola + talhões)'},
+      {ok: state.financeiro.length > 0 || state.contasPagar.length > 0, tab:'financeiro', txt:'Faça o primeiro lançamento financeiro'}
+    ];
+    var feitos = passos.filter(function(p){ return p.ok; }).length;
+    if(feitos === passos.length) return '';
+    var h = '<div class="paper" style="padding:14px 18px; margin-bottom:18px; border-left:4px solid var(--accent);"><div style="display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:8px;"><div style="font-weight:600;">🚀 Primeiros passos (' + feitos + ' de ' + passos.length + ')</div><button type="button" class="auth-link" data-action="onboarding-dispensar" style="font-size:12px;">Não mostrar mais</button></div>';
+    passos.forEach(function(p){
+      h += '<div style="display:flex; gap:10px; align-items:center; padding:5px 0; font-size:13px; border-top:1px dashed var(--paper-line);"><span style="width:20px;">' + (p.ok ? '✅' : '⬜') + '</span><span style="flex:1;' + (p.ok ? ' color:var(--ink-soft); text-decoration:line-through;' : '') + '">' + escapeHtml(p.txt) + '</span>';
+      if(!p.ok) h += (p.acao ? '<button type="button" class="btn-edit" data-action="' + p.acao + '">' + escapeHtml(p.rotAcao) + '</button>' : '') + '<button type="button" class="btn-edit" data-action="onboarding-ir" data-tab="' + p.tab + '">abrir →</button>';
+      h += '</div>';
+    });
+    h += '<p style="font-size:11.5px; color:var(--ink-soft); margin:8px 0 0;">Dúvidas? Veja a aba <strong>❓ Ajuda</strong> ou o botão <strong>?</strong> ao lado do título de cada tela.</p>';
+    return h + '</div>';
+  }
   function listaPendencias(){
     var hoje = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10);
     var em7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0,10);
@@ -2291,6 +2417,7 @@
     html += statCard('Saldo financeiro', fmtBRL(saldo), saldo >= 0 ? 'growth' : 'cost');
     html += statCard('Produção em estoque', fmtBRL(estoque.total), 'growth');
     html += '</div>';
+    html += primeirosPassosHtml();
     html += painelPendenciasHtml();
 
     var estoqueBaixo = state.produtos.filter(function(p){ return Number(p.estoqueMinimo) > 0 && Number(p.estoqueAtual) < Number(p.estoqueMinimo); });
@@ -6915,6 +7042,96 @@
     XLSX.writeFile(wb, 'fazenda-relatorio.xlsx');
   }
 
+  var adminDados = null, adminCarregando = false, conviteRecemCriado = null;
+  function carregarAdminDados(){
+    if(adminCarregando) return; adminCarregando = true;
+    authPost({acao:'admin-listar'}).then(function(d){ adminCarregando = false; if(d && d.usuarios){ adminDados = d; renderConfiguracoes(); } }).catch(function(){ adminCarregando = false; });
+  }
+  function textoConvite(cv){
+    return 'Olá! Te convidei para usar o sistema de gestão da fazenda. Entre em ' + window.location.origin + ' , clique em "Tenho um convite" e use o código ' + cv.codigo + ' (vale até ' + fmtDate(String(cv.expira || '').slice(0, 10)) + '). Seus dados ficam só na sua conta.';
+  }
+  function painelUsuariosHtml(){
+    var h = '<div class="section-title">Usuários e convites</div><div class="paper form-card">';
+    h += '<p style="font-size:12.5px; margin:0 0 10px;">Cada pessoa tem a própria conta e só vê os próprios dados. Para alguém entrar, gere um convite e mande o código (vale 30 dias, uma pessoa por convite).</p>';
+    h += '<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end;"><div class="field" style="margin:0;"><label>Para quem? (opcional)</label><input type="text" id="convite-obs" placeholder="Ex: João do sítio Boa Vista" style="padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px; width:240px;"></div><button type="button" class="btn" data-action="convite-criar">Gerar convite</button></div>';
+    if(conviteRecemCriado){
+      h += '<div style="margin-top:12px; padding:10px 12px; background:#EFE6C8; border-radius:6px;"><div style="font-size:12px;">Convite criado:</div><div style="font-size:22px; font-weight:700; letter-spacing:2px; margin:4px 0;">' + escapeHtml(conviteRecemCriado.codigo) + '</div>';
+      h += '<textarea id="convite-texto" readonly style="width:100%; min-height:70px; font-size:12.5px; padding:6px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC;">' + escapeHtml(textoConvite(conviteRecemCriado)) + '</textarea>';
+      h += '<button type="button" class="btn-edit" data-action="convite-copiar">📋 Copiar mensagem</button> <a class="btn-edit" style="text-decoration:none;" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(textoConvite(conviteRecemCriado)) + '">💬 Enviar no WhatsApp</a></div>';
+    }
+    if(!adminDados){ carregarAdminDados(); h += '<p style="font-size:12px; color:var(--ink-soft);">Carregando usuários…</p></div>'; return h; }
+    h += '<div style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin:16px 0 6px;">Contas (' + adminDados.usuarios.length + ')</div>';
+    if(senhaTempInfo){
+      var msgSenha = 'Olá, ' + (senhaTempInfo.usuario.nome || '') + '! Sua senha do sistema da fazenda foi redefinida. Entre em ' + window.location.origin + ' com o e-mail ' + senhaTempInfo.usuario.email + ' e a senha provisória ' + senhaTempInfo.senha + ' — depois troque em Configurações → Senha de acesso.';
+      h += '<div style="margin-top:12px; padding:10px 12px; background:#EFE6C8; border-radius:6px;"><div style="font-size:12px;">Senha provisória de <strong>' + escapeHtml(senhaTempInfo.usuario.nome || senhaTempInfo.usuario.email) + '</strong>:</div><div style="font-size:20px; font-weight:700; letter-spacing:1px; margin:4px 0; font-family:monospace;">' + escapeHtml(senhaTempInfo.senha) + '</div><a class="btn-edit" style="text-decoration:none;" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(msgSenha) + '">💬 Enviar no WhatsApp</a> <button type="button" class="btn-cancel" data-action="fechar-senha-temp">Fechar</button></div>';
+    }
+    h += '<div class="table-wrap"><table class="sem-ordenacao"><thead><tr><th>Nome</th><th>E-mail</th><th>Tipo</th><th>Desde</th><th></th></tr></thead><tbody>';
+    adminDados.usuarios.forEach(function(u){
+      h += '<tr' + (u.ativo ? '' : ' style="opacity:0.55;"') + '><td>' + escapeHtml(u.nome || '—') + '</td><td>' + escapeHtml(u.email) + '</td><td>' + (u.admin ? 'Administrador' : 'Usuário') + (u.ativo ? '' : ' (desativada)') + '</td><td>' + fmtDate(String(u.criadoEm || '').slice(0, 10)) + '</td>';
+      h += '<td style="white-space:nowrap;">' + (u.admin ? '' : '<button type="button" class="btn-edit" data-action="admin-redefinir-senha" data-id="' + u.id + '">🔑 Nova senha</button><button type="button" class="' + (u.ativo ? 'btn-del' : 'btn-edit') + '" data-action="admin-ativar" data-id="' + u.id + '" data-ativo="' + (u.ativo ? '0' : '1') + '">' + (u.ativo ? 'Desativar' : 'Reativar') + '</button>') + '</td></tr>';
+    });
+    h += '</tbody></table></div>';
+    var hojeIso = new Date().toISOString();
+    var cvs = adminDados.convites.slice().reverse();
+    if(cvs.length){
+      h += '<div style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin:16px 0 6px;">Convites</div>';
+      h += '<div class="table-wrap"><table class="sem-ordenacao"><thead><tr><th>Código</th><th>Para</th><th>Situação</th><th></th></tr></thead><tbody>';
+      cvs.forEach(function(c){
+        var situ = c.usadoPor ? '✅ Usado por ' + escapeHtml(c.usadoPor.nome || c.usadoPor.email) : (c.revogado ? 'Cancelado' : (c.expira < hojeIso ? 'Vencido' : 'Aguardando (até ' + fmtDate(String(c.expira).slice(0, 10)) + ')'));
+        h += '<tr><td style="font-family:monospace; font-size:13px;">' + escapeHtml(c.codigo) + '</td><td>' + escapeHtml(c.obs || '—') + '</td><td>' + situ + '</td><td>' + (!c.usadoPor && !c.revogado && c.expira >= hojeIso ? '<button type="button" class="btn-del" data-action="convite-revogar" data-id="' + escapeHtml(c.codigo) + '">Cancelar</button>' : '') + '</td></tr>';
+      });
+      h += '</tbody></table></div>';
+    }
+    h += '<p style="font-size:11.5px; color:var(--ink-soft); margin:10px 0 0;">Desativar bloqueia a entrada na hora (os dados ficam guardados; reativar devolve o acesso). "Nova senha" cria uma senha provisória para quem esqueceu — mande para a pessoa e peça para trocar. Cada pessoa envia o próprio certificado digital para importar as notas da SEFAZ.</p>';
+    return h + '</div>';
+  }
+  var compartilhamentosWs = null, compartilhamentosWsId = null, senhaTempInfo = null;
+  function minhaContaHtml(){
+    var pf = lerPerfil(); if(!pf) return '';
+    var est = 'padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;';
+    var h = '<div class="section-title">Minha conta</div><div class="paper form-card">';
+    h += '<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end;"><div class="field" style="margin:0;"><label>Nome</label><input type="text" id="conta-nome" value="' + escapeHtml(pf.nome || '') + '" style="width:240px; ' + est + '"></div><button type="button" class="btn-edit" data-action="conta-salvar-nome">Salvar nome</button></div>';
+    h += '<p style="font-size:12px; color:var(--ink-soft); margin:10px 0 0;">E-mail de login: <strong>' + escapeHtml(pf.email) + '</strong>' + (pf.admin ? ' · administrador' : '') + '. <a href="#" data-action="ver-termos">Termos de uso e privacidade</a>.</p>';
+    if(!pf.admin) h += '<details style="margin-top:10px; font-size:12.5px;"><summary style="cursor:pointer; color:var(--cost-dark);">Excluir minha conta</summary><p style="margin:8px 0;">Apaga a sua conta e <strong>todos os seus dados</strong> (propriedades, lançamentos, estoque, notas). Baixe um backup antes, se quiser guardar. Não dá para desfazer.</p><div style="display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end;"><div class="field" style="margin:0;"><label>Confirme com sua senha</label><input type="password" id="excluir-senha" style="' + est + '"></div><button type="button" class="btn-del" data-action="conta-excluir">Excluir minha conta e meus dados</button></div></details>';
+    return h + '</div>';
+  }
+  function compartilharPropriedadeHtml(){
+    var info = currentWorkspaceInfo;
+    if(!info) return '';
+    if(info.compartilhado){
+      return '<div class="section-title">Esta propriedade</div><div class="paper form-card"><p style="font-size:12.5px; margin:0 0 10px;">Compartilhada com você por <strong>' + escapeHtml((info.dono && (info.dono.nome || info.dono.email)) || '') + '</strong> — você ' + ROTULO_PAPEL[info.papel] + '.</p><button type="button" class="btn-del" data-action="sair-compartilhamento">Sair desta propriedade</button></div>';
+    }
+    var est = 'padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;';
+    var h = '<div class="section-title">Compartilhar esta propriedade</div><div class="paper form-card">';
+    h += '<p style="font-size:12.5px; margin:0 0 10px;">Dê acesso a <strong>' + escapeHtml(info.nome || 'esta propriedade') + '</strong> para outra pessoa que já tem conta no sistema (um funcionário, sócio ou o agrônomo). Ela continua com a conta dela e passa a ver esta propriedade na lista.</p>';
+    h += '<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end;"><div class="field" style="margin:0;"><label>E-mail da pessoa</label><input type="email" id="compartilhar-email" placeholder="email@exemplo.com" style="width:230px; ' + est + '"></div>';
+    h += '<div class="field" style="margin:0;"><label>O que ela pode fazer</label><select id="compartilhar-papel" style="' + est + '"><option value="editor">Editar tudo</option><option value="campo">Só lançar no Diário de Campo</option><option value="leitura">Só visualizar</option></select></div><button type="button" class="btn" data-action="compartilhar-ws">Compartilhar</button></div>';
+    if(compartilhamentosWsId !== currentWorkspaceId){ compartilhamentosWsId = currentWorkspaceId; compartilhamentosWs = null; authPost({acao:'compartilhamentos-ws', wsId: currentWorkspaceId}).then(function(d){ compartilhamentosWs = (d && d.compartilhamentos) || []; renderConfiguracoes(); }).catch(function(){}); }
+    if(compartilhamentosWs && compartilhamentosWs.length){
+      h += '<div class="table-wrap" style="margin-top:12px;"><table class="sem-ordenacao"><thead><tr><th>Pessoa</th><th>Pode</th><th></th></tr></thead><tbody>';
+      compartilhamentosWs.forEach(function(c){
+        h += '<tr><td>' + escapeHtml((c.usuario && (c.usuario.nome || c.usuario.email)) || '—') + '<br><span style="font-size:11.5px; color:var(--ink-soft);">' + escapeHtml((c.usuario && c.usuario.email) || '') + '</span></td>';
+        h += '<td><select data-action-change="alterar-papel" data-id="' + c.id + '" class="sel-papel" style="' + est + '">' + ['editor','campo','leitura'].map(function(pp){ return '<option value="' + pp + '"' + (pp === c.papel ? ' selected' : '') + '>' + ROTULO_PAPEL[pp] + '</option>'; }).join('') + '</select></td>';
+        h += '<td><button type="button" class="btn-del" data-action="descompartilhar" data-id="' + c.id + '">Remover acesso</button></td></tr>';
+      });
+      h += '</tbody></table></div>';
+    } else if(compartilhamentosWs) h += '<p style="font-size:12px; color:var(--ink-soft); margin:10px 0 0;">Ninguém mais tem acesso a esta propriedade.</p>';
+    return h + '</div>';
+  }
+  var TERMOS_HTML = '<h3 style="margin-top:0;">Termos de uso e privacidade</h3>'
+    + '<p><strong>O que é.</strong> Um sistema gratuito de gestão rural, oferecido por Frideberth Conrado a pessoas convidadas, sem garantia de funcionamento contínuo e sem cobrança.</p>'
+    + '<p><strong>Seus dados são seus.</strong> Tudo o que você cadastra (propriedades, lançamentos, estoque, notas, análises) fica guardado em servidor na nuvem (Netlify), separado por conta. Outras pessoas só veem uma propriedade sua se você compartilhar. O administrador do sistema não acessa seus dados pelo sistema e não os usa, vende ou repassa para ninguém.</p>'
+    + '<p><strong>O que guardamos sobre você.</strong> Nome, e-mail e a senha em forma criptografada (ninguém consegue ler). Se você enviar o certificado digital, ele fica criptografado e só é usado para buscar as suas notas na SEFAZ.</p>'
+    + '<p><strong>Seus direitos (LGPD).</strong> Você pode baixar todos os seus dados a qualquer momento (Configurações → Baixar backup) e excluir a sua conta com todos os dados (Configurações → Minha conta).</p>'
+    + '<p><strong>Responsabilidade.</strong> Os cálculos (custos, recomendações de adubação, rateios) são estimativas de apoio: confira com seu agrônomo e contador. Faça backups de vez em quando. O sistema pode mudar, ficar fora do ar ou ser descontinuado — se isso for acontecer, você será avisado com antecedência para baixar seus dados.</p>';
+  function mostrarTermos(){
+    if(document.getElementById('termos-overlay')) return;
+    var d = document.createElement('div');
+    d.id = 'termos-overlay';
+    d.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; display:flex; align-items:center; justify-content:center; padding:16px;';
+    d.innerHTML = '<div style="background:#FBF7EC; color:#1B1508; max-width:620px; max-height:85vh; overflow:auto; border-radius:10px; padding:20px 22px; font-size:13.5px; line-height:1.55;">' + TERMOS_HTML + '<button type="button" class="btn" data-action="fechar-termos">Fechar</button></div>';
+    document.body.appendChild(d);
+  }
   function renderConfiguracoes(){
     var el = document.getElementById('tab-configuracoes');
     var html = '';
@@ -6925,7 +7142,11 @@
       html += '<div class="field"><label>Nova senha</label><input type="password" name="nova1" required></div>';
       html += '<div class="field"><label>Confirmar nova senha</label><input type="password" name="nova2" required></div>';
       html += '<button type="submit" class="btn">Trocar senha</button></form>';
-      html += '<p style="font-size:12px; color:var(--ink-soft); margin:10px 0 0;">A senha fica só no servidor, criptografada. Ao trocar, todo mundo que estiver com o sistema aberto em outro aparelho precisa entrar de novo com a senha nova. Se esquecer, use "Esqueci a senha" na tela de entrada com o código de recuperação do Netlify.</p></div>';
+      var pfCfg = lerPerfil();
+      html += '<p style="font-size:12px; color:var(--ink-soft); margin:10px 0 0;">' + (pfCfg ? 'Conta: <strong>' + escapeHtml(pfCfg.nome || '') + '</strong> (' + escapeHtml(pfCfg.email) + '). ' : '') + 'A senha fica só no servidor, criptografada (mínimo 6 caracteres). Ao trocar, os outros aparelhos onde você estiver logado precisam entrar de novo.' + (pfCfg && pfCfg.admin ? ' Se esquecer, use "Esqueci a senha → Sou o administrador" com o código de recuperação do Netlify.' : ' Se esquecer, peça uma senha nova ao administrador.') + '</p></div>';
+      html += minhaContaHtml();
+      html += compartilharPropriedadeHtml();
+      if(pfCfg && pfCfg.admin) html += painelUsuariosHtml();
     }
 
     html += '<div class="section-title" style="margin-top:0;">Backup e Restore</div>';
@@ -6938,7 +7159,7 @@
     html += '<p style="font-size:12px; color:var(--ink-soft); margin:12px 0 0;">Os dados ficam no servidor (Netlify) quando o sistema está publicado — ou só neste navegador, no modo local. Baixe um backup periodicamente — restaurar substitui os dados atuais pelos do arquivo.</p>';
     html += '</div>';
 
-    html += '<div class="section-title">Certificado Digital (A1)</div>';
+    html += '<div class="section-title">Certificado Digital (A1)' + (hasNetlifyBlobs ? ' — da sua conta' : '') + '</div>';
     html += '<div class="paper form-card">';
     html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 12px;">Guardado de forma criptografada. Na hora do upload, o sistema já lê o CPF/CNPJ e (quando disponível no certificado) a UF, pra preencher sozinho a consulta na SEFAZ (aba NF-e) depois.</p>';
     html += '<div id="certificado-status" style="font-size:13px; margin-bottom:10px;">Verificando…</div>';
@@ -7187,6 +7408,10 @@
     if(e.target && e.target.id === 'f-orc-ano-view'){
       orcamentoAnoSelecionado = parseInt(e.target.value, 10) || new Date().getFullYear();
       renderOrcamento();
+      return;
+    }
+    if(e.target && e.target.classList && e.target.classList.contains('sel-papel')){
+      authPost({acao:'alterar-papel', id: e.target.dataset.id, papel: e.target.value}).then(function(d){ if(!(d && d.ok)) alert((d && d.error) || 'Não foi possível alterar.'); compartilhamentosWsId = null; renderConfiguracoes(); });
       return;
     }
     if(e.target && e.target.id === 'filtro-ano-agricola'){
@@ -7658,6 +7883,7 @@
 
     if(form.id === 'form-trocar-senha'){
       if(data.get('nova1') !== data.get('nova2')){ alert('As senhas novas não coincidem.'); return; }
+      if(String(data.get('nova1') || '').length < 6){ alert('A nova senha precisa ter pelo menos 6 caracteres.'); return; }
       authPost({acao:'trocar', senhaAtual: data.get('senhaAtual'), novaSenha: data.get('nova1')}).then(function(d){
         if(d.token){ gravarToken(d.token); form.reset(); alert('Senha trocada.'); } else { alert(d.error || 'Não foi possível trocar a senha.'); }
       });
@@ -7665,12 +7891,16 @@
     }
     if(form.id === 'form-gate' && hasNetlifyBlobs){
       var modoG = form.dataset.mode;
-      var entrarCom = function(d){ if(d && d.token){ gravarToken(d.token); unlockSession(); } else { showGateScreen((d && d.error) || 'Não foi possível entrar.', modoG === 'recuperar' ? 'recuperar' : ''); } };
-      if(modoG === 'login'){ authPost({acao:'login', senha: data.get('pass')}).then(entrarCom).catch(function(){ showGateScreen('Sem conexão com o servidor.'); }); return; }
+      var modoErro = modoG === 'recuperar' ? 'recuperar' : (modoG === 'cadastro' ? 'cadastro' : '');
+      var entrarCom = function(d){ if(d && d.token){ gravarToken(d.token); gravarPerfil(d.usuario || null); unlockSession(); } else { showGateScreen((d && d.error) || 'Não foi possível entrar.', modoErro); } };
+      var semConexao = function(){ showGateScreen('Sem conexão com o servidor.', modoErro); };
+      if(modoG === 'login'){ authPost({acao:'login', email: data.get('email'), senha: data.get('pass'), nome: data.get('nome') || ''}).then(entrarCom).catch(semConexao); return; }
       var np1 = data.get('pass1'), np2 = data.get('pass2');
-      if(!np1 || np1 !== np2){ showGateScreen(!np1 ? 'Digite uma senha.' : 'As senhas não coincidem.', modoG === 'recuperar' ? 'recuperar' : ''); return; }
-      if(modoG === 'setup'){ authPost({acao:'definir', senha: np1}).then(entrarCom); return; }
-      if(modoG === 'recuperar'){ authPost({acao:'recuperar', codigo: data.get('codigo'), novaSenha: np1}).then(entrarCom); return; }
+      if(!np1 || np1 !== np2){ showGateScreen(!np1 ? 'Digite uma senha.' : 'As senhas não coincidem.', modoErro); return; }
+      if(np1.length < 6){ showGateScreen('A senha precisa ter pelo menos 6 caracteres.', modoErro); return; }
+      if(modoG === 'setup'){ authPost({acao:'definir', nome: data.get('nome'), email: data.get('email'), senha: np1}).then(entrarCom).catch(semConexao); return; }
+      if(modoG === 'cadastro'){ if(!data.get('aceite')){ showGateScreen('Marque que leu e aceita os termos.', 'cadastro'); return; } authPost({acao:'cadastrar', codigo: data.get('codigo'), nome: data.get('nome'), email: data.get('email'), senha: np1, aceiteTermos: true}).then(entrarCom).catch(semConexao); return; }
+      if(modoG === 'recuperar'){ authPost({acao:'recuperar', email: data.get('email'), codigo: data.get('codigo'), novaSenha: np1}).then(entrarCom).catch(semConexao); return; }
       return;
     }
     if(form.id === 'form-gate'){
@@ -8336,7 +8566,61 @@
     var id = btn.dataset.id;
 
     if(action === 'gate-voltar-login'){ showGateScreen(); return; }
-    if(action === 'reset-password' && hasNetlifyBlobs){ showGateScreen('', 'recuperar'); return; }
+    if(action === 'reset-password' && hasNetlifyBlobs){ showGateScreen('', 'esqueci'); return; }
+    if(action === 'conta-salvar-nome'){
+      var nmC = ((document.getElementById('conta-nome') || {}).value || '').trim(); if(!nmC){ alert('Digite o nome.'); return; }
+      authPost({acao:'alterar-nome', nome: nmC}).then(function(d){ if(d && d.usuario){ gravarPerfil(d.usuario); mostrarUsuarioLogado(); adminDados = null; renderConfiguracoes(); alert('Nome salvo.'); } else alert((d && d.error) || 'Não foi possível salvar.'); }); return;
+    }
+    if(action === 'conta-excluir'){
+      var snE = (document.getElementById('excluir-senha') || {}).value || '';
+      if(!snE){ alert('Digite sua senha para confirmar.'); return; }
+      if(!window.confirm('Excluir a sua conta e TODOS os seus dados? Não dá para desfazer.')) return;
+      authPost({acao:'excluir-conta', senha: snE}).then(function(d){ if(d && d.ok){ alert('Conta excluída.'); gravarToken(''); gravarPerfil(null); window.location.reload(); } else alert((d && d.error) || 'Não foi possível excluir.'); }); return;
+    }
+    if(action === 'compartilhar-ws'){
+      var emC = ((document.getElementById('compartilhar-email') || {}).value || '').trim(), ppC = (document.getElementById('compartilhar-papel') || {}).value;
+      if(!emC){ alert('Digite o e-mail da pessoa.'); return; }
+      authPost({acao:'compartilhar', wsId: currentWorkspaceId, email: emC, papel: ppC}).then(function(d){ if(d && d.ok){ compartilhamentosWsId = null; renderConfiguracoes(); alert('Pronto: ' + ((d.usuario && (d.usuario.nome || d.usuario.email)) || emC) + ' já vê esta propriedade (' + ROTULO_PAPEL[ppC] + ') na próxima vez que entrar ou trocar de propriedade.'); } else alert((d && d.error) || 'Não foi possível compartilhar.'); }); return;
+    }
+    if(action === 'descompartilhar'){
+      if(!window.confirm('Remover o acesso desta pessoa à propriedade?')) return;
+      authPost({acao:'descompartilhar', id: id}).then(function(d){ if(d && d.ok){ compartilhamentosWsId = null; renderConfiguracoes(); } else alert((d && d.error) || 'Não foi possível remover.'); }); return;
+    }
+    if(action === 'sair-compartilhamento'){
+      if(!window.confirm('Sair desta propriedade? Você deixa de ver os dados dela (o dono pode compartilhar de novo).')) return;
+      authPost({acao:'descompartilhar', id: String(currentWorkspaceId).slice(3)}).then(function(d){ if(d && d.ok){ window.location.reload(); } else alert((d && d.error) || 'Não foi possível sair.'); }); return;
+    }
+    if(action === 'admin-ativar'){
+      var atv = btn.dataset.ativo === '1';
+      if(!atv && !window.confirm('Desativar esta conta? A pessoa não consegue mais entrar (os dados ficam guardados).')) return;
+      authPost({acao:'admin-ativar', id: id, ativo: atv}).then(function(d){ if(d && d.ok){ adminDados = null; renderConfiguracoes(); } else alert((d && d.error) || 'Não foi possível.'); }); return;
+    }
+    if(action === 'admin-redefinir-senha'){
+      if(!window.confirm('Criar uma senha provisória para esta pessoa? A senha atual dela deixa de funcionar.')) return;
+      authPost({acao:'admin-redefinir-senha', id: id}).then(function(d){ if(d && d.ok){ senhaTempInfo = {senha: d.senhaTemporaria, usuario: d.usuario}; renderConfiguracoes(); } else alert((d && d.error) || 'Não foi possível.'); }); return;
+    }
+    if(action === 'fechar-senha-temp'){ senhaTempInfo = null; renderConfiguracoes(); return; }
+    if(action === 'ver-termos'){ if(e && e.preventDefault) e.preventDefault(); mostrarTermos(); return; }
+    if(action === 'fechar-termos'){ var tm = document.getElementById('termos-overlay'); if(tm) tm.remove(); return; }
+    if(action === 'onboarding-dispensar'){ try{ window.localStorage.setItem('fazenda-onboarding-ok:' + currentWorkspaceId, '1'); }catch(err){} renderPainel(); return; }
+    if(action === 'onboarding-ir'){ switchTab(btn.dataset.tab); window.scrollTo(0, 0); return; }
+    if(action === 'onboarding-culturas'){
+      if(state.culturas.length){ switchTab('culturas'); return; }
+      var nowCu = Date.now();
+      state.culturas = ['Soja','Milho','Café','Trigo','Feijão'].map(function(n, i){ return {id: uid(), nome: n, criadoEm: nowCu + i}; });
+      saveKey('culturas', state.culturas); renderAll(); return;
+    }
+    if(action === 'convite-criar'){
+      authPost({acao:'convite-criar', obs: (document.getElementById('convite-obs') || {}).value || ''}).then(function(d){
+        if(d && d.convite){ conviteRecemCriado = d.convite; adminDados = null; renderConfiguracoes(); } else alert((d && d.error) || 'Não foi possível gerar o convite.');
+      }); return;
+    }
+    if(action === 'convite-copiar'){ var ta = document.getElementById('convite-texto'); if(ta){ ta.select(); try{ document.execCommand('copy'); }catch(e){} if(navigator.clipboard) navigator.clipboard.writeText(ta.value).catch(function(){}); btn.textContent = '✅ Copiado'; } return; }
+    if(action === 'convite-revogar'){
+      if(!window.confirm('Cancelar o convite ' + id + '? O código deixa de funcionar.')) return;
+      authPost({acao:'convite-revogar', codigo: id}).then(function(d){ if(d && d.ok){ adminDados = null; renderConfiguracoes(); } else alert((d && d.error) || 'Não foi possível cancelar.'); }); return;
+    }
+    if(action === 'gate-modo'){ showGateScreen('', btn.dataset.modo); return; }
     if(action === 'reset-password'){
       if(window.confirm('Isso remove a senha atual (definida apenas neste dispositivo/ambiente). Você poderá definir uma nova em seguida. Continuar?')){
         saveGlobal(PASS_KEY, null).then(function(){ showGateScreen(); });
@@ -8741,12 +9025,13 @@
     if(action === 'switch-workspace'){
       currentWorkspaceId = null;
       document.getElementById('app').style.display = 'none';
-      loadWorkspaces().then(function(list){ showWorkspaceScreen(list); });
+      loadWorkspacesComCompartilhadas().then(function(list){ showWorkspaceScreen(list); });
       return;
     }
     if(action === 'lock-app'){
       currentWorkspaceId = null;
-      gravarToken('');
+      gravarToken(''); gravarPerfil(null);
+      if(hasNetlifyBlobs){ try{ window.sessionStorage.removeItem(UNLOCK_FLAG); }catch(e){} window.location.reload(); return; }
       try{ window.sessionStorage.removeItem(UNLOCK_FLAG); }catch(e){}
       document.getElementById('app').style.display = 'none';
       showGateScreen();

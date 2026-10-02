@@ -1,5 +1,5 @@
 import { lerCertificadoDescriptografado } from "./certificado.mjs";
-import { exigirLogin, naoAutorizado } from "../lib/auth-comum.mjs";
+import { exigirLogin, naoAutorizado, configurarAmbiente } from "../lib/auth-comum.mjs";
 import { UF_CODIGO, abrirPfx, chamarSoap, extrairTag, descompactarDocZips, respostaJson } from "../lib/sefaz-comum.mjs";
 
 // Consulta o webservice NFeDistribuicaoDFe da SEFAZ (Ambiente Nacional) com o certificado A1 guardado.
@@ -38,17 +38,19 @@ function montarEnvelopeSoap({ tpAmb, cUFAutor, documento, ultNSU, chave }) {
 </soap12:Envelope>`;
 }
 
-export default async (req) => {
+export default async (req, context) => {
+  configurarAmbiente(req, context);
   if (req.method === "OPTIONS") return respostaJson({}, 204);
   if (req.method !== "POST") return respostaJson({ error: "Method Not Allowed" }, 405);
-  if (!(await exigirLogin(req))) return naoAutorizado();
+  const usuarioLogado = await exigirLogin(req);
+  if (!usuarioLogado) return naoAutorizado();
 
   try {
     const { ambiente, uf, documento, ultNSU, chaves } = (await req.json()) || {};
     if (!uf || !UF_CODIGO[uf]) return respostaJson({ error: "UF inválida ou não informada." }, 400);
     if (!documento || !/^\d{11}$|^\d{14}$/.test(documento)) return respostaJson({ error: "Informe um CPF (11 dígitos) ou CNPJ (14 dígitos), só números." }, 400);
 
-    const cert = await lerCertificadoDescriptografado();
+    const cert = await lerCertificadoDescriptografado(usuarioLogado);
     if (!cert) return respostaJson({ error: "Nenhum certificado configurado ainda. Suba o certificado primeiro." }, 400);
 
     let pfx;
