@@ -1802,6 +1802,24 @@
           marcarImportAplicado('fix-duplicata-parceiros-v1');
         })();
         (function(){
+          // Correção pontual: Cletodim da NF 1015 lançado duas vezes (6 BD × R$ 630 = 120 L × R$ 31,50); fica só o do produto atual
+          if(importJaAplicado('fix-cletodim-nf1015-v1')) return;
+          if(typeof podeGravarChave === 'function' && !podeGravarChave('financeiro')) return;
+          var ID_FIN = 'd7c0ec8b-c545-45bb-a9fc-baad30326b16', ID_COMPRA = '1d87c7ec-75ed-4af8-a700-562437f2faaf';
+          var fin = state.financeiro.find(function(f){ return f.id === ID_FIN; });
+          var cmp = state.compras.find(function(c){ return c.id === ID_COMPRA; });
+          if(fin && Math.abs((Number(fin.valor) || 0) - 3780) < 0.01){
+            state.financeiro = state.financeiro.filter(function(f){ return f.id !== ID_FIN; });
+            saveKey('financeiro', state.financeiro);
+          }
+          // o produto dessa compra já foi apagado, então não há estoque para desfazer
+          if(cmp && Number(cmp.valorTotal) === 3780 && !state.produtos.some(function(pr){ return pr.id === cmp.produtoId; })){
+            state.compras = state.compras.filter(function(c){ return c.id !== ID_COMPRA; });
+            saveKey('compras', state.compras);
+          }
+          marcarImportAplicado('fix-cletodim-nf1015-v1');
+        })();
+        (function(){
           // CP/CR antigos: categoria de texto → conta do plano de contas (quando o nome bate)
           if(importJaAplicado('cp-cr-plano-contas-v1')) return;
           var mudouCp = false, mudouCr = false;
