@@ -1705,6 +1705,58 @@
           marcarImportAplicado('fin-dll-826949-parcelas-v1');
         })();
         (function(){
+          // Unificação: contas a pagar, contas a receber e serviços passam a ser lançamentos (state.financeiro)
+          if(importJaAplicado('unificar-financeiro-v1')) return;
+          if(typeof podeGravarChave === 'function' && !podeGravarChave('financeiro')) return; // só quem pode editar converte
+          var cps = state.contasPagar || [], crs = state.contasReceber || [], svs = state.servicosPrestados || [];
+          if(!cps.length && !crs.length && !svs.length){ marcarImportAplicado('unificar-financeiro-v1'); return; }
+          var idsFin = {}; state.financeiro.forEach(function(f){ idsFin[f.id] = true; });
+          var copiar = ['contaId','categoria','descricao','parceiroId','talhaoId','talhoesIds','safraId','destino','partes','metodoRateio','maquinasIds','origemImportacao','criadoEm'];
+          cps.forEach(function(c){
+            if(idsFin[c.id]) return;
+            var f = {id: c.id, tipo: 'custo', origem: c.origem || 'contaPagar', membroId: '', quantidade: 0, peso: 0, unidade: '', status: c.status === 'Pago' ? 'Pago' : 'Pendente', data: c.status === 'Pago' ? (c.dataPagamento || c.vencimento || '') : '', vencimento: c.vencimento || '', valor: Number(c.valor) || 0};
+            copiar.forEach(function(k){ if(c[k] !== undefined) f[k] = c[k]; });
+            if(!f.talhoesIds) f.talhoesIds = c.talhaoId ? [c.talhaoId] : [];
+            state.financeiro.push(f); idsFin[f.id] = true;
+          });
+          crs.forEach(function(c){
+            if(idsFin[c.id]) return;
+            var liq = valorLiquidoContaReceber(c), desc = valorDescontoContaReceber(c);
+            var f = {id: c.id, tipo: 'receita', origem: 'contaReceber', membroId: '', quantidade: 0, peso: 0, unidade: '', status: c.status === 'Recebido' ? 'Pago' : 'Pendente', data: c.status === 'Recebido' ? (c.dataRecebimento || c.vencimento || '') : '', vencimento: c.vencimento || '', valor: Math.round(liq * 100) / 100};
+            copiar.forEach(function(k){ if(c[k] !== undefined) f[k] = c[k]; });
+            if(desc > 0){ f.valorBruto = Number(c.valor) || 0; f.valorDescontos = Math.round(desc * 100) / 100; }
+            if(!f.talhoesIds) f.talhoesIds = c.talhaoId ? [c.talhaoId] : [];
+            if(!f.destino) f.destino = c.safraId ? 'lavoura' : (c.talhaoId ? 'talhao' : 'geral');
+            state.financeiro.push(f); idsFin[f.id] = true;
+          });
+          svs.forEach(function(sv){
+            var info = {direcao: sv.direcao || 'Contratado', tipo: sv.tipo || 'Diversos', dataServico: sv.data || ''};
+            var existente = sv.financeiroId ? state.financeiro.find(function(f){ return f.id === sv.financeiroId; }) : null;
+            if(existente){
+              existente.servico = info;
+              if(!(Number(existente.valorUnitario) > 0) && Number(sv.valor) > 0){ existente.valorUnitario = Number(sv.valor); existente.quantidade = Number(sv.quantidade) || 1; }
+              if(!existente.unidade && sv.unidade) existente.unidade = sv.unidade;
+              return;
+            }
+            if(idsFin[sv.id]) return;
+            var tipoS = info.direcao === 'Prestado' ? 'receita' : 'custo';
+            var contaS = sv.contaId || ((state.contasFinanceiro.find(function(c){ return contaTipo(c.id) === tipoS && /servi/i.test(c.nome); }) || {}).id) || '';
+            var pend = sv.status !== 'Pago';
+            var f = {id: sv.id, tipo: tipoS, origem: 'servico', contaId: contaS, categoria: contaS ? contaNome(contaS) : '', parceiroId: sv.prestadorId || '', membroId: '',
+              descricao: (info.direcao === 'Prestado' ? 'Serviço prestado' : 'Serviço contratado') + ' - ' + info.tipo + (sv.descricao ? ' - ' + sv.descricao : ''),
+              quantidade: Number(sv.quantidade) || 1, valorUnitario: Number(sv.valor) || 0, unidade: sv.unidade || '', peso: 0,
+              valor: Math.round(valorTotalServicoPrestado(sv) * 100) / 100, status: pend ? 'Pendente' : 'Pago', data: pend ? '' : (sv.data || ''), vencimento: pend ? (sv.data || '') : '',
+              talhaoId: sv.talhaoId || '', talhoesIds: sv.talhaoId ? [sv.talhaoId] : [], destino: sv.talhaoId ? 'talhao' : '', servico: info, criadoEm: sv.criadoEm || Date.now()};
+            state.financeiro.push(f); idsFin[f.id] = true;
+          });
+          // guarda uma cópia do que existia antes (segurança) e esvazia as listas antigas
+          saveKey('financeiro', state.financeiro);
+          saveKey('arquivoPreUnificacao', [{em: new Date().toISOString(), contasPagar: cps, contasReceber: crs, servicosPrestados: svs}]);
+          state.contasPagar = []; state.contasReceber = []; state.servicosPrestados = [];
+          saveKey('contasPagar', []); saveKey('contasReceber', []); saveKey('servicosPrestados', []);
+          marcarImportAplicado('unificar-financeiro-v1');
+        })();
+        (function(){
           // CP/CR antigos: categoria de texto → conta do plano de contas (quando o nome bate)
           if(importJaAplicado('cp-cr-plano-contas-v1')) return;
           var mudouCp = false, mudouCr = false;
@@ -2116,7 +2168,10 @@
     'nfe': {label:'NF-e', cor:'#C98A2B'},
     'financiamento': {label:'Financiamento', cor:'#A23E2E'},
     'vendaAntecipada': {label:'Venda Antecipada', cor:'#9C6A1E'},
-    'relatorioHistorico': {label:'Relatório Histórico', cor:'#6B5D46'}
+    'relatorioHistorico': {label:'Relatório Histórico', cor:'#6B5D46'},
+    'contaPagar': {label:'Conta a pagar', cor:'#B5651D'},
+    'contaReceber': {label:'Conta a receber', cor:'#4F7942'},
+    'servico': {label:'Serviço', cor:'#3B6EA5'}
   };
 
   var ENTIDADES_BUSCA_GLOBAL = [
@@ -2214,9 +2269,10 @@
       'Errou? "↩️ Desfazer entrega" devolve o produto ao estoque, apaga a receita e deixa o contrato em aberto de novo.'
     ]},
     {id:'pagar', titulo:'Pagar e receber contas', passos:[
-      '<b>Contas a Pagar</b> → cada conta tem conta do plano de contas e <b>destino</b> (lavoura, só talhão, máquina ou geral).',
+      'Contas a pagar e a receber são <b>lançamentos pendentes</b>: tudo fica em Lançamentos, e as abas Contas a Pagar / a Receber mostram só o que falta pagar ou receber.',
+      '<b>Contas a Pagar</b> → cada conta tem conta do plano de contas, <b>destino</b> (lavoura, só talhão, máquina ou geral) e, se quiser, parcelas mensais.',
       'Clique em "💰 Pagar", confirme data e valor. Pagamento parcial deixa o saldo pendente numa conta nova.',
-      '<b>Contas a Receber</b> → botão "💵 Receber" marca como recebido com a data.',
+      '<b>Contas a Receber</b> → botão "💵 Receber" confirma data e valor e marca como recebido.',
       'O painel <b>Pendências</b> no Dashboard avisa contas vencidas e vencendo na semana.'
     ]},
     {id:'custos', titulo:'Entender o custo de cada lavoura', passos:[
@@ -2239,12 +2295,12 @@
     producao: {t:'Colheita e Vendas', txt:'Entradas de colheita somam no estoque de cada safra. Vendas podem sair de um talhão ou do <b>estoque geral</b> da cultura, com descontos (a receita líquida vai para o Financeiro). ▸ Raio-x mostra, por talhão, colhido, vendido, saldo e sc/ha. Saídas que são entrega de venda antecipada só se desfazem pela aba Venda Antecipada.'},
     vendasAntecipadas: {t:'Venda Antecipada', txt:'Contratos a termo. "✅ Efetivar venda" registra a entrega (baixa no estoque, calcula descontos e lança a receita). "↩️ Desfazer entrega" volta tudo como estava. Remover um contrato já entregue também desfaz a entrega.'},
     financeiro: {t:'Lançamentos', txt:'Todas as despesas e receitas. Cada lançamento tem uma <b>conta</b> do plano de contas (botão + cria conta nova) e um <b>destino</b>: lavoura, só talhão, máquina/equipamento ou geral (rateado). "⚠️ A classificar" lista os que ficaram sem destino — marque vários e classifique de uma vez. "Fechar período" trava um mês já conferido.'},
-    contasPagar: {t:'Contas a Pagar', txt:'Contas futuras, com conta do plano de contas e destino. "💰 Pagar" pede data e valor; pagando menos, o saldo continua pendente. Contas de NF-e com duplicatas são criadas sozinhas na importação.'},
-    contasReceber: {t:'Contas a Receber', txt:'Valores a receber, com desconto opcional. "💵 Receber" marca como recebido. Vendas de colheita já geram receita sozinhas — não lance a mesma venda aqui.'},
+    contasPagar: {t:'Contas a Pagar', txt:'Mostra os <b>lançamentos de despesa pendentes</b> (tudo fica num lugar só: em Lançamentos). Aqui você cria conta futura (com parcelas mensais, se quiser), conta do plano de contas e destino. "💰 Pagar" pede data e valor; pagando menos, o saldo continua pendente num lançamento novo. Os filtros mostram pendentes, pagas ou todas. Duplicatas de NF-e entram aqui sozinhas na importação.'},
+    contasReceber: {t:'Contas a Receber', txt:'Mostra os <b>lançamentos de receita pendentes</b> (eles ficam em Lançamentos). Aqui você cria valores a receber, com desconto opcional e parcelas. "💵 Receber" pede data e valor e marca como recebido. Vendas de colheita já geram receita sozinhas — não lance a mesma venda aqui.'},
     compras: {t:'Compras e NF-e', txt:'Três caminhos: compra manual, importar XML ou importar notas da SEFAZ (precisa do certificado A1). Notas que chegam só como resumo precisam de "ciência" para liberar os itens. Na revisão, cada item vira compra (estoque + despesa) ou entrada de colheita. Remover uma compra tira do estoque e apaga a despesa ligada.'},
     financiamentos: {t:'Financiamentos', txt:'Cadastre o contrato com valor, taxa ao ano, número de parcelas, periodicidade e 1º vencimento. Escolha o sistema: <b>parcela informada</b> (um valor só), <b>parcelas do contrato</b> (valor e data de cada uma, digitados em 📅 Parcelas), <b>SAC</b> ou <b>PRICE</b>. Se deu entrada, informe o valor e a data. "📅 Parcelas" mostra o cronograma com amortização, juros e saldo, e imprime. "Pagar parcela" dá baixa e lança a despesa no Financeiro.'},
     arrendamentos: {t:'Arrendamentos', txt:'Contratos de arrendamento de terra pagos ou recebidos, com valores e vencimentos.'},
-    servicosPrestados: {t:'Serviços', txt:'Serviços que você contratou (colheita, frete…) ou prestou a outros. Com uma conta escolhida, o valor (quantidade × valor unitário) vai para o Financeiro automaticamente.'},
+    servicosPrestados: {t:'Serviços', txt:'Serviços que você contratou (colheita, frete…) ou prestou a outros. Cada serviço é um lançamento (despesa se contratou, receita se prestou) com quantidade × valor unitário — aparece também em Lançamentos e, se pendente, em Contas a Pagar ou a Receber.'},
     rentabilidade: {t:'Rentabilidade', txt:'Resultado por lavoura, por cultura, por máquina e por talhão. As caixas no topo incluem custos gerais rateados, depreciação e custo de oportunidade. 📄 PDF gera o relatório de custo de produção da lavoura (por talhão, insumos, máquinas e contas).'},
     fluxoCaixa: {t:'Fluxo de Caixa', txt:'Entradas e saídas mês a mês, com o que já foi pago/recebido e o que está pendente.'},
     contaCorrente: {t:'Conta-Corrente', txt:'Extrato por parceiro: tudo que foi pago ou recebido de cada fornecedor, cliente ou prestador.'},
@@ -2344,7 +2400,7 @@
       {ok: state.patrimonio.length > 0, tab:'patrimonio', txt:'Cadastre máquinas e equipamentos (opcional)'},
       {ok: state.produtos.length > 0, tab:'produtos', txt:'Cadastre os insumos ou importe uma nota (XML)'},
       {ok: (state.lavouras || []).length > 0, tab:'safras', txt:'Crie a lavoura do ano (cultura + ano agrícola + talhões)'},
-      {ok: state.financeiro.length > 0 || state.contasPagar.length > 0, tab:'financeiro', txt:'Faça o primeiro lançamento financeiro'}
+      {ok: state.financeiro.length > 0, tab:'financeiro', txt:'Faça o primeiro lançamento financeiro'}
     ];
     var feitos = passos.filter(function(p){ return p.ok; }).length;
     if(feitos === passos.length) return '';
@@ -2364,14 +2420,13 @@
     var add = function(qtd, icone, texto, tab, filtro, grave){ if(qtd > 0) itens.push({qtd: qtd, icone: icone, texto: texto, tab: tab, filtro: filtro || '', grave: !!grave}); };
     var semDestino = state.financeiro.filter(function(f){ return f.tipo === 'custo' && destinoEfetivo(f) === 'classificar'; }).length;
     add(semDestino, '🏷️', 'lançamento(s) de custo sem destino (não entram em nenhuma lavoura)', 'financeiro', 'sem-destino', true);
-    var cpSemDestino = state.contasPagar.filter(function(c){ return destinoEfetivo(c) === 'classificar'; }).length;
-    add(cpSemDestino, '🏷️', 'conta(s) a pagar sem destino', 'contasPagar');
-    var cpVencidas = state.contasPagar.filter(function(c){ return c.status !== 'Pago' && c.vencimento && c.vencimento < hoje; });
+    var pendCusto = state.financeiro.filter(function(f){ return f.tipo === 'custo' && f.status === 'Pendente'; });
+    var cpVencidas = pendCusto.filter(function(c){ return c.vencimento && c.vencimento < hoje; });
     add(cpVencidas.length, '⏰', 'conta(s) a pagar vencida(s) — ' + fmtBRL(cpVencidas.reduce(function(sm, c){ return sm + (Number(c.valor) || 0); }, 0)), 'contasPagar', '', true);
-    var cpSemana = state.contasPagar.filter(function(c){ return c.status !== 'Pago' && c.vencimento && c.vencimento >= hoje && c.vencimento <= em7; });
+    var cpSemana = pendCusto.filter(function(c){ return c.vencimento && c.vencimento >= hoje && c.vencimento <= em7; });
     add(cpSemana.length, '📅', 'conta(s) a pagar vencendo em 7 dias — ' + fmtBRL(cpSemana.reduce(function(sm, c){ return sm + (Number(c.valor) || 0); }, 0)), 'contasPagar');
-    var crVencidas = state.contasReceber.filter(function(c){ return c.status !== 'Recebido' && c.vencimento && c.vencimento < hoje; });
-    add(crVencidas.length, '💵', 'conta(s) a receber atrasada(s) — ' + fmtBRL(crVencidas.reduce(function(sm, c){ return sm + valorLiquidoContaReceber(c); }, 0)), 'contasReceber');
+    var crVencidas = state.financeiro.filter(function(f){ return f.tipo === 'receita' && f.status === 'Pendente' && f.vencimento && f.vencimento < hoje; });
+    add(crVencidas.length, '💵', 'conta(s) a receber atrasada(s) — ' + fmtBRL(crVencidas.reduce(function(sm, c){ return sm + (Number(c.valor) || 0); }, 0)), 'contasReceber');
     var negativos = state.produtos.filter(function(p){ return (Number(p.estoqueAtual) || 0) < -0.0005; });
     add(negativos.length, '📦', 'produto(s) com estoque negativo: ' + negativos.slice(0, 4).map(function(p){ return p.nome; }).join(', ') + (negativos.length > 4 ? '…' : ''), 'produtos', '', true);
     var semCusto = state.produtos.filter(function(p){ return (Number(p.estoqueAtual) || 0) > 0 && !(custoMedioProduto(p.id) > 0); });
@@ -2462,7 +2517,7 @@
           html += '<div class="field" style="margin:0;"><label>Data do ' + (v.tipo === 'entrada' ? 'recebimento' : 'pagamento') + '</label><input type="date" id="dash-pag-data" value="' + hojeDp + '" style="' + estDp + '"></div>';
           html += '<div class="field" style="margin:0;"><label>Valor (R$)</label><input type="number" id="dash-pag-valor" step="0.01" min="0" value="' + (Math.round(v.valor * 100) / 100) + '" style="width:140px; ' + estDp + '"' + (v.chave.indexOf('cr:') === 0 ? ' readonly title="Para mudar o valor, edite a conta em Contas a Receber"' : '') + '></div>';
           html += '<button type="button" class="btn" data-action="dash-confirmar-pagamento" data-chave="' + v.chave + '">Confirmar</button><button type="button" class="btn-cancel" data-action="dash-cancelar-pagamento">Cancelar</button>';
-          if(v.chave.indexOf('cp:') === 0) html += '<span style="font-size:11.5px; color:var(--ink-soft); flex-basis:100%;">Pagando menos que ' + fmtBRL(v.valor) + ', a diferença continua pendente numa conta nova.</span>';
+          if(v.chave.indexOf('cr:') !== 0) html += '<span style="font-size:11.5px; color:var(--ink-soft); flex-basis:100%;">' + (v.tipo === 'entrada' ? 'Recebendo' : 'Pagando') + ' menos que ' + fmtBRL(v.valor) + ', a diferença continua pendente num lançamento novo.</span>';
           html += '</div>';
         }
       });
@@ -5017,114 +5072,124 @@
     renderDestinoWidget(document.getElementById('destino-financeiro'), editingRecord);
   }
 
-  /* ---------------- Contas a Pagar / Contas a Receber ---------------- */
-  var cpPagandoId = null;
-  // Paga uma conta (inteira ou em parte). Pagamento parcial: a conta vira "Pago" com o valor pago e a diferença vira uma conta nova pendente.
-  function pagarContaPagar(id, dataPag, valorPago){
-    var c = state.contasPagar.find(function(x){ return x.id === id; });
-    if(!c) return;
-    var total = Number(c.valor) || 0;
+  /* ---------------- Contas a Pagar / Contas a Receber / Serviços ----------------
+     Tudo fica em state.financeiro (um lançamento por despesa/receita). Estas telas são atalhos filtrados:
+     Contas a Pagar = despesas com vencimento; Contas a Receber = receitas com vencimento; Serviços = lançamentos com "servico". */
+  var cpPagandoId = null, cpFiltro = 'pendentes', crFiltro = 'pendentes', servEditId = null;
+  function hojeISO(){ return new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10); }
+  // Paga (ou recebe) um lançamento pendente, inteiro ou em parte. Parcial: o lançamento vira "Pago" com o valor pago
+  // e a diferença vira um lançamento novo pendente, com o mesmo vencimento e destino.
+  function pagarLancamento(id, dataPag, valorPago){
+    var f = state.financeiro.find(function(x){ return x.id === id; });
+    if(!f) return;
+    var total = Number(f.valor) || 0;
     var resto = Math.round((total - valorPago) * 100) / 100;
-    var escalarPartes = function(reg, novoValor){
-      if(!reg.partes || !reg.partes.length || !total) return;
-      var fracoes = reg.partes.map(function(pt){ return (Number(pt.valor) || 0) / total; });
-      var vals = dividirValor(novoValor, fracoes);
-      reg.partes = reg.partes.map(function(pt, i){ return {talhaoId: pt.talhaoId, safraId: pt.safraId, valor: vals[i]}; });
+    var escalar = function(reg, novoValor){
+      if(reg.partes && reg.partes.length && total){
+        var vals = dividirValor(novoValor, reg.partes.map(function(pt){ return (Number(pt.valor) || 0) / total; }));
+        reg.partes = reg.partes.map(function(pt, i){ return Object.assign({}, pt, {valor: vals[i]}); });
+      }
+      if(Number(reg.valorUnitario) > 0){ reg.valorUnitario = 0; reg.quantidade = reg.quantidade || 0; } // valor passa a ser o informado
     };
     if(resto > 0.004){
-      var restante = JSON.parse(JSON.stringify(c));
-      restante.id = uid(); restante.criadoEm = Date.now(); restante.valor = resto; restante.status = 'Pendente'; restante.dataPagamento = '';
-      restante.descricao = (c.descricao || '') + ' (saldo restante)';
-      escalarPartes(restante, resto);
-      state.contasPagar.push(restante);
+      var restante = JSON.parse(JSON.stringify(f));
+      restante.id = uid(); restante.criadoEm = Date.now(); restante.valor = resto; restante.status = 'Pendente'; restante.data = '';
+      restante.descricao = (f.descricao || '') + ' (saldo restante)';
+      escalar(restante, resto);
+      state.financeiro.push(restante);
     }
-    escalarPartes(c, valorPago);
-    c.valor = valorPago; c.status = 'Pago'; c.dataPagamento = dataPag;
-    saveKey('contasPagar', state.contasPagar);
+    if(Math.abs(valorPago - total) > 0.004) escalar(f, valorPago);
+    f.valor = valorPago; f.status = 'Pago'; f.data = dataPag;
+    saveKey('financeiro', state.financeiro);
+  }
+  function lancamentosContas(tipo, filtro){
+    return state.financeiro.filter(function(f){
+      if(f.tipo !== tipo) return false;
+      var pend = (f.status || 'Pago') === 'Pendente';
+      if(filtro === 'pendentes') return pend;
+      if(filtro === 'pagas') return !pend && !!f.vencimento;
+      return pend || !!f.vencimento;
+    }).sort(function(a, b){ return (a.status === 'Pendente' ? (a.vencimento || '9') : 'z' + (b.data || '')).localeCompare(b.status === 'Pendente' ? (b.vencimento || '9') : 'z' + (a.data || '')); });
+  }
+  function filtroChipsHtml(acao, atual, rotulos){
+    return '<div style="display:flex; gap:6px; flex-wrap:wrap; margin:0 0 10px;">' + Object.keys(rotulos).map(function(k){ var at = k === atual; return '<button type="button" data-action="' + acao + '" data-filtro="' + k + '" style="font-family:inherit; font-size:12px; padding:4px 11px; border-radius:14px; cursor:pointer; border:1px solid ' + (at ? 'var(--accent)' : 'var(--paper-line)') + '; background:' + (at ? 'var(--accent)' : 'var(--paper)') + '; color:' + (at ? '#fff' : 'var(--ink)') + ';">' + rotulos[k] + '</button>'; }).join('') + '</div>';
+  }
+  function linhaPagamentoHtml(f, colspan){
+    var receita = f.tipo === 'receita';
+    var h = '<tr style="background:#EFE6C8;"><td colspan="' + colspan + '" style="padding:12px 14px;"><div style="display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;">';
+    h += '<div class="field" style="margin:0;"><label>Data do ' + (receita ? 'recebimento' : 'pagamento') + '</label><input type="date" id="cp-pag-data" value="' + hojeISO() + '" style="padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+    h += '<div class="field" style="margin:0;"><label>Valor ' + (receita ? 'recebido' : 'pago') + ' (R$)</label><input type="number" id="cp-pag-valor" value="' + (Number(f.valor) || 0) + '" step="0.01" min="0" style="width:140px; padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+    h += '<button type="button" class="btn" data-action="cp-confirmar-pagamento" data-id="' + f.id + '">Confirmar</button><button type="button" class="btn-cancel" data-action="cp-cancelar-pagamento">Cancelar</button></div>';
+    h += '<p style="font-size:11.5px; color:var(--ink-soft); margin:8px 0 0;">Se ' + (receita ? 'receber' : 'pagar') + ' menos que ' + fmtBRL(f.valor) + ', a diferença continua pendente num lançamento novo, com o mesmo vencimento e destino.</p>';
+    if(!receita && destinoEfetivo(f) === 'classificar') h += '<p style="font-size:11.5px; color:var(--cost-dark); margin:4px 0 0;">⚠️ Sem destino (lavoura, talhão, máquina ou geral). Depois de pagar, use "Editar" para escolher — senão o custo não entra em nenhuma lavoura.</p>';
+    return h + '</td></tr>';
+  }
+  function tabelaContasHtml(lista, tipo){
+    if(!lista.length) return '<div class="paper empty-state">Nada por aqui.</div>';
+    var hoje = hojeISO();
+    var h = '<div class="paper"><div class="table-wrap"><table><thead><tr><th>Vencimento</th><th>Descrição</th><th>Conta</th><th>Parceiro</th><th>Destino</th><th>Valor</th><th>Situação</th><th></th></tr></thead><tbody>';
+    lista.forEach(function(f){
+      var pend = f.status === 'Pendente', atras = pend && f.vencimento && f.vencimento < hoje;
+      h += '<tr><td>' + fmtDate(f.vencimento) + (atras ? '<br><span class="flag-late">Atrasado</span>' : '') + '</td>';
+      h += '<td>' + escapeHtml(f.descricao || '—') + (f.servico ? ' <span class="badge" style="background:#3B6EA5; color:#fff; font-size:10px;">Serviço</span>' : '') + '</td>';
+      h += '<td>' + (f.contaId ? escapeHtml(contaLabel(f.contaId)) : '<span style="color:var(--ink-soft);">' + escapeHtml(f.categoria || '—') + '</span>') + '</td>';
+      h += '<td>' + (f.parceiroId ? escapeHtml(parceiroNome(f.parceiroId)) : '—') + '</td>';
+      h += '<td>' + destinoCelulaHtml(f) + '</td>';
+      h += '<td class="num ' + (tipo === 'custo' ? 'cost' : 'growth') + '">' + fmtBRL(f.valor) + (f.valorDescontos ? '<br><span style="font-size:11px; color:var(--ink-soft);">bruto ' + fmtBRL(f.valorBruto) + '</span>' : '') + '</td>';
+      h += '<td><span class="badge" style="background:' + (pend ? '#DFA84E' : '#7FA36D') + '; color:#1B1508">' + (pend ? 'Pendente' : (tipo === 'custo' ? 'Pago' : 'Recebido') + (f.data ? ' ' + fmtDate(f.data) : '')) + '</span></td>';
+      h += '<td style="white-space:nowrap;">' + (pend ? '<button class="btn" data-action="cp-abrir-pagamento" data-id="' + f.id + '" style="padding:5px 12px; font-size:12px; margin-right:4px;">' + (tipo === 'custo' ? '💰 Pagar' : '💵 Receber') + '</button>' : '');
+      h += lancamentoEstaFechado(f) ? '🔒' : '<button class="btn-edit" data-action="editar-lancamento" data-id="' + f.id + '">Editar</button><button class="btn-del" data-action="del-financeiro" data-id="' + f.id + '">Remover</button>';
+      h += '</td></tr>';
+      if(cpPagandoId === f.id) h += linhaPagamentoHtml(f, 8);
+    });
+    return h + '</tbody></table></div></div>';
+  }
+  function formContaHtml(tipo){
+    var receita = tipo === 'receita', pre = receita ? 'cr' : 'cp';
+    var h = '<div class="paper form-card"><h3>' + (receita ? 'Nova conta a receber' : 'Nova conta a pagar') + '</h3>';
+    h += '<form class="entry-form" id="form-conta' + (receita ? 'receber' : 'pagar') + '">';
+    h += field('text', 'descricao', 'Descrição', true, receita ? 'Ex: Venda de café - lote 3' : 'Ex: Fatura de fertilizante', {});
+    h += '<div class="field-with-add"><div style="flex:1;">' + selectField('contaId', 'Conta (plano de contas)', opcoesContasPorTipo(tipo, null), '') + '</div><button type="button" class="btn-add-inline" data-action="open-conta-modal" title="Nova conta">+</button></div>';
+    h += selectField('parceiroId', receita ? 'Cliente / parceiro (opcional)' : 'Fornecedor / parceiro (opcional)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })), '');
+    h += field('number', 'valor', receita ? 'Valor bruto (R$)' : 'Valor (R$)', true, '0,00', {step:'0.01', min:'0'});
+    if(receita){
+      h += selectField('descontoTipo', 'Desconto', [{value:'Nenhum', label:'Sem desconto'}, {value:'Percentual', label:'Percentual (%)'}, {value:'ValorFixo', label:'Valor fixo (R$)'}], 'Nenhum');
+      h += field('number', 'descontoValor', 'Valor do desconto', false, '0', {step:'0.01', min:'0'});
+    }
+    h += field('date', 'vencimento', 'Vencimento', true, '', {});
+    h += field('number', 'parcelas', 'Parcelas (opcional)', false, '1', {step:'1', min:'1', max:'60'});
+    h += '<div id="destino-conta' + pre + '" data-destino-widget="1" style="grid-column: 1 / -1; display:flex; flex-direction:column; gap:8px; padding:10px 0 6px; border-top:1px dashed var(--paper-line); margin-top:4px;"></div>';
+    h += '<button type="submit" class="btn">Adicionar</button></form>';
+    h += '<p style="font-size:11.5px; color:var(--ink-soft); margin:8px 0 0;">Com mais de 1 parcela, o valor é dividido em parcelas mensais a partir do vencimento. Para editar uma conta já criada, use "Editar" na lista (abre em Lançamentos).</p></div>';
+    return h;
   }
   function renderContasPagar(){
     var el = document.getElementById('tab-contasPagar');
-    var pendente = state.contasPagar.filter(function(c){ return c.status === 'Pendente'; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0);
-    var pago = state.contasPagar.filter(function(c){ return c.status === 'Pago'; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0);
-    var editingRecordCP = (editState && editState.scope === 'generic' && editState.entityKey === 'contasPagar') ? state.contasPagar.find(function(x){ return x.id === editState.id; }) : null;
-
-    var html = '<div class="stat-row">';
-    html += statCard('Total pendente', fmtBRL(pendente), 'cost');
-    html += statCard('Total pago', fmtBRL(pago), 'growth');
-    html += '</div>';
-
-    html += '<div class="paper form-card"><h3>' + (editingRecordCP ? 'Editar conta a pagar' : 'Nova conta a pagar') + '</h3>';
-    html += '<form class="entry-form" id="form-contapagar"' + (editingRecordCP ? ' data-editing-id="' + editingRecordCP.id + '"' : '') + '>';
-    html += field('text', 'descricao', 'Descrição', true, 'Ex: Fatura de fertilizante', {}, editingRecordCP ? editingRecordCP.descricao : undefined);
-    html += '<div class="field-with-add"><div style="flex:1;">' + selectField('contaId', 'Conta (plano de contas)', opcoesContasPorTipo('custo', editingRecordCP), editingRecordCP ? (editingRecordCP.contaId || '') : '') + '</div><button type="button" class="btn-add-inline" data-action="open-conta-modal" title="Nova conta">+</button></div>';
-    html += selectField('parceiroId', 'Parceiro (opcional)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })), editingRecordCP ? editingRecordCP.parceiroId : undefined);
-    html += field('number', 'valor', 'Valor (R$)', true, '0,00', {step:'0.01', min:'0'}, editingRecordCP ? editingRecordCP.valor : undefined);
-    html += field('date', 'vencimento', 'Vencimento', false, '', {}, editingRecordCP ? editingRecordCP.vencimento : undefined);
-    html += selectField('status', 'Status', ['Pendente','Pago'].map(function(c){ return {value:c,label:c}; }), editingRecordCP ? editingRecordCP.status : undefined);
-    html += field('date', 'dataPagamento', 'Data do pagamento', false, '', {}, editingRecordCP ? editingRecordCP.dataPagamento : undefined);
-
-    html += '<div id="destino-contapagar" data-destino-widget="1" style="grid-column: 1 / -1; display:flex; flex-direction:column; gap:8px; padding:10px 0 6px; border-top:1px dashed var(--paper-line); margin-top:4px;"></div>';
-
-    html += '<button type="submit" class="btn">' + (editingRecordCP ? 'Salvar alterações' : 'Adicionar') + '</button>';
-    if(editingRecordCP) html += '<button type="button" class="btn-cancel" data-action="cancel-edit">Cancelar</button>';
-    html += '</form></div>';
-
-    if(!state.contasPagar.length){
-      html += '<div class="paper empty-state">Nenhuma conta a pagar cadastrada ainda.</div>';
-    } else {
-      html += '<div class="paper">';
-      html += '<div class="table-wrap"><table><thead><tr><th>Descrição</th><th>Conta</th><th>Parceiro</th><th>Talhão(ões)</th><th>Destino</th><th>Valor</th><th>Vencimento</th><th>Status</th><th></th></tr></thead><tbody>';
-      state.contasPagar.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(c){
-        html += '<tr>';
-        html += '<td>' + escapeHtml(c.descricao || '—') + '</td>';
-        html += '<td>' + (c.contaId ? escapeHtml(contaLabel(c.contaId)) : '<span style="color:var(--ink-soft);">' + escapeHtml(c.categoria || '—') + '</span>') + '</td>';
-        html += '<td>' + (c.parceiroId ? escapeHtml(parceiroNome(c.parceiroId)) : '—') + '</td>';
-        html += '<td>' + (c.talhoesIds && c.talhoesIds.length ? escapeHtml(c.talhoesIds.map(talhaoNome).join(', ')) : (c.talhaoId ? escapeHtml(talhaoNome(c.talhaoId)) : '—')) + '</td>';
-        html += '<td>' + destinoCelulaHtml(c) + '</td>';
-        html += '<td class="num">' + fmtBRL(c.valor) + '</td>';
-        html += '<td>' + fmtDate(c.vencimento) + '</td>';
-        html += '<td><span class="badge" style="background:' + (c.status === 'Pago' ? '#7FA36D' : '#DFA84E') + '; color:#1B1508">' + c.status + '</span></td>';
-        html += '<td style="white-space:nowrap;">' + (c.status !== 'Pago' ? '<button class="btn" data-action="cp-abrir-pagamento" data-id="' + c.id + '" style="padding:5px 12px; font-size:12px; margin-right:4px;">💰 Pagar</button>' : '');
-        html += '<button class="btn-edit" data-action="edit-generic" data-entity="contasPagar" data-id="' + c.id + '">Editar</button>';
-        html += '<button class="btn-del" data-action="del-generic" data-entity="contasPagar" data-id="' + c.id + '">Remover</button></td>';
-        html += '</tr>';
-        if(cpPagandoId === c.id){
-          var hojeCp = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10);
-          html += '<tr style="background:#EFE6C8;"><td colspan="9" style="padding:12px 14px;">';
-          html += '<div style="display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;">';
-          html += '<div class="field" style="margin:0;"><label>Data do pagamento</label><input type="date" id="cp-pag-data" value="' + hojeCp + '" style="padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
-          html += '<div class="field" style="margin:0;"><label>Valor pago (R$)</label><input type="number" id="cp-pag-valor" value="' + (Number(c.valor) || 0) + '" step="0.01" min="0" style="width:140px; padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
-          html += '<button type="button" class="btn" data-action="cp-confirmar-pagamento" data-id="' + c.id + '">Confirmar pagamento</button>';
-          html += '<button type="button" class="btn-cancel" data-action="cp-cancelar-pagamento">Cancelar</button>';
-          html += '</div>';
-          html += '<p style="font-size:11.5px; color:var(--ink-soft); margin:8px 0 0;">Se pagar menos que ' + fmtBRL(c.valor) + ', a diferença continua pendente numa conta nova, com o mesmo vencimento e destino.</p>';
-          if(destinoEfetivo(c) === 'classificar') html += '<p style="font-size:11.5px; color:var(--cost-dark); margin:4px 0 0;">⚠️ Essa conta ainda não tem destino (lavoura, talhão, máquina ou geral). Depois de pagar, use "Editar" para escolher — senão o custo não entra em nenhuma lavoura.</p>';
-          html += '</td></tr>';
-        }
-      });
-      html += '</tbody></table></div>';
-      html += '</div>';
-    }
-    html += '<div class="paper note-box">Estes lançamentos alimentam o Fluxo de Caixa. Quando vinculados a um talhão e marcados como "Pago", também entram nos custos da Rentabilidade.</div>';
+    var pend = lancamentosContas('custo', 'pendentes'), hoje = hojeISO();
+    var totPend = pend.reduce(function(sm, f){ return sm + (Number(f.valor) || 0); }, 0);
+    var totAtras = pend.filter(function(f){ return f.vencimento && f.vencimento < hoje; }).reduce(function(sm, f){ return sm + (Number(f.valor) || 0); }, 0);
+    var em30 = new Date(Date.now() + 30 * 864e5).toISOString().slice(0,10);
+    var tot30 = pend.filter(function(f){ return f.vencimento && f.vencimento >= hoje && f.vencimento <= em30; }).reduce(function(sm, f){ return sm + (Number(f.valor) || 0); }, 0);
+    var html = '<div class="stat-row">' + statCard('Total a pagar', fmtBRL(totPend), 'cost') + statCard('Atrasado', fmtBRL(totAtras), 'cost') + statCard('Vence em 30 dias', fmtBRL(tot30), 'cost') + '</div>';
+    html += formContaHtml('custo');
+    html += filtroChipsHtml('filtro-cp', cpFiltro, {pendentes:'A pagar', pagas:'Pagas', todas:'Todas'});
+    html += tabelaContasHtml(lancamentosContas('custo', cpFiltro), 'custo');
+    html += '<div class="paper note-box">As contas a pagar são lançamentos de despesa com vencimento — ficam em Lançamentos junto com o resto, então nada é contado duas vezes. As duplicatas das notas importadas entram aqui sozinhas. Quando pagar, o custo entra na lavoura pelo destino escolhido.</div>';
     el.innerHTML = html;
-    renderDestinoWidget(document.getElementById('destino-contapagar'), editingRecordCP);
+    renderDestinoWidget(document.getElementById('destino-contacp'), null);
   }
-
   function renderContasReceber(){
     var el = document.getElementById('tab-contasReceber');
-    var pendente = state.contasReceber.filter(function(c){ return c.status === 'Pendente'; }).reduce(function(s,c){ return s + valorLiquidoContaReceber(c); }, 0);
-    var recebido = state.contasReceber.filter(function(c){ return c.status === 'Recebido'; }).reduce(function(s,c){ return s + valorLiquidoContaReceber(c); }, 0);
-    var totalGeral = pendente + recebido;
-
-    var html = '<div class="stat-row">';
-    html += statCard('Total pendente', fmtBRL(pendente), 'growth');
-    html += statCard('Total recebido', fmtBRL(recebido), 'growth');
-    html += statCard('Valor total (geral)', fmtBRL(totalGeral), 'growth');
-    html += '</div>';
-    html += buildGenericFormHtml('contasReceber');
-    html += buildGenericTableHtml('contasReceber');
-    html += '<div class="paper note-box">Os totais acima já são o valor líquido, com desconto aplicado quando houver. Contas marcadas como "Recebido" e vinculadas a um talhão entram automaticamente na Rentabilidade. Estes lançamentos também alimentam o Fluxo de Caixa. Vendas de colheita registradas na aba Colheita geram receita automaticamente em Financeiro — não use Contas a Receber para a mesma venda, a menos que seja um valor futuro ainda sem colheita associada.</div>';
+    var pend = lancamentosContas('receita', 'pendentes'), hoje = hojeISO();
+    var totPend = pend.reduce(function(sm, f){ return sm + (Number(f.valor) || 0); }, 0);
+    var totAtras = pend.filter(function(f){ return f.vencimento && f.vencimento < hoje; }).reduce(function(sm, f){ return sm + (Number(f.valor) || 0); }, 0);
+    var html = '<div class="stat-row">' + statCard('Total a receber', fmtBRL(totPend), 'growth') + statCard('Atrasado', fmtBRL(totAtras), 'cost') + '</div>';
+    html += formContaHtml('receita');
+    html += filtroChipsHtml('filtro-cr', crFiltro, {pendentes:'A receber', pagas:'Recebidas', todas:'Todas'});
+    html += tabelaContasHtml(lancamentosContas('receita', crFiltro), 'receita');
+    html += '<div class="paper note-box">As contas a receber são lançamentos de receita com vencimento — ficam em Lançamentos junto com o resto. O valor é o líquido (com o desconto já aplicado). Vendas de colheita já geram a receita sozinhas — não lance a mesma venda aqui.</div>';
     el.innerHTML = html;
+    renderDestinoWidget(document.getElementById('destino-contacr'), null);
   }
 
   /* ---------------- Arrendamentos, Financiamentos, Serviços Prestados ---------------- */
@@ -5207,28 +5272,48 @@
     el.innerHTML = html;
   }
 
+  var TIPOS_SERVICO = ['Colheita', 'Frete', 'Plantio', 'Pulverização', 'Diversos'];
   function renderServicosPrestados(){
     var el = document.getElementById('tab-servicosPrestados');
-    var contratados = state.servicosPrestados.filter(function(s){ return (s.direcao || 'Contratado') === 'Contratado'; });
-    var prestados = state.servicosPrestados.filter(function(s){ return s.direcao === 'Prestado'; });
-    var totalPago = contratados.filter(function(s){ return s.status === 'Pago'; }).reduce(function(s,x){ return s + (Number(x.valor)||0); }, 0);
-    var totalPendentePagar = contratados.filter(function(s){ return s.status === 'Pendente'; }).reduce(function(s,x){ return s + (Number(x.valor)||0); }, 0);
-    var totalRecebido = prestados.filter(function(s){ return s.status === 'Pago'; }).reduce(function(s,x){ return s + (Number(x.valor)||0); }, 0);
-    var totalPendenteReceber = prestados.filter(function(s){ return s.status === 'Pendente'; }).reduce(function(s,x){ return s + (Number(x.valor)||0); }, 0);
-    var valorTotalGeral = state.servicosPrestados.reduce(function(s,x){ return s + (Number(x.valor)||0); }, 0);
-
+    var lista = state.financeiro.filter(function(f){ return !!f.servico; }).sort(function(a, b){ return ((b.data || b.vencimento || '')).localeCompare(a.data || a.vencimento || ''); });
+    var soma = function(fn){ return lista.filter(fn).reduce(function(sm, f){ return sm + (Number(f.valor) || 0); }, 0); };
     var html = '<div class="stat-row">';
-    html += statCard('Serviços registrados', state.servicosPrestados.length);
-    html += statCard('Valor total (todos)', fmtBRL(valorTotalGeral));
-    html += statCard('Pago (contratados)', fmtBRL(totalPago), 'cost');
-    html += statCard('A pagar (contratados)', fmtBRL(totalPendentePagar), 'cost');
-    html += statCard('Recebido (prestados)', fmtBRL(totalRecebido), 'growth');
-    html += statCard('A receber (prestados)', fmtBRL(totalPendenteReceber), 'growth');
+    html += statCard('Serviços registrados', lista.length);
+    html += statCard('Pago (contratados)', fmtBRL(soma(function(f){ return f.tipo === 'custo' && f.status !== 'Pendente'; })), 'cost');
+    html += statCard('A pagar (contratados)', fmtBRL(soma(function(f){ return f.tipo === 'custo' && f.status === 'Pendente'; })), 'cost');
+    html += statCard('Recebido (prestados)', fmtBRL(soma(function(f){ return f.tipo === 'receita' && f.status !== 'Pendente'; })), 'growth');
+    html += statCard('A receber (prestados)', fmtBRL(soma(function(f){ return f.tipo === 'receita' && f.status === 'Pendente'; })), 'growth');
     html += '</div>';
-    html += buildGenericFormHtml('servicosPrestados');
-    html += buildGenericTableHtml('servicosPrestados');
-    html += '<div class="paper note-box">Use "Contratado" quando você paga um terceiro pra prestar o serviço pra você (ex: colheita ou frete que você contrata); use "Prestado" quando é você quem presta o serviço e recebe por isso (ex: você faz colheita pra outro produtor). O "Valor unitário" é multiplicado pela "Quantidade" (ou por 1, se a quantidade ficar em branco) pra chegar no "Valor total" — é esse total que entra no Financeiro. Escolhendo uma "Conta" e status "Pago/Recebido", o lançamento (despesa se Contratado, receita se Prestado) é criado automaticamente no Financeiro, e continua sincronizado se você editar o serviço depois (muda o valor lá também).</div>';
+    html += '<div class="paper form-card"><h3>Novo serviço</h3><form class="entry-form" id="form-servico">';
+    html += selectField('direcao', 'Direção', [{value:'Contratado', label:'Contratado (eu pago)'}, {value:'Prestado', label:'Prestado (eu recebo)'}], 'Contratado');
+    html += selectField('tipoServico', 'Tipo de serviço', TIPOS_SERVICO.map(function(t){ return {value:t, label:t}; }), 'Colheita');
+    html += '<div class="field-with-add"><div style="flex:1;">' + selectField('parceiroId', 'Prestador (se eu contratei) / Cliente (se eu prestei)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })), '') + '</div><button type="button" class="btn-add-inline" data-action="open-parceiro-modal" title="Novo parceiro">+</button></div>';
+    html += field('date', 'data', 'Data', true, '', {});
+    html += field('text', 'descricao', 'Descrição', false, 'Ex: Colheita da soja do Pivo', {});
+    html += field('number', 'quantidade', 'Quantidade', false, '1', {step:'0.01', min:'0'});
+    html += field('text', 'unidade', 'Unidade', false, 'Ex: ha, sc, km, h', {});
+    html += field('number', 'valorUnitario', 'Valor unitário (R$)', true, '0,00', {step:'0.01', min:'0'});
+    html += selectField('status', 'Situação', [{value:'Pago', label:'Pago / recebido'}, {value:'Pendente', label:'Pendente (a pagar / receber)'}], 'Pago');
+    html += field('date', 'vencimento', 'Vencimento (se pendente)', false, '', {});
+    html += '<div class="field-with-add"><div style="flex:1;">' + selectField('contaId', 'Conta (plano de contas)', [{value:'', label:'— escolha a conta —'}].concat(state.contasFinanceiro.map(function(c){ return {value:c.id, label:(contaTipo(c.id) === 'receita' ? '↑ ' : '↓ ') + contaLabel(c.id)}; }).sort(function(x, y){ return x.label.localeCompare(y.label, 'pt-BR'); })), '') + '</div><button type="button" class="btn-add-inline" data-action="open-conta-modal" title="Nova conta">+</button></div>';
+    html += '<div id="destino-servico" data-destino-widget="1" style="grid-column: 1 / -1; display:flex; flex-direction:column; gap:8px; padding:10px 0 6px; border-top:1px dashed var(--paper-line); margin-top:4px;"></div>';
+    html += '<button type="submit" class="btn">Adicionar</button></form></div>';
+    if(!lista.length) html += '<div class="paper empty-state">Nenhum serviço registrado ainda.</div>';
+    else {
+      html += '<div class="paper"><div class="table-wrap"><table><thead><tr><th>Data</th><th>Direção</th><th>Tipo</th><th>Prestador / cliente</th><th>Descrição</th><th>Quantidade</th><th>Valor</th><th>Situação</th><th></th></tr></thead><tbody>';
+      lista.forEach(function(f){
+        var pend = f.status === 'Pendente';
+        html += '<tr><td>' + fmtDate(f.data || f.vencimento) + '</td><td>' + (f.tipo === 'receita' ? 'Prestado' : 'Contratado') + '</td><td>' + escapeHtml(f.servico.tipo || '—') + '</td><td>' + (f.parceiroId ? escapeHtml(parceiroNome(f.parceiroId)) : '—') + '</td>';
+        html += '<td>' + escapeHtml(f.descricao || '—') + '</td><td class="num">' + (f.quantidade ? fmtNum(f.quantidade) + (f.unidade ? ' ' + escapeHtml(f.unidade) : '') : '—') + (Number(f.valorUnitario) > 0 ? '<br><span style="font-size:11px; color:var(--ink-soft);">× ' + fmtBRL(f.valorUnitario) + '</span>' : '') + '</td>';
+        html += '<td class="num ' + (f.tipo === 'custo' ? 'cost' : 'growth') + '">' + fmtBRL(f.valor) + '</td><td><span class="badge" style="background:' + (pend ? '#DFA84E' : '#7FA36D') + '; color:#1B1508">' + (pend ? 'Pendente' : 'Pago') + '</span></td>';
+        html += '<td style="white-space:nowrap;">' + (pend ? '<button class="btn" data-action="cp-abrir-pagamento" data-id="' + f.id + '" style="padding:5px 12px; font-size:12px; margin-right:4px;">' + (f.tipo === 'custo' ? '💰 Pagar' : '💵 Receber') + '</button>' : '') + (lancamentoEstaFechado(f) ? '🔒' : '<button class="btn-edit" data-action="editar-lancamento" data-id="' + f.id + '">Editar</button><button class="btn-del" data-action="del-financeiro" data-id="' + f.id + '">Remover</button>') + '</td></tr>';
+        if(cpPagandoId === f.id) html += linhaPagamentoHtml(f, 9);
+      });
+      html += '</tbody></table></div></div>';
+    }
+    html += '<div class="paper note-box">Cada serviço é um lançamento (aparece também em Lançamentos e no Fluxo de Caixa). "Contratado" é despesa: escolha o destino para o custo entrar na lavoura ou talhão certo. "Prestado" é receita.</div>';
     el.innerHTML = html;
+    renderDestinoWidget(document.getElementById('destino-servico'), null);
   }
 
   /* ---------------- AGRO5.0 — espaço para novos indicadores/tecnologias ---------------- */
@@ -6457,7 +6542,7 @@
       }
     }
 
-    html += '<div class="paper note-box">Este extrato considera os lançamentos da aba Financeiro vinculados a um Parceiro. Contas a Pagar/Receber, Arrendamentos, Financiamentos e Serviços Prestados têm seus próprios controles e ainda não entram nesta soma.</div>';
+    html += '<div class="paper note-box">Este extrato considera os lançamentos da aba Financeiro vinculados a um Parceiro. Contas a pagar/receber e serviços também são lançamentos e entram aqui quando têm parceiro. Arrendamentos e Financiamentos têm seus próprios controles e só entram quando a parcela é paga.</div>';
     el.innerHTML = html;
   }
 
@@ -6623,7 +6708,7 @@
     html += '</div>';
     html += renderSecao('receita', totalReceitas, 'RECEITAS');
     html += renderSecao('custo', totalCustos, 'DESPESAS');
-    html += '<div class="paper note-box">Este relatório considera apenas lançamentos do Financeiro marcados como "Pago" e vinculados a uma Conta (cadastrada pelo botão "+" no formulário de Lançamentos). Contas a Pagar/Receber ainda pendentes não entram aqui — acompanhe-as nas abas próprias.</div>';
+    html += '<div class="paper note-box">Este relatório considera apenas lançamentos do Financeiro marcados como "Pago" e vinculados a uma Conta (cadastrada pelo botão "+" no formulário de Lançamentos). Lançamentos ainda pendentes (contas a pagar/receber) não entram aqui — acompanhe-os nas abas Contas a Pagar e Contas a Receber.</div>';
     el.innerHTML = html;
   }
 
@@ -7027,8 +7112,10 @@
     addSheet('Subgrupos', state.subgruposFinanceiro.map(function(s){ return {Nome:s.nome, Tipo: s.tipo==='custo'?'Despesa':'Receita'}; }));
     addSheet('ContasFinanceiro', state.contasFinanceiro.map(function(c){ return {Conta:c.nome, Subgrupo: subgrupoNome(c.subgrupoId)}; }));
     addSheet('Financeiro', state.financeiro.map(function(f){ return {Data:f.data, Vencimento:f.vencimento, Status:f.status||'Pago', Tipo:f.tipo, Subgrupo: f.contaId?subgrupoNome((state.contasFinanceiro.find(function(c){return c.id===f.contaId;})||{}).subgrupoId):'', Conta: f.contaId?contaNome(f.contaId):f.categoria, Quantidade:f.quantidade, ValorUnitario:f.valorUnitario, Unidade:f.unidade, Talhoes: talhoesDoLancamento(f).map(talhaoNome).join(', '), Descricao:f.descricao, Valor:f.valor}; }));
-    addSheet('ContasAPagar', state.contasPagar.map(function(c){ return {Descricao:c.descricao, Categoria:c.categoria, Valor:c.valor, Vencimento:c.vencimento, Status:c.status}; }));
-    addSheet('ContasAReceber', state.contasReceber.map(function(c){ return {Descricao:c.descricao, Categoria:c.categoria, ValorBruto:c.valor, Desconto:valorDescontoContaReceber(c), ValorTotal:valorLiquidoContaReceber(c), Vencimento:c.vencimento, Status:c.status}; }));
+    addSheet('ContasAPagar', state.financeiro.filter(function(f){ return f.tipo === 'custo' && (f.status === 'Pendente' || f.vencimento); }).map(function(c){ return {Descricao:c.descricao, Conta: c.contaId ? contaNome(c.contaId) : c.categoria, Valor:c.valor, Vencimento:c.vencimento, Status:c.status || 'Pago', DataPagamento: c.data}; }));
+    if(false) addSheet('x', state.contasPagar.map(function(c){ return {Descricao:c.descricao, Categoria:c.categoria, Valor:c.valor, Vencimento:c.vencimento, Status:c.status}; }));
+    addSheet('ContasAReceber', state.financeiro.filter(function(f){ return f.tipo === 'receita' && (f.status === 'Pendente' || f.vencimento); }).map(function(c){ return {Descricao:c.descricao, Conta: c.contaId ? contaNome(c.contaId) : c.categoria, ValorLiquido:c.valor, Vencimento:c.vencimento, Status:c.status || 'Pago', DataRecebimento: c.data}; }));
+    if(false) addSheet('y', state.contasReceber.map(function(c){ return {Descricao:c.descricao, Categoria:c.categoria, ValorBruto:c.valor, Desconto:valorDescontoContaReceber(c), ValorTotal:valorLiquidoContaReceber(c), Vencimento:c.vencimento, Status:c.status}; }));
 
     var rentTalhao = state.talhoes.map(function(t){
       var safraIdsDoTalhao = state.safras.filter(function(s){ return s.talhaoId === t.id; }).map(function(s){ return s.id; });
@@ -8396,30 +8483,63 @@
       form.reset(); renderAll(); return;
     }
 
-    if(form.id === 'form-contapagar'){
-      var cpEditingId = form.dataset.editingId;
-      var cpDestino = lerDestinoDoForm(form);
-      if(cpDestino.erro){ alert(cpDestino.erro); return; }
-      var cpFields = {
-        descricao: (data.get('descricao') || '').trim(), contaId: data.get('contaId') || '', categoria: data.get('contaId') ? contaNome(data.get('contaId')) : '',
-        parceiroId: data.get('parceiroId') || '', vencimento: data.get('vencimento') || '',
-        status: data.get('status') || 'Pendente', dataPagamento: data.get('dataPagamento') || '',
-        valor: parseFloat(data.get('valor')) || 0
-      };
-      if(cpEditingId){
-        var idxCpEdit = state.contasPagar.findIndex(function(x){ return x.id === cpEditingId; });
-        if(idxCpEdit !== -1 && !cpFields.contaId) delete cpFields.categoria;
-        if(idxCpEdit !== -1){ Object.keys(cpFields).forEach(function(k){ state.contasPagar[idxCpEdit][k] = cpFields[k]; }); aplicarDestino(state.contasPagar[idxCpEdit], cpDestino); }
-      } else {
-        cpFields.id = uid();
-        cpFields.criadoEm = Date.now();
-        state.contasPagar.push(aplicarDestino(cpFields, cpDestino));
+    if(form.id === 'form-contapagar' || form.id === 'form-contareceber'){
+      var tipoCt = form.id === 'form-contareceber' ? 'receita' : 'custo';
+      var destCt = lerDestinoDoForm(form);
+      if(destCt.erro && tipoCt === 'custo'){ alert(destCt.erro); return; }
+      var contaCt = data.get('contaId') || '';
+      if(!contaCt){ alert('Escolha a conta do plano de contas.'); return; }
+      var brutoCt = parseFloat(data.get('valor')) || 0;
+      if(brutoCt <= 0){ alert('Informe o valor.'); return; }
+      var liquidoCt = brutoCt, descontoCt = 0;
+      if(tipoCt === 'receita'){
+        var dv = parseFloat(data.get('descontoValor')) || 0, dt = data.get('descontoTipo');
+        descontoCt = dt === 'Percentual' ? brutoCt * dv / 100 : (dt === 'ValorFixo' ? dv : 0);
+        liquidoCt = Math.round((brutoCt - descontoCt) * 100) / 100;
       }
-      saveKey('contasPagar', state.contasPagar);
-      editState = null;
-      form.reset();
-      renderAll();
-      return;
+      var nParc = Math.max(1, Math.min(60, parseInt(data.get('parcelas'), 10) || 1));
+      var valoresParc = dividirValor(liquidoCt, Array.from({length: nParc}, function(){ return 1 / nParc; }));
+      var venc0 = data.get('vencimento') || hojeISO();
+      var descCt = (data.get('descricao') || '').trim();
+      for(var ip = 0; ip < nParc; ip++){
+        var novoCt = {
+          id: uid(), origem: tipoCt === 'receita' ? 'contaReceber' : 'contaPagar', tipo: tipoCt, contaId: contaCt, categoria: contaNome(contaCt),
+          descricao: descCt + (nParc > 1 ? ' (' + (ip + 1) + '/' + nParc + ')' : ''), parceiroId: data.get('parceiroId') || '', membroId: '',
+          valor: valoresParc[ip], quantidade: 0, peso: 0, unidade: '', status: 'Pendente', data: '', vencimento: addMesesISO(venc0, ip),
+          talhoesIds: [], talhaoId: '', criadoEm: Date.now() + ip
+        };
+        if(descontoCt > 0){ novoCt.valorBruto = Math.round(brutoCt / nParc * 100) / 100; novoCt.valorDescontos = Math.round(descontoCt / nParc * 100) / 100; }
+        if(!destCt.erro) aplicarDestino(novoCt, destCt);
+        if(nParc > 1 && novoCt.partes && novoCt.partes.length){ var vsP = dividirValor(novoCt.valor, novoCt.partes.map(function(pt){ return (Number(pt.valor) || 0) / liquidoCt; })); novoCt.partes = novoCt.partes.map(function(pt, i){ return Object.assign({}, pt, {valor: vsP[i]}); }); }
+        state.financeiro.push(novoCt);
+      }
+      saveKey('financeiro', state.financeiro);
+      form.reset(); renderAll(); return;
+    }
+    if(form.id === 'form-servico'){
+      var destSv = lerDestinoDoForm(form);
+      var dirSv = data.get('direcao') === 'Prestado' ? 'Prestado' : 'Contratado';
+      var tipoSv = dirSv === 'Prestado' ? 'receita' : 'custo';
+      if(destSv.erro && tipoSv === 'custo'){ alert(destSv.erro); return; }
+      var contaSv = data.get('contaId') || '';
+      if(!contaSv){ alert('Escolha a conta do plano de contas.'); return; }
+      if(contaTipo(contaSv) !== tipoSv && !window.confirm('A conta escolhida é de ' + (contaTipo(contaSv) === 'receita' ? 'receita' : 'despesa') + ', mas o serviço é ' + (tipoSv === 'receita' ? 'prestado (receita)' : 'contratado (despesa)') + '. Continuar mesmo assim?')) return;
+      var qSv = parseFloat(data.get('quantidade')) || 1, vuSv = parseFloat(data.get('valorUnitario')) || 0;
+      if(vuSv <= 0){ alert('Informe o valor unitário.'); return; }
+      var pendSv = data.get('status') === 'Pendente';
+      var tpSv = data.get('tipoServico') || 'Diversos', dsSv = (data.get('descricao') || '').trim();
+      var novoSv = {
+        id: uid(), origem: 'servico', tipo: tipoSv, contaId: contaSv, categoria: contaNome(contaSv),
+        descricao: (dirSv === 'Prestado' ? 'Serviço prestado' : 'Serviço contratado') + ' - ' + tpSv + (dsSv ? ' - ' + dsSv : ''),
+        parceiroId: data.get('parceiroId') || '', membroId: '', quantidade: qSv, valorUnitario: vuSv, unidade: (data.get('unidade') || '').trim(), peso: 0,
+        valor: Math.round(qSv * vuSv * 100) / 100, status: pendSv ? 'Pendente' : 'Pago', data: pendSv ? '' : (data.get('data') || hojeISO()),
+        vencimento: pendSv ? (data.get('vencimento') || data.get('data') || hojeISO()) : '', talhoesIds: [], talhaoId: '',
+        servico: {direcao: dirSv, tipo: tpSv, dataServico: data.get('data') || ''}, criadoEm: Date.now()
+      };
+      if(!destSv.erro) aplicarDestino(novoSv, destSv);
+      state.financeiro.push(novoSv);
+      saveKey('financeiro', state.financeiro);
+      form.reset(); renderAll(); return;
     }
 
     if(form.id === 'form-financeiro'){
@@ -8780,35 +8900,28 @@
     }
     if(action === 'produto-add-embalagem'){ lerEmbalagensDoDom(); produtoEmbRascunho.itens.push({nome:'', conteudo:''}); renderEmbalagensProduto(); return; }
     if(action === 'produto-remover-embalagem'){ lerEmbalagensDoDom(); produtoEmbRascunho.itens.splice(Number(btn.dataset.idx), 1); renderEmbalagensProduto(); return; }
-    if(action === 'cr-receber'){
-      var crRec = state.contasReceber.find(function(x){ return x.id === id; });
-      if(!crRec) return;
-      var hojeCr = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10);
-      var dtCr = window.prompt('Receber ' + fmtBRL(valorLiquidoContaReceber(crRec)) + ' — ' + (crRec.descricao || '') + '\n\nData do recebimento (dd/mm/aaaa):', hojeCr.split('-').reverse().join('/'));
-      if(dtCr === null) return;
-      dtCr = dtCr.trim();
-      var mCr = dtCr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-      if(mCr) dtCr = mCr[3] + '-' + ('0' + mCr[2]).slice(-2) + '-' + ('0' + mCr[1]).slice(-2);
-      if(!/^\d{4}-\d{2}-\d{2}$/.test(dtCr)){ alert('Data inválida. Use dd/mm/aaaa.'); return; }
-      if(periodoFechado(dtCr)){ alert('O período ' + dtCr.slice(0,7) + ' está fechado. Reabra-o na aba Financeiro antes.'); return; }
-      crRec.status = 'Recebido'; crRec.dataRecebimento = dtCr;
-      saveKey('contasReceber', state.contasReceber); renderAll(); return;
-    }
-    if(action === 'cp-abrir-pagamento'){ cpPagandoId = id; renderContasPagar(); var dt = document.getElementById('cp-pag-data'); if(dt) dt.focus(); return; }
-    if(action === 'cp-cancelar-pagamento'){ cpPagandoId = null; renderContasPagar(); return; }
+    if(action === 'cp-abrir-pagamento'){ cpPagandoId = cpPagandoId === id ? null : id; renderAll(); var dt = document.getElementById('cp-pag-data'); if(dt) dt.focus(); return; }
+    if(action === 'cp-cancelar-pagamento'){ cpPagandoId = null; renderAll(); return; }
     if(action === 'cp-confirmar-pagamento'){
-      var cpPag = state.contasPagar.find(function(x){ return x.id === id; });
-      if(!cpPag) return;
+      var lcPag = state.financeiro.find(function(x){ return x.id === id; });
+      if(!lcPag) return;
       var dataPg = (document.getElementById('cp-pag-data') || {}).value || '';
       var valorPg = parseFloat((document.getElementById('cp-pag-valor') || {}).value) || 0;
-      if(!dataPg){ alert('Informe a data do pagamento.'); return; }
+      if(!dataPg){ alert('Informe a data.'); return; }
       if(periodoFechado(dataPg)){ alert('O período ' + dataPg.slice(0,7) + ' está fechado. Reabra-o na aba Financeiro antes.'); return; }
-      if(valorPg <= 0){ alert('Informe o valor pago.'); return; }
-      if(valorPg > (Number(cpPag.valor) || 0) + 0.004 && !window.confirm('O valor pago (' + fmtBRL(valorPg) + ') é maior que o da conta (' + fmtBRL(cpPag.valor) + '). Registrar mesmo assim (juros/multa)?')) return;
-      pagarContaPagar(id, dataPg, valorPg);
+      if(valorPg <= 0){ alert('Informe o valor.'); return; }
+      if(valorPg > (Number(lcPag.valor) || 0) + 0.004 && !window.confirm('O valor (' + fmtBRL(valorPg) + ') é maior que o da conta (' + fmtBRL(lcPag.valor) + '). Registrar mesmo assim (juros/multa)?')) return;
+      pagarLancamento(id, dataPg, valorPg);
       cpPagandoId = null;
       renderAll();
       return;
+    }
+    if(action === 'filtro-cp'){ cpFiltro = btn.dataset.filtro; renderContasPagar(); return; }
+    if(action === 'filtro-cr'){ crFiltro = btn.dataset.filtro; renderContasReceber(); return; }
+    if(action === 'editar-lancamento'){
+      var lcEd = state.financeiro.find(function(f){ return f.id === id; });
+      if(lcEd && lancamentoEstaFechado(lcEd)){ alert('Este lançamento está num período fechado. Reabra o período antes de editar.'); return; }
+      editState = {scope:'financeiro', id: id}; switchTab('financeiro'); renderAll(); var fEd = document.getElementById('form-financeiro'); if(fEd) fEd.scrollIntoView({behavior:'smooth', block:'start'}); return;
     }
     if(action === 'dar-ciencia-resumos'){ var chCi = chavesResumosMarcados(); if(!chCi.length){ alert('Marque as notas na lista de resumos.'); return; } darCienciaEBaixar(chCi); return; }
     if(action === 'baixar-resumos'){ baixarNovamenteResumos(chavesResumosMarcados()); return; }
@@ -8975,10 +9088,10 @@
         var notaPag = notasComVencimentoParaContasPagar[chaveNotaPag];
         var descricaoItens = notaPag.itensDescricao.join(', ');
         notaPag.duplicatas.forEach(function(dupItem, dupIdx){
-          state.contasPagar.push({
-            id: uid(), descricao: 'NF ' + (notaPag.numeroNota || '') + (notaPag.duplicatas.length > 1 ? ' - parcela ' + (dupItem.numero || (dupIdx+1)) : '') + ' — ' + descricaoItens,
-            categoria: notaPag.categoria, contaId: contaEscolhida || '', parceiroId: notaPag.fornecedorId, talhaoId: '',
-            valor: dupItem.valor, vencimento: dupItem.vencimento, status: 'Pendente', dataPagamento: '',
+          state.financeiro.push({
+            id: uid(), tipo: 'custo', descricao: 'NF ' + (notaPag.numeroNota || '') + (notaPag.duplicatas.length > 1 ? ' - parcela ' + (dupItem.numero || (dupIdx+1)) : '') + ' — ' + descricaoItens,
+            categoria: notaPag.categoria, contaId: contaEscolhida || '', parceiroId: notaPag.fornecedorId, membroId: '', talhaoId: '', talhoesIds: [],
+            valor: dupItem.valor, quantidade: 0, peso: 0, unidade: '', vencimento: dupItem.vencimento, status: 'Pendente', data: '',
             origem: 'nfe', criadoEm: Date.now() + dupIdx
           });
           qtdContasPagarCriadas++;
@@ -9014,7 +9127,6 @@
       saveKey('parceiros', state.parceiros);
       saveKey('producao', state.producao);
       if(mudouFinanceiro) saveKey('financeiro', state.financeiro);
-      if(qtdContasPagarCriadas) saveKey('contasPagar', state.contasPagar);
       nfeImportada = null;
       notaEmDetalheChave = null;
       state.sefazItensRevisao = [];
@@ -9540,11 +9652,8 @@
         crDp.status = 'Recebido'; crDp.dataRecebimento = dataDp; saveKey('contasReceber', state.contasReceber);
       } else if(tipoDp === 'fin'){
         var fDp = state.financeiro.find(function(x){ return x.id === idDp; }); if(!fDp) return;
-        if(Math.abs(valorDp - (Number(fDp.valor) || 0)) > 0.004){
-          if(fDp.partes && fDp.partes.length && Number(fDp.valor) > 0){ var frDp = fDp.partes.map(function(pt){ return (Number(pt.valor) || 0) / Number(fDp.valor); }); var vsDp = dividirValor(valorDp, frDp); fDp.partes = fDp.partes.map(function(pt, i){ return Object.assign({}, pt, {valor: vsDp[i]}); }); }
-          fDp.valor = valorDp;
-        }
-        fDp.status = 'Pago'; fDp.data = dataDp; saveKey('financeiro', state.financeiro);
+        if(valorDp > (Number(fDp.valor) || 0) + 0.004 && !window.confirm('O valor (' + fmtBRL(valorDp) + ') é maior que o da conta (' + fmtBRL(fDp.valor) + '). Registrar mesmo assim (juros/multa)?')) return;
+        pagarLancamento(idDp, dataDp, valorDp);
       }
       dashPagandoChave = null; renderAll(); return;
     }
