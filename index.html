@@ -258,6 +258,18 @@
     body.imprimindo-calagem .modal-box{max-width:100% !important; box-shadow:none !important; border:none !important; padding:0 !important;}
     body.imprimindo-calagem .no-print{display:none !important;}
   }
+  #tip-lanc{position:fixed; z-index:9999; max-width:380px; min-width:240px; background:#FFFDF6; color:var(--ink); border:1px solid var(--paper-line); border-radius:8px; box-shadow:0 8px 28px rgba(40,30,10,.22); padding:12px 14px; font-size:12.5px; line-height:1.45; pointer-events:none; opacity:0; transition:opacity .12s;}
+  #tip-lanc.on{opacity:1;}
+  #tip-lanc.toque{pointer-events:auto;}
+  #tip-lanc .tl-tit{font-weight:700; font-size:13.5px; margin-bottom:4px;}
+  #tip-lanc .tl-tags{margin-bottom:8px; display:flex; flex-wrap:wrap; gap:4px;}
+  #tip-lanc .tl-tags span{font-size:10.5px; padding:1px 7px; border-radius:9px; color:#fff;}
+  #tip-lanc table{width:100%; border-collapse:collapse; margin:0;}
+  #tip-lanc td{padding:2px 0; border:none; vertical-align:top; font-size:12.5px; background:none;}
+  #tip-lanc td.k{color:var(--ink-soft); padding-right:10px; white-space:nowrap; width:1%;}
+  #tip-lanc .tl-sec{margin-top:8px; padding-top:7px; border-top:1px dashed var(--paper-line); font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft);}
+  #tip-lanc .tl-obs{margin-top:8px; padding:6px 8px; background:#F3ECD8; border-radius:4px; white-space:pre-wrap;}
+  [data-tip-fin]{cursor:default;}
 </style>
 </head>
 <body>
@@ -1757,6 +1769,39 @@
           marcarImportAplicado('unificar-financeiro-v1');
         })();
         (function(){
+          // Correção pontual (Sítio Santa Izabel): "Contrato milho" lançado em duplicidade com as duas Vendas Antecipadas,
+          // e lançamentos ligados a parceiros que foram apagados do cadastro (Integrada antiga e LAR antiga).
+          if(importJaAplicado('fix-duplicata-parceiros-v1')) return;
+          if(typeof podeGravarChave === 'function' && !podeGravarChave('financeiro')) return;
+          var ID_DUP = '7c8f937a-405c-4946-890e-81ca9b97ced1';
+          var ORFAOS = [
+            {id: 'b94c0a28-5980-4470-b4a0-8635c074ab60', nome: /integrada/i},
+            {id: '3dba12bb-131b-47ff-a1ba-454cea19ba4a', nome: /^\s*lar\b/i}
+          ];
+          var existe = function(id){ return state.parceiros.some(function(pc){ return pc.id === id; }); };
+          var aqui = state.financeiro.some(function(f){ return f.id === ID_DUP; }) || ALL_KEYS.some(function(k){
+            return Array.isArray(state[k]) && state[k].some(function(r){ return r && ORFAOS.some(function(o){ return r.parceiroId === o.id; }); });
+          });
+          if(!aqui){ marcarImportAplicado('fix-duplicata-parceiros-v1'); return; }
+          var dup = state.financeiro.find(function(f){ return f.id === ID_DUP; });
+          if(dup && dup.tipo === 'receita' && Math.abs((Number(dup.valor) || 0) - 140068.8) < 0.01){
+            state.financeiro = state.financeiro.filter(function(f){ return f.id !== ID_DUP; });
+            saveKey('financeiro', state.financeiro);
+          }
+          ORFAOS.forEach(function(o){
+            if(existe(o.id)) return; // o parceiro antigo ainda existe: não mexe
+            var alvo = state.parceiros.find(function(pc){ return o.nome.test(pc.nome || ''); });
+            if(!alvo) return;
+            ALL_KEYS.forEach(function(k){
+              if(k === 'parceiros' || !Array.isArray(state[k])) return;
+              var mudou = false;
+              state[k].forEach(function(r){ if(r && r.parceiroId === o.id){ r.parceiroId = alvo.id; mudou = true; } });
+              if(mudou) saveKey(k, state[k]);
+            });
+          });
+          marcarImportAplicado('fix-duplicata-parceiros-v1');
+        })();
+        (function(){
           // CP/CR antigos: categoria de texto → conta do plano de contas (quando o nome bate)
           if(importJaAplicado('cp-cr-plano-contas-v1')) return;
           var mudouCp = false, mudouCr = false;
@@ -2507,7 +2552,7 @@
       html += '<div class="paper list-card">';
       vencendo.forEach(function(v){
         var rotBtn = v.tipo === 'entrada' ? '💵 Receber' : '💰 Pagar';
-        html += '<div class="list-row" style="align-items:center; gap:10px;"><span style="flex:1;">' + escapeHtml(v.desc) + (v.atrasado ? '<span class="flag-late">Atrasado</span>' : '') + '</span>';
+        html += '<div class="list-row"' + (v.chave.indexOf('fin:') === 0 ? ' data-tip-fin="' + v.chave.slice(4) + '"' : '') + ' style="align-items:center; gap:10px;"><span style="flex:1;">' + escapeHtml(v.desc) + (v.atrasado ? '<span class="flag-late">Atrasado</span>' : '') + '</span>';
         html += '<span class="num ' + (v.tipo==='entrada'?'growth':'cost') + '">' + (v.tipo==='entrada'?'+':'−') + ' ' + fmtBRL(v.valor) + ' · ' + fmtDate(v.vencimento) + '</span>';
         html += '<button type="button" class="btn" data-action="dash-abrir-pagamento" data-chave="' + v.chave + '" style="padding:4px 12px; font-size:12px; white-space:nowrap;">' + rotBtn + '</button></div>';
         if(dashPagandoChave === v.chave){
@@ -5013,7 +5058,7 @@
       html += '<div class="table-wrap"><table><thead><tr>' + (financeiroSoSemSafra ? '<th><input type="checkbox" id="classif-todos" title="Marcar todos"></th>' : '') + '<th>Data/Venc.</th><th>Funcionário</th><th>Descrição</th><th>Conta</th><th>Talhão</th><th>Destino</th><th>Quantidade</th><th>Valor Unitário</th><th>Valor Total</th><th>Tipo</th><th>Status</th><th></th></tr></thead><tbody>';
       financeiroFiltrado.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(f){
         var status = f.status || 'Pago';
-        html += '<tr>';
+        html += '<tr data-tip-fin="' + f.id + '">';
         if(financeiroSoSemSafra) html += '<td>' + (lancamentoEstaFechado(f) ? '🔒' : '<input type="checkbox" class="classif-cb" value="' + f.id + '">') + '</td>';
         html += '<td>' + fmtDate(status === 'Pendente' ? f.vencimento : f.data) + '</td>';
         html += '<td>' + (f.membroId ? escapeHtml(membroNome(f.membroId)) : '—') + (f.temAnexo ? ' <button type="button" class="btn-edit" data-action="ver-anexo" data-id="' + f.id + '" title="Ver comprovante" style="padding:2px 7px; font-size:11px;">📎</button>' : '') + '</td>';
@@ -5130,7 +5175,7 @@
     var h = '<div class="paper"><div class="table-wrap"><table><thead><tr><th>Vencimento</th><th>Descrição</th><th>Conta</th><th>Parceiro</th><th>Destino</th><th>Valor</th><th>Situação</th><th></th></tr></thead><tbody>';
     lista.forEach(function(f){
       var pend = f.status === 'Pendente', atras = pend && f.vencimento && f.vencimento < hoje;
-      h += '<tr><td>' + fmtDate(f.vencimento) + (atras ? '<br><span class="flag-late">Atrasado</span>' : '') + '</td>';
+      h += '<tr data-tip-fin="' + f.id + '"><td>' + fmtDate(f.vencimento) + (atras ? '<br><span class="flag-late">Atrasado</span>' : '') + '</td>';
       h += '<td>' + escapeHtml(f.descricao || '—') + (f.servico ? ' <span class="badge" style="background:#3B6EA5; color:#fff; font-size:10px;">Serviço</span>' : '') + '</td>';
       h += '<td>' + (f.contaId ? escapeHtml(contaLabel(f.contaId)) : '<span style="color:var(--ink-soft);">' + escapeHtml(f.categoria || '—') + '</span>') + '</td>';
       h += '<td>' + (f.parceiroId ? escapeHtml(parceiroNome(f.parceiroId)) : '—') + '</td>';
@@ -5303,7 +5348,7 @@
       html += '<div class="paper"><div class="table-wrap"><table><thead><tr><th>Data</th><th>Direção</th><th>Tipo</th><th>Prestador / cliente</th><th>Descrição</th><th>Quantidade</th><th>Valor</th><th>Situação</th><th></th></tr></thead><tbody>';
       lista.forEach(function(f){
         var pend = f.status === 'Pendente';
-        html += '<tr><td>' + fmtDate(f.data || f.vencimento) + '</td><td>' + (f.tipo === 'receita' ? 'Prestado' : 'Contratado') + '</td><td>' + escapeHtml(f.servico.tipo || '—') + '</td><td>' + (f.parceiroId ? escapeHtml(parceiroNome(f.parceiroId)) : '—') + '</td>';
+        html += '<tr data-tip-fin="' + f.id + '"><td>' + fmtDate(f.data || f.vencimento) + '</td><td>' + (f.tipo === 'receita' ? 'Prestado' : 'Contratado') + '</td><td>' + escapeHtml(f.servico.tipo || '—') + '</td><td>' + (f.parceiroId ? escapeHtml(parceiroNome(f.parceiroId)) : '—') + '</td>';
         html += '<td>' + escapeHtml(f.descricao || '—') + '</td><td class="num">' + (f.quantidade ? fmtNum(f.quantidade) + (f.unidade ? ' ' + escapeHtml(f.unidade) : '') : '—') + (Number(f.valorUnitario) > 0 ? '<br><span style="font-size:11px; color:var(--ink-soft);">× ' + fmtBRL(f.valorUnitario) + '</span>' : '') + '</td>';
         html += '<td class="num ' + (f.tipo === 'custo' ? 'cost' : 'growth') + '">' + fmtBRL(f.valor) + '</td><td><span class="badge" style="background:' + (pend ? '#DFA84E' : '#7FA36D') + '; color:#1B1508">' + (pend ? 'Pendente' : 'Pago') + '</span></td>';
         html += '<td style="white-space:nowrap;">' + (pend ? '<button class="btn" data-action="cp-abrir-pagamento" data-id="' + f.id + '" style="padding:5px 12px; font-size:12px; margin-right:4px;">' + (f.tipo === 'custo' ? '💰 Pagar' : '💵 Receber') + '</button>' : '') + (lancamentoEstaFechado(f) ? '🔒' : '<button class="btn-edit" data-action="editar-lancamento" data-id="' + f.id + '">Editar</button><button class="btn-del" data-action="del-financeiro" data-id="' + f.id + '">Remover</button>') + '</td></tr>';
@@ -6897,6 +6942,124 @@
     if(!dataISO || !state.periodosFechados) return false;
     return state.periodosFechados.indexOf(dataISO.slice(0, 7)) !== -1;
   }
+  /* ---------------- Caixa flutuante com o resumo do lançamento (passar o mouse; no celular, tocar) ---------------- */
+  function tipLancamentoHtml(f){
+    var pend = (f.status || 'Pago') === 'Pendente', receita = f.tipo === 'receita', hoje = hojeISO();
+    var linha = function(k, v){ return v ? '<tr><td class="k">' + k + '</td><td>' + v + '</td></tr>' : ''; };
+    var h = '<div class="tl-tit">' + escapeHtml(f.descricao || '(sem descrição)') + '</div><div class="tl-tags">';
+    h += '<span style="background:' + (receita ? 'var(--growth)' : 'var(--cost)') + ';">' + (receita ? 'Receita' : 'Despesa') + '</span>';
+    if(f.servico) h += '<span style="background:#3B6EA5;">Serviço ' + (f.servico.direcao === 'Prestado' ? 'prestado' : 'contratado') + '</span>';
+    if(f.origem && ORIGEM_LANCAMENTO_LABEL[f.origem] && !(f.servico && f.origem === 'servico')) h += '<span style="background:' + ORIGEM_LANCAMENTO_LABEL[f.origem].cor + ';">' + ORIGEM_LANCAMENTO_LABEL[f.origem].label + '</span>';
+    if(lancamentoEstaFechado(f)) h += '<span style="background:#8B8368;">🔒 Período fechado</span>';
+    h += '</div><table>';
+    var valor = Number(f.valorUnitario) > 0 ? valorTotalLancamento(f) : (Number(f.valor) || 0);
+    h += linha('Valor', '<b class="' + (receita ? 'growth' : 'cost') + '">' + fmtBRL(valor) + '</b>');
+    if(Number(f.valorUnitario) > 0 && Number(f.quantidade) > 0) h += linha('Cálculo', fmtNum(f.quantidade) + (f.unidade ? ' ' + escapeHtml(f.unidade) : '') + ' × ' + fmtBRL(f.valorUnitario));
+    else if(Number(f.quantidade) > 0) h += linha('Quantidade', fmtNum(f.quantidade) + (f.unidade ? ' ' + escapeHtml(f.unidade) : ''));
+    if(Number(f.valorDescontos) > 0) h += linha('Bruto / desconto', fmtBRL(f.valorBruto) + ' − ' + fmtBRL(f.valorDescontos));
+    var sit;
+    if(pend){
+      var dias = f.vencimento ? Math.round((new Date(f.vencimento + 'T00:00:00') - new Date(hoje + 'T00:00:00')) / 86400000) : null;
+      sit = '<b style="color:#B07A16;">Pendente</b>' + (f.vencimento ? ' · vence ' + fmtDate(f.vencimento) : '') + (dias === null ? '' : dias < 0 ? ' <b style="color:var(--cost-dark);">(atrasada ' + (-dias) + ' dia' + (dias === -1 ? '' : 's') + ')</b>' : dias === 0 ? ' (vence hoje)' : ' (faltam ' + dias + ' dia' + (dias === 1 ? '' : 's') + ')');
+    } else {
+      sit = '<b style="color:var(--growth-dark);">' + (receita ? 'Recebido' : 'Pago') + '</b>' + (f.data ? ' em ' + fmtDate(f.data) : '') + (f.vencimento && f.vencimento !== f.data ? ' · venc. ' + fmtDate(f.vencimento) : '');
+    }
+    h += linha('Situação', sit);
+    h += linha('Conta', f.contaId ? escapeHtml(contaLabel(f.contaId)) : (f.categoria ? escapeHtml(f.categoria) : ''));
+    h += linha(receita ? 'Cliente' : 'Fornecedor', f.parceiroId && parceiroNome(f.parceiroId) !== '—' ? escapeHtml(parceiroNome(f.parceiroId)) : '');
+    h += linha('Funcionário', f.membroId && membroNome(f.membroId) !== '—' ? escapeHtml(membroNome(f.membroId)) : '');
+    if(f.servico) h += linha('Serviço', escapeHtml(f.servico.tipo || '—') + (f.servico.dataServico ? ' · feito em ' + fmtDate(f.servico.dataServico) : ''));
+    h += '</table>';
+    // destino
+    var d = destinoEfetivo(f);
+    h += '<div class="tl-sec">Destino: ' + (DESTINO_LABEL[d] || d) + '</div>';
+    if(d === 'lavoura' || d === 'talhao'){
+      var partes = partesDoLancamento(f), soma = partes.reduce(function(s, pt){ return s + (Number(pt.valor) || 0); }, 0);
+      if(partes.length && (partes.length > 1 || partes[0].talhaoId || partes[0].safraId)){
+        h += '<table>';
+        partes.forEach(function(pt){
+          var sf = pt.safraId ? state.safras.find(function(x){ return x.id === pt.safraId; }) : null;
+          var nome = (pt.talhaoId ? talhaoNome(pt.talhaoId) : '') + (sf ? ' · ' + lavouraLabel(sf.lavouraId) : (pt.talhaoId ? ' (só talhão)' : ''));
+          var pct = soma > 0 ? ' <span style="color:var(--ink-soft);">' + fmtNum((Number(pt.valor) || 0) / soma * 100) + '%</span>' : '';
+          h += '<tr><td>' + escapeHtml(nome || '—') + '</td><td class="num" style="text-align:right; white-space:nowrap;">' + fmtBRL(pt.valor) + pct + '</td></tr>';
+        });
+        h += '</table>';
+      }
+    } else if(d === 'maquina'){
+      h += '<div>🚜 ' + escapeHtml((f.maquinasIds || []).map(nomePatrimonio).join(', ') || '—') + '</div>';
+    } else if(d === 'geral'){
+      h += '<div style="color:var(--ink-soft);">Rateado entre as lavouras pela área.</div>';
+    } else if(d === 'classificar' && !receita){
+      h += '<div style="color:var(--cost-dark);">⚠️ Sem destino: este valor ainda não entra no custo de nenhuma lavoura.</div>';
+    }
+    var obs = f.observacao || f.obs || '';
+    if(obs) h += '<div class="tl-obs">' + escapeHtml(String(obs)) + '</div>';
+    if(f.temAnexo) h += '<div style="margin-top:6px; color:var(--ink-soft);">📎 Tem comprovante anexado</div>';
+    return h;
+  }
+  (function(){
+    var caixa = null, timer = null, atual = null, ultimoToque = 0;
+    function el(){ if(!caixa){ caixa = document.createElement('div'); caixa.id = 'tip-lanc'; document.body.appendChild(caixa); } return caixa; }
+    function esconder(){ clearTimeout(timer); timer = null; atual = null; if(caixa){ caixa.classList.remove('on'); caixa.classList.remove('toque'); caixa.style.left = '-9999px'; } }
+    function posicionar(x, y){
+      // usa a área visível de verdade (no celular, com zoom, ela é menor que a página)
+      var vv = window.visualViewport, ox = vv ? vv.offsetLeft : 0, oy = vv ? vv.offsetTop : 0;
+      var vw = vv ? vv.width : window.innerWidth, vh = vv ? vv.height : window.innerHeight;
+      var c = el(); c.style.maxWidth = Math.min(380, vw - 16) + 'px'; c.style.minWidth = Math.min(240, vw - 16) + 'px';
+      var w = c.offsetWidth, hh = c.offsetHeight;
+      var l = x + 16, t = y + 16;
+      if(l + w > ox + vw - 8) l = x - w - 16;
+      if(l < ox + 8) l = ox + Math.max(8, (vw - w) / 2);
+      if(t + hh > oy + vh - 8) t = y - hh - 16;
+      if(t < oy + 8) t = oy + Math.max(8, Math.min(vh - hh - 8, y + 16));
+      c.style.left = l + 'px'; c.style.top = t + 'px';
+    }
+    function mostrar(id, x, y, toque){
+      var f = state.financeiro.find(function(r){ return r.id === id; });
+      if(!f){ esconder(); return; }
+      var c = el(); c.innerHTML = tipLancamentoHtml(f); c.classList.toggle('toque', !!toque);
+      posicionar(x, y); c.classList.add('on'); atual = id; rolagemInicial = window.scrollY;
+    }
+    function ignorar(t){ return !!(t.closest && t.closest('button, input, select, textarea, a, label')); }
+    document.addEventListener('mouseover', function(e){
+      if(Date.now() - ultimoToque < 800) return;
+      var row = e.target.closest ? e.target.closest('[data-tip-fin]') : null;
+      if(!row || ignorar(e.target)){ if(atual) esconder(); return; }
+      var id = row.getAttribute('data-tip-fin');
+      if(id === atual) return;
+      clearTimeout(timer); var x = e.clientX, y = e.clientY;
+      timer = setTimeout(function(){ mostrar(id, x, y, false); }, 250);
+      if(atual) esconder();
+    });
+    document.addEventListener('mousemove', function(e){
+      if(Date.now() - ultimoToque < 800) return;
+      if(atual && caixa && !caixa.classList.contains('toque')) posicionar(e.clientX, e.clientY);
+    });
+    document.addEventListener('mouseout', function(e){
+      if(Date.now() - ultimoToque < 800) return;
+      var row = e.target.closest ? e.target.closest('[data-tip-fin]') : null;
+      if(row && (!e.relatedTarget || !row.contains(e.relatedTarget))){ esconder(); }
+    });
+    // celular / tablet: tocar na linha abre, tocar fora fecha
+    document.addEventListener('touchstart', function(){ ultimoToque = Date.now(); }, {passive: true, capture: true});
+    document.addEventListener('click', function(e){
+      if(Date.now() - ultimoToque > 800) return;
+      if(caixa && caixa.contains(e.target)){ esconder(); return; }
+      var row = e.target.closest ? e.target.closest('[data-tip-fin]') : null;
+      if(!row || ignorar(e.target)){ if(atual) esconder(); return; }
+      var id = row.getAttribute('data-tip-fin');
+      if(id === atual){ esconder(); return; }
+      var r = row.getBoundingClientRect();
+      mostrar(id, Math.min(e.clientX, window.innerWidth - 20), r.bottom - 8, true);
+    }, true);
+    var rolagemInicial = 0;
+    window.addEventListener('scroll', function(){
+      if(!atual) return;
+      if(caixa && caixa.classList.contains('toque') && Math.abs(window.scrollY - rolagemInicial) < 60) return;
+      esconder();
+    }, true);
+    document.addEventListener('keydown', function(e){ if(e.key === 'Escape') esconder(); });
+  })();
   function lancamentoEstaFechado(f){
     return periodoFechado(f.data || f.vencimento || '');
   }
