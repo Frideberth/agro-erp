@@ -8,16 +8,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#1C2818;
-    --panel:#223020;
-    --panel-line:#33452D;
-    --paper:#F1E9D2;
-    --paper-2:#E8DCB9;
-    --paper-line:#CBB98C;
-    --ink:#2A2016;
-    --ink-soft:#6B5D46;
-    --accent:#C98A2B;
-    --accent-dark:#9C6A1E;
+    --bg:#2F3A26;
+    --panel:#37442D;
+    --panel-line:#4B5A3E;
+    --paper:#F5F5EA;
+    --paper-2:#E8E9D6;
+    --paper-line:#C9CCAA;
+    --ink:#262A1C;
+    --ink-soft:#5E644B;
+    --accent:#8A9A2E;
+    --accent-dark:#6B7822;
     --growth:#4F7942;
     --growth-dark:#3B5B32;
     --cost:#A23E2E;
@@ -63,38 +63,38 @@
   }
   .brand-text{display:flex; flex-direction:column; line-height:1.25;}
   .brand-text strong{font-family:'Zilla Slab', serif; font-size:16px; color:var(--paper); letter-spacing:0.2px;}
-  .brand-text span{font-size:11px; color:#9FAE93; text-transform:uppercase; letter-spacing:0.08em;}
+  .brand-text span{font-size:11px; color:#A0A88A; text-transform:uppercase; letter-spacing:0.08em;}
 
   nav{display:flex; flex-direction:column; gap:2px;}
   .nav-group-label{
     font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em;
-    color:#9FAE93; font-weight:700; padding:14px 10px 6px;
+    color:#A0A88A; font-weight:700; padding:14px 10px 6px;
     display:flex; align-items:center; justify-content:space-between;
     cursor:pointer; user-select:none; border-radius:4px;
     transition:color .15s ease;
   }
   .nav-group-label:hover{color:var(--paper);}
   .nav-group-label::after{
-    content:'▾'; font-size:9px; color:#7C8A70; transition:transform .15s ease;
+    content:'▾'; font-size:9px; color:#8A9174; transition:transform .15s ease;
   }
   .nav-group-label.collapsed::after{transform:rotate(-90deg);}
   .nav-btn{
     display:flex; align-items:center; gap:10px;
     background:transparent; border:1px solid transparent;
-    color:#C7D0BC; text-align:left; padding:8px 12px 8px 16px;
+    color:#D5DBC4; text-align:left; padding:8px 12px 8px 16px;
     border-radius:var(--radius); font-size:13px; font-weight:500;
     transition:background .15s ease, color .15s ease;
   }
   .nav-btn:hover{background:rgba(255,255,255,0.05); color:var(--paper);}
-  .nav-btn.active{background:var(--accent); color:#241704; font-weight:600;}
-  .sidebar-footer{margin-top:auto; font-size:11px; color:#7C8A70; line-height:1.5; padding:0 4px;}
+  .nav-btn.active{background:var(--accent); color:#FFFFFF; font-weight:600;}
+  .sidebar-footer{margin-top:auto; font-size:11px; color:#8A9174; line-height:1.5; padding:0 4px;}
 
   /* ---------- Main ---------- */
   main{padding:28px 34px 60px; max-width:1640px;}
   .topbar{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:8px;}
   .topbar h1{font-family:'Zilla Slab', serif; font-size:28px; color:var(--paper); margin:0; font-weight:600;}
-  .topbar .subtitle{color:#8E9B82; font-size:13px; margin-top:2px;}
-  #loading-indicator{color:#9FAE93; font-size:12.5px; font-style:italic; max-width:260px; text-align:right;}
+  .topbar .subtitle{color:#A0A88A; font-size:13px; margin-top:2px;}
+  #loading-indicator{color:#A0A88A; font-size:12.5px; font-style:italic; max-width:260px; text-align:right;}
   #loading-indicator.hidden{display:none;}
   .tab-content.hidden{display:none;}
 
@@ -160,9 +160,9 @@
   form.entry-form{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:12px; align-items:end;}
   .field{display:flex; flex-direction:column; gap:4px; min-width:0;}
   .field label{font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em;}
-  .field input, .field select, .field textarea{padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; color:var(--ink); font-size:13px; width:100%; min-width:0; box-sizing:border-box; font-family:inherit;}
+  .field input, .field select, .field textarea{padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; color:var(--ink); font-size:13px; width:100%; min-width:0; box-sizing:border-box; font-family:inherit;}
   .field input:focus, .field select:focus, .field textarea:focus{border-color:var(--accent);}
-  .btn{padding:9px 16px; border-radius:4px; border:none; font-size:13px; font-weight:600; background:var(--accent); color:#241704; transition:background .15s ease;}
+  .btn{padding:9px 16px; border-radius:4px; border:none; font-size:13px; font-weight:600; background:var(--accent); color:#1F2410; transition:background .15s ease;}
   .btn:hover{background:var(--accent-dark); color:var(--paper);}
   .btn-del{background:transparent; border:1px solid var(--cost); color:var(--cost-dark); padding:4px 9px; font-size:11px; border-radius:4px; font-weight:600;}
   .btn-del:hover{background:var(--cost); color:#fff;}
@@ -182,8 +182,8 @@
   .num.growth{color:var(--growth-dark); font-weight:600;}
   .num.cost{color:var(--cost-dark); font-weight:600;}
   .badge{font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; padding:2px 7px; border-radius:3px; font-weight:700;}
-  .badge.status-andamento{background:#DFA84E; color:#241704;}
-  .badge.status-planejada{background:#C9C3A4; color:#241704;}
+  .badge.status-andamento{background:#DFA84E; color:#1F2410;}
+  .badge.status-planejada{background:#C9C3A4; color:#1F2410;}
   .badge.status-colhida{background:#7FA36D; color:#0E1D0A;}
   .badge.tipo-custo{background:var(--cost); color:#fff;}
   .badge.tipo-receita{background:var(--growth); color:#fff;}
@@ -219,7 +219,7 @@
   .workspace-item{
     display:flex; align-items:center; justify-content:space-between; gap:10px;
     padding:12px 14px; border:1px solid var(--paper-line); border-radius:4px; margin-bottom:8px;
-    background:#FBF7EC; cursor:pointer; font-size:14px; font-weight:600;
+    background:#FCFCF5; cursor:pointer; font-size:14px; font-weight:600;
   }
   .workspace-item:hover{border-color:var(--accent);}
 
@@ -236,7 +236,7 @@
   .field-with-add{display:flex; align-items:flex-end; gap:6px; min-width:0;}
   .field-with-add .field{flex:1; min-width:0;}
   .btn-add-inline{
-    background:var(--accent); color:#241704; border:none; border-radius:4px;
+    background:var(--accent); color:#1F2410; border:none; border-radius:4px;
     width:34px; height:34px; font-size:18px; font-weight:700; line-height:1; cursor:pointer; flex:none;
   }
   .btn-add-inline:hover{background:var(--accent-dark); color:var(--paper);}
@@ -258,7 +258,8 @@
     body.imprimindo-calagem .modal-box{max-width:100% !important; box-shadow:none !important; border:none !important; padding:0 !important;}
     body.imprimindo-calagem .no-print{display:none !important;}
   }
-  #tip-lanc{position:fixed; z-index:9999; max-width:380px; min-width:240px; background:#FFFDF6; color:var(--ink); border:1px solid var(--paper-line); border-radius:8px; box-shadow:0 8px 28px rgba(40,30,10,.22); padding:12px 14px; font-size:12.5px; line-height:1.45; pointer-events:none; opacity:0; transition:opacity .12s;}
+  .tab-content > .field > label{color:#A0A88A;}
+  #tip-lanc{position:fixed; z-index:9999; max-width:380px; min-width:240px; background:#FDFDF8; color:var(--ink); border:1px solid var(--paper-line); border-radius:8px; box-shadow:0 8px 28px rgba(40,30,10,.22); padding:12px 14px; font-size:12.5px; line-height:1.45; pointer-events:none; opacity:0; transition:opacity .12s;}
   #tip-lanc.on{opacity:1;}
   #tip-lanc.toque{pointer-events:auto;}
   #tip-lanc .tl-tit{font-weight:700; font-size:13.5px; margin-bottom:4px;}
@@ -268,7 +269,7 @@
   #tip-lanc td{padding:2px 0; border:none; vertical-align:top; font-size:12.5px; background:none;}
   #tip-lanc td.k{color:var(--ink-soft); padding-right:10px; white-space:nowrap; width:1%;}
   #tip-lanc .tl-sec{margin-top:8px; padding-top:7px; border-top:1px dashed var(--paper-line); font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft);}
-  #tip-lanc .tl-obs{margin-top:8px; padding:6px 8px; background:#F3ECD8; border-radius:4px; white-space:pre-wrap;}
+  #tip-lanc .tl-obs{margin-top:8px; padding:6px 8px; background:#EEF0DE; border-radius:4px; white-space:pre-wrap;}
   [data-tip-fin]{cursor:default;}
 </style>
 </head>
@@ -284,7 +285,7 @@
     <h3 style="margin:0 0 12px; font-family:'Zilla Slab',serif; font-size:16px; border-bottom:1px dashed var(--paper-line); padding-bottom:8px;">Categorias de Produto</h3>
     <div id="cat-modal-list" style="margin-bottom:14px;"></div>
     <form id="form-cat-modal" style="display:flex; gap:8px;">
-      <input type="text" id="cat-modal-input" name="nome" placeholder="Nova categoria" required style="flex:1; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">
+      <input type="text" id="cat-modal-input" name="nome" placeholder="Nova categoria" required style="flex:1; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;">
       <button type="submit" class="btn">Adicionar</button>
     </form>
     <button type="button" class="btn-cancel" data-action="close-cat-modal" style="margin-top:14px; width:100%;">Fechar</button>
@@ -312,9 +313,9 @@
   <div class="modal-box paper">
     <h3 style="margin:0 0 12px; font-family:'Zilla Slab',serif; font-size:16px; border-bottom:1px dashed var(--paper-line); padding-bottom:8px;">Novo Parceiro</h3>
     <form id="form-parceiro-modal">
-      <div class="field"><label>Nome</label><input type="text" id="parceiro-modal-nome" name="nome" placeholder="Nome do parceiro" required style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>
+      <div class="field"><label>Nome</label><input type="text" id="parceiro-modal-nome" name="nome" placeholder="Nome do parceiro" required style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;"></div>
       <div class="field"><label>Tipo</label>
-        <select id="parceiro-modal-tipo" name="tipo" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">
+        <select id="parceiro-modal-tipo" name="tipo" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;">
           <option value="Fornecedor">Fornecedor</option>
           <option value="Cliente">Cliente</option>
           <option value="Fornecedor e Cliente">Fornecedor e Cliente</option>
@@ -330,8 +331,8 @@
     <h3 style="margin:0 0 12px; font-family:'Zilla Slab',serif; font-size:16px; border-bottom:1px dashed var(--paper-line); padding-bottom:8px;">Tipos de Atividade</h3>
     <div id="tipo-modal-list" style="margin-bottom:14px;"></div>
     <form id="form-tipo-modal" style="display:flex; flex-direction:column; gap:8px;">
-      <input type="text" id="tipo-modal-input" name="nome" placeholder="Nova atividade (ex: Irrigação)" required style="padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">
-      <select id="tipo-modal-cor" name="cor" style="padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></select>
+      <input type="text" id="tipo-modal-input" name="nome" placeholder="Nova atividade (ex: Irrigação)" required style="padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;">
+      <select id="tipo-modal-cor" name="cor" style="padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;"></select>
       <button type="submit" class="btn">Adicionar</button>
     </form>
     <button type="button" class="btn-cancel" data-action="close-tipo-modal" style="margin-top:14px; width:100%;">Fechar</button>
@@ -342,9 +343,9 @@
     <h3 style="margin:0 0 12px; font-family:'Zilla Slab',serif; font-size:16px; border-bottom:1px dashed var(--paper-line); padding-bottom:8px;">Contas Financeiras</h3>
     <div id="conta-modal-list" style="margin-bottom:14px; max-height:220px; overflow-y:auto;"></div>
     <form id="form-conta-modal" style="display:flex; flex-direction:column; gap:8px;">
-      <input type="text" id="conta-modal-input" name="nome" placeholder="Nome da conta (ex: Fertilizante)" required style="padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">
+      <input type="text" id="conta-modal-input" name="nome" placeholder="Nome da conta (ex: Fertilizante)" required style="padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;">
       <div class="field-with-add">
-        <select id="conta-modal-subgrupo" name="subgrupoId" style="flex:1; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></select>
+        <select id="conta-modal-subgrupo" name="subgrupoId" style="flex:1; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;"></select>
         <button type="button" class="btn-add-inline" data-action="open-subgrupo-modal" title="Novo subgrupo">+</button>
       </div>
       <button type="submit" class="btn">Adicionar</button>
@@ -357,8 +358,8 @@
     <h3 style="margin:0 0 12px; font-family:'Zilla Slab',serif; font-size:16px; border-bottom:1px dashed var(--paper-line); padding-bottom:8px;">Subgrupos Financeiros</h3>
     <div id="subgrupo-modal-list" style="margin-bottom:14px; max-height:220px; overflow-y:auto;"></div>
     <form id="form-subgrupo-modal" style="display:flex; flex-direction:column; gap:8px;">
-      <input type="text" id="subgrupo-modal-input" name="nome" placeholder="Nome do subgrupo (ex: Custo Insumos Agrícolas)" required style="padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">
-      <select id="subgrupo-modal-tipo" name="tipo" style="padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">
+      <input type="text" id="subgrupo-modal-input" name="nome" placeholder="Nome do subgrupo (ex: Custo Insumos Agrícolas)" required style="padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;">
+      <select id="subgrupo-modal-tipo" name="tipo" style="padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;">
         <option value="custo">Despesa</option>
         <option value="receita">Receita</option>
       </select>
@@ -410,13 +411,13 @@
     </nav>
     <div class="sidebar-footer">
       <span id="usuario-logado"></span><br>
-      <button type="button" class="auth-link" data-action="lock-app" style="color:#9FAE93;">Sair</button>
+      <button type="button" class="auth-link" data-action="lock-app" style="color:#A0A88A;">Sair</button>
     </div>
   </aside>
 
   <main>
     <div id="faixa-ambiente-teste" style="display:none; background:#A23E2E; color:#fff; padding:6px 14px; border-radius:6px; margin-bottom:10px; font-size:13px; font-weight:600;">🧪 SITE DE TESTE — os dados aqui são separados dos reais. Pode testar à vontade.</div>
-    <div id="faixa-compartilhada" style="display:none; background:#EFE6C8; border:1px solid var(--paper-line); padding:7px 14px; border-radius:6px; margin-bottom:10px; font-size:13px;"></div>
+    <div id="faixa-compartilhada" style="display:none; background:#E8E9D6; border:1px solid var(--paper-line); padding:7px 14px; border-radius:6px; margin-bottom:10px; font-size:13px;"></div>
     <div class="topbar">
       <div>
         <h1 id="page-title" style="display:inline;">Dashboard</h1> <button type="button" id="btn-ajuda-tela" data-action="ajuda-tela" title="Como usar esta tela" style="vertical-align:middle; margin-left:6px; width:26px; height:26px; border-radius:50%; border:1px solid var(--paper-line); background:var(--paper); color:var(--ink); cursor:pointer; font-weight:700; font-family:inherit;">?</button>
@@ -1395,7 +1396,7 @@
         }
       } else if(servidor){
         html += '<h2>Minha Fazenda</h2>';
-        if(info.migrarSenhaUnica) html += '<p style="background:#EFE6C8; padding:8px 10px; border-radius:6px; font-size:12.5px;"><strong>Atualização:</strong> agora cada pessoa entra com e-mail e senha. Digite o <strong>seu e-mail</strong> (ele passa a ser o seu login) e a <strong>senha de sempre</strong>. Você vira o administrador e seus dados continuam todos aqui.</p>';
+        if(info.migrarSenhaUnica) html += '<p style="background:#E8E9D6; padding:8px 10px; border-radius:6px; font-size:12.5px;"><strong>Atualização:</strong> agora cada pessoa entra com e-mail e senha. Digite o <strong>seu e-mail</strong> (ele passa a ser o seu login) e a <strong>senha de sempre</strong>. Você vira o administrador e seus dados continuam todos aqui.</p>';
         else html += '<p>Entre com seu e-mail e senha.</p>';
         html += '<form id="form-gate" data-mode="login">' + (info.migrarSenhaUnica ? campo('Seu nome', 'nome', 'text', ' autocomplete="name"') : '')
           + '<div class="field"><label for="gate-email">E-mail</label><input type="email" id="gate-email" name="email" required autocomplete="username"></div>'
@@ -1947,15 +1948,15 @@
     }
 
     html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">';
-    html += '<div class="field" style="margin:0;"><label>Quantidade entregue</label><input type="number" id="efv-qtd-entregue" value="' + (venda.quantidade || 0) + '" min="0" step="0.01" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
-    html += '<div class="field" style="margin:0;"><label>Data da entrega</label><input type="date" id="efv-data-entrega" value="' + (dataEntregaAtual && dataEntregaAtual.value ? dataEntregaAtual.value : new Date().toISOString().slice(0,10)) + '" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+    html += '<div class="field" style="margin:0;"><label>Quantidade entregue</label><input type="number" id="efv-qtd-entregue" value="' + (venda.quantidade || 0) + '" min="0" step="0.01" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;"></div>';
+    html += '<div class="field" style="margin:0;"><label>Data da entrega</label><input type="date" id="efv-data-entrega" value="' + (dataEntregaAtual && dataEntregaAtual.value ? dataEntregaAtual.value : new Date().toISOString().slice(0,10)) + '" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;"></div>';
     html += '</div>';
-    html += '<div class="field" style="margin-bottom:14px;"><label>Data de pagamento (pode ser diferente da entrega — confira na nota)</label><input type="date" id="efv-data-pagamento" value="' + (dataPagamentoAtual && dataPagamentoAtual.value ? dataPagamentoAtual.value : new Date().toISOString().slice(0,10)) + '" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+    html += '<div class="field" style="margin-bottom:14px;"><label>Data de pagamento (pode ser diferente da entrega — confira na nota)</label><input type="date" id="efv-data-pagamento" value="' + (dataPagamentoAtual && dataPagamentoAtual.value ? dataPagamentoAtual.value : new Date().toISOString().slice(0,10)) + '" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;"></div>';
 
     html += '<div style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:6px;">Descontos da cooperativa (%)</div>';
     html += '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:8px; margin-bottom:14px;">';
     descontosLabels.forEach(function(d){
-      html += '<div class="field" style="margin:0;"><label>' + d.label + '</label><input type="number" id="efv-desconto-' + d.chave + '" value="' + efetivarVendaDescontos[d.chave] + '" min="0" step="0.01" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+      html += '<div class="field" style="margin:0;"><label>' + d.label + '</label><input type="number" id="efv-desconto-' + d.chave + '" value="' + efetivarVendaDescontos[d.chave] + '" min="0" step="0.01" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;"></div>';
     });
     html += '</div>';
 
@@ -1987,8 +1988,8 @@
       html += '</div>';
 
       html += '<div class="no-print" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">';
-      html += '<div class="field" style="margin:0;"><label>Saturação por bases desejada (V%)</label><input type="number" id="calagem-v-desejado" value="' + calagemVDesejado + '" min="0" max="100" step="1" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
-      html += '<div class="field" style="margin:0;"><label>PRNT do calcário (%)</label><input type="number" id="calagem-prnt" value="' + calagemPrnt + '" min="1" max="100" step="1" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+      html += '<div class="field" style="margin:0;"><label>Saturação por bases desejada (V%)</label><input type="number" id="calagem-v-desejado" value="' + calagemVDesejado + '" min="0" max="100" step="1" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;"></div>';
+      html += '<div class="field" style="margin:0;"><label>PRNT do calcário (%)</label><input type="number" id="calagem-prnt" value="' + calagemPrnt + '" min="1" max="100" step="1" style="width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;"></div>';
       html += '</div>';
 
       var nc = calcularNecessidadeCalagem(analise.ctc, analise.saturacaoBases, calagemVDesejado, calagemPrnt);
@@ -2575,8 +2576,8 @@
         html += '<button type="button" class="btn" data-action="dash-abrir-pagamento" data-chave="' + v.chave + '" style="padding:4px 12px; font-size:12px; white-space:nowrap;">' + rotBtn + '</button></div>';
         if(dashPagandoChave === v.chave){
           var hojeDp = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10);
-          var estDp = 'padding:6px 8px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;';
-          html += '<div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; padding:10px 14px; background:#EFE6C8; border-radius:4px; margin:4px 0 8px;">';
+          var estDp = 'padding:6px 8px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;';
+          html += '<div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; padding:10px 14px; background:#E8E9D6; border-radius:4px; margin:4px 0 8px;">';
           html += '<div class="field" style="margin:0;"><label>Data do ' + (v.tipo === 'entrada' ? 'recebimento' : 'pagamento') + '</label><input type="date" id="dash-pag-data" value="' + hojeDp + '" style="' + estDp + '"></div>';
           html += '<div class="field" style="margin:0;"><label>Valor (R$)</label><input type="number" id="dash-pag-valor" step="0.01" min="0" value="' + (Math.round(v.valor * 100) / 100) + '" style="width:140px; ' + estDp + '"' + (v.chave.indexOf('cr:') === 0 ? ' readonly title="Para mudar o valor, edite a conta em Contas a Receber"' : '') + '></div>';
           html += '<button type="button" class="btn" data-action="dash-confirmar-pagamento" data-chave="' + v.chave + '">Confirmar</button><button type="button" class="btn-cancel" data-action="dash-cancelar-pagamento">Cancelar</button>';
@@ -2628,7 +2629,7 @@
         } else {
           safrasColuna.forEach(function(s){
             var cor = corPorCultura[s.culturaId] || '#C9C3A4';
-            html += '<div style="background:#FBF7EC; border-left:4px solid ' + cor + '; border-radius:4px; padding:8px 10px; margin-bottom:8px; font-size:12.5px; overflow-wrap:break-word;">';
+            html += '<div style="background:#FCFCF5; border-left:4px solid ' + cor + '; border-radius:4px; padding:8px 10px; margin-bottom:8px; font-size:12.5px; overflow-wrap:break-word;">';
             html += '<div style="font-weight:600;">' + escapeHtml(talhaoNome(s.talhaoId)) + '</div>';
             html += '<div style="color:var(--ink-soft);">' + escapeHtml(culturaNome(s.culturaId)) + (s.anoAgricola ? ' · ' + escapeHtml(s.anoAgricola) : '') + '</div>';
             html += '</div>';
@@ -2689,7 +2690,7 @@
         html += '<div class="list-row" style="align-items:center;">';
         html += '<span>' + escapeHtml(c.nome) + (cot ? ' <span style="font-size:11px; color:var(--ink-soft);">(atualizado ' + fmtDate(cot.dataAtualizacao) + ')</span>' : '') + '</span>';
         html += '<span style="display:flex; align-items:center; gap:6px;">';
-        html += '<input type="number" step="0.01" min="0" class="cotacao-input" data-cultura-id="' + c.id + '" placeholder="0,00" value="' + (cot ? cot.preco : '') + '" style="width:90px; padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12.5px;">';
+        html += '<input type="number" step="0.01" min="0" class="cotacao-input" data-cultura-id="' + c.id + '" placeholder="0,00" value="' + (cot ? cot.preco : '') + '" style="width:90px; padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:12.5px;">';
         html += '<button type="button" class="btn-edit" data-action="salvar-cotacao" data-id="' + c.id + '">Salvar</button>';
         html += '<a href="https://www.google.com/search?q=' + encodeURIComponent('cotação ' + c.nome + ' cepea hoje') + '" target="_blank" rel="noopener" class="btn-edit" style="text-decoration:none;">Ver preço</a>';
         html += '</span></div>';
@@ -2809,7 +2810,7 @@
       html += '<div class="empty-state">Nenhum(a) ' + cfg.label.toLowerCase() + ' cadastrado(a) ainda.</div>';
     } else {
       if(list.length > 4){
-        html += '<div style="padding:14px 18px 0;"><input type="text" id="search-' + entityKey + '" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+        html += '<div style="padding:14px 18px 0;"><input type="text" id="search-' + entityKey + '" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;"></div>';
       }
       var ordenAtualGenerico = genericTableSort[entityKey];
       html += '<div class="table-wrap"><table><thead><tr>';
@@ -2855,7 +2856,7 @@
   function horimetroHtml(){
     var it = state.patrimonio.find(function(x){ return x.id === patrimonioHorimetroId; });
     if(!it) return '';
-    var ls = leiturasHorimetro(it.id), est = 'padding:6px 8px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;';
+    var ls = leiturasHorimetro(it.id), est = 'padding:6px 8px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;';
     var hoje = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10);
     var h = '<div class="paper form-card" style="margin-top:16px;"><h3 style="display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; align-items:center;">⏱️ Horímetro — ' + escapeHtml(it.nome) + '<button type="button" class="btn-cancel" data-action="fechar-horimetro">Fechar</button></h3>';
     h += '<div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin-bottom:12px;"><div class="field" style="margin:0;"><label>Data da leitura</label><input type="date" id="hor-data" value="' + hoje + '" style="' + est + '"></div><div class="field" style="margin:0;"><label>Leitura do horímetro (h)</label><input type="number" id="hor-leitura" step="0.1" min="0" placeholder="Ex: 4521,5" style="width:150px; ' + est + '"></div><button type="button" class="btn" data-action="horimetro-adicionar">Adicionar leitura</button></div>';
@@ -3063,7 +3064,7 @@
     var unVelha = unidadeControle(p);
     var novaSel = (document.getElementById('cv-unidade') || {}).value;
     var fatorTxt = (document.getElementById('cv-fator') || {}).value;
-    var est = 'padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;';
+    var est = 'padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;';
     if(!novaSel){
       // sugestão: pelo nome do produto (ex.: "HEAT 350GR" → g, 350)
       var m = String(p.nome).match(/(\d+(?:[.,]\d+)?)\s*(L|LT|LTS|ML|KG|G|GR)\b/i);
@@ -3092,7 +3093,7 @@
   }
   function renderPainelUnidades(){
     var cfg = configUnidades();
-    var est = 'padding:6px 8px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12.5px;';
+    var est = 'padding:6px 8px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:12.5px;';
     var h = '<div class="paper form-card" style="margin-bottom:20px;"><h3 style="display:flex; justify-content:space-between; align-items:center;">📏 Unidades e embalagens <button type="button" class="btn-cancel" data-action="toggle-painel-unidades" style="font-size:12px; padding:5px 12px;">' + (unidadesPainelAberto ? '▲ Fechar' : '▼ Abrir') + '</button></h3>';
     if(!unidadesPainelAberto){ h += '<p style="font-size:12px; color:var(--ink-soft); margin:0;">Unidades de medida (L, mL, kg, g...), embalagens padrão (Galão 5 L, Balde 20 L, Saco 25 kg...) e o tamanho do alqueire usado nas doses.</p></div>'; return h; }
     h += '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:20px;">';
@@ -3149,7 +3150,7 @@
     var motivo = (document.getElementById('aj-motivo') || {}).value || (modo === 'contagem' ? MOTIVOS_AJUSTE[0] : MOTIVOS_AJUSTE[1]);
     var obs = (document.getElementById('aj-obs') || {}).value || '';
     var dataAj = (document.getElementById('aj-data') || {}).value || new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10);
-    var estilo = 'padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;';
+    var estilo = 'padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;';
     var h = '<div style="font-size:13px; margin-bottom:8px;"><strong>Ajustar estoque de ' + escapeHtml(p.nome) + '</strong> — hoje: ' + fmtNum(estAtual) + ' ' + escapeHtml(un) + (descreverEmEmbalagens(p.id, estAtual) ? ' (' + escapeHtml(descreverEmEmbalagens(p.id, estAtual)) + ')' : '') + '</div>';
     h += '<div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;">';
     h += '<div class="field" style="margin:0;"><label>Tipo de ajuste</label><select id="aj-modo" style="' + estilo + '">';
@@ -3199,8 +3200,8 @@
     if(!produtoEmbRascunho.itens.length) html += '<span style="font-size:12px; color:var(--ink-soft);">Nenhuma. Ex.: Balde = 20 ' + escapeHtml(un || 'L') + ', Galão = 5 ' + escapeHtml(un || 'L') + '.</span>';
     produtoEmbRascunho.itens.forEach(function(e, i){
       html += '<div data-emb-idx="' + i + '" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">';
-      html += '<input type="text" data-campo="nome" list="lista-embalagens-padrao" value="' + escapeHtml(e.nome || '') + '" placeholder="Ex: Balde" style="width:160px; padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">';
-      html += '<span style="font-size:12.5px;">=</span><input type="number" data-campo="conteudo" value="' + (e.conteudo === undefined ? '' : e.conteudo) + '" step="0.001" min="0" placeholder="20" style="width:100px; padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">';
+      html += '<input type="text" data-campo="nome" list="lista-embalagens-padrao" value="' + escapeHtml(e.nome || '') + '" placeholder="Ex: Balde" style="width:160px; padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;">';
+      html += '<span style="font-size:12.5px;">=</span><input type="number" data-campo="conteudo" value="' + (e.conteudo === undefined ? '' : e.conteudo) + '" step="0.001" min="0" placeholder="20" style="width:100px; padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;">';
       html += '<span style="font-size:12.5px;">' + escapeHtml(un || '(unidade)') + '</span>';
       html += '<button type="button" class="btn-del" data-action="produto-remover-embalagem" data-idx="' + i + '">✕</button></div>';
     });
@@ -3223,7 +3224,7 @@
     if(unAtual && !unidadesCadastradas().some(function(u){ return u.sigla === unAtual; })) opcoesUn.push({value: unAtual, label: unAtual + ' (atual — use "🔁 Unidade" na lista para converter)'});
     html += selectField('unidade', 'Unidade de controle (estoque, dose e custo)', opcoesUn, unAtual);
     if(editingRecord){
-      html += '<div class="field"><label>Estoque atual</label><input type="text" value="' + fmtNum(editingRecord.estoqueAtual) + ' ' + escapeHtml(unidadeControle(editingRecord)) + '" readonly style="background:#E8DCB9;"><span style="font-size:10.5px; color:var(--ink-soft);">Para mudar, use "⚖️ Ajustar" na lista (fica registrado)</span></div>';
+      html += '<div class="field"><label>Estoque atual</label><input type="text" value="' + fmtNum(editingRecord.estoqueAtual) + ' ' + escapeHtml(unidadeControle(editingRecord)) + '" readonly style="background:#E8E9D6;"><span style="font-size:10.5px; color:var(--ink-soft);">Para mudar, use "⚖️ Ajustar" na lista (fica registrado)</span></div>';
     } else {
       html += field('number', 'estoqueAtual', 'Estoque inicial', false, '0', {step:'0.001', min:'0'});
     }
@@ -3243,7 +3244,7 @@
       html += '<div class="empty-state">Nenhum produto cadastrado ainda.</div>';
     } else {
       if(state.produtos.length > 4){
-        html += '<div style="padding:14px 18px 0;"><input type="text" id="search-produtos" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+        html += '<div style="padding:14px 18px 0;"><input type="text" id="search-produtos" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;"></div>';
       }
       html += '<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Categoria</th><th>Unidade</th><th>Embalagens</th><th>Estoque</th><th>Custo médio</th><th>Mínimo</th><th></th></tr></thead><tbody>';
       state.produtos.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(p){
@@ -3260,8 +3261,8 @@
         html += '<td class="num">' + fmtNum(p.estoqueMinimo) + '</td>';
         html += '<td style="white-space:nowrap;"><button class="btn-edit" data-action="abrir-ajuste-estoque" data-id="' + p.id + '">⚖️ Ajustar</button><button class="btn-edit" data-action="abrir-conversao-produto" data-id="' + p.id + '" title="Trocar a unidade de controle convertendo estoque, compras e aplicações">🔁 Unidade</button><button class="btn-edit" data-action="edit-produto" data-id="' + p.id + '">Editar</button><button class="btn-del" data-action="del-produto" data-id="' + p.id + '">Remover</button></td>';
         html += '</tr>';
-        if(ajusteEstoqueProdutoId === p.id) html += '<tr style="background:#EFE6C8;"><td colspan="9" style="padding:12px 14px;" id="ajuste-estoque-area"></td></tr>';
-        if(conversaoProdutoId === p.id) html += '<tr style="background:#EFE6C8;"><td colspan="9" style="padding:12px 14px;" id="conversao-produto-area"></td></tr>';
+        if(ajusteEstoqueProdutoId === p.id) html += '<tr style="background:#E8E9D6;"><td colspan="9" style="padding:12px 14px;" id="ajuste-estoque-area"></td></tr>';
+        if(conversaoProdutoId === p.id) html += '<tr style="background:#E8E9D6;"><td colspan="9" style="padding:12px 14px;" id="conversao-produto-area"></td></tr>';
       });
       html += '</tbody></table></div>';
     }
@@ -3281,7 +3282,7 @@
     }
     if(state.produtos.length > 1){
       var optsMesclar = state.produtos.slice().sort(function(a,b){ return String(a.nome).localeCompare(String(b.nome), 'pt-BR'); }).map(function(p){ return '<option value="' + p.id + '">' + escapeHtml(p.nome) + ' (' + fmtNum(p.estoqueAtual) + ' ' + escapeHtml(unidadeControle(p)) + ')</option>'; }).join('');
-      var estSel = 'padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px; max-width:340px;';
+      var estSel = 'padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px; max-width:340px;';
       html += '<div class="paper form-card" style="margin-top:20px;"><h3>🔗 Juntar produtos duplicados</h3>';
       html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 10px;">Quando o mesmo produto foi cadastrado duas vezes (ex.: um manual e outro vindo de NF-e), junte os dois: as compras, aplicações do Diário e ajustes do duplicado passam para o que fica, o estoque é somado e o duplicado é apagado.</p>';
       html += '<div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;">';
@@ -3507,7 +3508,7 @@
         var valorTotalNota = grupo.indices.reduce(function(s,idx){ return s + (Number(nfeImportada.itens[idx].vProd)||0); }, 0);
         var qtdMarcados = grupo.indices.filter(function(idx){ return nfeImportada.itens[idx].incluir; }).length;
         var selecionada = chaveGrupo === notaEmDetalheChave;
-        html += '<tr class="linha-nota-clicavel" data-action="ver-nota-detalhe" data-chave="' + escapeHtml(chaveGrupo) + '" style="cursor:pointer;' + (selecionada ? ' background:#EFE6C8;' : '') + '">';
+        html += '<tr class="linha-nota-clicavel" data-action="ver-nota-detalhe" data-chave="' + escapeHtml(chaveGrupo) + '" style="cursor:pointer;' + (selecionada ? ' background:#E8E9D6;' : '') + '">';
         html += '<td>' + (qtdMarcados === grupo.indices.length ? '✅' : (qtdMarcados === 0 ? '⬜' : '🟡')) + '</td>';
         html += '<td>' + escapeHtml(grupo.fornecedor || '—') + '</td>';
         html += '<td style="font-size:11.5px;">' + escapeHtml(grupo.natureza || '—') + '</td>';
@@ -3539,13 +3540,13 @@
           html += '<td class="num">' + fmtNum(item.qCom) + (item.uCom ? ' ' + escapeHtml(item.uCom) : '') + '</td>';
           html += '<td class="num">' + fmtBRL(item.vUnCom) + '</td>';
           html += '<td class="num">' + fmtBRL(item.vProd) + '</td>';
-          html += '<td><select id="nfe-item-destino-' + idx + '" style="padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12.5px;">';
+          html += '<td><select id="nfe-item-destino-' + idx + '" style="padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:12.5px;">';
           html += '<option value="compra"' + (item.destino === 'compra' ? ' selected' : '') + '>Compra de insumo → Produtos</option>';
           html += '<option value="colheita"' + (item.destino === 'colheita' ? ' selected' : '') + '>Entrada de colheita → Produção</option>';
           html += '</select></td>';
           html += '<td>';
           html += '<span id="nfe-item-destino-produto-' + idx + '"' + (item.destino === 'colheita' ? ' style="display:none;"' : '') + '>';
-          html += '<select id="nfe-item-produto-' + idx + '" style="padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12.5px;">';
+          html += '<select id="nfe-item-produto-' + idx + '" style="padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:12.5px;">';
           html += '<option value="">+ Criar novo produto "' + escapeHtml(item.xProd) + '"</option>';
           state.produtos.forEach(function(p){
             html += '<option value="' + p.id + '"' + (item.produtoId === p.id ? ' selected' : '') + '>' + escapeHtml(p.nome) + '</option>';
@@ -3555,7 +3556,7 @@
           if(!state.safras.length){
             html += '<span style="font-size:11px; color:var(--cost-dark);">Cadastre uma safra primeiro</span>';
           } else {
-            html += '<select id="nfe-item-safra-' + idx + '" style="padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12.5px;">';
+            html += '<select id="nfe-item-safra-' + idx + '" style="padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:12.5px;">';
             html += '<option value="">Escolha a safra…</option>';
             state.safras.forEach(function(s){
               html += '<option value="' + s.id + '"' + (item.safraId === s.id ? ' selected' : '') + '>' + escapeHtml(safraLabel(s.id)) + '</option>';
@@ -3572,7 +3573,7 @@
           html += '<td style="min-width:190px;">';
           if(item.destino === 'colheita'){ html += '<span style="font-size:11px; color:var(--ink-soft);">—</span>'; }
           else {
-            html += '<div style="display:flex; align-items:center; gap:4px; font-size:12px; white-space:nowrap;">1 ' + escapeHtml(item.uCom || 'un') + ' = <input type="number" id="nfe-item-fator-' + idx + '" value="' + fatorNfe + '" step="0.001" min="0" style="width:74px; padding:4px 6px; border:1px solid ' + (sugNfe.fonte === 'confira' && item.fator === undefined ? 'var(--cost-dark)' : 'var(--paper-line)') + '; border-radius:4px; background:#FBF7EC; font-size:12px;"> ' + escapeHtml(unNfe) + '</div>';
+            html += '<div style="display:flex; align-items:center; gap:4px; font-size:12px; white-space:nowrap;">1 ' + escapeHtml(item.uCom || 'un') + ' = <input type="number" id="nfe-item-fator-' + idx + '" value="' + fatorNfe + '" step="0.001" min="0" style="width:74px; padding:4px 6px; border:1px solid ' + (sugNfe.fonte === 'confira' && item.fator === undefined ? 'var(--cost-dark)' : 'var(--paper-line)') + '; border-radius:4px; background:#FCFCF5; font-size:12px;"> ' + escapeHtml(unNfe) + '</div>';
             html += '<div style="font-size:11px; color:var(--ink-soft);">= ' + fmtNum(Math.round(item.qCom * fatorNfe * 1000) / 1000) + ' ' + escapeHtml(unNfe) + (fatorNfe > 0 ? ' · ' + fmtBRL(item.vUnCom / fatorNfe) + '/' + escapeHtml(unNfe) : '') + '</div>';
             if(item.fator === undefined) html += '<div style="font-size:10.5px; color:' + (sugNfe.fonte === 'confira' ? 'var(--cost-dark)' : 'var(--ink-soft)') + ';">' + (sugNfe.fonte === 'salvo' ? '✓ conversão já usada antes' : (sugNfe.fonte === 'confira' ? '⚠️ confira a conversão' : 'sugerido pela ' + sugNfe.fonte)) + '</div>';
           }
@@ -4120,7 +4121,7 @@
     if(!state.talhoes.length){
       html += '<div class="empty-state">Nenhum talhão cadastrado ainda.</div>';
     } else {
-      html += '<div style="padding:14px 18px 0;"><input type="text" id="search-talhoes" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+      html += '<div style="padding:14px 18px 0;"><input type="text" id="search-talhoes" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;"></div>';
       html += '<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Área</th><th>Propriedade</th><th>Solo</th><th>Cultura anterior</th><th>Safra atual</th><th>Status</th><th>Perfil do Solo</th><th></th></tr></thead><tbody>';
       state.talhoes.forEach(function(t){
         var safra = safraAtualDoTalhao(t.id);
@@ -4162,6 +4163,7 @@
   var safrasAnoFiltro = '';
   var financeiroMesFiltro = '';
   var financeiroSoSemSafra = false;
+  var financeiroStatusFiltro = 'todos'; // 'todos' | 'pendentes' | 'pagos'
   var dashboardMaisDetalhesAberto = false;
   var dashPagandoChave = null;
   var agro50SecaoAtiva = null;
@@ -4204,7 +4206,7 @@
     return lista.map(function(x){ return Object.assign({doseMin:'', doseMax:'', area:'', status:'Recomendada', calculada:true}, x); });
   }
   function criteriosRecomHtml(){
-    var c = criteriosRecom(), est = 'width:62px; padding:4px 6px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12px;';
+    var c = criteriosRecom(), est = 'width:62px; padding:4px 6px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:12px;';
     var campo = function(k, rot){ return '<label style="display:inline-flex; gap:4px; align-items:center; margin:0 10px 6px 0;">' + rot + ' <input type="number" step="any" class="crit-recom" data-k="' + k + '" value="' + c[k] + '" style="' + est + '"></label>'; };
     return '<details style="font-size:12px; margin:8px 18px 12px;"><summary style="cursor:pointer;">⚙️ Critérios do cálculo automático</summary><div style="margin-top:8px;">'
       + '<div><b>Calagem:</b> ' + campo('vDesejado','V% desejado') + campo('prnt','PRNT %') + '</div>'
@@ -4266,11 +4268,11 @@
       if(!soloRecomRascunho.length){ soloRecomRascunho = recomendacoesCalculadas(a); soloRecomAutoPreenchido = soloRecomRascunho.length > 0; }
     }
     var t = state.talhoes.find(function(x){ return x.id === a.talhaoId; });
-    var est = 'padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12.5px;';
+    var est = 'padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:12.5px;';
     var h = '<div class="paper form-card" style="margin-top:16px;"><h3 style="display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; align-items:center;">🧪 Recomendações — ' + escapeHtml(talhaoNome(a.talhaoId)) + ' · ' + fmtDate(a.dataColeta) + '<button type="button" class="btn-cancel" data-action="fechar-recom-solo">Fechar</button></h3>';
     var outrasAn = state.analisesSolo.filter(function(x){ return x.talhaoId === a.talhaoId; }).sort(function(x, y){ return (y.dataColeta || '').localeCompare(x.dataColeta || ''); });
     if(outrasAn.length > 1) h += '<div style="display:flex; flex-wrap:wrap; gap:6px; margin:0 0 10px; font-size:12px; align-items:center;">Análises deste talhão: ' + outrasAn.map(function(x){ var nr = (x.recomendacoes || []).length; return '<button type="button" data-action="recom-trocar-analise" data-id="' + x.id + '" style="font-family:inherit; font-size:12px; padding:3px 10px; border-radius:12px; cursor:pointer; border:1px solid ' + (x.id === a.id ? 'var(--accent)' : 'var(--paper-line)') + '; background:' + (x.id === a.id ? 'var(--accent)' : 'var(--paper)') + '; color:' + (x.id === a.id ? '#fff' : 'var(--ink)') + ';">' + fmtDate(x.dataColeta) + (nr ? ' (' + nr + ')' : '') + '</button>'; }).join('') + '</div>';
-    if(soloRecomAutoPreenchido) h += '<p style="font-size:12.5px; margin:0 0 8px; padding:8px 10px; background:#EFE6C8; border-radius:4px;">✏️ Preenchido pelo sistema a partir desta análise. Confira, ajuste as doses se o agrônomo recomendou outras, e clique em <b>Salvar recomendações</b>.</p>';
+    if(soloRecomAutoPreenchido) h += '<p style="font-size:12.5px; margin:0 0 8px; padding:8px 10px; background:#E8E9D6; border-radius:4px;">✏️ Preenchido pelo sistema a partir desta análise. Confira, ajuste as doses se o agrônomo recomendou outras, e clique em <b>Salvar recomendações</b>.</p>';
     h += '<p style="font-size:12px; margin:0 0 10px;">Doses em kg/ha. Em agricultura de precisão, use a <b>média</b> e anote mínimo e máximo do mapa. O total é dose média × área' + (t ? ' (área do talhão: ' + fmtHa(t.area) + ', mude se o relatório usou outra)' : '') + '.</p>';
     h += '<datalist id="recom-fontes">' + Object.keys(FONTE_PADRAO_RECOM).map(function(k){ return '<option value="' + FONTE_PADRAO_RECOM[k] + '">'; }).join('') + '<option value="Calcário calcítico"><option value="MAP"><option value="KCl"></datalist>';
     h += '<div class="table-wrap"><table class="sem-ordenacao" id="recom-solo-tabela"><thead><tr><th>Tipo</th><th>Fonte / produto</th><th>Dose média</th><th>Mín</th><th>Máx</th><th>Área (ha)</th><th>Total</th><th>Critério / observação</th><th>Situação</th><th></th></tr></thead><tbody>';
@@ -4317,7 +4319,7 @@
       html += '<label style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em;">Talhões da lavoura e área plantada</label>';
       html += '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:8px;">';
       state.talhoes.forEach(function(t){
-        html += '<div style="display:flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid var(--paper-line); border-radius:6px; background:#FBF7EC;">';
+        html += '<div style="display:flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid var(--paper-line); border-radius:6px; background:#FCFCF5;">';
         html += '<label style="display:flex; align-items:center; gap:6px; font-size:12.5px; flex:1; cursor:pointer;"><input type="checkbox" name="lavTalhaoIds" value="' + t.id + '"> ' + escapeHtml(t.nome) + '</label>';
         html += '<input type="number" name="lavArea-' + t.id + '" value="' + (Number(t.area) || '') + '" step="0.01" min="0" title="Área plantada (ha)" style="width:80px; padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; font-size:12px;"> <span style="font-size:11px; color:var(--ink-soft);">ha</span>';
         html += '</div>';
@@ -4388,14 +4390,14 @@
       var anosDisponiveis = state.safras.map(function(s){ return s.anoAgricola; }).filter(function(v){ return v; }).filter(function(v,i,a){ return a.indexOf(v)===i; }).sort().reverse();
       html += '<div style="padding:14px 18px 0; display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">';
       if(anosDisponiveis.length){
-        html += '<div class="field" style="margin:0; max-width:220px;"><label>Ano agrícola</label><select id="filtro-ano-agricola" style="padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px; width:100%;">';
+        html += '<div class="field" style="margin:0; max-width:220px;"><label>Ano agrícola</label><select id="filtro-ano-agricola" style="padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px; width:100%;">';
         html += '<option value=""' + (safrasAnoFiltro === '' ? ' selected' : '') + '>Todos os anos</option>';
         anosDisponiveis.forEach(function(ano){
           html += '<option value="' + escapeHtml(ano) + '"' + (safrasAnoFiltro === ano ? ' selected' : '') + '>' + escapeHtml(ano) + '</option>';
         });
         html += '</select></div>';
       }
-      html += '<input type="text" id="search-safras" placeholder="Buscar..." style="flex:1; min-width:180px; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">';
+      html += '<input type="text" id="search-safras" placeholder="Buscar..." style="flex:1; min-width:180px; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;">';
       html += '</div>';
       var safrasFiltradas = state.safras.filter(function(s){ return !safrasAnoFiltro || normalizarAnoAgricola(s.anoAgricola) === normalizarAnoAgricola(safrasAnoFiltro); });
       if(!safrasFiltradas.length){
@@ -4570,7 +4572,7 @@
             linhasHtml += '<tr style="background:#F6EFDC;"><td colspan="12" style="padding:10px 14px;">' + det + '</td></tr>';
           }
         });
-        html += '<tr style="background:#EFE6C8;"><td style="font-weight:700;">' + escapeHtml(lavId === 'sem' ? 'Sem lavoura' : lavouraLabel(lavId)) + (sfs.length > 1 ? ' <span style="font-weight:400; font-size:11px;">(' + sfs.length + ' talhões)</span>' : '') + '</td>' + celulasRaiox(tot, true) + '</tr>';
+        html += '<tr style="background:#E8E9D6;"><td style="font-weight:700;">' + escapeHtml(lavId === 'sem' ? 'Sem lavoura' : lavouraLabel(lavId)) + (sfs.length > 1 ? ' <span style="font-weight:400; font-size:11px;">(' + sfs.length + ' talhões)</span>' : '') + '</td>' + celulasRaiox(tot, true) + '</tr>';
         html += linhasHtml;
       });
       html += '</tbody></table></div>';
@@ -4775,8 +4777,8 @@
     var cont = document.getElementById('diario-dinamico');
     if(!cont || !diarioRascunho) return;
     var r = diarioRascunho;
-    var estiloSel = 'width:100%; padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;';
-    var estiloNum = 'width:100%; padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;';
+    var estiloSel = 'width:100%; padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;';
+    var estiloNum = 'width:100%; padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;';
     var tituloSecao = function(t){ return '<div style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin:14px 0 6px;">' + t + '</div>'; };
     var html = '';
 
@@ -4791,7 +4793,7 @@
       sfsL.forEach(function(sf){
         var mk = !r.marcadas || r.marcadas.indexOf(sf.id) !== -1;
         var areaV = r.areas[sf.id] !== undefined && r.areas[sf.id] !== '' ? r.areas[sf.id] : areaPlantadaSafra(sf);
-        html += '<div style="display:flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid ' + (mk ? 'var(--accent)' : 'var(--paper-line)') + '; border-radius:6px; background:' + (mk ? '#F1E0BC' : '#FBF7EC') + ';">';
+        html += '<div style="display:flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid ' + (mk ? 'var(--accent)' : 'var(--paper-line)') + '; border-radius:6px; background:' + (mk ? '#F1E0BC' : '#FCFCF5') + ';">';
         html += '<label style="display:flex; align-items:center; gap:6px; font-size:12.5px; flex:1; cursor:pointer;"><input type="checkbox" name="diarioSafraIds" value="' + sf.id + '"' + (mk ? ' checked' : '') + '> ' + escapeHtml(talhaoNome(sf.talhaoId)) + '</label>';
         html += '<input type="number" data-area-safra="' + sf.id + '" value="' + areaV + '" step="0.01" min="0" title="Área aplicada (ha)" style="width:78px; padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; font-size:12px;"' + (mk ? '' : ' disabled') + '> <span style="font-size:11px; color:var(--ink-soft);">ha</span>';
         html += '</div>';
@@ -4823,13 +4825,13 @@
       state.produtos.slice().sort(function(a,b){ return (a.nome||'').localeCompare(b.nome||'', 'pt-BR'); }).forEach(function(pp){ html += '<option value="' + pp.id + '"' + (pp.id === p.produtoId ? ' selected' : '') + '>' + escapeHtml(pp.nome) + '</option>'; });
       html += '</select></td>';
       var doseUnAtual = p.doseUn && unidadesCompativeis(un).indexOf(p.doseUn) !== -1 ? p.doseUn : un;
-      var estiloMini = 'padding:6px 4px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12px;';
+      var estiloMini = 'padding:6px 4px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:12px;';
       html += '<td style="min-width:230px;"><div style="display:flex; align-items:center; gap:4px;"><input type="number" data-campo="dose" value="' + (p.dose === undefined ? '' : p.dose) + '" step="any" min="0" style="' + estiloNum + ' min-width:70px;">';
       html += '<select data-campo="doseUn" style="' + estiloMini + '">' + (unidadesCompativeis(un).length ? unidadesCompativeis(un) : [un || 'un']).map(function(u){ return '<option' + (u === doseUnAtual ? ' selected' : '') + '>' + escapeHtml(u) + '</option>'; }).join('') + '</select>';
       html += '<select data-campo="dosePor" style="' + estiloMini + '"><option value="ha"' + (p.dosePor !== 'alq' ? ' selected' : '') + '>/ha</option><option value="alq"' + (p.dosePor === 'alq' ? ' selected' : '') + '>/alq</option></select></div>';
       if(p.produtoId && p.dose !== '' && p.dose !== undefined && (doseUnAtual !== un || p.dosePor === 'alq')) html += '<div style="font-size:10.5px; color:var(--ink-soft);">= ' + fmtNum(Math.round(doseHaNaUnidadeProduto(p) * 100000) / 100000) + ' ' + escapeHtml(un) + '/ha</div>';
       html += '</td>';
-      html += '<td style="min-width:120px;"><div style="display:flex; align-items:center; gap:4px;"><input type="number" data-campo="quantidade" value="' + (qtd || '') + '" step="0.001" min="0" style="' + estiloNum + (p.qtdManual ? '' : ' background:#EFE6C8;') + '" title="Calculada: dose × área. Digite para usar outro valor."><span style="font-size:11px; color:var(--ink-soft);">' + escapeHtml(un) + '</span></div>' + (p.produtoId && qtd > 0 && descreverEmEmbalagens(p.produtoId, qtd) ? '<div style="font-size:10.5px; color:var(--ink-soft);">≈ ' + escapeHtml(descreverEmEmbalagens(p.produtoId, qtd)) + '</div>' : '') + '</td>';
+      html += '<td style="min-width:120px;"><div style="display:flex; align-items:center; gap:4px;"><input type="number" data-campo="quantidade" value="' + (qtd || '') + '" step="0.001" min="0" style="' + estiloNum + (p.qtdManual ? '' : ' background:#E8E9D6;') + '" title="Calculada: dose × área. Digite para usar outro valor."><span style="font-size:11px; color:var(--ink-soft);">' + escapeHtml(un) + '</span></div>' + (p.produtoId && qtd > 0 && descreverEmEmbalagens(p.produtoId, qtd) ? '<div style="font-size:10.5px; color:var(--ink-soft);">≈ ' + escapeHtml(descreverEmEmbalagens(p.produtoId, qtd)) + '</div>' : '') + '</td>';
       var embEst = p.produtoId ? descreverEmEmbalagens(p.produtoId, estoqueDisp) : '';
       html += '<td class="num" style="' + (p.produtoId && qtd > estoqueDisp ? 'color:var(--cost-dark); font-weight:600;' : '') + '">' + (p.produtoId ? fmtNum(estoqueDisp) + ' ' + escapeHtml(un) + (embEst ? '<br><span style="font-size:10.5px; color:var(--ink-soft); font-weight:400;">' + escapeHtml(embEst) + '</span>' : '') : '—') + '</td>';
       html += '<td class="num">' + (p.produtoId ? (cm > 0 ? fmtBRL(cm) : '<span title="Sem compra registrada desse produto" style="color:var(--cost-dark);">sem preço</span>') : '—') + '</td>';
@@ -4917,7 +4919,7 @@
     if(!state.operacoes.length){
       html += '<div class="empty-state">Nenhuma atividade registrada ainda.</div>';
     } else {
-      html += '<div style="padding:14px 18px 0;"><input type="text" id="search-operacoes" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+      html += '<div style="padding:14px 18px 0;"><input type="text" id="search-operacoes" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;"></div>';
       html += '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Lavoura / talhões</th><th>Produtos</th><th>Máquinas</th><th>Custo</th><th>Responsável</th><th>Obs.</th><th></th></tr></thead><tbody>';
       state.operacoes.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(o){
         html += '<tr>';
@@ -4965,7 +4967,7 @@
 
     var html = '';
     if(mesesDisponiveis.length){
-      html += '<div class="field" style="max-width:240px; margin-bottom:14px;"><label>Mês de visualização</label><select id="f-financeiro-mes-filtro" style="width:100%; padding:8px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">';
+      html += '<div class="field" style="max-width:240px; margin-bottom:14px;"><label>Mês de visualização</label><select id="f-financeiro-mes-filtro" style="width:100%; padding:8px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;">';
       html += '<option value="">Todos os meses</option>';
       mesesDisponiveis.forEach(function(m){
         var partes = m.split('-');
@@ -5005,7 +5007,7 @@
       html += field('text', 'unidade', 'Unidade (opcional)', false, 'Ex: SC, kg, L', {}, editingRecord ? (mostrarDiariaJaAqui ? 'diárias' : editingRecord.unidade) : undefined);
       html += '</div>';
 
-      html += field('number', 'valor', 'Valor total (R$)', true, '0,00', mostrarDiariaJaAqui ? {step:'0.01', min:'0', readonly:'readonly', style:'background:#E8DCB9;'} : {step:'0.01', min:'0'}, editingRecord ? editingRecord.valor : undefined);
+      html += field('number', 'valor', 'Valor total (R$)', true, '0,00', mostrarDiariaJaAqui ? {step:'0.01', min:'0', readonly:'readonly', style:'background:#E8E9D6;'} : {step:'0.01', min:'0'}, editingRecord ? editingRecord.valor : undefined);
       html += '<span id="qtd-valorunit-hint" style="display:' + (mostrarQtdValorUnit ? 'block' : 'none') + '; grid-column: 1 / -1; font-size:11.5px; color:var(--ink-soft);">Preenchendo Quantidade e Valor unitário acima, este valor é calculado automaticamente (Quantidade × Valor unitário) — você ainda pode digitar por cima, se preferir.</span>';
 
       var mostrarHoraExtra = editingRecord && editingRecord.contaId && contaNome(editingRecord.contaId) === 'Salário';
@@ -5032,8 +5034,8 @@
         html += field('number', 'parcelas', 'Parcelar em quantas vezes? (opcional)', false, '1', {step:'1', min:'1'});
         html += '<div class="field"><label>Repetir automaticamente? (opcional)</label>';
         html += '<div style="display:flex; gap:6px;">';
-        html += '<select name="recorrenciaFrequencia" style="flex:1; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"><option value="Mensal">Mensal</option><option value="Anual">Anual</option></select>';
-        html += '<input type="number" name="recorrenciaRepeticoes" placeholder="Nº de vezes" min="1" step="1" style="width:110px; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;">';
+        html += '<select name="recorrenciaFrequencia" style="flex:1; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;"><option value="Mensal">Mensal</option><option value="Anual">Anual</option></select>';
+        html += '<input type="number" name="recorrenciaRepeticoes" placeholder="Nº de vezes" min="1" step="1" style="width:110px; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;">';
         html += '</div></div>';
       }
       html += '<div id="campo-parceiro" style="display:' + (mostrarDiariaJaAqui ? 'none' : 'contents') + ';">';
@@ -5055,7 +5057,9 @@
     if(!state.financeiro.length){
       html += '<div class="empty-state">Nenhum lançamento financeiro ainda.</div>';
     } else {
-      html += '<div style="padding:14px 18px 0;"><input type="text" id="search-financeiro" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+      var qtdPendFin = financeiroFiltrado.filter(function(f){ return (f.status || 'Pago') === 'Pendente'; }).length;
+      html += '<div style="padding:14px 18px 0; display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center;"><input type="text" id="search-financeiro" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;">'
+        + '<div style="margin-bottom:-10px;">' + filtroChipsHtml('filtro-fin-status', financeiroStatusFiltro, {todos:'Todos', pendentes:'Só pendentes (' + qtdPendFin + ')', pagos:'Só pagos / recebidos'}) + '</div></div>';
       if(financeiroSoSemSafra){
         html += '<div style="padding:12px 18px 0; display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;">';
         html += '<div class="field" style="margin:0; min-width:260px;"><label>Classificar os marcados como</label><select id="classif-destino" style="' + ESTILO_SELECT_DESTINO + '">';
@@ -5074,7 +5078,15 @@
         html += '</div>';
       }
       html += '<div class="table-wrap"><table><thead><tr>' + (financeiroSoSemSafra ? '<th><input type="checkbox" id="classif-todos" title="Marcar todos"></th>' : '') + '<th>Data/Venc.</th><th>Funcionário</th><th>Descrição</th><th>Conta</th><th>Talhão</th><th>Destino</th><th>Quantidade</th><th>Valor Unitário</th><th>Valor Total</th><th>Tipo</th><th>Status</th><th></th></tr></thead><tbody>';
-      financeiroFiltrado.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(f){
+      var listaFinTabela = financeiroFiltrado.filter(function(f){
+        var pend = (f.status || 'Pago') === 'Pendente';
+        return financeiroStatusFiltro === 'pendentes' ? pend : (financeiroStatusFiltro === 'pagos' ? !pend : true);
+      });
+      if(!listaFinTabela.length) html += '<tr><td colspan="13" style="text-align:center; padding:18px; color:var(--ink-soft);">' + (financeiroStatusFiltro === 'pendentes' ? 'Nenhum lançamento pendente' : 'Nenhum lançamento') + (financeiroMesFiltro ? ' neste mês' : '') + '.</td></tr>';
+      listaFinTabela.sort(function(a,b){
+        if(financeiroStatusFiltro === 'pendentes') return (a.vencimento || '9999').localeCompare(b.vencimento || '9999');
+        return (b.criadoEm||0)-(a.criadoEm||0);
+      }).forEach(function(f){
         var status = f.status || 'Pago';
         html += '<tr data-tip-fin="' + f.id + '">';
         if(financeiroSoSemSafra) html += '<td>' + (lancamentoEstaFechado(f) ? '🔒' : '<input type="checkbox" class="classif-cb" value="' + f.id + '">') + '</td>';
@@ -5179,9 +5191,9 @@
   }
   function linhaPagamentoHtml(f, colspan){
     var receita = f.tipo === 'receita';
-    var h = '<tr style="background:#EFE6C8;"><td colspan="' + colspan + '" style="padding:12px 14px;"><div style="display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;">';
-    h += '<div class="field" style="margin:0;"><label>Data do ' + (receita ? 'recebimento' : 'pagamento') + '</label><input type="date" id="cp-pag-data" value="' + hojeISO() + '" style="padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
-    h += '<div class="field" style="margin:0;"><label>Valor ' + (receita ? 'recebido' : 'pago') + ' (R$)</label><input type="number" id="cp-pag-valor" value="' + (Number(f.valor) || 0) + '" step="0.01" min="0" style="width:140px; padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></div>';
+    var h = '<tr style="background:#E8E9D6;"><td colspan="' + colspan + '" style="padding:12px 14px;"><div style="display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;">';
+    h += '<div class="field" style="margin:0;"><label>Data do ' + (receita ? 'recebimento' : 'pagamento') + '</label><input type="date" id="cp-pag-data" value="' + hojeISO() + '" style="padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;"></div>';
+    h += '<div class="field" style="margin:0;"><label>Valor ' + (receita ? 'recebido' : 'pago') + ' (R$)</label><input type="number" id="cp-pag-valor" value="' + (Number(f.valor) || 0) + '" step="0.01" min="0" style="width:140px; padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;"></div>';
     h += '<button type="button" class="btn" data-action="cp-confirmar-pagamento" data-id="' + f.id + '">Confirmar</button><button type="button" class="btn-cancel" data-action="cp-cancelar-pagamento">Cancelar</button></div>';
     h += '<p style="font-size:11.5px; color:var(--ink-soft); margin:8px 0 0;">Se ' + (receita ? 'receber' : 'pagar') + ' menos que ' + fmtBRL(f.valor) + ', a diferença continua pendente num lançamento novo, com o mesmo vencimento e destino.</p>';
     if(!receita && destinoEfetivo(f) === 'classificar') h += '<p style="font-size:11.5px; color:var(--cost-dark); margin:4px 0 0;">⚠️ Sem destino (lavoura, talhão, máquina ou geral). Depois de pagar, use "Editar" para escolher — senão o custo não entra em nenhuma lavoura.</p>';
@@ -5294,7 +5306,7 @@
     cr.forEach(function(l){
       var situ = l.paga ? '✅ Paga' + (l.pagamento ? ' em ' + fmtDate(l.pagamento.data) + (Math.abs((Number(l.pagamento.valor) || 0) - l.parcela) > 0.01 ? ' (' + fmtBRL(l.pagamento.valor) + ')' : '') : '') : (l.vencimento && l.vencimento < hoje ? '⚠️ Vencida' : 'A vencer');
       tA += l.amortizacao; tJ += l.juros + (l.jurosCarencia || 0); tP += l.parcela;
-      var estIn = 'padding:4px 6px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:12.5px;';
+      var estIn = 'padding:4px 6px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:12.5px;';
       if(editavel && !l.paga){
         h += '<tr><td>' + l.n + '</td><td><input type="date" class="pc-venc" data-n="' + l.n + '" value="' + (l.vencimento || '') + '" style="' + estIn + '"></td><td class="num">' + fmtBRL(l.amortizacao) + '</td><td class="num">' + fmtBRL(l.juros) + '</td><td class="num"><input type="number" step="0.01" min="0" class="pc-valor" data-n="' + l.n + '" value="' + (l.parcela ? Math.round(l.parcela * 100) / 100 : '') + '" style="width:120px; text-align:right; ' + estIn + '"></td><td class="num">' + fmtBRL(l.saldo) + '</td><td>' + situ + '</td></tr>';
         return;
@@ -6332,7 +6344,7 @@
     html += '<label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;"><input type="checkbox" id="rent-incluir-depreciacao"' + (rentabilidadeIncluirDepreciacao ? ' checked' : '') + '> Incluir Depreciação</label>';
     html += '<label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;"><input type="checkbox" id="rent-incluir-custo-oport"' + (rentabilidadeIncluirCustoOportunidade ? ' checked' : '') + '> Incluir Custo de Oportunidade</label>';
     if(rentabilidadeIncluirCustoOportunidade){
-      html += '<label style="display:flex; align-items:center; gap:6px; font-size:13px;">Taxa ao ano (%) <input type="number" id="rent-taxa-oportunidade" value="' + rentabilidadeTaxaOportunidade + '" min="0" step="0.1" style="width:70px; padding:6px 8px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;"></label>';
+      html += '<label style="display:flex; align-items:center; gap:6px; font-size:13px;">Taxa ao ano (%) <input type="number" id="rent-taxa-oportunidade" value="' + rentabilidadeTaxaOportunidade + '" min="0" step="0.1" style="width:70px; padding:6px 8px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;"></label>';
     }
     html += '</div>';
     html += '</div>';
@@ -7321,17 +7333,17 @@
   function painelUsuariosHtml(){
     var h = '<div class="section-title">Usuários e convites</div><div class="paper form-card">';
     h += '<p style="font-size:12.5px; margin:0 0 10px;">Cada pessoa tem a própria conta e só vê os próprios dados. Para alguém entrar, gere um convite e mande o código (vale 30 dias, uma pessoa por convite).</p>';
-    h += '<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end;"><div class="field" style="margin:0;"><label>Para quem? (opcional)</label><input type="text" id="convite-obs" placeholder="Ex: João do sítio Boa Vista" style="padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px; width:240px;"></div><button type="button" class="btn" data-action="convite-criar">Gerar convite</button></div>';
+    h += '<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end;"><div class="field" style="margin:0;"><label>Para quem? (opcional)</label><input type="text" id="convite-obs" placeholder="Ex: João do sítio Boa Vista" style="padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px; width:240px;"></div><button type="button" class="btn" data-action="convite-criar">Gerar convite</button></div>';
     if(conviteRecemCriado){
-      h += '<div style="margin-top:12px; padding:10px 12px; background:#EFE6C8; border-radius:6px;"><div style="font-size:12px;">Convite criado:</div><div style="font-size:22px; font-weight:700; letter-spacing:2px; margin:4px 0;">' + escapeHtml(conviteRecemCriado.codigo) + '</div>';
-      h += '<textarea id="convite-texto" readonly style="width:100%; min-height:70px; font-size:12.5px; padding:6px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC;">' + escapeHtml(textoConvite(conviteRecemCriado)) + '</textarea>';
+      h += '<div style="margin-top:12px; padding:10px 12px; background:#E8E9D6; border-radius:6px;"><div style="font-size:12px;">Convite criado:</div><div style="font-size:22px; font-weight:700; letter-spacing:2px; margin:4px 0;">' + escapeHtml(conviteRecemCriado.codigo) + '</div>';
+      h += '<textarea id="convite-texto" readonly style="width:100%; min-height:70px; font-size:12.5px; padding:6px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5;">' + escapeHtml(textoConvite(conviteRecemCriado)) + '</textarea>';
       h += '<button type="button" class="btn-edit" data-action="convite-copiar">📋 Copiar mensagem</button> <a class="btn-edit" style="text-decoration:none;" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(textoConvite(conviteRecemCriado)) + '">💬 Enviar no WhatsApp</a></div>';
     }
     if(!adminDados){ carregarAdminDados(); h += '<p style="font-size:12px; color:var(--ink-soft);">Carregando usuários…</p></div>'; return h; }
     h += '<div style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin:16px 0 6px;">Contas (' + adminDados.usuarios.length + ')</div>';
     if(senhaTempInfo){
       var msgSenha = 'Olá, ' + (senhaTempInfo.usuario.nome || '') + '! Sua senha do sistema da fazenda foi redefinida. Entre em ' + window.location.origin + ' com o e-mail ' + senhaTempInfo.usuario.email + ' e a senha provisória ' + senhaTempInfo.senha + ' — depois troque em Configurações → Senha de acesso.';
-      h += '<div style="margin-top:12px; padding:10px 12px; background:#EFE6C8; border-radius:6px;"><div style="font-size:12px;">Senha provisória de <strong>' + escapeHtml(senhaTempInfo.usuario.nome || senhaTempInfo.usuario.email) + '</strong>:</div><div style="font-size:20px; font-weight:700; letter-spacing:1px; margin:4px 0; font-family:monospace;">' + escapeHtml(senhaTempInfo.senha) + '</div><a class="btn-edit" style="text-decoration:none;" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(msgSenha) + '">💬 Enviar no WhatsApp</a> <button type="button" class="btn-cancel" data-action="fechar-senha-temp">Fechar</button></div>';
+      h += '<div style="margin-top:12px; padding:10px 12px; background:#E8E9D6; border-radius:6px;"><div style="font-size:12px;">Senha provisória de <strong>' + escapeHtml(senhaTempInfo.usuario.nome || senhaTempInfo.usuario.email) + '</strong>:</div><div style="font-size:20px; font-weight:700; letter-spacing:1px; margin:4px 0; font-family:monospace;">' + escapeHtml(senhaTempInfo.senha) + '</div><a class="btn-edit" style="text-decoration:none;" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(msgSenha) + '">💬 Enviar no WhatsApp</a> <button type="button" class="btn-cancel" data-action="fechar-senha-temp">Fechar</button></div>';
     }
     h += '<div class="table-wrap"><table class="sem-ordenacao"><thead><tr><th>Nome</th><th>E-mail</th><th>Tipo</th><th>Desde</th><th></th></tr></thead><tbody>';
     adminDados.usuarios.forEach(function(u){
@@ -7356,7 +7368,7 @@
   var compartilhamentosWs = null, compartilhamentosWsId = null, senhaTempInfo = null;
   function minhaContaHtml(){
     var pf = lerPerfil(); if(!pf) return '';
-    var est = 'padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;';
+    var est = 'padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;';
     var h = '<div class="section-title">Minha conta</div><div class="paper form-card">';
     h += '<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end;"><div class="field" style="margin:0;"><label>Nome</label><input type="text" id="conta-nome" value="' + escapeHtml(pf.nome || '') + '" style="width:240px; ' + est + '"></div><button type="button" class="btn-edit" data-action="conta-salvar-nome">Salvar nome</button></div>';
     h += '<p style="font-size:12px; color:var(--ink-soft); margin:10px 0 0;">E-mail de login: <strong>' + escapeHtml(pf.email) + '</strong>' + (pf.admin ? ' · administrador' : '') + '. <a href="#" data-action="ver-termos">Termos de uso e privacidade</a>.</p>';
@@ -7369,7 +7381,7 @@
     if(info.compartilhado){
       return '<div class="section-title">Esta propriedade</div><div class="paper form-card"><p style="font-size:12.5px; margin:0 0 10px;">Compartilhada com você por <strong>' + escapeHtml((info.dono && (info.dono.nome || info.dono.email)) || '') + '</strong> — você ' + ROTULO_PAPEL[info.papel] + '.</p><button type="button" class="btn-del" data-action="sair-compartilhamento">Sair desta propriedade</button></div>';
     }
-    var est = 'padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;';
+    var est = 'padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;';
     var h = '<div class="section-title">Compartilhar esta propriedade</div><div class="paper form-card">';
     h += '<p style="font-size:12.5px; margin:0 0 10px;">Dê acesso a <strong>' + escapeHtml(info.nome || 'esta propriedade') + '</strong> para outra pessoa que já tem conta no sistema (um funcionário, sócio ou o agrônomo). Ela continua com a conta dela e passa a ver esta propriedade na lista.</p>';
     h += '<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end;"><div class="field" style="margin:0;"><label>E-mail da pessoa</label><input type="email" id="compartilhar-email" placeholder="email@exemplo.com" style="width:230px; ' + est + '"></div>';
@@ -7397,7 +7409,7 @@
     var d = document.createElement('div');
     d.id = 'termos-overlay';
     d.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; display:flex; align-items:center; justify-content:center; padding:16px;';
-    d.innerHTML = '<div style="background:#FBF7EC; color:#1B1508; max-width:620px; max-height:85vh; overflow:auto; border-radius:10px; padding:20px 22px; font-size:13.5px; line-height:1.55;">' + TERMOS_HTML + '<button type="button" class="btn" data-action="fechar-termos">Fechar</button></div>';
+    d.innerHTML = '<div style="background:#FCFCF5; color:#1B1508; max-width:620px; max-height:85vh; overflow:auto; border-radius:10px; padding:20px 22px; font-size:13.5px; line-height:1.55;">' + TERMOS_HTML + '<button type="button" class="btn" data-action="fechar-termos">Fechar</button></div>';
     document.body.appendChild(d);
   }
   function renderConfiguracoes(){
@@ -7745,7 +7757,7 @@
         if(camposPadrao2) camposPadrao2.style.display = ehDiaria ? 'none' : 'contents';
         if(campoParc) campoParc.style.display = ehDiaria ? 'none' : 'contents';
         if(valorIn){
-          if(ehDiaria){ valorIn.setAttribute('readonly', 'readonly'); valorIn.style.background = '#E8DCB9'; valorIn.value = '0.00'; }
+          if(ehDiaria){ valorIn.setAttribute('readonly', 'readonly'); valorIn.style.background = '#E8E9D6'; valorIn.value = '0.00'; }
           else { valorIn.removeAttribute('readonly'); valorIn.style.background = ''; }
         }
         if(tipoIn && ehDiaria) tipoIn.value = 'diárias';
@@ -7761,7 +7773,7 @@
   }
 
   /* ---------------- Campo "Destino" (Lavoura / Só talhão / Geral) usado em Lançamentos e Contas a Pagar ---------------- */
-  var ESTILO_SELECT_DESTINO = 'width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FBF7EC; font-size:13px;';
+  var ESTILO_SELECT_DESTINO = 'width:100%; padding:8px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;';
   function lerEstadoDestinoDoDom(cont){
     var form = cont.closest('form');
     var radio = form.querySelector('input[name="destino"]:checked');
@@ -7807,7 +7819,7 @@
     html += '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
     [{v:'lavoura', l:'🌱 Lavoura'}, {v:'talhao', l:'🗺️ Só talhão (sem cultura)'}, {v:'maquina', l:'🚜 Máquina / equipamento'}, {v:'geral', l:'🏠 Geral da fazenda'}].forEach(function(o){
       var marcado = st.destino === o.v;
-      html += '<label style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; padding:6px 12px; border:1px solid ' + (marcado ? 'var(--accent)' : 'var(--paper-line)') + '; border-radius:20px; background:' + (marcado ? '#F1E0BC' : '#FBF7EC') + '; cursor:pointer;">';
+      html += '<label style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; padding:6px 12px; border:1px solid ' + (marcado ? 'var(--accent)' : 'var(--paper-line)') + '; border-radius:20px; background:' + (marcado ? '#F1E0BC' : '#FCFCF5') + '; cursor:pointer;">';
       html += '<input type="radio" name="destino" value="' + o.v + '"' + (marcado ? ' checked' : '') + '> ' + o.l + '</label>';
     });
     html += '</div>';
@@ -7835,7 +7847,7 @@
             html += '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
             sfs.forEach(function(x){
               var mk = marcadas.indexOf(x.id) !== -1;
-              html += '<label style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; padding:5px 10px; border:1px solid ' + (mk ? 'var(--accent)' : 'var(--paper-line)') + '; border-radius:20px; background:' + (mk ? '#F1E0BC' : '#FBF7EC') + '; cursor:pointer;">';
+              html += '<label style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; padding:5px 10px; border:1px solid ' + (mk ? 'var(--accent)' : 'var(--paper-line)') + '; border-radius:20px; background:' + (mk ? '#F1E0BC' : '#FCFCF5') + '; cursor:pointer;">';
               html += '<input type="checkbox" name="destSafraIds" value="' + x.id + '"' + (mk ? ' checked' : '') + '> ' + escapeHtml(talhaoNome(x.talhaoId)) + ' · ' + fmtHa(areaPlantadaSafra(x)) + '</label>';
             });
             html += '</div>';
@@ -7862,7 +7874,7 @@
       html += '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
       state.talhoes.forEach(function(t){
         var mk = (st.talhaoIds || []).indexOf(t.id) !== -1;
-        html += '<label style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; padding:5px 10px; border:1px solid ' + (mk ? 'var(--accent)' : 'var(--paper-line)') + '; border-radius:20px; background:' + (mk ? '#F1E0BC' : '#FBF7EC') + '; cursor:pointer;">';
+        html += '<label style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; padding:5px 10px; border:1px solid ' + (mk ? 'var(--accent)' : 'var(--paper-line)') + '; border-radius:20px; background:' + (mk ? '#F1E0BC' : '#FCFCF5') + '; cursor:pointer;">';
         html += '<input type="checkbox" name="destTalhaoIds" value="' + t.id + '"' + (mk ? ' checked' : '') + '> ' + escapeHtml(t.nome) + '</label>';
       });
       html += '</div>';
@@ -7878,7 +7890,7 @@
         patrimonioParaDestino().forEach(function(it){
           if(it.categoria !== catAtual){ catAtual = it.categoria; html += '<span style="flex-basis:100%; font-size:10.5px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin-top:4px;">' + escapeHtml(catAtual || 'Outro') + '</span>'; }
           var mk = (st.maquinaIds || []).indexOf(it.id) !== -1;
-          html += '<label style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; padding:5px 10px; border:1px solid ' + (mk ? 'var(--accent)' : 'var(--paper-line)') + '; border-radius:20px; background:' + (mk ? '#F1E0BC' : '#FBF7EC') + '; cursor:pointer;">';
+          html += '<label style="display:inline-flex; align-items:center; gap:6px; font-size:12.5px; padding:5px 10px; border:1px solid ' + (mk ? 'var(--accent)' : 'var(--paper-line)') + '; border-radius:20px; background:' + (mk ? '#F1E0BC' : '#FCFCF5') + '; cursor:pointer;">';
           html += '<input type="checkbox" name="destMaquinaIds" value="' + it.id + '"' + (mk ? ' checked' : '') + '> ' + escapeHtml(it.nome) + '</label>';
         });
         html += '</div>';
@@ -9855,6 +9867,11 @@
       saveKey('financeiro', state.financeiro);
       renderFinanceiro();
       alert(resClassif.ok + ' lançamento(s) classificado(s).' + (resClassif.pulados.length ? '\n\nNão classificados:\n' + resClassif.pulados.join('\n') : ''));
+      return;
+    }
+    if(action === 'filtro-fin-status'){
+      financeiroStatusFiltro = btn.dataset.filtro || 'todos';
+      renderFinanceiro();
       return;
     }
     if(action === 'toggle-financeiro-so-sem-safra'){
