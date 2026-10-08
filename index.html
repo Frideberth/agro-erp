@@ -4720,6 +4720,56 @@
       maquinas: (o.maquinas || []).map(function(m){ return {patrimonioId: m.patrimonioId, horas: m.horas}; })
     };
   }
+  function ehTipoPulverizacao(tipo){ return /pulveri|aplica[çc][aã]o|dessec|herbic|fungic|inseti/i.test(String(tipo || '')); }
+  function ultimoTanqueUsado(){
+    var ops = state.operacoes.filter(function(o){ return Number(o.tanqueLitros) > 0; }).sort(function(a, b){ return (b.data || '').localeCompare(a.data || '') || (b.criadoEm || 0) - (a.criadoEm || 0); });
+    return ops.length ? ops[0].tanqueLitros : 0;
+  }
+  // Quantos tanques e quanto de cada produto vai em cada tanque
+  function calculoTanque(area, volumeCalda, tanque){
+    if(!(area > 0) || !(volumeCalda > 0) || !(tanque > 0)) return null;
+    var caldaTotal = area * volumeCalda, haPorTanque = tanque / volumeCalda;
+    var cheios = Math.floor(caldaTotal / tanque + 1e-9), resto = caldaTotal - cheios * tanque;
+    if(resto < 0.5) resto = 0;
+    return {caldaTotal: caldaTotal, haPorTanque: haPorTanque, tanques: caldaTotal / tanque, cheios: cheios, resto: resto};
+  }
+  function textoTanques(c, tanque){
+    if(!c) return '';
+    var partes = [];
+    if(c.cheios) partes.push(c.cheios + ' tanque' + (c.cheios > 1 ? 's' : '') + ' cheio' + (c.cheios > 1 ? 's' : '') + ' de ' + fmtNum(tanque) + ' L');
+    if(c.resto) partes.push('1 de ' + fmtNum(Math.round(c.resto)) + ' L');
+    return partes.join(' + ');
+  }
+  function atualizarCalcTanque(){
+    var form = document.getElementById('form-operacao'); if(!form) return;
+    var tipoSel = form.querySelector('[name="tipo"]'), campo = document.getElementById('campo-tanque'), box = document.getElementById('tanque-calc');
+    if(!campo || !box) return;
+    var pulv = ehTipoPulverizacao(tipoSel ? tipoSel.value : '');
+    campo.style.display = pulv ? '' : 'none';
+    var tanque = parseFloat((form.querySelector('[name="tanqueLitros"]') || {}).value) || 0;
+    var vol = parseFloat((form.querySelector('[name="volumeCalda"]') || {}).value) || 0;
+    if(diarioRascunho) lerRascunhoDiarioDoDom();
+    var area = diarioRascunho ? areaAplicadaRascunho(diarioRascunho) : 0;
+    if(!pulv){ box.innerHTML = ''; return; }
+    if(!tanque || !vol){ box.innerHTML = '<div style="font-size:12px; color:var(--ink-soft); padding:2px 0 4px;">🛢️ Informe o volume de calda e o tamanho do tanque para ver quantos tanques e quanto de cada produto vai em cada um.</div>'; return; }
+    var c = calculoTanque(area, vol, tanque);
+    var h = '<div style="border:1px solid var(--paper-line); border-radius:6px; background:var(--paper-2); padding:10px 14px; font-size:12.5px;">';
+    h += '<div style="font-weight:700; margin-bottom:4px;">🛢️ Tanque de ' + fmtNum(tanque) + ' L com ' + fmtNum(vol) + ' L/ha → cada tanque cobre <b>' + fmtNum(Math.round(tanque / vol * 100) / 100) + ' ha</b></div>';
+    if(c){
+      h += '<div style="margin-bottom:6px;">Área ' + fmtHa(area) + ' · calda total ' + fmtNum(Math.round(c.caldaTotal)) + ' L · <b>' + fmtNum(Math.round(c.tanques * 10) / 10) + ' tanques</b> (' + textoTanques(c, tanque) + ')</div>';
+      var prods = (diarioRascunho && diarioRascunho.produtos || []).filter(function(pp){ return pp.produtoId && Number(pp.quantidade) > 0; });
+      if(prods.length){
+        h += '<table style="width:auto; border-collapse:collapse; margin:0;"><thead><tr><th style="text-align:left; padding:3px 14px 3px 0; font-size:11px;">Produto</th><th style="text-align:right; padding:3px 14px; font-size:11px;">Dose no tanque cheio (' + fmtNum(tanque) + ' L)</th>' + (c.resto ? '<th style="text-align:right; padding:3px 0 3px 14px; font-size:11px;">Dose no último tanque (' + fmtNum(Math.round(c.resto)) + ' L)</th>' : '') + '</tr></thead><tbody>';
+        prods.forEach(function(pp){
+          var un = unidadeProduto(pp.produtoId) || '';
+          var porTanque = (Number(pp.quantidade) || 0) / c.tanques;
+          h += '<tr><td style="padding:2px 14px 2px 0;">' + escapeHtml(produtoNome(pp.produtoId)) + '</td><td style="text-align:right; padding:2px 14px; font-family:\'JetBrains Mono\', monospace;"><b>' + fmtNum(Math.round(porTanque * 1000) / 1000) + ' ' + escapeHtml(un) + '</b></td>' + (c.resto ? '<td style="text-align:right; padding:2px 0 2px 14px; font-family:\'JetBrains Mono\', monospace;">' + fmtNum(Math.round(porTanque * c.resto / tanque * 1000) / 1000) + ' ' + escapeHtml(un) + '</td>' : '') + '</tr>';
+        });
+        h += '</tbody></table>';
+      } else h += '<div style="color:var(--ink-soft);">Escolha os produtos e as doses acima para ver a quantidade por tanque.</div>';
+    } else h += '<div style="color:var(--ink-soft);">Escolha a lavoura ou o talhão acima para calcular quantos tanques.</div>';
+    box.innerHTML = h + '</div>';
+  }
   function areaAplicadaRascunho(r){
     if(r.lavouraId){
       return safrasDaLavoura(r.lavouraId).filter(function(sf){ return !r.marcadas || r.marcadas.indexOf(sf.id) !== -1; })
@@ -4776,6 +4826,7 @@
   function renderDiarioDinamico(){
     var cont = document.getElementById('diario-dinamico');
     if(!cont || !diarioRascunho) return;
+    setTimeout(atualizarCalcTanque, 0);
     var r = diarioRascunho;
     var estiloSel = 'width:100%; padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;';
     var estiloNum = 'width:100%; padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;';
@@ -4903,6 +4954,8 @@
       html += '<div style="grid-column:1/-1; font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin:8px 0 -4px;">📋 Dados do receituário (opcional)</div>';
       html += field('text', 'alvo', 'Alvo (praga, doença ou planta daninha)', false, 'Ex: Ferrugem, buva', {}, editingRecord ? editingRecord.alvo : undefined);
       html += field('number', 'volumeCalda', 'Volume de calda (L/ha)', false, '0', {step:'1', min:'0'}, editingRecord ? editingRecord.volumeCalda : undefined);
+      html += '<div class="field" id="campo-tanque"><label for="f-tanqueLitros">Tamanho do tanque (L)</label><input type="number" id="f-tanqueLitros" name="tanqueLitros" step="1" min="0" placeholder="Ex: 2000" value="' + (editingRecord ? (editingRecord.tanqueLitros || '') : (ultimoTanqueUsado() || '')) + '"></div>';
+      html += '<div id="tanque-calc" style="grid-column:1/-1;"></div>';
       html += field('text', 'receituario', 'Nº do receituário agronômico', false, '', {}, editingRecord ? editingRecord.receituario : undefined);
       html += field('text', 'responsavelTecnico', 'Responsável técnico (agrônomo)', false, '', {}, editingRecord ? editingRecord.responsavelTecnico : undefined);
       html += '<label style="grid-column:1/-1; display:flex; align-items:center; gap:6px; font-size:12.5px;"><input type="checkbox" name="custear"' + (editingRecord && editingRecord.custear === false ? '' : ' checked') + '> Somar o custo dos produtos na safra <span style="font-size:11px; color:var(--ink-soft);">(desmarque se a compra desses produtos já foi lançada direto na lavoura, pra não contar duas vezes)</span></label>';
@@ -6263,17 +6316,22 @@
     h += '<tr><th>Cultura / lavoura</th><td>' + (sf0 ? escapeHtml(lavouraLabel(sf0.lavouraId)) : '—') + '</td><th>Área total tratada</th><td>' + fmtHa(areaT) + ' (' + fmtNum(areaT / alq) + ' alq)</td></tr>';
     h += '<tr><th>Talhões</th><td colspan="3">' + escapeHtml(aps.map(function(a){ return talhaoNome(a.talhaoId) + ' (' + fmtHa(a.area) + ')'; }).join(', ') || '—') + '</td></tr>';
     h += '<tr><th>Alvo (praga / doença / planta daninha)</th><td>' + escapeHtml(o.alvo || '—') + '</td><th>Volume de calda</th><td>' + (o.volumeCalda ? fmtNum(o.volumeCalda) + ' L/ha · total ' + fmtNum(o.volumeCalda * areaT) + ' L' : '—') + '</td></tr>';
+    var tanqueR = Number(o.tanqueLitros) || 0, calcR = calculoTanque(areaT, Number(o.volumeCalda) || 0, tanqueR);
+    if(tanqueR) h += '<tr><th>Tanque do pulverizador</th><td>' + fmtNum(tanqueR) + ' L' + (o.volumeCalda ? ' · cobre ' + fmtNum(Math.round(tanqueR / o.volumeCalda * 100) / 100) + ' ha' : '') + '</td><th>Nº de tanques</th><td>' + (calcR ? '<b>' + fmtNum(Math.round(calcR.tanques * 10) / 10) + '</b> (' + textoTanques(calcR, tanqueR) + ')' : '—') + '</td></tr>';
     h += '<tr><th>Receituário agronômico nº</th><td>' + escapeHtml(o.receituario || '—') + '</td><th>Responsável técnico</th><td>' + escapeHtml(o.responsavelTecnico || '—') + '</td></tr>';
     h += '<tr><th>Aplicador / responsável</th><td>' + (o.responsavelId ? escapeHtml(membroNome(o.responsavelId)) : (o.parceiroId ? escapeHtml(parceiroNome(o.parceiroId)) : '—')) + '</td><th>Equipamento</th><td>' + escapeHtml((o.maquinas || []).map(function(m){ return nomePatrimonio(m.patrimonioId) + (m.horas ? ' (' + fmtNum(m.horas) + ' h)' : ''); }).join(', ') || '—') + '</td></tr>';
     h += '</tbody></table>';
-    h += '<h2>Produtos e doses</h2><table><thead><tr><th>Produto</th><th class="num">Dose / ha</th><th class="num">Dose / alqueire</th><th class="num">Dose informada</th><th class="num">Quantidade total</th><th class="num">Por tanque de 100 L</th></tr></thead><tbody>';
+    h += '<h2>Produtos e doses</h2><table><thead><tr><th>Produto</th><th class="num">Dose / ha</th><th class="num">Dose / alqueire</th><th class="num">Dose informada</th><th class="num">Quantidade total</th><th class="num">Por tanque de ' + fmtNum(Number(o.tanqueLitros) || 100) + ' L</th>' + (calcR && calcR.resto ? '<th class="num">No último tanque (' + fmtNum(Math.round(calcR.resto)) + ' L)</th>' : '') + '</tr></thead><tbody>';
     produtosDaOperacao(o).forEach(function(pp){
       var un = unidadeProduto(pp.produtoId) || pp.unidade || '';
       var doseHa = Number(pp.dose) || (areaT > 0 ? (Number(pp.quantidade) || 0) / areaT : 0);
       var di = pp.doseInformada;
       h += '<tr><td>' + escapeHtml(produtoNome(pp.produtoId)) + '</td><td class="num">' + (doseHa ? fmtNum(Math.round(doseHa * 1000) / 1000) + ' ' + escapeHtml(un) : '—') + '</td><td class="num">' + (doseHa ? fmtNum(Math.round(doseHa * alq * 1000) / 1000) + ' ' + escapeHtml(un) : '—') + '</td>';
       h += '<td class="num">' + (di ? fmtNum(di.valor) + ' ' + escapeHtml(di.unidade) + '/' + (di.por === 'alq' ? 'alq' : 'ha') : '—') + '</td><td class="num"><b>' + fmtNum(pp.quantidade) + ' ' + escapeHtml(un) + '</b>' + (descreverEmEmbalagens(pp.produtoId, pp.quantidade) ? '<br><span class="nota">' + escapeHtml(descreverEmEmbalagens(pp.produtoId, pp.quantidade)) + '</span>' : '') + '</td>';
-      h += '<td class="num">' + (o.volumeCalda && doseHa ? fmtNum(Math.round(doseHa / o.volumeCalda * 100 * 1000) / 1000) + ' ' + escapeHtml(un) : '—') + '</td></tr>';
+      var tqR = Number(o.tanqueLitros) || 100;
+      h += '<td class="num">' + (o.volumeCalda && doseHa ? '<b>' + fmtNum(Math.round(doseHa / o.volumeCalda * tqR * 1000) / 1000) + ' ' + escapeHtml(un) + '</b>' : '—') + '</td>';
+      if(calcR && calcR.resto) h += '<td class="num">' + (o.volumeCalda && doseHa ? fmtNum(Math.round(doseHa / o.volumeCalda * calcR.resto * 1000) / 1000) + ' ' + escapeHtml(un) : '—') + '</td>';
+      h += '</tr>';
     });
     h += '</tbody></table>';
     if(o.observacao) h += '<h2>Observações</h2><p>' + escapeHtml(o.observacao) + '</p>';
@@ -7592,7 +7650,11 @@
     switchTab(btn.dataset.tab);
   });
 
+  document.addEventListener('input', function(e){
+    if(e.target && e.target.closest && e.target.closest('#form-operacao') && (e.target.name === 'tanqueLitros' || e.target.name === 'volumeCalda')) atualizarCalcTanque();
+  });
   document.addEventListener('change', function(e){
+    if(e.target && e.target.name === 'tipo' && e.target.closest && e.target.closest('#form-operacao')) atualizarCalcTanque();
     if(e.target && e.target.type === 'number' && e.target.closest && e.target.closest('#diario-dinamico') && diarioRascunho){
       lerRascunhoDiarioDoDom(); renderDiarioDinamico(); return;
     }
@@ -8644,7 +8706,7 @@
         // campos antigos, mantidos para telas e exportações que ainda os usam
         talhaoId: aplicacoesOp.length ? aplicacoesOp[0].talhaoId : '', safraId: sf1 ? sf1.safraId : '',
         produtoId: produtosOp.length ? produtosOp[0].produtoId : '', quantidade: produtosOp.length ? produtosOp[0].quantidade : 0, unidade: produtosOp.length ? produtosOp[0].unidade : '',
-        alvo: (data.get('alvo') || '').trim(), volumeCalda: parseFloat(data.get('volumeCalda')) || 0,
+        alvo: (data.get('alvo') || '').trim(), volumeCalda: parseFloat(data.get('volumeCalda')) || 0, tanqueLitros: parseFloat(data.get('tanqueLitros')) || 0,
         receituario: (data.get('receituario') || '').trim(), responsavelTecnico: (data.get('responsavelTecnico') || '').trim(),
         custear: !!form.querySelector('input[name="custear"]:checked'),
         parceiroId: data.get('parceiroId') || '', responsavelId: data.get('responsavelId') || '',
