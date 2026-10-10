@@ -379,6 +379,7 @@
       <div class="nav-group-label" data-group="safra">Safra</div>
       <button class="nav-btn" data-tab="safras">Lavouras e Safras</button>
       <button class="nav-btn" data-tab="operacoes">Diário de Campo</button>
+      <button class="nav-btn" data-tab="chuvas">Chuvas</button>
       <button class="nav-btn" data-tab="producao">Colheita e Vendas</button>
       <button class="nav-btn" data-tab="vendasAntecipadas">Venda Antecipada</button>
       <div class="nav-group-label" data-group="financeiro">Financeiro</div>
@@ -405,7 +406,6 @@
       <button class="nav-btn" data-tab="equipe">Funcionários</button>
       <button class="nav-btn" data-tab="patrimonio">Máquinas e Patrimônio</button>
       <div class="nav-group-label" data-group="ferramentas">Ferramentas</div>
-      <button class="nav-btn" data-tab="agro50">AGRO5.0</button>
       <button class="nav-btn" data-tab="configuracoes">Configurações</button>
       <button class="nav-btn" data-tab="ajuda">❓ Ajuda</button>
     </nav>
@@ -458,6 +458,7 @@
     <section id="tab-indicadores" class="tab-content hidden"></section>
     <section id="tab-configuracoes" class="tab-content hidden"></section>
     <section id="tab-agro50" class="tab-content hidden"></section>
+    <section id="tab-chuvas" class="tab-content hidden"></section>
   </main>
 </div>
 
@@ -467,7 +468,7 @@
 (function(){
   "use strict";
 
-  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas','sefazNotasPendentes','sefazItensRevisao','sefazProgresso','analisesSolo','imagensCampo','importsAplicados','lavouras','sefazResumos','ajustesEstoque','configUnidades'];
+  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas','sefazNotasPendentes','sefazItensRevisao','sefazProgresso','analisesSolo','imagensCampo','importsAplicados','lavouras','sefazResumos','ajustesEstoque','configUnidades','alertasLidos'];
   var state = {};
   var editState = null; // {scope:'generic', entityKey, id} ou {scope:'talhoes'|'safras'|'operacoes'|'financeiro'|'producao', id}
   ALL_KEYS.forEach(function(k){ state[k] = []; });
@@ -500,6 +501,7 @@
     indicadores: {title:'Indicadores', subtitle:'Gráficos, dashboards e exportação para Excel e PDF'},
     configuracoes: {title:'Configurações', subtitle:'Backup, certificado digital e troca de propriedade'},
     ajuda: {title:'Ajuda', subtitle:'Manual de uso: passo a passo e explicação de cada tela'},
+    chuvas: {title:'Chuvas', subtitle:'Pluviometria e análise hídrica das propriedades'},
     agro50: {title:'AGRO5.0', subtitle:'Espaço para incorporar novas tecnologias e indicadores ao sistema, conforme sua realidade'}
   };
 
@@ -1483,7 +1485,7 @@
       } else faixa.style.display = 'none';
     }
     // papel "campo": só Diário de Campo, Produtos (estoque) e Ajuda
-    var permitidasCampo = ['operacoes', 'produtos', 'ajuda', 'configuracoes'];
+    var permitidasCampo = ['operacoes', 'chuvas', 'produtos', 'ajuda', 'configuracoes'];
     document.querySelectorAll('#nav .nav-btn').forEach(function(b){ b.style.display = (pa === 'campo' && permitidasCampo.indexOf(b.dataset.tab) === -1) ? 'none' : ''; });
     document.querySelectorAll('#nav .nav-group-label').forEach(function(l){ l.style.visibility = pa === 'campo' ? 'hidden' : ''; });
     if(pa === 'campo') switchTab('operacoes');
@@ -1979,7 +1981,7 @@
     html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 16px;">Gerado em ' + fmtDate(new Date().toISOString().slice(0,10)) + '</p>';
     html += '<div style="margin-bottom:14px;"><strong>Talhão:</strong> ' + escapeHtml(t.nome) + ' (' + fmtHa(t.area) + ')</div>';
     if(!analise){
-      html += '<div class="empty-state">Esse talhão ainda não tem uma análise de solo com CTC e Saturação por Bases (V%) registrada — não dá pra calcular a recomendação sem esses dois valores. Cadastre uma análise em AGRO5.0 → Análise de Solo primeiro.</div>';
+      html += '<div class="empty-state">Esse talhão ainda não tem uma análise de solo com CTC e Saturação por Bases (V%) registrada — não dá pra calcular a recomendação sem esses dois valores. Cadastre uma análise na aba Talhões, em Análise de Solo (mais abaixo na página), primeiro.</div>';
     } else {
       html += '<div style="font-size:13px; margin-bottom:14px; padding:10px; background:var(--paper-2); border-radius:6px;">';
       html += 'Análise usada: <strong>' + fmtDate(analise.dataColeta) + '</strong><br>';
@@ -2378,7 +2380,7 @@
     parceiros: {t:'Parceiros', txt:'Fornecedores, clientes, prestadores e bancos.'},
     equipe: {t:'Funcionários', txt:'Equipe da propriedade; aparece como responsável no Diário e nos lançamentos de mão de obra.'},
     patrimonio: {t:'Máquinas e Patrimônio', txt:'Máquinas, veículos e benfeitorias com valor, ano e vida útil (depreciação). Custos lançados com destino "Máquina" + horas do Diário e da Colheita dão o custo/hora real de cada máquina. Sem custo lançado, vale o "Custo/hora de referência" do cadastro. "⏱️ Horímetro" guarda as leituras: o total de horas passa a ser o do horímetro, e as horas não registradas no Diário vão para o rateio geral.'},
-    agro50: {t:'AGRO5.0', txt:'Chuva (pluviometria), análise hídrica, análises de solo, imagens de campo, alertas e rastreabilidade.'},
+    chuvas: {t:'Chuvas', txt:'Lance a leitura do pluviômetro sempre que chover: o total do mês e do ano, os dias sem chuva e o mapa anual são calculados sozinhos. Em "Análise hídrica" você vê veranicos e compara a chuva com a média da região.'},
     configuracoes: {t:'Configurações', txt:'Sua conta (nome, senha, termos e exclusão da conta), backup completo (baixar e restaurar), certificado digital para a SEFAZ, troca de propriedade e <b>Compartilhar esta propriedade</b>: dê acesso a outra pessoa que já tem conta, escolhendo se ela pode editar tudo, só lançar no Diário de Campo ou só visualizar. O administrador vê também <b>Usuários e convites</b>: gerar convite, desativar conta e criar senha provisória para quem esqueceu.'}
   };
   function renderAjuda(){
@@ -2439,7 +2441,7 @@
     safeRender('financiamentos', renderFinanciamentos);
     safeRender('ajuda', renderAjuda);
     safeRender('servicosPrestados', renderServicosPrestados);
-    safeRender('agro50', renderAgro50);
+    safeRender('chuvas', renderChuvas);
     safeRender('rentabilidade', renderRentabilidade);
     safeRender('fluxoCaixa', renderFluxoCaixa);
     safeRender('contaCorrente', renderContaCorrente);
@@ -2508,14 +2510,128 @@
     add(resumos.length, '🧾', 'nota(s) da SEFAZ só com resumo — dar ciência e baixar', 'compras', 'sefaz');
     return itens;
   }
+  function alertasInteligentesLista(){
+    var alertasInteligentes = [];
+    state.safras.forEach(function(s){
+      if(s.status !== 'andamento' && s.status !== 'colhida') return;
+      var prodReal = produtividadeRealSafra(s.id);
+      var hist = historicoTalhao(s.talhaoId, s.id);
+      if(prodReal !== null && hist.mediaProdutividade !== null && hist.qtdSafras >= 1 && prodReal < hist.mediaProdutividade * 0.85){
+        alertasInteligentes.push({tab:'rentabilidade', chave:'prod:' + s.id, nivel: Math.round((1 - prodReal / hist.mediaProdutividade) * 100),
+          cor: '#A23E2E',
+          texto: 'Produtividade de <strong>' + escapeHtml(safraLabel(s.id)) + '</strong> está ' + Math.round((1 - prodReal / hist.mediaProdutividade) * 100) + '% abaixo da média histórica desse talhão (' + fmtNum(prodReal) + ' vs ' + fmtNum(hist.mediaProdutividade) + ' sc/ha).'
+        });
+      }
+      var areaAlerta = areaPlantadaSafra(s);
+      if(areaAlerta > 0 && hist.mediaCustoHa !== null && hist.qtdSafras >= 1 && qtdLancamentosSafra(s.id) > 0){
+        var custoHaAtual = custoDiretoSafra(s.id) / areaAlerta;
+        if(custoHaAtual > hist.mediaCustoHa * 1.15){
+          alertasInteligentes.push({tab:'rentabilidade', chave:'custo:' + s.id, nivel: Math.round((custoHaAtual / hist.mediaCustoHa - 1) * 100),
+            cor: '#C98A2B',
+            texto: 'Custo/ha de <strong>' + escapeHtml(safraLabel(s.id)) + '</strong> está ' + Math.round((custoHaAtual / hist.mediaCustoHa - 1) * 100) + '% acima da média histórica desse talhão (' + fmtBRL(custoHaAtual) + ' vs ' + fmtBRL(hist.mediaCustoHa) + ').'
+          });
+        }
+      }
+    });
+    state.producao.filter(function(p){ return p.tipo === 'saida' && Number(p.precoUnitario) > 0; }).forEach(function(p){
+      var safraVenda = state.safras.find(function(s){ return s.id === p.safraId; });
+      if(!safraVenda) return;
+      var cot = state.cotacoes.find(function(c){ return c.culturaId === safraVenda.culturaId; });
+      if(cot && cot.preco > 0 && Number(p.precoUnitario) < cot.preco * 0.9){
+        alertasInteligentes.push({tab:'producao', chave:'venda:' + p.id, nivel: Math.round((1 - Number(p.precoUnitario) / cot.preco) * 100),
+          cor: '#8B8368',
+          texto: 'Venda de <strong>' + escapeHtml(safraVenda.id ? safraLabel(safraVenda.id) : '') + '</strong> em ' + fmtDate(p.data) + ' foi feita a ' + fmtBRL(p.precoUnitario) + ', abaixo da última cotação registrada (' + fmtBRL(cot.preco) + ').'
+        });
+      }
+    });
+    if(typeof CLIMATOLOGIA_INMET_ABATIA !== 'undefined'){
+      var propClimatologia = state.propriedades.find(function(p){ return p.nome.trim().toLowerCase() === CLIMATOLOGIA_ABATIA_PROPRIEDADE_NOME; });
+      if(propClimatologia){
+        var hojeClima = new Date();
+        var mesAtualClima = hojeClima.getMonth() + 1;
+        var anoAtualClima = hojeClima.getFullYear();
+        var chuvaMesAtualClima = state.chuvas.filter(function(c){
+          return c.propriedadeId === propClimatologia.id && (c.data||'').slice(0,7) === (anoAtualClima + '-' + String(mesAtualClima).padStart(2,'0'));
+        }).reduce(function(s,c){ return s + (Number(c.mm)||0); }, 0);
+        var mediaClimatologica = CLIMATOLOGIA_INMET_ABATIA[mesAtualClima];
+        if(mediaClimatologica && chuvaMesAtualClima > 0){
+          var pctClima = chuvaMesAtualClima / mediaClimatologica * 100;
+          if(pctClima < 60){
+            alertasInteligentes.push({tab:'chuvas', chave:'chuva-baixa:' + propClimatologia.id + ':' + anoAtualClima + '-' + mesAtualClima, nivel: Math.round(100 - pctClima),
+              cor: '#A23E2E',
+              texto: 'Chuva de ' + MESES[mesAtualClima-1] + ' em <strong>' + escapeHtml(propClimatologia.nome) + '</strong> está ' + Math.round(100 - pctClima) + '% abaixo da média histórica oficial (INMET) pra esse mês (' + fmtNum(chuvaMesAtualClima) + 'mm vs ' + fmtNum(mediaClimatologica) + 'mm esperados).'
+            });
+          } else if(pctClima > 150){
+            alertasInteligentes.push({tab:'chuvas', chave:'chuva-alta:' + propClimatologia.id + ':' + anoAtualClima + '-' + mesAtualClima, nivel: Math.round(pctClima - 100),
+              cor: '#3B6EA5',
+              texto: 'Chuva de ' + MESES[mesAtualClima-1] + ' em <strong>' + escapeHtml(propClimatologia.nome) + '</strong> está ' + Math.round(pctClima - 100) + '% acima da média histórica oficial (INMET) pra esse mês (' + fmtNum(chuvaMesAtualClima) + 'mm vs ' + fmtNum(mediaClimatologica) + 'mm esperados).'
+            });
+          }
+        }
+      }
+    }
+    return alertasInteligentes;
+  }
+  // Alerta marcado como lido só volta se piorar mais de 20 pontos (%) desde que foi marcado
+  var ALERTA_VOLTA_SE_PIORAR = 20;
+  function alertaJaLido(al){
+    var l = (state.alertasLidos || []).find(function(x){ return x.chave === al.chave; });
+    return !!(l && (Number(al.nivel) || 0) <= (Number(l.nivel) || 0) + ALERTA_VOLTA_SE_PIORAR);
+  }
+  function marcarAlertasLidos(lista){
+    if(!Array.isArray(state.alertasLidos)) state.alertasLidos = [];
+    var hoje = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10);
+    lista.forEach(function(al){
+      state.alertasLidos = state.alertasLidos.filter(function(x){ return x.chave !== al.chave; });
+      state.alertasLidos.push({chave: al.chave, nivel: Number(al.nivel) || 0, texto: al.texto, cor: al.cor, tab: al.tab, lidoEm: hoje});
+    });
+    if(state.alertasLidos.length > 200) state.alertasLidos = state.alertasLidos.slice(-200);
+    saveKey('alertasLidos', state.alertasLidos);
+  }
   function painelPendenciasHtml(){
     var itens = listaPendencias();
-    if(!itens.length) return '<div class="paper" style="padding:12px 18px; margin-bottom:18px; font-size:13px; color:var(--growth-dark, #4E6B3F);">✅ Nenhuma pendência — tudo em dia.</div>';
-    var h = '<div class="paper" style="padding:14px 18px; margin-bottom:18px;"><div style="font-weight:600; margin-bottom:8px;">📋 Pendências (' + itens.length + ')</div>';
+    var alertasP = []; try{ alertasP = alertasInteligentesLista(); }catch(e){ alertasP = []; }
+    var novos = alertasP.filter(function(al){ return !alertaJaLido(al); });
+    var lidos = (state.alertasLidos || []).slice().sort(function(a, b){ return (b.lidoEm || '').localeCompare(a.lidoEm || ''); });
+    var podeMarcar = typeof podeGravarChave !== 'function' || podeGravarChave('alertasLidos');
+    var estBtnPeq = 'font-family:inherit; font-size:11.5px; padding:4px 10px; border-radius:4px; border:1px solid var(--paper-line); background:var(--paper); color:var(--ink); cursor:pointer; white-space:nowrap;';
+    var linkLidos = function(){
+      if(!lidos.length) return '';
+      var r = '<div style="margin-top:6px;"><button type="button" data-action="toggle-alertas-lidos" style="font-family:inherit; font-size:12px; background:none; border:none; padding:2px 0; color:var(--ink-soft); text-decoration:underline; cursor:pointer;">' + (dashAlertasLidosAbertos ? 'Ocultar alertas lidos' : 'Ver alertas lidos (' + lidos.length + ')') + '</button></div>';
+      if(dashAlertasLidosAbertos){
+        r += '<div style="margin:4px 0 0 18px;">';
+        lidos.forEach(function(l){
+          r += '<div style="display:flex; gap:10px; align-items:center; font-size:12px; padding:5px 10px; margin:0 0 4px; border:1px solid var(--paper-line); border-left:4px solid ' + (l.cor || '#8B8368') + '; border-radius:4px; background:var(--paper-2); color:var(--ink-soft);">';
+          r += '<span style="flex:1;">' + l.texto + ' <span style="font-size:11px;">· lido em ' + fmtDate(l.lidoEm) + '</span></span>';
+          if(podeMarcar) r += '<button type="button" data-action="alerta-mostrar" data-chave="' + escapeHtml(l.chave) + '" style="' + estBtnPeq + '">Mostrar de novo</button>';
+          r += '</div>';
+        });
+        r += '</div>';
+      }
+      return r;
+    };
+    if(!itens.length && !novos.length) return '<div class="paper" style="padding:12px 18px; margin-bottom:18px; font-size:13px;"><span style="color:var(--growth-dark, #4E6B3F);">✅ Nenhuma pendência — tudo em dia.</span>' + linkLidos() + '</div>';
+    var h = '<div class="paper" style="padding:14px 18px; margin-bottom:18px;"><div style="font-weight:600; margin-bottom:8px;">📋 Pendências (' + (itens.length + (novos.length ? 1 : 0)) + ')</div>';
     itens.sort(function(a, b){ return (b.grave ? 1 : 0) - (a.grave ? 1 : 0); }).forEach(function(it){
       h += '<button type="button" data-action="ir-pendencia" data-tab="' + it.tab + '" data-filtro="' + it.filtro + '" style="display:flex; gap:10px; align-items:center; width:100%; text-align:left; font-family:inherit; font-size:13px; padding:7px 10px; margin:0 0 4px; border:1px solid var(--paper-line); border-left:4px solid ' + (it.grave ? 'var(--cost-dark, #A23E2E)' : '#DFA84E') + '; border-radius:4px; background:var(--paper); color:var(--ink); cursor:pointer;">';
       h += '<span>' + it.icone + '</span><span><strong>' + it.qtd + '</strong> ' + escapeHtml(it.texto) + '</span><span style="margin-left:auto; color:var(--ink-soft);">abrir →</span></button>';
     });
+    if(novos.length){
+      h += '<button type="button" data-action="toggle-dash-alertas" style="display:flex; gap:10px; align-items:center; width:100%; text-align:left; font-family:inherit; font-size:13px; padding:7px 10px; margin:0 0 5px; border:1px solid var(--paper-line); border-left:4px solid #8B8368; border-radius:4px; background:var(--paper); color:var(--ink); cursor:pointer;">';
+      h += '<span>⚠️</span><span><strong>' + novos.length + '</strong> alerta(s) novo(s): safra com custo/ha ou produtividade fora da média do talhão, venda abaixo da cotação, chuva fora do normal</span><span style="margin-left:auto; color:var(--ink-soft); white-space:nowrap;">' + (dashAlertasAbertos ? 'fechar ▲' : 'ver ▼') + '</span></button>';
+      if(dashAlertasAbertos){
+        h += '<div style="margin:0 0 6px 18px;">';
+        novos.forEach(function(al){
+          h += '<div style="display:flex; gap:8px; align-items:center; margin:0 0 4px; padding:5px 6px 5px 10px; border:1px solid var(--paper-line); border-left:4px solid ' + al.cor + '; border-radius:4px; background:var(--paper-2);">';
+          h += '<button type="button" data-action="ir-pendencia" data-tab="' + (al.tab || 'painel') + '" data-filtro="" style="flex:1; text-align:left; font-family:inherit; font-size:12.5px; border:none; background:none; color:var(--ink); cursor:pointer; padding:0;">' + al.texto + ' <span style="color:var(--ink-soft); white-space:nowrap;">abrir →</span></button>';
+          if(podeMarcar) h += '<button type="button" data-action="alerta-lido" data-chave="' + escapeHtml(al.chave) + '" style="' + estBtnPeq + '" title="Não mostrar mais (volta só se piorar)">✓ Lido</button>';
+          h += '</div>';
+        });
+        if(podeMarcar && novos.length > 1) h += '<button type="button" data-action="alertas-todos-lidos" style="' + estBtnPeq + ' margin-top:2px;">✓ Marcar todos como lidos</button>';
+        h += '<p style="font-size:11px; color:var(--ink-soft); margin:6px 0 0;">Compara a safra atual com a média das safras anteriores do mesmo talhão e as vendas com a última cotação salva. Não é previsão: é um sinal para conferir. Um alerta marcado como lido só volta se piorar mais de ' + ALERTA_VOLTA_SE_PIORAR + ' pontos.</p></div>';
+      }
+    }
+    h += linkLidos();
     return h + '</div>';
   }
   function renderPainel(){
@@ -4154,8 +4270,9 @@
       html += '</tbody></table></div>';
     }
     html += '</div>';
-    if(soloRecomOrigem === 'talhoes' && soloRecomId) html += recomendacoesSoloHtml();
+    if(soloRecomId) html += recomendacoesSoloHtml();
     html += recomendacoesPendentesFazendaHtml();
+    html += '<div id="secao-analise-solo" style="margin-top:26px;">' + htmlSecaoAgro('solo') + '</div>';
     el.innerHTML = html;
   }
 
@@ -4166,11 +4283,13 @@
   var financeiroStatusFiltro = 'todos'; // 'todos' | 'pendentes' | 'pagos'
   var dashboardMaisDetalhesAberto = false;
   var dashPagandoChave = null;
+  var dashAlertasAbertos = false;
+  var dashAlertasLidosAbertos = false;
   var agro50SecaoAtiva = null;
   var genericAvancadoAberto = {};
   var soloTalhaoFiltro = '';
-  var soloRecomId = null, soloRecomRascunho = null, soloRecomOrigem = 'agro50', soloRecomAutoPreenchido = false;
-  function rerenderRecomSolo(){ if(soloRecomOrigem === 'talhoes') renderTalhoes(); else renderAgro50(); }
+  var soloRecomId = null, soloRecomRascunho = null, soloRecomOrigem = 'talhoes', soloRecomAutoPreenchido = false;
+  function rerenderRecomSolo(){ renderTalhoes(); }
   function recomendacoesDoTalhao(talhaoId){
     var lista = [];
     state.analisesSolo.filter(function(a){ return a.talhaoId === talhaoId; }).forEach(function(a){ (a.recomendacoes || []).forEach(function(r, i){ lista.push({analise: a, rec: r, idx: i}); }); });
@@ -4416,7 +4535,7 @@
         html += '<td>' + (s.previsaoColheita ? fmtDate(s.previsaoColheita) : '—') + '</td>';
         html += '<td><span class="badge status-' + s.status + '">' + STATUS_LABEL[s.status] + '</span></td>';
         html += '<td><span class="badge" style="background:' + (ativa ? '#7FA36D' : '#8B8368') + '; color:#fff;">' + (ativa ? 'Ativa' : 'Inativa') + '</span></td>';
-        html += '<td><button class="btn-edit" data-action="edit-safra" data-id="' + s.id + '">Editar</button><button class="btn-edit" data-action="toggle-ativa-safra" data-id="' + s.id + '">' + (ativa ? 'Inativar' : 'Ativar') + '</button><button class="btn-del" data-action="del-safra" data-id="' + s.id + '">Remover</button></td>';
+        html += '<td><button class="btn-edit" data-action="abrir-rastreabilidade" data-id="' + s.id + '" title="Tudo o que foi feito nesta safra">🔗 Rastreabilidade</button><button class="btn-edit" data-action="edit-safra" data-id="' + s.id + '">Editar</button><button class="btn-edit" data-action="toggle-ativa-safra" data-id="' + s.id + '">' + (ativa ? 'Inativar' : 'Ativar') + '</button><button class="btn-del" data-action="del-safra" data-id="' + s.id + '">Remover</button></td>';
         html += '</tr>';
       });
       html += '</tbody></table></div>';
@@ -4424,6 +4543,7 @@
       }
     }
     html += '</div>';
+    html += '<div id="secao-rastreabilidade" style="margin-top:26px;">' + htmlSecaoAgro('rastreabilidade') + '</div>';
     el.innerHTML = html;
   }
 
@@ -5584,35 +5704,28 @@
       state.analisesSolo = analisesFiltradas.slice().sort(function(a,b){ return (b.dataColeta||'').localeCompare(a.dataColeta||''); });
       html += buildGenericTableHtml('analisesSolo');
       state.analisesSolo = originalList;
-      html += recomendacoesSoloHtml();
     }
     html += '<div class="paper note-box">Faixas de referência variam bastante por cultura, região e método do laboratório — não existe um "valor ideal" único. A seta de tendência compara a Saturação por Bases (V%) da análise mais recente com a anterior do mesmo talhão — não é diagnóstico, só um indicativo visual rápido. Use o histórico por talhão pra acompanhar a evolução ao longo do tempo, e compare com a recomendação do seu agrônomo pra cada cultura específica.</div>';
     return html;
   }
 
+  // A antiga aba AGRO5.0 foi dividida: Chuvas (aba própria), Análise de Solo (Talhões), Alertas (Dashboard) e Rastreabilidade (Lavouras e Safras).
   function renderAgro50(){
-    var el = document.getElementById('tab-agro50');
-    var html = '<div class="paper note-box">Esse espaço é pra ir incorporando, aos poucos, tecnologias e indicadores novos ao sistema — sempre focado no que faz sentido pra sua realidade, sem depender de comprar hardware.</div>';
-
-    var abasAgro50 = [
-      {chave: 'pluviometria', label: 'Pluviometria', icone: '🌧️'},
-      {chave: 'hidrica', label: 'Análise Hídrica', icone: '💧'},
-      {chave: 'solo', label: 'Análise de Solo', icone: '🌱'},
-      {chave: 'imagens', label: 'Imagens de Campo', icone: '🛰️'},
-      {chave: 'alertas', label: 'Alertas Inteligentes', icone: '⚠️'},
-      {chave: 'rastreabilidade', label: 'Rastreabilidade', icone: '🔗'}
-    ];
-    if(!agro50SecaoAtiva) agro50SecaoAtiva = 'pluviometria';
-    html += '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:10px; margin-bottom:20px;">';
-    abasAgro50.forEach(function(a){
-      var ativa = agro50SecaoAtiva === a.chave;
-      html += '<button type="button" class="paper" data-action="abrir-secao-agro50" data-secao="' + a.chave + '" style="padding:13px; text-align:center; cursor:pointer; border:2px solid ' + (ativa ? 'var(--accent)' : 'var(--paper-line)') + '; background:' + (ativa ? 'var(--paper-2)' : 'var(--paper)') + '; font-family:inherit;">';
-      html += '<div style="font-size:19px; margin-bottom:4px;">' + a.icone + '</div>';
-      html += '<div style="font-size:12.5px; font-weight:600; color:var(--ink);">' + a.label + '</div>';
-      html += '</button>';
-    });
-    html += '</div>';
-
+    if(abaAtual === 'chuvas') renderChuvas();
+    else if(abaAtual === 'talhoes') renderTalhoes();
+    else if(abaAtual === 'safras') renderSafras();
+    else if(abaAtual === 'painel') renderPainel();
+    else renderAll();
+  }
+  var chuvasSecao = 'pluviometria';
+  function renderChuvas(){
+    var el = document.getElementById('tab-chuvas'); if(!el) return;
+    var html = filtroChipsHtml('chuvas-secao', chuvasSecao, {pluviometria:'🌧️ Chuvas registradas', hidrica:'💧 Análise hídrica'});
+    html += htmlSecaoAgro(chuvasSecao);
+    el.innerHTML = html;
+  }
+  function htmlSecaoAgro(agro50SecaoAtiva){
+    var html = '';
     if(agro50SecaoAtiva === 'pluviometria'){
     html += '<div class="section-title" style="margin-top:0;">Pluviometria</div>';
 
@@ -5766,65 +5879,7 @@
 
     if(agro50SecaoAtiva === 'alertas'){
     html += '<div class="section-title" style="margin-top:0;">Alertas Inteligentes</div>';
-    var alertasInteligentes = [];
-    state.safras.forEach(function(s){
-      if(s.status !== 'andamento' && s.status !== 'colhida') return;
-      var prodReal = produtividadeRealSafra(s.id);
-      var hist = historicoTalhao(s.talhaoId, s.id);
-      if(prodReal !== null && hist.mediaProdutividade !== null && hist.qtdSafras >= 1 && prodReal < hist.mediaProdutividade * 0.85){
-        alertasInteligentes.push({
-          cor: '#A23E2E',
-          texto: 'Produtividade de <strong>' + escapeHtml(safraLabel(s.id)) + '</strong> está ' + Math.round((1 - prodReal / hist.mediaProdutividade) * 100) + '% abaixo da média histórica desse talhão (' + fmtNum(prodReal) + ' vs ' + fmtNum(hist.mediaProdutividade) + ' sc/ha).'
-        });
-      }
-      var areaAlerta = areaPlantadaSafra(s);
-      if(areaAlerta > 0 && hist.mediaCustoHa !== null && hist.qtdSafras >= 1 && qtdLancamentosSafra(s.id) > 0){
-        var custoHaAtual = custoDiretoSafra(s.id) / areaAlerta;
-        if(custoHaAtual > hist.mediaCustoHa * 1.15){
-          alertasInteligentes.push({
-            cor: '#C98A2B',
-            texto: 'Custo/ha de <strong>' + escapeHtml(safraLabel(s.id)) + '</strong> está ' + Math.round((custoHaAtual / hist.mediaCustoHa - 1) * 100) + '% acima da média histórica desse talhão (' + fmtBRL(custoHaAtual) + ' vs ' + fmtBRL(hist.mediaCustoHa) + ').'
-          });
-        }
-      }
-    });
-    state.producao.filter(function(p){ return p.tipo === 'saida' && Number(p.precoUnitario) > 0; }).forEach(function(p){
-      var safraVenda = state.safras.find(function(s){ return s.id === p.safraId; });
-      if(!safraVenda) return;
-      var cot = state.cotacoes.find(function(c){ return c.culturaId === safraVenda.culturaId; });
-      if(cot && cot.preco > 0 && Number(p.precoUnitario) < cot.preco * 0.9){
-        alertasInteligentes.push({
-          cor: '#8B8368',
-          texto: 'Venda de <strong>' + escapeHtml(safraVenda.id ? safraLabel(safraVenda.id) : '') + '</strong> em ' + fmtDate(p.data) + ' foi feita a ' + fmtBRL(p.precoUnitario) + ', abaixo da última cotação registrada (' + fmtBRL(cot.preco) + ').'
-        });
-      }
-    });
-    if(typeof CLIMATOLOGIA_INMET_ABATIA !== 'undefined'){
-      var propClimatologia = state.propriedades.find(function(p){ return p.nome.trim().toLowerCase() === CLIMATOLOGIA_ABATIA_PROPRIEDADE_NOME; });
-      if(propClimatologia){
-        var hojeClima = new Date();
-        var mesAtualClima = hojeClima.getMonth() + 1;
-        var anoAtualClima = hojeClima.getFullYear();
-        var chuvaMesAtualClima = state.chuvas.filter(function(c){
-          return c.propriedadeId === propClimatologia.id && (c.data||'').slice(0,7) === (anoAtualClima + '-' + String(mesAtualClima).padStart(2,'0'));
-        }).reduce(function(s,c){ return s + (Number(c.mm)||0); }, 0);
-        var mediaClimatologica = CLIMATOLOGIA_INMET_ABATIA[mesAtualClima];
-        if(mediaClimatologica && chuvaMesAtualClima > 0){
-          var pctClima = chuvaMesAtualClima / mediaClimatologica * 100;
-          if(pctClima < 60){
-            alertasInteligentes.push({
-              cor: '#A23E2E',
-              texto: 'Chuva de ' + MESES[mesAtualClima-1] + ' em <strong>' + escapeHtml(propClimatologia.nome) + '</strong> está ' + Math.round(100 - pctClima) + '% abaixo da média histórica oficial (INMET) pra esse mês (' + fmtNum(chuvaMesAtualClima) + 'mm vs ' + fmtNum(mediaClimatologica) + 'mm esperados).'
-            });
-          } else if(pctClima > 150){
-            alertasInteligentes.push({
-              cor: '#3B6EA5',
-              texto: 'Chuva de ' + MESES[mesAtualClima-1] + ' em <strong>' + escapeHtml(propClimatologia.nome) + '</strong> está ' + Math.round(pctClima - 100) + '% acima da média histórica oficial (INMET) pra esse mês (' + fmtNum(chuvaMesAtualClima) + 'mm vs ' + fmtNum(mediaClimatologica) + 'mm esperados).'
-            });
-          }
-        }
-      }
-    }
+    var alertasInteligentes = alertasInteligentesLista();
     if(!alertasInteligentes.length){
       html += '<div class="paper empty-state">Nenhum alerta no momento — ou ainda não há histórico suficiente pra comparar (precisa de pelo menos 2 safras no mesmo talhão, ou uma cotação salva no Dashboard).</div>';
     } else {
@@ -5926,7 +5981,7 @@
     }
     } // fim da secao rastreabilidade
 
-    el.innerHTML = html;
+    return html;
   }
 
   /* ---------------- Funcionários (equipe) ---------------- */
@@ -9565,9 +9620,9 @@
     if(action === 'edit-talhao'){ editState = {scope:'talhoes', id: id}; renderAll(); var f2 = document.getElementById('form-talhao'); if(f2) f2.scrollIntoView({behavior:'smooth', block:'start'}); return; }
     if(action === 'ver-perfil-solo'){
       soloTalhaoFiltro = id;
-      agro50SecaoAtiva = 'solo';
-      switchTab('agro50');
+      switchTab('talhoes');
       renderAll();
+      var secSolo = document.getElementById('secao-analise-solo'); if(secSolo) secSolo.scrollIntoView({behavior:'smooth', block:'start'});
       return;
     }
     if(action === 'abrir-calagem'){
@@ -9586,7 +9641,7 @@
       window.print();
       return;
     }
-    if(action === 'abrir-recom-solo'){ soloRecomOrigem = 'agro50'; soloRecomId = soloRecomId === id ? null : id; soloRecomRascunho = null; renderAgro50(); var rcEl = document.querySelector('[data-action="fechar-recom-solo"]'); if(rcEl) rcEl.scrollIntoView({behavior:'smooth', block:'center'}); return; }
+    if(action === 'abrir-recom-solo'){ soloRecomOrigem = 'talhoes'; soloRecomId = soloRecomId === id ? null : id; soloRecomRascunho = null; renderTalhoes(); var rcEl = document.querySelector('[data-action="fechar-recom-solo"]'); if(rcEl) rcEl.scrollIntoView({behavior:'smooth', block:'center'}); return; }
     if(action === 'abrir-recom-talhao'){ soloRecomOrigem = 'talhoes'; soloRecomId = id; soloRecomRascunho = null; renderTalhoes(); var rtEl = document.querySelector('[data-action="fechar-recom-solo"]'); if(rtEl) rtEl.scrollIntoView({behavior:'smooth', block:'center'}); return; }
     if(action === 'recom-marcar-aplicada'){
       var aAp = state.analisesSolo.find(function(x){ return x.id === id; }); if(!aAp || !aAp.recomendacoes) return;
@@ -9598,7 +9653,7 @@
       var comRecT = recomendacoesDoTalhao(id);
       var pendRecT = comRecT.find(function(x){ return x.rec.status !== 'Aplicada'; }) || comRecT[0];
       var anT = pendRecT ? pendRecT.analise : ultimaAnaliseSoloDoTalhao(id);
-      if(!anT){ alert('Esse talhão ainda não tem análise de solo. Cadastre a análise em AGRO5.0 → Análise de Solo; as recomendações ficam ligadas a ela.'); return; }
+      if(!anT){ alert('Esse talhão ainda não tem análise de solo. Cadastre a análise na aba Talhões, em Análise de Solo (mais abaixo na página); as recomendações ficam ligadas a ela.'); return; }
       soloRecomOrigem = 'talhoes'; soloRecomId = anT.id; soloRecomRascunho = null; renderTalhoes(); var rnEl = document.querySelector('[data-action="fechar-recom-solo"]'); if(rnEl) rnEl.scrollIntoView({behavior:'smooth', block:'center'}); return;
     }
     if(action === 'calagem-salvar-recom'){
@@ -9946,6 +10001,24 @@
       renderPainel();
       return;
     }
+    if(action === 'abrir-rastreabilidade'){
+      rastreabilidadeSafraId = id; renderSafras();
+      var secR = document.getElementById('secao-rastreabilidade'); if(secR) secR.scrollIntoView({behavior:'smooth', block:'start'});
+      return;
+    }
+    if(action === 'alerta-lido' || action === 'alertas-todos-lidos'){
+      var ativosAl = alertasInteligentesLista().filter(function(al){ return !alertaJaLido(al); });
+      var marcarAl = action === 'alertas-todos-lidos' ? ativosAl : ativosAl.filter(function(al){ return al.chave === btn.dataset.chave; });
+      if(marcarAl.length) marcarAlertasLidos(marcarAl);
+      renderPainel(); return;
+    }
+    if(action === 'alerta-mostrar'){
+      state.alertasLidos = (state.alertasLidos || []).filter(function(x){ return x.chave !== btn.dataset.chave; });
+      saveKey('alertasLidos', state.alertasLidos); dashAlertasAbertos = true; renderPainel(); return;
+    }
+    if(action === 'toggle-alertas-lidos'){ dashAlertasLidosAbertos = !dashAlertasLidosAbertos; renderPainel(); return; }
+    if(action === 'toggle-dash-alertas'){ dashAlertasAbertos = !dashAlertasAbertos; renderPainel(); return; }
+    if(action === 'chuvas-secao'){ chuvasSecao = btn.dataset.filtro || 'pluviometria'; renderChuvas(); return; }
     if(action === 'abrir-secao-agro50'){
       agro50SecaoAtiva = btn.dataset.secao;
       renderAgro50();
