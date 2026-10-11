@@ -1824,6 +1824,21 @@
           marcarImportAplicado('fix-duplicata-parceiros-v1');
         })();
         (function(){
+          // Carência por cultura dos defensivos já cadastrados (dados das bulas — out/2026). Só preenche o que estiver vazio.
+          if(importJaAplicado('carencias-bula-v1')) return;
+          if(typeof podeGravarChave === 'function' && !podeGravarChave('produtos')) return;
+          var IDS = ['06827f34-e472-4630-9d9d-9fefef5c215b','ec572450-16f6-4466-a94b-819ec3108afb','8436f4f6-1886-4afa-8d29-b8f9a5fdf91a','09314710-9fc9-4bda-9f5d-9cb1473584f5','92527bbf-acf2-4a1c-ac4d-69c0ff4d2345','ef29ce0c-a64c-4207-991f-69d0326a7fe6','99386a4b-6039-4c5e-a2b3-e4ce43d249bd','09007dbb-afbd-46b9-b66e-06e2e8245c42','a219ebd1-ee1c-4970-aaa7-c51d2e739238','4a7ecf20-55d0-4be7-a538-b2c39075215b'];
+          var mudou = false;
+          state.produtos.forEach(function(p){
+            if(IDS.indexOf(p.id) === -1) return;
+            if(p.carencias && Object.keys(p.carencias).length) return;
+            var b = bulaCarenciaDoNome(p.nome); if(!b) return;
+            p.carencias = Object.assign({}, b.car); p.carenciaObs = b.obs; p.carenciaFonte = b.fonte; mudou = true;
+          });
+          if(mudou) saveKey('produtos', state.produtos);
+          marcarImportAplicado('carencias-bula-v1');
+        })();
+        (function(){
           // Correção pontual: Cletodim da NF 1015 lançado duas vezes (6 BD × R$ 630 = 120 L × R$ 31,50); fica só o do produto atual
           if(importJaAplicado('fix-cletodim-nf1015-v1')) return;
           if(typeof podeGravarChave === 'function' && !podeGravarChave('financeiro')) return;
@@ -3364,7 +3379,7 @@
       html += field('number', 'estoqueAtual', 'Estoque inicial', false, '0', {step:'0.001', min:'0'});
     }
     html += field('number', 'estoqueMinimo', 'Estoque mínimo', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.estoqueMinimo : undefined);
-    html += field('number', 'carenciaDias', 'Carência (dias) — defensivos', false, 'Ex: 30 (veja a bula)', {step:'1', min:'0'}, editingRecord && editingRecord.carenciaDias !== undefined ? editingRecord.carenciaDias : undefined);
+    html += camposCarenciaHtml(editingRecord);
     var cmCompras = editingRecord ? custoMedioComprasProduto(editingRecord.id) : 0;
     html += field('number', 'custoManual', 'Custo por ' + (editingRecord ? unidadeControle(editingRecord) || 'unidade' : 'unidade') + ' (R$) — opcional', false, cmCompras > 0 ? 'Compras: ' + cmCompras.toFixed(2) : '0,00', {step:'0.0001', min:'0'}, editingRecord && Number(editingRecord.custoManual) > 0 ? editingRecord.custoManual : undefined);
     html += '<p style="grid-column:1/-1; font-size:11px; color:var(--ink-soft); margin:-6px 0 0;">Deixe em branco para usar o custo médio das compras' + (cmCompras > 0 ? ' (hoje ' + fmtBRL(cmCompras) + ' por ' + escapeHtml(unidadeControle(editingRecord)) + ')' : '') + '. Preenchido, esse valor passa a valer para o custo das aplicações no Diário de Campo — as já lançadas são recalculadas ao salvar.</p>';
@@ -4302,6 +4317,7 @@
 
   /* ---------------- Safras ---------------- */
   var safrasAnoFiltro = '';
+  var safrasOcultarInativas = false; try{ safrasOcultarInativas = localStorage.getItem('agro-ocultar-safras-inativas') === '1'; }catch(e){}
   var financeiroMesFiltro = '';
   var financeiroSoSemSafra = false;
   var financeiroStatusFiltro = 'todos'; // 'todos' | 'pendentes' | 'pagos'
@@ -4541,10 +4557,12 @@
         html += '</select></div>';
       }
       html += '<input type="text" id="search-safras" placeholder="Buscar..." style="flex:1; min-width:180px; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;">';
+      var qtdInativas = state.safras.filter(function(s){ return s.ativa === false && (!safrasAnoFiltro || normalizarAnoAgricola(s.anoAgricola) === normalizarAnoAgricola(safrasAnoFiltro)); }).length;
+      if(qtdInativas || safrasOcultarInativas) html += '<button type="button" data-action="toggle-safras-inativas" style="font-family:inherit; font-size:12.5px; padding:7px 12px; border-radius:4px; cursor:pointer; border:1px solid ' + (safrasOcultarInativas ? 'var(--accent)' : 'var(--paper-line)') + '; background:' + (safrasOcultarInativas ? 'var(--accent)' : 'var(--paper)') + '; color:' + (safrasOcultarInativas ? '#fff' : 'var(--ink)') + ';">' + (safrasOcultarInativas ? '👁️ Mostrar inativas (' + qtdInativas + ')' : '🙈 Esconder inativas (' + qtdInativas + ')') + '</button>';
       html += '</div>';
-      var safrasFiltradas = state.safras.filter(function(s){ return !safrasAnoFiltro || normalizarAnoAgricola(s.anoAgricola) === normalizarAnoAgricola(safrasAnoFiltro); });
+      var safrasFiltradas = state.safras.filter(function(s){ return (!safrasAnoFiltro || normalizarAnoAgricola(s.anoAgricola) === normalizarAnoAgricola(safrasAnoFiltro)) && !(safrasOcultarInativas && s.ativa === false); });
       if(!safrasFiltradas.length){
-        html += '<div class="empty-state">Nenhuma safra no ano agrícola "' + escapeHtml(safrasAnoFiltro) + '".</div>';
+        html += '<div class="empty-state">' + (safrasOcultarInativas ? 'Nenhuma safra ativa' + (safrasAnoFiltro ? ' no ano agrícola "' + escapeHtml(safrasAnoFiltro) + '"' : '') + ' (as inativas estão escondidas).' : 'Nenhuma safra no ano agrícola "' + escapeHtml(safrasAnoFiltro) + '".') + '</div>';
       } else {
       html += '<div class="table-wrap"><table><thead><tr><th>Talhão</th><th>Cultura</th><th>Área plantada</th><th>Plantio</th><th>Ano agrícola</th><th>Produtiv. esperada</th><th>Previsão colheita</th><th>Status</th><th>Ativa</th><th></th></tr></thead><tbody>';
       safrasFiltradas.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(s){
@@ -7960,6 +7978,82 @@
     return false;
   }
   document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && mapaEd && mapaEd.gpsWatch === null) fecharMapa(); });
+  /* ---------------- Carência (intervalo de segurança) por cultura ----------------
+     produto.carencias = {'Soja': 56, 'Milho': 'ND', 'Café': 'NR'}  — número = dias; ND = não determinado (uso antes do plantio /
+     modalidade de emprego); NR = produto não registrado para a cultura. produto.carenciaDias (antigo) vale para todas. */
+  var BULAS_CARENCIA = [
+    {re: /DUAL\s*GOLD/i, car: {'Café': 65, 'Soja': 70, 'Milho': 'ND', 'Trigo': 80, 'Aveia': 80}, obs: 'S-metolacloro. Soja: 70 dias em pós-emergência (em pré-emergência não determinado). Trigo/aveia: 80 dias em pós (pré: não determinado).', fonte: 'Bula Dual Gold — ADAPAR, 2026'},
+    {re: /PRIORI\s*TOP/i, car: {'Café': 30, 'Soja': 30, 'Milho': 42, 'Trigo': 30}, obs: 'Azoxistrobina + difenoconazol.', fonte: 'Bula Priori Top — Revista Cultivar'},
+    {re: /DIFERE/i, car: {'Café': 0, 'Soja': 0}, obs: 'Oxicloreto de cobre: intervalo de segurança "sem restrições" na bula do Difere. Confira se a bula do Difere SC traz o mesmo.', fonte: 'Bula Difere / Levero / Wall — ADAPAR, 2026'},
+    {re: /ALTO\s*100/i, car: {'Café': 30, 'Trigo': 30}, obs: 'Ciproconazol. Café: 30 dias em aplicação foliar; 90 dias se aplicado no solo (drench).', fonte: 'Bula Alto 100 — Revista Cultivar'},
+    {re: /ZAPP/i, car: {'Café': 15, 'Soja': 56, 'Milho': 90, 'Trigo': 'ND'}, obs: 'Glifosato. Soja: 56 dias na soja RR/IPRO (convencional: não determinado). Milho: 90 dias no milho RR em pós-emergência (convencional / dessecação: não determinado).', fonte: 'Bula Zapp QI 620 — Revista Cultivar'},
+    {re: /STINGER/i, car: {'Café': 15, 'Soja': 56, 'Milho': 'ND', 'Trigo': 'ND'}, obs: 'Glifosato 720 WG. Soja: 56 dias na soja tolerante ao glifosato (RR/IPRO) em pós; convencional: não determinado.', fonte: 'Bula Stinger WG — ADAPAR, 2026'},
+    {re: /\bHEAT\b/i, car: {'Soja': 7, 'Café': 1, 'Milho': 'ND', 'Trigo': 95, 'Aveia': 'ND'}, obs: 'Saflufenacil. Milho e aveia: só pré-plantio (não estabelecido). Trigo: 95 dias em pós (pré: não estabelecido).', fonte: 'Bula Heat — ADAPAR, 2026'},
+    {re: /VIANCE/i, car: {'Soja': 60, 'Café': 20, 'Milho': 'ND', 'Trigo': 'ND'}, obs: 'Cletodim 240 EC. Soja: 60 dias com 1 aplicação; 97 dias com 3 aplicações. Milho e trigo: só pré-plantio.', fonte: 'Bula Viance — Revista Cultivar'},
+    {re: /REATOR\s*360/i, car: {'Soja': 100, 'Milho': 'NR', 'Café': 'NR'}, obs: 'Clomazona. Soja: 100 dias (pré ou pós-emergência). Não registrado para milho e café.', fonte: 'Bula Reator 360 CS — Revista Cultivar'},
+    {re: /ELEVORE/i, car: {'Soja': 'ND', 'Milho': 'ND', 'Café': 'NR', 'Trigo': 'NR'}, obs: 'Halauxifen-metil, dessecação antes do plantio: carência não determinada. Plantar a soja 30 dias após a aplicação (milho: pode plantar logo).', fonte: 'Bula Elevore — Revista Cultivar'}
+  ];
+  function bulaCarenciaDoNome(nome){ return BULAS_CARENCIA.find(function(b){ return b.re.test(nome || ''); }) || null; }
+  function semAcento(s){ return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim(); }
+  // devolve {tipo:'dias', dias} | {tipo:'ND'} | {tipo:'NR'} | null
+  function carenciaDoProduto(p, culturaNome){
+    if(!p) return null;
+    var cs = p.carencias || {}, alvo = semAcento(culturaNome), v;
+    Object.keys(cs).forEach(function(k){ if(semAcento(k) === alvo) v = cs[k]; });
+    if(v === undefined || v === '' || v === null){
+      if(p.carenciaDias !== undefined && p.carenciaDias !== '' && p.carenciaDias !== null) return {tipo: 'dias', dias: Number(p.carenciaDias) || 0};
+      return null;
+    }
+    if(v === 'ND' || v === 'NR') return {tipo: v};
+    return {tipo: 'dias', dias: Number(v) || 0};
+  }
+  function textoCarencia(c){ if(!c) return ''; return c.tipo === 'dias' ? (c.dias === 0 ? 'sem restrição' : c.dias + ' dias') : (c.tipo === 'ND' ? 'não determinada' : 'não registrado'); }
+  function lerCarenciaDigitada(txt){
+    txt = String(txt || '').trim().toUpperCase();
+    if(!txt) return '';
+    if(/^N\.?D\.?$|^NAO DET|^NÃO DET/.test(txt)) return 'ND';
+    if(/^N\.?R\.?$|^NAO REG|^NÃO REG/.test(txt)) return 'NR';
+    var n = parseInt(txt.replace(/[^0-9]/g, ''), 10);
+    return isFinite(n) ? n : '';
+  }
+  function camposCarenciaHtml(produto){
+    var cs = (produto && produto.carencias) || {}, bula = bulaCarenciaDoNome(produto ? produto.nome : '');
+    var valor = function(nome){ var v; Object.keys(cs).forEach(function(k){ if(semAcento(k) === semAcento(nome)) v = cs[k]; }); if((v === undefined || v === '') && produto && produto.carenciaDias !== undefined && produto.carenciaDias !== '' && produto.carenciaDias !== null) v = produto.carenciaDias; return v === undefined ? '' : v; };
+    var h = '<div style="grid-column:1/-1; border-top:1px dashed var(--paper-line); padding-top:8px;">';
+    h += '<div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:6px;"><span style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em;">⏳ Carência (dias entre a aplicação e a colheita) — defensivos</span>';
+    h += '<button type="button" class="btn-edit" data-action="carencia-usar-bula" title="Preenche com os dados da bula que o sistema conhece"' + (bula ? '' : ' style="display:none;"') + ' id="btn-carencia-bula">📖 Usar dados da bula</button></div>';
+    h += '<div id="campos-carencia" style="display:flex; flex-wrap:wrap; gap:8px;">';
+    var nomes = state.culturas.map(function(c){ return c.nome; });
+    Object.keys(cs).forEach(function(k){ if(!nomes.some(function(n){ return semAcento(n) === semAcento(k); })) nomes.push(k); });
+    nomes.forEach(function(n){
+      h += '<label style="display:flex; flex-direction:column; font-size:11.5px; color:var(--ink-soft); gap:2px;">' + escapeHtml(n) + '<input type="text" data-carencia-cultura="' + escapeHtml(n) + '" value="' + escapeHtml(valor(n)) + '" placeholder="dias, ND ou NR" style="width:110px; padding:6px 8px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;"></label>';
+    });
+    h += '</div>';
+    h += '<input type="hidden" name="carenciaObs" value="' + escapeHtml(produto && produto.carenciaObs || '') + '"><input type="hidden" name="carenciaFonte" value="' + escapeHtml(produto && produto.carenciaFonte || '') + '">';
+    h += '<p id="carencia-obs-txt" style="font-size:11px; color:var(--ink-soft); margin:6px 0 0;">' + (produto && produto.carenciaObs ? escapeHtml(produto.carenciaObs) + (produto.carenciaFonte ? ' <i>(' + escapeHtml(produto.carenciaFonte) + ')</i>' : '') + '<br>' : '') + 'Número = dias · <b>ND</b> = não determinada (uso antes do plantio) · <b>NR</b> = não registrado para a cultura · vazio = não sei. Sempre confira na bula do produto.</p>';
+    return h + '</div>';
+  }
+  function lerCarenciasDoForm(form){
+    var cs = {};
+    form.querySelectorAll('[data-carencia-cultura]').forEach(function(inp){ var v = lerCarenciaDigitada(inp.value); if(v !== '') cs[inp.dataset.carenciaCultura] = v; });
+    return cs;
+  }
+  function aplicarBulaNoForm(){
+    var form = document.getElementById('form-produto'); if(!form) return;
+    var bula = bulaCarenciaDoNome((form.querySelector('[name="nome"]') || {}).value);
+    if(!bula){ alert('Não tenho os dados da bula deste produto. Preencha olhando a bula (item "Intervalo de segurança").'); return; }
+    var cont = document.getElementById('campos-carencia');
+    Object.keys(bula.car).forEach(function(cul){
+      var inp = Array.prototype.find.call(form.querySelectorAll('[data-carencia-cultura]'), function(i){ return semAcento(i.dataset.carenciaCultura) === semAcento(cul); });
+      if(!inp){ var lb = document.createElement('label'); lb.style.cssText = 'display:flex; flex-direction:column; font-size:11.5px; color:var(--ink-soft); gap:2px;'; lb.textContent = cul; inp = document.createElement('input'); inp.type = 'text'; inp.dataset.carenciaCultura = cul; inp.style.cssText = 'width:110px; padding:6px 8px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;'; lb.appendChild(inp); cont.appendChild(lb); }
+      inp.value = bula.car[cul];
+    });
+    form.querySelector('[name="carenciaObs"]').value = bula.obs; form.querySelector('[name="carenciaFonte"]').value = bula.fonte;
+    document.getElementById('carencia-obs-txt').innerHTML = escapeHtml(bula.obs) + ' <i>(' + escapeHtml(bula.fonte) + ')</i><br>Confira os valores e clique em Salvar.';
+  }
+  document.addEventListener('input', function(e){
+    if(e.target && e.target.name === 'nome' && e.target.closest && e.target.closest('#form-produto')){ var b = document.getElementById('btn-carencia-bula'); if(b) b.style.display = bulaCarenciaDoNome(e.target.value) ? '' : 'none'; }
+  });
   /* ---------------- Dossiê de rastreabilidade (para comprador, certificadora e EUDR) ---------------- */
   var REGEX_DEFENSIVO = /defens|herbic|fungic|insetic|acaric|nemat|bactericida|agrot[oó]x/i;
   function somarDiasISO(iso, dias){ if(!iso) return ''; var d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + (Number(dias) || 0)); return d.toISOString().slice(0, 10); }
@@ -7999,11 +8093,16 @@
       var base = {op: o, data: o.data, tipo: o.tipo, area: area, talhoes: aps.map(function(ap){ return talhaoNome(ap.talhaoId); }).join(', '), safraIds: aps.map(function(ap){ return ap.safraId; })};
       if(!prods.length){ aplicacoes.push(Object.assign({}, base, {produtoId: '', semProduto: true})); return; }
       prods.forEach(function(pp){
-        var p = produtoPorId(pp.produtoId), car = p && p.carenciaDias !== undefined && p.carenciaDias !== '' && p.carenciaDias !== null ? Number(p.carenciaDias) : null;
+        var p = produtoPorId(pp.produtoId);
+        var sfAp = state.safras.find(function(x){ return x.id === base.safraIds[0]; });
+        var cInfo = carenciaDoProduto(p, sfAp ? culturaNome(sfAp.culturaId) : '');
+        var car = cInfo && cInfo.tipo === 'dias' ? cInfo.dias : null;
         var libera = car !== null && o.data ? somarDiasISO(o.data, car) : '';
         var colh = base.safraIds.map(function(id){ return primeiraColheitaPorSafra[id]; }).filter(Boolean).sort()[0] || '';
         var sit = 'na';
         if(car !== null && o.data){ sit = colh ? (colh >= libera ? 'ok' : 'violada') : 'aguardando'; }
+        else if(cInfo && cInfo.tipo === 'ND') sit = 'nd';
+        else if(cInfo && cInfo.tipo === 'NR') sit = 'nr';
         else if(ehDefensivo(pp.produtoId)) sit = 'sem-carencia';
         aplicacoes.push(Object.assign({}, base, {produtoId: pp.produtoId, dose: Number(pp.dose) || 0, qtd: (Number(pp.quantidade) || 0) * (fr || 1), un: unidadeProduto(pp.produtoId) || pp.unidade || '', carencia: car, libera: libera, colheita: colh, situacao: sit, defensivo: ehDefensivo(pp.produtoId)}));
       });
@@ -8022,7 +8121,7 @@
       datas.sort(); primeiroRegistro[t.id] = datas[0] || '';
     });
     return {sfs: sfs, talhoes: talhoes, props: props, colheitas: colheitas, vendas: vendas, aplicacoes: aplicacoes, semContorno: semContorno, semReceituario: semReceituario, primeiroRegistro: primeiroRegistro,
-      violadas: aplicacoes.filter(function(a){ return a.situacao === 'violada'; }), semCarencia: aplicacoes.filter(function(a){ return a.situacao === 'sem-carencia'; })};
+      violadas: aplicacoes.filter(function(a){ return a.situacao === 'violada'; }), semCarencia: aplicacoes.filter(function(a){ return a.situacao === 'sem-carencia'; }), naoRegistrados: aplicacoes.filter(function(a){ return a.situacao === 'nr'; })};
   }
 
   // Desenho simples das áreas (SVG, sem internet)
@@ -8095,11 +8194,11 @@
     else {
       h += '<table><thead><tr><th>Data</th><th>Atividade</th><th>Talhão</th><th>Produto</th><th class="num">Dose/ha</th><th class="num">Quantidade</th><th>Alvo</th><th>Receituário / resp. técnico</th><th>Carência</th></tr></thead><tbody>';
       comProduto.forEach(function(a){
-        var o = a.op, sitTxt = {ok: '✔ respeitada', violada: '<b style="color:#A23E2E;">✖ colheita antes de ' + fmtDate(a.libera) + '</b>', aguardando: 'libera em ' + fmtDate(a.libera), 'sem-carencia': '<span style="color:#A23E2E;">não informada</span>', na: '—'}[a.situacao];
+        var o = a.op, sitTxt = {ok: '✔ respeitada', violada: '<b style="color:#A23E2E;">✖ colheita antes de ' + fmtDate(a.libera) + '</b>', aguardando: 'libera em ' + fmtDate(a.libera), 'sem-carencia': '<span style="color:#A23E2E;">não informada</span>', nd: 'não determinada (uso antes do plantio)', nr: '<b style="color:#A23E2E;">produto não registrado para a cultura</b>', na: '—'}[a.situacao];
         h += '<tr><td>' + fmtDate(a.data) + '</td><td>' + escapeHtml(a.tipo || '') + '</td><td>' + escapeHtml(a.talhoes) + '</td><td>' + escapeHtml(produtoNome(a.produtoId)) + '</td>';
         h += '<td class="num">' + (a.dose ? fmtNum(Math.round(a.dose * 1000) / 1000) + ' ' + escapeHtml(a.un) : '—') + '</td><td class="num">' + fmtNum(Math.round(a.qtd * 1000) / 1000) + ' ' + escapeHtml(a.un) + '</td>';
         h += '<td>' + escapeHtml(o.alvo || '—') + '</td><td>' + escapeHtml([o.receituario ? 'nº ' + o.receituario : '', o.responsavelTecnico].filter(Boolean).join(' · ') || (a.defensivo ? '' : '—')) + (a.defensivo && !String(o.receituario || '').trim() ? (o.responsavelTecnico ? '<br>' : '') + '<b style="color:#A23E2E;">sem receituário</b>' : '') + '</td>';
-        h += '<td>' + (a.carencia !== null && a.carencia !== undefined ? a.carencia + ' dias · ' : '') + sitTxt + '</td></tr>';
+        h += '<td>' + (a.carencia !== null && a.carencia !== undefined ? (a.carencia === 0 ? 'sem restrição · ' : a.carencia + ' dias · ') : '') + sitTxt + '</td></tr>';
       });
       h += '</tbody></table>';
     }
@@ -8127,6 +8226,7 @@
     h += chk(d.props.length && d.props.every(function(p){ return !!p.codigoCAR; }), 'Número do CAR informado', d.props.some(function(p){ return !p.codigoCAR; }) ? 'Informe em Propriedades → Editar.' : '');
     h += chk(!d.semReceituario.length, 'Receituário agronômico em todas as aplicações de defensivos', d.semReceituario.length ? d.semReceituario.length + ' aplicação(ões) sem nº de receituário.' : '');
     h += chk(!d.violadas.length && !d.semCarencia.length, 'Período de carência respeitado antes da colheita', d.violadas.length ? d.violadas.length + ' aplicação(ões) com colheita antes do fim da carência.' : (d.semCarencia.length ? d.semCarencia.length + ' defensivo(s) sem carência cadastrada (Produtos → Editar → Carência).' : ''));
+    if(d.naoRegistrados.length) h += chk(false, 'Produtos registrados para a cultura', d.naoRegistrados.length + ' aplicação(ões) de produto que, pela bula cadastrada, não é registrado para esta cultura: ' + escapeHtml(d.naoRegistrados.map(function(a){ return produtoNome(a.produtoId); }).filter(function(v, i, arr){ return arr.indexOf(v) === i; }).join(', ')) + '. Confira com o agrônomo.');
     h += chk(d.colheitas.length > 0 ? true : (naoColhida ? 'pend' : false), 'Colheita registrada', naoColhida ? 'Safra ainda não colhida.' : (d.colheitas.length ? '' : 'Safra marcada como colhida, mas sem registro na aba Colheita.'));
     h += chk(d.vendas.length > 0 ? true : 'pend', 'Destino da produção registrado', d.vendas.length ? '' : 'Ainda sem saída / venda registrada.');
     h += '</tbody></table>';
@@ -9314,8 +9414,9 @@
         estoqueAtual: parseFloat(data.get('estoqueAtual')) || 0, estoqueMinimo: parseFloat(data.get('estoqueMinimo')) || 0
       };
       prodFields.custoManual = parseFloat(data.get('custoManual')) || 0;
-      var carTxt = String(data.get('carenciaDias') || '').trim();
-      prodFields.carenciaDias = carTxt === '' ? '' : Math.max(0, parseInt(carTxt, 10) || 0);
+      prodFields.carencias = lerCarenciasDoForm(form);
+      prodFields.carenciaObs = data.get('carenciaObs') || ''; prodFields.carenciaFonte = data.get('carenciaFonte') || '';
+      prodFields.carenciaDias = '';
       if(prodEditingId) delete prodFields.estoqueAtual; // estoque só muda por compra, aplicação ou ajuste registrado
       lerEmbalagensDoDom();
       prodFields.embalagens = (produtoEmbRascunho ? produtoEmbRascunho.itens : []).map(function(e){ return {nome: String(e.nome || '').trim(), conteudo: parseFloat(e.conteudo) || 0}; }).filter(function(e){ return e.nome && e.conteudo > 0; });
@@ -9978,6 +10079,7 @@
     var id = btn.dataset.id;
     if(action.indexOf('mapa-') === 0 && acaoMapa(action, btn)) return;
     if(action.indexOf('dossie-') === 0){ acaoDossie(action, btn); return; }
+    if(action === 'carencia-usar-bula'){ aplicarBulaNoForm(); return; }
     if(action === 'abrir-mapa-talhao'){ abrirMapa({modo:'editar', talhaoId: id}); return; }
     if(action === 'abrir-mapa-fazenda'){ abrirMapa({modo:'visao'}); return; }
 
@@ -10987,6 +11089,7 @@
       renderPainel();
       return;
     }
+    if(action === 'toggle-safras-inativas'){ safrasOcultarInativas = !safrasOcultarInativas; try{ localStorage.setItem('agro-ocultar-safras-inativas', safrasOcultarInativas ? '1' : '0'); }catch(e){} renderSafras(); return; }
     if(action === 'abrir-rastreabilidade'){
       rastreabilidadeSafraId = id; renderSafras();
       var secR = document.getElementById('secao-rastreabilidade'); if(secR) secR.scrollIntoView({behavior:'smooth', block:'start'});
