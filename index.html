@@ -228,6 +228,11 @@
     display:flex; align-items:center; justify-content:center; padding:20px;
   }
   .modal-box{width:100%; max-width:360px; padding:22px;}
+  .mapa-box{width:100%; max-width:1200px; height:calc(100vh - 20px); display:flex; flex-direction:column; padding:12px 14px; overflow:auto;}
+  #mapa-div{flex:1; min-height:260px; border-radius:6px; overflow:hidden; background:#2F3A26;}
+  .mapa-vertice{background:#FFD54A; border:2px solid #1F2410; border-radius:50%; box-shadow:0 0 0 2px rgba(255,255,255,.6); cursor:move;}
+  .leaflet-tooltip.mapa-rotulo{background:rgba(31,36,16,.75); color:#fff; border:none; box-shadow:none; font-size:11.5px; padding:2px 6px;}
+  .leaflet-tooltip.mapa-rotulo::before{display:none;}
   .modal-cat-row{
     display:flex; align-items:center; justify-content:space-between; gap:8px;
     padding:6px 0; border-bottom:1px solid var(--paper-2); font-size:13.5px;
@@ -291,6 +296,13 @@
       <button type="submit" class="btn">Adicionar</button>
     </form>
     <button type="button" class="btn-cancel" data-action="close-cat-modal" style="margin-top:14px; width:100%;">Fechar</button>
+  </div>
+</div>
+<div id="mapa-overlay" class="modal-overlay" style="display:none; padding:10px;">
+  <div class="paper mapa-box">
+    <div id="mapa-topo"></div>
+    <div id="mapa-div"></div>
+    <div id="mapa-rodape"></div>
   </div>
 </div>
 <div id="calagem-modal-overlay" class="modal-overlay" style="display:none;">
@@ -2376,7 +2388,7 @@
     relatorios: {t:'Relatórios', txt:'Receitas e despesas agrupadas por subgrupo e conta do plano de contas.'},
     indicadores: {t:'Indicadores', txt:'Gráficos e exportação para Excel e PDF.'},
     propriedades: {t:'Propriedades', txt:'Cada imóvel rural com sua área. O nome aparece no cabeçalho dos relatórios impressos.'},
-    talhoes: {t:'Talhões', txt:'As áreas de plantio, com tamanho em hectares (base do rateio e do custo por hectare). Para plantar num talhão, crie a lavoura em Lavouras e Safras. "📋 Recomendações" guarda calagem, fosfatagem, potassagem e gesso recomendados pela análise de solo (ou pelo 🧪 Calagem); embaixo da tabela aparecem as pendentes da fazenda toda, com o total a comprar. "✅ Aplicada" dá baixa — registre a aplicação no Diário de Campo.'},
+    talhoes: {t:'Talhões', txt:'As áreas de plantio, com tamanho em hectares (base do rateio e do custo por hectare). Para plantar num talhão, crie a lavoura em Lavouras e Safras. "📋 Recomendações" guarda calagem, fosfatagem, potassagem e gesso recomendados pela análise de solo (ou pelo 🧪 Calagem); embaixo da tabela aparecem as pendentes da fazenda toda, com o total a comprar. "✅ Aplicada" dá baixa — registre a aplicação no Diário de Campo. No botão <b>🗺️ Desenhar</b> você marca o contorno do talhão no mapa de satélite (clicando nos cantos), pelo GPS do celular (ponto a ponto ou andando pela divisa) ou importando o arquivo do CAR (.zip baixado do SICAR), KML ou KMZ do Google Earth. O sistema mede a área e você escolhe se usa a medida, mantém a cadastrada ou digita outra.'},
     culturas: {t:'Culturas', txt:'Lista de culturas (soja, milho, café…).'},
     produtos: {t:'Produtos e Estoque', txt:'Cada produto tem uma <b>unidade de controle</b> (L, kg, un…) — estoque e custo ficam sempre nela — e <b>embalagens</b> (galão, balde, saco…). O custo vem da média das compras, ou do "custo manual" se você preencher. "⚖️ Ajustar" corrige o estoque com motivo (fica no histórico). "🔁 Unidade" troca a unidade convertendo tudo. "🔗 Juntar produtos duplicados" une dois cadastros do mesmo produto. O painel 📏 Unidades e embalagens define as unidades, embalagens padrão e o tamanho do alqueire.'},
     parceiros: {t:'Parceiros', txt:'Fornecedores, clientes, prestadores e bancos.'},
@@ -4239,6 +4251,8 @@
     if(!state.talhoes.length){
       html += '<div class="empty-state">Nenhum talhão cadastrado ainda.</div>';
     } else {
+      var qtdDesenhados = state.talhoes.filter(function(t){ return t.contorno && t.contorno.length >= 3; }).length;
+      html += '<div style="padding:14px 18px 0; display:flex; justify-content:flex-end;"><button type="button" class="btn-edit" data-action="abrir-mapa-fazenda">🗺️ Ver mapa da fazenda (' + qtdDesenhados + ' de ' + state.talhoes.length + ' desenhados)</button></div>';
       html += '<div style="padding:14px 18px 0;"><input type="text" id="search-talhoes" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;"></div>';
       html += '<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Área</th><th>Propriedade</th><th>Solo</th><th>Cultura anterior</th><th>Safra atual</th><th>Status</th><th>Perfil do Solo</th><th></th></tr></thead><tbody>';
       state.talhoes.forEach(function(t){
@@ -4246,7 +4260,7 @@
         var analiseRecente = ultimaAnaliseSoloDoTalhao(t.id);
         html += '<tr>';
         html += '<td>' + escapeHtml(t.nome) + '</td>';
-        html += '<td class="num">' + fmtHa(t.area) + '</td>';
+        html += '<td class="num">' + fmtHa(t.area) + (t.contorno && t.contorno.length >= 3 ? '<br><span style="font-size:11px; color:var(--ink-soft);" title="Área medida no mapa">🗺️ ' + fmtHa(t.areaMapa || 0) + (t.areaManual ? ' · área informada' : '') + '</span>' : '') + '</td>';
         html += '<td>' + (t.propriedadeId ? escapeHtml(propriedadeNome(t.propriedadeId)) : '—') + '</td>';
         html += '<td>' + (t.tipoSolo ? escapeHtml(t.tipoSolo) : '—') + '</td>';
         html += '<td>' + (t.culturaAnteriorId ? escapeHtml(culturaNome(t.culturaAnteriorId)) : '—') + '</td>';
@@ -4266,7 +4280,7 @@
           html += '<button type="button" class="btn-edit" data-action="ver-perfil-solo" data-id="' + t.id + '" style="margin-top:4px;">Registrar</button>';
         }
         html += '</td>';
-        html += '<td><button class="btn-edit" data-action="edit-talhao" data-id="' + t.id + '">Editar</button><button class="btn-del" data-action="del-talhao" data-id="' + t.id + '">Remover</button></td>';
+        html += '<td style="white-space:nowrap;"><button class="btn-edit" data-action="abrir-mapa-talhao" data-id="' + t.id + '" title="Desenhar no mapa, marcar pelo GPS ou importar do CAR/KML">🗺️ ' + (t.contorno && t.contorno.length >= 3 ? 'Mapa' : 'Desenhar') + '</button><button class="btn-edit" data-action="edit-talhao" data-id="' + t.id + '">Editar</button><button class="btn-del" data-action="del-talhao" data-id="' + t.id + '">Remover</button></td>';
         html += '</tr>';
       });
       html += '</tbody></table></div>';
@@ -7465,6 +7479,473 @@
     if(tipo === 'cat') return tipCategoria(arg);
     return '';
   }
+  /* ---------------- Mapa dos talhões (Leaflet + satélite Esri, sem chave nem cadastro) ----------------
+     Desenhar clicando, marcar pelo GPS do celular ou importar arquivo (CAR/SICAR shapefile em .zip, KML, KMZ, GeoJSON).
+     Cada talhão guarda: contorno [[lat,lng],...], areaMapa (ha medida), contornoOrigem, contornoEm, areaManual (true = área informada à mão). */
+  var MAPA_LIBS = {
+    leafletJs: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js',
+    leafletCss: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css',
+    jszip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
+  };
+  var MAPA_CENTRO_PADRAO = [-23.30, -50.31], MAPA_ZOOM_PADRAO = 14;
+  var _scriptsCarregados = {};
+  function carregarScript(url){
+    if(_scriptsCarregados[url]) return _scriptsCarregados[url];
+    _scriptsCarregados[url] = new Promise(function(res, rej){
+      var s = document.createElement('script'); s.src = url; s.onload = function(){ res(); };
+      s.onerror = function(){ delete _scriptsCarregados[url]; rej(new Error('sem internet ou bloqueado: ' + url)); };
+      document.head.appendChild(s);
+    });
+    return _scriptsCarregados[url];
+  }
+  function carregarCss(url){ if(document.querySelector('link[href="' + url + '"]')) return; var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = url; document.head.appendChild(l); }
+  function carregarLeaflet(){ carregarCss(MAPA_LIBS.leafletCss); return window.L && window.L.map ? Promise.resolve() : carregarScript(MAPA_LIBS.leafletJs); }
+
+  // Área geodésica (m² → ha) e perímetro (m) de um polígono [[lat,lng],...]
+  function areaPoligonoHa(pts){
+    if(!pts || pts.length < 3) return 0;
+    var R = 6378137, rad = Math.PI / 180, s = 0;
+    for(var i = 0; i < pts.length; i++){
+      var p1 = pts[i], p2 = pts[(i + 1) % pts.length];
+      s += (p2[1] - p1[1]) * rad * (2 + Math.sin(p1[0] * rad) + Math.sin(p2[0] * rad));
+    }
+    return Math.abs(s * R * R / 2) / 10000;
+  }
+  function distanciaM(a, b){
+    var R = 6371008.8, rad = Math.PI / 180;
+    var dLat = (b[0] - a[0]) * rad, dLng = (b[1] - a[1]) * rad;
+    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(a[0] * rad) * Math.cos(b[0] * rad) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+  }
+  function perimetroM(pts){ if(!pts || pts.length < 2) return 0; var s = 0; for(var i = 0; i < pts.length; i++) s += distanciaM(pts[i], pts[(i + 1) % pts.length]); return s; }
+
+  // UTM (SIRGAS 2000 / WGS84) → lat/lng, hemisfério sul
+  function utmParaLatLng(x, y, zona, sul){
+    var a = 6378137, f = 1 / 298.257222101, k0 = 0.9996, e2 = f * (2 - f), ep2 = e2 / (1 - e2);
+    x -= 500000; if(sul !== false) y -= 10000000;
+    var M = y / k0, mu = M / (a * (1 - e2 / 4 - 3 * e2 * e2 / 64 - 5 * e2 * e2 * e2 / 256));
+    var e1 = (1 - Math.sqrt(1 - e2)) / (1 + Math.sqrt(1 - e2));
+    var p1 = mu + (3 * e1 / 2 - 27 * Math.pow(e1, 3) / 32) * Math.sin(2 * mu) + (21 * e1 * e1 / 16 - 55 * Math.pow(e1, 4) / 32) * Math.sin(4 * mu) + (151 * Math.pow(e1, 3) / 96) * Math.sin(6 * mu) + (1097 * Math.pow(e1, 4) / 512) * Math.sin(8 * mu);
+    var N1 = a / Math.sqrt(1 - e2 * Math.sin(p1) * Math.sin(p1)), T1 = Math.tan(p1) * Math.tan(p1), C1 = ep2 * Math.cos(p1) * Math.cos(p1);
+    var R1 = a * (1 - e2) / Math.pow(1 - e2 * Math.sin(p1) * Math.sin(p1), 1.5), D = x / (N1 * k0);
+    var lat = p1 - (N1 * Math.tan(p1) / R1) * (D * D / 2 - (5 + 3 * T1 + 10 * C1 - 4 * C1 * C1 - 9 * ep2) * Math.pow(D, 4) / 24 + (61 + 90 * T1 + 298 * C1 + 45 * T1 * T1 - 252 * ep2 - 3 * C1 * C1) * Math.pow(D, 6) / 720);
+    var lng = (D - (1 + 2 * T1 + C1) * Math.pow(D, 3) / 6 + (5 - 2 * C1 + 28 * T1 - 3 * C1 * C1 + 8 * ep2 + 24 * T1 * T1) * Math.pow(D, 5) / 120) / Math.cos(p1);
+    return [lat * 180 / Math.PI, (zona * 6 - 183) + lng * 180 / Math.PI];
+  }
+
+  // ---- leitura de arquivos ----
+  function poligonoDeAneis(aneis){ // aneis: [[ [lat,lng],... ], ...] → maior anel como contorno, demais descontados se estiverem dentro
+    var lista = aneis.filter(function(r){ return r.length >= 3; }).map(function(r){ if(r.length > 3 && r[0][0] === r[r.length - 1][0] && r[0][1] === r[r.length - 1][1]) r = r.slice(0, -1); return {pts: r, area: areaPoligonoHa(r)}; });
+    if(!lista.length) return null;
+    lista.sort(function(a, b){ return b.area - a.area; });
+    var furos = lista.slice(1).reduce(function(s, r){ return s + r.area; }, 0);
+    return {pts: lista[0].pts, area: Math.max(lista[0].area - furos, 0), temFuros: lista.length > 1};
+  }
+  function poligonosDeKml(texto, origemNome){
+    var xml = new DOMParser().parseFromString(texto, 'text/xml'), saida = [];
+    var lerCoords = function(el){ return (el ? el.textContent : '').trim().split(/\s+/).map(function(c){ var p = c.split(','); return [parseFloat(p[1]), parseFloat(p[0])]; }).filter(function(p){ return isFinite(p[0]) && isFinite(p[1]); }); };
+    Array.prototype.forEach.call(xml.getElementsByTagName('Polygon'), function(pg, i){
+      var aneis = [];
+      Array.prototype.forEach.call(pg.getElementsByTagName('outerBoundaryIs'), function(o){ aneis.push(lerCoords(o.getElementsByTagName('coordinates')[0])); });
+      Array.prototype.forEach.call(pg.getElementsByTagName('innerBoundaryIs'), function(o){ aneis.push(lerCoords(o.getElementsByTagName('coordinates')[0])); });
+      var pl = poligonoDeAneis(aneis); if(!pl) return;
+      var pm = pg.parentNode; while(pm && pm.nodeName !== 'Placemark') pm = pm.parentNode;
+      var nm = pm && pm.getElementsByTagName('name')[0] ? pm.getElementsByTagName('name')[0].textContent.trim() : '';
+      saida.push({nome: nm || ((origemNome || 'Área') + ' ' + (i + 1)), pts: pl.pts, area: pl.area});
+    });
+    return saida;
+  }
+  function poligonosDeGeoJson(gj, origemNome){
+    var saida = [], n = 0;
+    var feats = gj.type === 'FeatureCollection' ? gj.features : (gj.type === 'Feature' ? [gj] : [{type:'Feature', geometry: gj, properties:{}}]);
+    feats.forEach(function(ft){
+      var g = ft && ft.geometry; if(!g) return;
+      var polis = g.type === 'Polygon' ? [g.coordinates] : (g.type === 'MultiPolygon' ? g.coordinates : []);
+      polis.forEach(function(rings){
+        var pl = poligonoDeAneis(rings.map(function(r){ return r.map(function(c){ return [c[1], c[0]]; }); })); if(!pl) return;
+        n++; var pr = ft.properties || {};
+        saida.push({nome: pr.name || pr.nome || pr.NOME || ((origemNome || 'Área') + ' ' + n), pts: pl.pts, area: pl.area});
+      });
+    });
+    return saida;
+  }
+  // Shapefile (.shp) de polígonos; prj diz se é UTM. Nomes vêm do arquivo (ex.: AREA_IMOVEL, RESERVA_LEGAL do CAR)
+  function poligonosDeShp(buf, prj, origemNome){
+    var dv = new DataView(buf), saida = [];
+    if(buf.byteLength < 100 || dv.getInt32(0, false) !== 9994) throw new Error('o arquivo .shp não é um shapefile válido');
+    var zona = 0, sul = true;
+    var mz = /UTM[_ ]?zone[_ ]?(\d{1,2})\s*([NS])?/i.exec(prj || '') || /\/ UTM zone (\d{1,2})([NS])/i.exec(prj || '') || /_(\d{2})S["_]/.exec(prj || '');
+    if(mz){ zona = parseInt(mz[1], 10); sul = !mz[2] || mz[2].toUpperCase() === 'S'; }
+    var off = 100, n = 0;
+    while(off + 8 <= buf.byteLength){
+      var lenBytes = dv.getInt32(off + 4, false) * 2, c = off + 8;
+      if(lenBytes < 4 || c + lenBytes > buf.byteLength) break;
+      var tipo = dv.getInt32(c, true);
+      if(tipo === 5 || tipo === 15 || tipo === 25){
+        var nParts = dv.getInt32(c + 36, true), nPts = dv.getInt32(c + 40, true), pBase = c + 44 + 4 * nParts, partes = [];
+        for(var i = 0; i < nParts; i++) partes.push(dv.getInt32(c + 44 + 4 * i, true));
+        partes.push(nPts);
+        var aneis = [];
+        for(var pi = 0; pi < nParts; pi++){
+          var anel = [];
+          for(var k = partes[pi]; k < partes[pi + 1]; k++){
+            var x = dv.getFloat64(pBase + 16 * k, true), y = dv.getFloat64(pBase + 16 * k + 8, true);
+            var utm = zona || Math.abs(x) > 180 || Math.abs(y) > 90;
+            anel.push(utm ? utmParaLatLng(x, y, zona || 22, sul) : [y, x]);
+          }
+          aneis.push(anel);
+        }
+        var pl = poligonoDeAneis(aneis);
+        if(pl){ n++; saida.push({nome: (origemNome || 'Área') + (n > 1 ? ' ' + n : ''), pts: pl.pts, area: pl.area}); }
+      }
+      off = c + lenBytes;
+    }
+    return saida;
+  }
+  function poligonosDeZip(zip, prefixo){
+    var arquivos = Object.keys(zip.files).filter(function(k){ return !zip.files[k].dir; });
+    var tarefas = [];
+    arquivos.forEach(function(k){
+      var kl = k.toLowerCase(), base = k.split('/').pop().replace(/\.[^.]+$/, '');
+      if(kl.slice(-4) === '.shp'){
+        var prjK = arquivos.find(function(o){ return o.toLowerCase() === kl.slice(0, -4) + '.prj'; });
+        tarefas.push(Promise.all([zip.files[k].async('arraybuffer'), prjK ? zip.files[prjK].async('string') : Promise.resolve('')]).then(function(r){ return poligonosDeShp(r[0], r[1], (prefixo && prefixo !== base ? prefixo + ' · ' : '') + base); }));
+      } else if(kl.slice(-4) === '.kml'){
+        tarefas.push(zip.files[k].async('string').then(function(t){ return poligonosDeKml(t, base); }));
+      } else if(kl.slice(-8) === '.geojson' || kl.slice(-5) === '.json'){
+        tarefas.push(zip.files[k].async('string').then(function(t){ try{ return poligonosDeGeoJson(JSON.parse(t), base); }catch(e){ return []; } }));
+      } else if(kl.slice(-4) === '.zip'){ // o CAR vem com um .zip para cada camada
+        tarefas.push(zip.files[k].async('arraybuffer').then(function(b){ return JSZip.loadAsync(b); }).then(function(z2){ return poligonosDeZip(z2, base); }));
+      }
+    });
+    return Promise.all(tarefas).then(function(ls){ return [].concat.apply([], ls); });
+  }
+  function lerArquivoMapa(file){
+    var nome = (file.name || '').toLowerCase(), base = (file.name || 'Área').replace(/\.[^.]+$/, '');
+    var lerTexto = function(){ return file.text ? file.text() : new Response(file).text(); };
+    var lerBuf = function(){ return file.arrayBuffer ? file.arrayBuffer() : new Response(file).arrayBuffer(); };
+    if(/\.kml$/.test(nome)) return lerTexto().then(function(t){ return poligonosDeKml(t, base); });
+    if(/\.(geo)?json$/.test(nome)) return lerTexto().then(function(t){ return poligonosDeGeoJson(JSON.parse(t), base); });
+    if(/\.shp$/.test(nome)) return lerBuf().then(function(b){ return poligonosDeShp(b, '', base); });
+    if(/\.(zip|kmz)$/.test(nome)) return carregarScript(MAPA_LIBS.jszip).then(lerBuf).then(function(b){ return JSZip.loadAsync(b); }).then(function(z){ return poligonosDeZip(z, ''); });
+    return Promise.reject(new Error('formato não reconhecido (use .zip do CAR, .kml, .kmz, .geojson ou .shp)'));
+  }
+
+  // ---- editor ----
+  var mapaEd = null;
+  function corStatusTalhao(t){
+    var sf = safraAtualDoTalhao(t.id);
+    if(!sf) return '#C9C3A4';
+    return sf.status === 'andamento' ? '#DFA84E' : (sf.status === 'colhida' ? '#7FA36D' : '#C9C3A4');
+  }
+  function abrirMapa(opcoes){
+    mapaEd = {modo: opcoes.modo, talhaoId: opcoes.talhaoId || null, pts: [], origem: 'desenho', escolhaArea: 'medida', areaDigitada: '', historico: [], importados: [], gpsWatch: null, gpsInfo: '', mapa: null};
+    if(mapaEd.modo === 'editar'){
+      var t = state.talhoes.find(function(x){ return x.id === opcoes.talhaoId; }); if(!t){ mapaEd = null; return; }
+      mapaEd.pts = (t.contorno || []).map(function(p){ return [p[0], p[1]]; });
+      mapaEd.origem = t.contornoOrigem || 'desenho';
+      mapaEd.escolhaArea = t.contorno && t.areaManual ? 'manter' : 'medida';
+    }
+    document.getElementById('mapa-overlay').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    ajustarOverlayMapa();
+    renderMapaTopo(); renderMapaRodape();
+    document.getElementById('mapa-div').innerHTML = '<div style="padding:30px; text-align:center; color:var(--ink-soft);">Carregando o mapa…</div>';
+    carregarLeaflet().then(iniciarMapa).catch(function(err){
+      document.getElementById('mapa-div').innerHTML = '<div style="padding:30px; text-align:center; color:var(--cost-dark);">Não consegui carregar o mapa (' + escapeHtml(err.message) + '). O mapa precisa de internet.</div>';
+    });
+  }
+  // No celular a página pode ficar mais larga que a tela: prende o mapa na área que está visível
+  function ajustarOverlayMapa(){
+    var ov = document.getElementById('mapa-overlay'); if(!ov || ov.style.display === 'none') return;
+    var vv = window.visualViewport;
+    if(vv && (vv.width < window.innerWidth - 2 || vv.height < window.innerHeight - 2 || window.innerWidth <= 700)){
+      ov.style.inset = 'auto'; ov.style.left = vv.offsetLeft + 'px'; ov.style.top = vv.offsetTop + 'px'; ov.style.width = vv.width + 'px'; ov.style.height = vv.height + 'px'; ov.style.padding = '0';
+      var bx = ov.querySelector('.mapa-box'); if(bx){ bx.style.height = '100%'; bx.style.borderRadius = '0'; bx.style.padding = '8px'; }
+    } else {
+      ov.style.inset = ''; ov.style.left = ''; ov.style.top = ''; ov.style.width = ''; ov.style.height = ''; ov.style.padding = '10px';
+      var bx2 = ov.querySelector('.mapa-box'); if(bx2){ bx2.style.height = ''; bx2.style.borderRadius = ''; bx2.style.padding = ''; }
+    }
+    if(mapaEd && mapaEd.mapa) mapaEd.mapa.invalidateSize();
+  }
+  if(window.visualViewport){ window.visualViewport.addEventListener('resize', ajustarOverlayMapa); window.visualViewport.addEventListener('scroll', ajustarOverlayMapa); }
+  window.addEventListener('resize', ajustarOverlayMapa);
+  function fecharMapa(){
+    var ed = mapaEd; mapaEd = null;
+    document.getElementById('mapa-overlay').style.display = 'none';
+    document.body.style.overflow = '';
+    if(ed){
+      try{ if(ed.gpsWatch !== null && navigator.geolocation) navigator.geolocation.clearWatch(ed.gpsWatch); }catch(e){}
+      try{ if(ed.mapa) ed.mapa.remove(); }catch(e){ console.warn('mapa.remove', e); }
+    }
+    document.getElementById('mapa-div').innerHTML = '';
+  }
+  function iniciarMapa(){
+    if(!mapaEd) return;
+    var div = document.getElementById('mapa-div'); div.innerHTML = '';
+    var m = L.map(div, {zoomControl: true, attributionControl: true});
+    mapaEd.mapa = m;
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom: 20, maxNativeZoom: 19, attribution: 'Imagens © Esri, Maxar, Earthstar Geographics'}).addTo(m);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {maxZoom: 20, maxNativeZoom: 19, opacity: 0.85}).addTo(m);
+    // posiciona o mapa ANTES de pôr os desenhos (o Leaflet precisa da vista definida)
+    var limites0 = [];
+    if(mapaEd.modo === 'editar' && mapaEd.pts.length >= 3) limites0 = mapaEd.pts.slice();
+    else {
+      state.propriedades.forEach(function(pr){ if(pr.contorno && pr.contorno.length >= 3) limites0 = limites0.concat(pr.contorno); });
+      state.talhoes.forEach(function(t){ if(t.contorno && t.contorno.length >= 3) limites0 = limites0.concat(t.contorno); });
+    }
+    if(limites0.length) m.fitBounds(L.latLngBounds(limites0).pad(0.15), {maxZoom: 17, animate: false});
+    else m.setView(MAPA_CENTRO_PADRAO, MAPA_ZOOM_PADRAO, {animate: false});
+    mapaEd.camRef = L.layerGroup().addTo(m);
+    mapaEd.camImport = L.layerGroup().addTo(m);
+    mapaEd.camGps = L.layerGroup().addTo(m);
+    var limites = [];
+    // propriedades com limite (do CAR)
+    state.propriedades.forEach(function(pr){
+      if(!pr.contorno || pr.contorno.length < 3) return;
+      L.polygon(pr.contorno, {color: '#FFE082', weight: 2, dashArray: '6 6', fill: false, interactive: false}).addTo(mapaEd.camRef);
+      limites = limites.concat(pr.contorno);
+    });
+    // talhões
+    state.talhoes.forEach(function(t){
+      if(!t.contorno || t.contorno.length < 3) return;
+      if(mapaEd.modo === 'editar' && t.id === mapaEd.talhaoId) return;
+      var cor = corStatusTalhao(t);
+      var pg = L.polygon(t.contorno, {color: mapaEd.modo === 'visao' ? '#FFFFFF' : '#FFFFFF', weight: mapaEd.modo === 'visao' ? 2 : 1, opacity: mapaEd.modo === 'visao' ? 0.95 : 0.6, fillColor: cor, fillOpacity: mapaEd.modo === 'visao' ? 0.45 : 0.15, dashArray: mapaEd.modo === 'visao' ? null : '4 4', interactive: mapaEd.modo === 'visao'}).addTo(mapaEd.camRef);
+      pg.bindTooltip('<b>' + escapeHtml(t.nome) + '</b><br>' + fmtHa(t.area) + (t.areaMapa && Math.abs(t.areaMapa - t.area) > 0.005 ? ' (mapa ' + fmtHa(t.areaMapa) + ')' : ''), {permanent: mapaEd.modo === 'visao', direction: 'center', className: 'mapa-rotulo'});
+      if(mapaEd.modo === 'visao') pg.on('click', function(){ var id = t.id; fecharMapa(); abrirMapa({modo: 'editar', talhaoId: id}); });
+      limites = limites.concat(t.contorno);
+    });
+    if(mapaEd.modo === 'editar'){
+      mapaEd.poli = L.polygon([], {color: '#FFD54A', weight: 3, fillColor: '#FFD54A', fillOpacity: 0.22}).addTo(m);
+      mapaEd.camVert = L.layerGroup().addTo(m);
+      m.on('click', function(e){ adicionarPontoMapa([e.latlng.lat, e.latlng.lng], false); });
+      if(mapaEd.pts.length >= 3) limites = mapaEd.pts.slice();
+      atualizarDesenhoMapa();
+    }
+    setTimeout(function(){ if(mapaEd && mapaEd.mapa) mapaEd.mapa.invalidateSize(); }, 60);
+  }
+  function distPontoSegmento(P, A, B){
+    var dx = B.x - A.x, dy = B.y - A.y, L2 = dx * dx + dy * dy;
+    var t = L2 ? Math.max(0, Math.min(1, ((P.x - A.x) * dx + (P.y - A.y) * dy) / L2)) : 0;
+    var X = A.x + t * dx, Y = A.y + t * dy;
+    return Math.sqrt((P.x - X) * (P.x - X) + (P.y - Y) * (P.y - Y));
+  }
+  function adicionarPontoMapa(p, emSequencia){
+    var pts = mapaEd.pts, idx = pts.length;
+    if(!emSequencia && pts.length >= 3 && mapaEd.mapa){
+      var m = mapaEd.mapa, P = m.latLngToLayerPoint(p), melhor = Infinity;
+      for(var i = 0; i < pts.length; i++){
+        var d = distPontoSegmento(P, m.latLngToLayerPoint(pts[i]), m.latLngToLayerPoint(pts[(i + 1) % pts.length]));
+        if(d < melhor){ melhor = d; idx = i + 1; }
+      }
+    }
+    pts.splice(idx, 0, p);
+    mapaEd.historico.push({tipo: 'add', idx: idx});
+    if(mapaEd.origem === 'arquivo') mapaEd.origem = 'desenho';
+    atualizarDesenhoMapa();
+  }
+  function atualizarDesenhoMapa(){
+    if(!mapaEd || !mapaEd.poli) { renderMapaRodape(); return; }
+    mapaEd.poli.setLatLngs(mapaEd.pts);
+    mapaEd.camVert.clearLayers();
+    mapaEd.pts.forEach(function(p, i){
+      var mk = L.marker(p, {draggable: true, icon: L.divIcon({className: 'mapa-vertice', iconSize: [16, 16]}), title: 'Arraste para ajustar · clique duas vezes para apagar'});
+      mk.on('drag', function(e){ var ll = e.target.getLatLng(); mapaEd.pts[i] = [ll.lat, ll.lng]; mapaEd.poli.setLatLngs(mapaEd.pts); renderMapaRodape(); });
+      mk.on('dragstart', function(){ mapaEd.historico.push({tipo: 'mover', idx: i, antes: mapaEd.pts[i].slice()}); });
+      mk.on('dragend', function(){ atualizarDesenhoMapa(); });
+      mk.on('dblclick', function(ev){ L.DomEvent.stop(ev); mapaEd.historico.push({tipo: 'apagar', idx: i, antes: mapaEd.pts[i].slice()}); mapaEd.pts.splice(i, 1); atualizarDesenhoMapa(); });
+      mk.addTo(mapaEd.camVert);
+    });
+    renderMapaRodape(); renderMapaTopo();
+  }
+  function desfazerMapa(){
+    var h = mapaEd.historico.pop(); if(!h) return;
+    if(h.tipo === 'add') mapaEd.pts.splice(h.idx, 1);
+    else if(h.tipo === 'mover') mapaEd.pts[h.idx] = h.antes;
+    else if(h.tipo === 'apagar') mapaEd.pts.splice(h.idx, 0, h.antes);
+    else if(h.tipo === 'trocar') mapaEd.pts = h.antes;
+    atualizarDesenhoMapa();
+  }
+  function renderMapaTopo(){
+    var el = document.getElementById('mapa-topo'); if(!el || !mapaEd) return;
+    var estB = 'font-family:inherit; font-size:12.5px; padding:6px 11px; border-radius:4px; border:1px solid var(--paper-line); background:var(--paper); color:var(--ink); cursor:pointer; white-space:nowrap;';
+    var h = '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px;">';
+    if(mapaEd.modo === 'visao'){
+      h += '<div><div style="font-family:\'Zilla Slab\',serif; font-size:19px; font-weight:700;">🗺️ Mapa da fazenda</div><div style="font-size:12px; color:var(--ink-soft);">Amarelo = em andamento · verde = colhida · cinza = planejada/sem safra. Clique num talhão para editar o contorno. Linha tracejada amarela = limite da propriedade (CAR).</div></div>';
+    } else {
+      var t = state.talhoes.find(function(x){ return x.id === mapaEd.talhaoId; });
+      h += '<div><div style="font-family:\'Zilla Slab\',serif; font-size:19px; font-weight:700;">🗺️ ' + escapeHtml(t ? t.nome : '') + '</div><div style="font-size:12px; color:var(--ink-soft);">Clique no mapa para marcar os cantos do talhão. Arraste um ponto para ajustar; clique duas vezes nele para apagar. Um clique perto de um lado cria um ponto novo naquele lado.</div></div>';
+    }
+    h += '<button type="button" data-action="mapa-fechar" style="' + estB + '">✕ Fechar</button></div>';
+    h += '<div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;">';
+    if(mapaEd.modo === 'editar'){
+      h += '<button type="button" data-action="mapa-desfazer" style="' + estB + '"' + (mapaEd.historico.length ? '' : ' disabled') + '>↶ Desfazer</button>';
+      h += '<button type="button" data-action="mapa-limpar" style="' + estB + '">🗑️ Limpar desenho</button>';
+      h += '<button type="button" data-action="mapa-gps-ponto" style="' + estB + '" title="Fique no canto do talhão e toque aqui">📍 Marcar onde estou (GPS)</button>';
+      h += '<button type="button" data-action="mapa-gps-seguir" style="' + estB + (mapaEd.gpsWatch !== null ? ' background:var(--accent); color:#fff; border-color:var(--accent);' : '') + '" title="Vá andando pela divisa do talhão; o celular marca um ponto a cada 5 m">' + (mapaEd.gpsWatch !== null ? '⏹️ Parar de seguir' : '🚶 Contornar andando (GPS)') + '</button>';
+      h += '<label style="' + estB + '">📂 Importar CAR / KML<input type="file" id="mapa-arquivo" accept=".zip,.kmz,.kml,.geojson,.json,.shp" style="display:none;"></label>';
+    }
+    h += '<button type="button" data-action="mapa-onde-estou" style="' + estB + '">🎯 Ir para onde estou</button>';
+    h += '</div>';
+    if(mapaEd.gpsInfo) h += '<div style="font-size:12px; margin:-2px 0 6px; color:var(--ink-soft);">' + mapaEd.gpsInfo + '</div>';
+    if(mapaEd.importados.length){
+      var t2 = state.talhoes.find(function(x){ return x.id === mapaEd.talhaoId; });
+      var prop = t2 && t2.propriedadeId ? state.propriedades.find(function(p){ return p.id === t2.propriedadeId; }) : null;
+      h += '<div style="border:1px solid var(--paper-line); border-radius:6px; background:var(--paper-2); padding:8px 10px; margin-bottom:8px; max-height:150px; overflow-y:auto; font-size:12.5px;">';
+      h += '<div style="font-weight:600; margin-bottom:4px;">Achei ' + mapaEd.importados.length + ' área(s) no arquivo (em azul no mapa):</div>';
+      mapaEd.importados.forEach(function(it, i){
+        h += '<div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:3px 0; border-top:1px dashed var(--paper-line);"><span style="flex:1; min-width:180px;"><b>' + escapeHtml(it.nome) + '</b> · ' + fmtHa(it.area) + ' (' + fmtNum(Math.round(it.area / alqueireHa() * 100) / 100) + ' alq)</span>';
+        h += '<button type="button" data-action="mapa-usar-importado" data-idx="' + i + '" style="' + estB + ' padding:3px 9px;">Usar como contorno deste talhão</button>';
+        if(prop) h += '<button type="button" data-action="mapa-importado-propriedade" data-idx="' + i + '" style="' + estB + ' padding:3px 9px;" title="Mostra a divisa da propriedade no mapa, para ajudar a desenhar">Guardar como limite de ' + escapeHtml(prop.nome) + '</button>';
+        h += '</div>';
+      });
+      h += '<button type="button" data-action="mapa-importados-limpar" style="' + estB + ' padding:3px 9px; margin-top:4px;">Esconder áreas do arquivo</button></div>';
+    }
+    el.innerHTML = h;
+  }
+  function renderMapaRodape(){
+    var el = document.getElementById('mapa-rodape'); if(!el || !mapaEd) return;
+    if(mapaEd.modo === 'visao'){
+      var com = state.talhoes.filter(function(t){ return t.contorno && t.contorno.length >= 3; });
+      var soma = com.reduce(function(s, t){ return s + (Number(t.areaMapa) || 0); }, 0);
+      el.innerHTML = '<div style="font-size:12.5px; padding-top:8px; color:var(--ink-soft);">' + com.length + ' de ' + state.talhoes.length + ' talhão(ões) desenhado(s)' + (com.length ? ' · área medida no mapa: <b style="color:var(--ink);">' + fmtHa(soma) + '</b>' : '') + '. Para desenhar, use o botão 🗺️ de cada talhão na aba Talhões.</div>';
+      return;
+    }
+    var t = state.talhoes.find(function(x){ return x.id === mapaEd.talhaoId; }); if(!t) return;
+    var a = areaPoligonoHa(mapaEd.pts), per = perimetroM(mapaEd.pts), alq = alqueireHa();
+    var dif = t.area > 0 && a > 0 ? (a - t.area) / t.area * 100 : null;
+    var h = '<div style="display:flex; flex-wrap:wrap; gap:8px 22px; align-items:center; padding-top:8px; font-size:13px;">';
+    h += '<div><span style="color:var(--ink-soft);">Área medida no mapa:</span> <b style="font-size:16px;">' + (a ? fmtHa(a) : '—') + '</b>' + (a ? ' <span style="color:var(--ink-soft);">(' + fmtNum(Math.round(a / alq * 100) / 100) + ' alq · perímetro ' + fmtNum(Math.round(per)) + ' m · ' + mapaEd.pts.length + ' pontos)</span>' : ' <span style="color:var(--ink-soft);">(' + mapaEd.pts.length + ' ponto(s) — precisa de pelo menos 3)</span>') + '</div>';
+    if(dif !== null) h += '<div style="color:' + (Math.abs(dif) > 5 ? 'var(--cost-dark)' : 'var(--ink-soft)') + ';">' + (dif >= 0 ? '+' : '') + fmtNum(Math.round(dif * 10) / 10) + '% em relação à área cadastrada (' + fmtHa(t.area) + ')</div>';
+    h += '</div>';
+    h += '<div style="display:flex; flex-wrap:wrap; gap:6px 16px; align-items:center; margin-top:8px; font-size:13px;"><span style="font-weight:600;">Área do talhão no sistema:</span>';
+    var rd = function(v, txt){ return '<label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="radio" name="mapa-escolha-area" value="' + v + '"' + (mapaEd.escolhaArea === v ? ' checked' : '') + '> ' + txt + '</label>'; };
+    h += rd('medida', 'usar a do mapa' + (a ? ' (' + fmtHa(a) + ')' : ''));
+    h += rd('manter', 'manter a cadastrada (' + fmtHa(t.area) + ')');
+    h += rd('digitar', 'digitar: <input type="number" id="mapa-area-digitada" step="0.01" min="0" value="' + escapeHtml(mapaEd.areaDigitada) + '" style="width:90px; padding:4px 6px; border:1px solid var(--paper-line); border-radius:4px; font-size:13px;"> ha');
+    h += '</div>';
+    h += '<div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;"><button type="button" class="btn" data-action="mapa-salvar">Salvar</button><button type="button" class="btn-cancel" data-action="mapa-fechar">Cancelar</button>';
+    if(t.contorno && t.contorno.length) h += '<button type="button" class="btn-del" data-action="mapa-remover-contorno" style="margin-left:auto;">Remover contorno salvo</button>';
+    h += '</div>';
+    el.innerHTML = h;
+  }
+  function salvarMapaTalhao(){
+    var t = state.talhoes.find(function(x){ return x.id === mapaEd.talhaoId; }); if(!t) return;
+    var pts = mapaEd.pts, a = areaPoligonoHa(pts);
+    if(pts.length > 0 && pts.length < 3){ alert('O contorno precisa de pelo menos 3 pontos.'); return; }
+    var escolha = mapaEd.escolhaArea;
+    if(escolha === 'medida' && !a){ alert('Desenhe o contorno (pelo menos 3 pontos) ou escolha manter / digitar a área.'); return; }
+    var novaArea = t.area;
+    if(escolha === 'medida') novaArea = Math.round(a * 100) / 100;
+    else if(escolha === 'digitar'){ novaArea = parseFloat(String(mapaEd.areaDigitada).replace(',', '.')); if(!(novaArea > 0)){ alert('Digite a área em hectares.'); return; } }
+    if(pts.length >= 3){
+      t.contorno = pts.map(function(p){ return [Math.round(p[0] * 1e7) / 1e7, Math.round(p[1] * 1e7) / 1e7]; });
+      t.areaMapa = Math.round(a * 10000) / 10000; t.contornoOrigem = mapaEd.origem; t.contornoEm = hojeISO();
+    }
+    t.area = novaArea; t.areaManual = escolha !== 'medida';
+    saveKey('talhoes', state.talhoes);
+    fecharMapa(); renderAll();
+  }
+  function gpsPosicao(sucesso){
+    if(!navigator.geolocation){ alert('Este aparelho não informa a localização.'); return; }
+    mapaEd.gpsInfo = '📡 Buscando sinal do GPS…'; renderMapaTopo();
+    navigator.geolocation.getCurrentPosition(function(pos){
+      if(!mapaEd) return;
+      mapaEd.gpsInfo = '📍 Precisão do GPS: ±' + fmtNum(Math.round(pos.coords.accuracy)) + ' m' + (pos.coords.accuracy > 15 ? ' — fraca; espere alguns segundos parado e tente de novo.' : '');
+      sucesso([pos.coords.latitude, pos.coords.longitude], pos.coords.accuracy);
+      renderMapaTopo();
+    }, function(err){ if(!mapaEd) return; mapaEd.gpsInfo = ''; renderMapaTopo(); alert('Não consegui pegar a localização: ' + err.message + '\n\nConfira se a localização do celular está ligada e se o navegador tem permissão.'); }, {enableHighAccuracy: true, timeout: 25000, maximumAge: 0});
+  }
+  function mostrarPosicaoGps(p, prec){
+    if(!mapaEd || !mapaEd.mapa) return;
+    mapaEd.camGps.clearLayers();
+    L.circle(p, {radius: prec || 5, color: '#3B6EA5', weight: 1, fillOpacity: 0.15, interactive: false}).addTo(mapaEd.camGps);
+    L.circleMarker(p, {radius: 6, color: '#fff', weight: 2, fillColor: '#3B6EA5', fillOpacity: 1, interactive: false}).addTo(mapaEd.camGps);
+  }
+  function gpsSeguir(){
+    if(mapaEd.gpsWatch !== null){ navigator.geolocation.clearWatch(mapaEd.gpsWatch); mapaEd.gpsWatch = null; mapaEd.gpsInfo = '⏹️ Parou de seguir. ' + mapaEd.pts.length + ' ponto(s) marcados.'; renderMapaTopo(); return; }
+    if(!navigator.geolocation){ alert('Este aparelho não informa a localização.'); return; }
+    if(mapaEd.pts.length && !window.confirm('Começar um contorno novo andando? O desenho atual será apagado (dá para desfazer).')) return;
+    if(mapaEd.pts.length) mapaEd.historico.push({tipo: 'trocar', antes: mapaEd.pts.slice()});
+    mapaEd.pts = []; mapaEd.origem = 'gps'; atualizarDesenhoMapa();
+    mapaEd.gpsInfo = '🚶 Ande pela divisa do talhão. Um ponto é marcado a cada 5 m (só com precisão melhor que 20 m).';
+    mapaEd.gpsWatch = navigator.geolocation.watchPosition(function(pos){
+      if(!mapaEd) return;
+      var p = [pos.coords.latitude, pos.coords.longitude], prec = pos.coords.accuracy;
+      mostrarPosicaoGps(p, prec);
+      var ult = mapaEd.pts[mapaEd.pts.length - 1];
+      if(prec <= 20 && (!ult || distanciaM(ult, p) >= 5)){ mapaEd.pts.push(p); mapaEd.historico.push({tipo: 'add', idx: mapaEd.pts.length - 1}); atualizarDesenhoMapa(); if(mapaEd.mapa) mapaEd.mapa.panTo(p); }
+      mapaEd.gpsInfo = '🚶 Seguindo: ' + mapaEd.pts.length + ' ponto(s) · precisão ±' + fmtNum(Math.round(prec)) + ' m' + (prec > 20 ? ' (fraca, aguardando melhorar)' : '') + '. Ao fechar a volta, toque em "Parar de seguir".';
+      renderMapaTopo();
+    }, function(err){ if(!mapaEd) return; if(err.code === 1){ alert('Sem permissão para usar a localização. Libere o acesso à localização para este site no navegador.'); gpsSeguir(); return; } mapaEd.gpsInfo = '📡 Aguardando sinal do GPS…'; renderMapaTopo(); }, {enableHighAccuracy: true, maximumAge: 0, timeout: 30000});
+    renderMapaTopo();
+  }
+  function mostrarImportadosMapa(){
+    if(!mapaEd || !mapaEd.mapa) return;
+    mapaEd.camImport.clearLayers();
+    var lim = [];
+    mapaEd.importados.forEach(function(it){ L.polygon(it.pts, {color: '#4FC3F7', weight: 2, fillOpacity: 0.08, interactive: false}).bindTooltip(escapeHtml(it.nome)).addTo(mapaEd.camImport); lim = lim.concat(it.pts); });
+    if(lim.length) mapaEd.mapa.fitBounds(L.latLngBounds(lim).pad(0.1));
+  }
+  document.addEventListener('change', function(e){
+    if(!mapaEd) return;
+    if(e.target && e.target.id === 'mapa-arquivo'){
+      var f = e.target.files && e.target.files[0]; e.target.value = '';
+      if(!f) return;
+      mapaEd.gpsInfo = '📂 Lendo ' + escapeHtml(f.name) + '…'; renderMapaTopo();
+      lerArquivoMapa(f).then(function(lista){
+        if(!mapaEd) return;
+        mapaEd.gpsInfo = '';
+        if(!lista.length){ renderMapaTopo(); alert('Não achei nenhuma área (polígono) nesse arquivo.'); return; }
+        lista.sort(function(a, b){ return (/imovel|imóvel/i.test(b.nome) ? 1 : 0) - (/imovel|imóvel/i.test(a.nome) ? 1 : 0) || b.area - a.area; });
+        mapaEd.importados = lista.slice(0, 40); renderMapaTopo(); mostrarImportadosMapa();
+      }).catch(function(err){ if(!mapaEd) return; mapaEd.gpsInfo = ''; renderMapaTopo(); alert('Não consegui ler o arquivo: ' + err.message); });
+      return;
+    }
+    if(e.target && e.target.name === 'mapa-escolha-area'){ mapaEd.escolhaArea = e.target.value; return; }
+  });
+  document.addEventListener('input', function(e){
+    if(mapaEd && e.target && e.target.id === 'mapa-area-digitada'){ mapaEd.areaDigitada = e.target.value; mapaEd.escolhaArea = 'digitar'; var r = document.querySelector('input[name="mapa-escolha-area"][value="digitar"]'); if(r) r.checked = true; }
+  });
+  function acaoMapa(action, btn){
+    if(action === 'mapa-fechar'){ fecharMapa(); return true; }
+    if(!mapaEd) return false;
+    if(action === 'mapa-desfazer'){ desfazerMapa(); renderMapaTopo(); return true; }
+    if(action === 'mapa-limpar'){ if(mapaEd.pts.length){ mapaEd.historico.push({tipo: 'trocar', antes: mapaEd.pts.slice()}); mapaEd.pts = []; atualizarDesenhoMapa(); renderMapaTopo(); } return true; }
+    if(action === 'mapa-gps-ponto'){ gpsPosicao(function(p, prec){ mostrarPosicaoGps(p, prec); mapaEd.origem = 'gps'; mapaEd.pts.push(p); mapaEd.historico.push({tipo: 'add', idx: mapaEd.pts.length - 1}); atualizarDesenhoMapa(); if(mapaEd.mapa) mapaEd.mapa.setView(p, Math.max(mapaEd.mapa.getZoom(), 17)); }); return true; }
+    if(action === 'mapa-gps-seguir'){ gpsSeguir(); return true; }
+    if(action === 'mapa-onde-estou'){ gpsPosicao(function(p, prec){ mostrarPosicaoGps(p, prec); if(mapaEd.mapa) mapaEd.mapa.setView(p, 17); }); return true; }
+    if(action === 'mapa-usar-importado'){
+      var it = mapaEd.importados[Number(btn.dataset.idx)]; if(!it) return true;
+      mapaEd.historico.push({tipo: 'trocar', antes: mapaEd.pts.slice()});
+      mapaEd.pts = it.pts.map(function(p){ return [p[0], p[1]]; }); mapaEd.origem = 'arquivo';
+      if(it.pts.length > 300) alert('Essa área tem ' + it.pts.length + ' pontos. Dá para ajustar, mas o mapa pode ficar mais lento.');
+      atualizarDesenhoMapa(); renderMapaTopo();
+      if(mapaEd.mapa) mapaEd.mapa.fitBounds(L.latLngBounds(mapaEd.pts).pad(0.15));
+      return true;
+    }
+    if(action === 'mapa-importado-propriedade'){
+      var it2 = mapaEd.importados[Number(btn.dataset.idx)]; if(!it2) return true;
+      var t = state.talhoes.find(function(x){ return x.id === mapaEd.talhaoId; });
+      var pr = t ? state.propriedades.find(function(p){ return p.id === t.propriedadeId; }) : null; if(!pr) return true;
+      pr.contorno = it2.pts.map(function(p){ return [Math.round(p[0] * 1e7) / 1e7, Math.round(p[1] * 1e7) / 1e7]; }); pr.areaMapa = Math.round(it2.area * 10000) / 10000; pr.contornoEm = hojeISO();
+      saveKey('propriedades', state.propriedades);
+      alert('Limite de ' + pr.nome + ' guardado (' + fmtHa(it2.area) + '). Ele aparece tracejado em amarelo no mapa, para ajudar a desenhar os talhões.');
+      if(mapaEd.mapa) L.polygon(pr.contorno, {color: '#FFE082', weight: 2, dashArray: '6 6', fill: false, interactive: false}).addTo(mapaEd.camRef);
+      return true;
+    }
+    if(action === 'mapa-importados-limpar'){ mapaEd.importados = []; if(mapaEd.camImport) mapaEd.camImport.clearLayers(); renderMapaTopo(); return true; }
+    if(action === 'mapa-salvar'){ salvarMapaTalhao(); return true; }
+    if(action === 'mapa-remover-contorno'){
+      var t3 = state.talhoes.find(function(x){ return x.id === mapaEd.talhaoId; }); if(!t3) return true;
+      if(!window.confirm('Remover o contorno salvo de ' + t3.nome + '? A área cadastrada (' + fmtHa(t3.area) + ') continua igual.')) return true;
+      delete t3.contorno; delete t3.areaMapa; delete t3.contornoOrigem; delete t3.contornoEm; t3.areaManual = true;
+      saveKey('talhoes', state.talhoes); fecharMapa(); renderAll(); return true;
+    }
+    return false;
+  }
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && mapaEd && mapaEd.gpsWatch === null) fecharMapa(); });
   function lancamentoEstaFechado(f){
     return periodoFechado(f.data || f.vencimento || '');
   }
@@ -9256,6 +9737,9 @@
     if(!btn) return;
     var action = btn.dataset.action;
     var id = btn.dataset.id;
+    if(action.indexOf('mapa-') === 0 && acaoMapa(action, btn)) return;
+    if(action === 'abrir-mapa-talhao'){ abrirMapa({modo:'editar', talhaoId: id}); return; }
+    if(action === 'abrir-mapa-fazenda'){ abrirMapa({modo:'visao'}); return; }
 
     if(action === 'gate-voltar-login'){ showGateScreen(); return; }
     if(action === 'reset-password' && hasNetlifyBlobs){ showGateScreen('', 'esqueci'); return; }
