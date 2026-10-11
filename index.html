@@ -270,7 +270,9 @@
   #tip-lanc td.k{color:var(--ink-soft); padding-right:10px; white-space:nowrap; width:1%;}
   #tip-lanc .tl-sec{margin-top:8px; padding-top:7px; border-top:1px dashed var(--paper-line); font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft);}
   #tip-lanc .tl-obs{margin-top:8px; padding:6px 8px; background:#EEF0DE; border-radius:4px; white-space:pre-wrap;}
-  [data-tip-fin]{cursor:default;}
+  [data-tip-fin],[data-tip]{cursor:default;}
+  #tip-lanc td.v{text-align:right; white-space:nowrap; padding-left:10px;}
+  #tip-lanc .tl-sub{font-size:11.5px; color:var(--ink-soft); margin:-2px 0 6px;}
 </style>
 </head>
 <body>
@@ -6511,7 +6513,7 @@
       html += '<div class="paper table-wrap"><table><thead><tr><th>Lavoura</th><th>Status</th>' + cabecalhoNumeros + '<th></th></tr></thead><tbody>';
       state.lavouras.slice().sort(function(a,b){ return (b.anoAgricola || '').localeCompare(a.anoAgricola || '') || lavouraLabel(a.id).localeCompare(lavouraLabel(b.id), 'pt-BR'); }).forEach(function(l){
         var n = numerosDeSafras(safrasDaLavoura(l.id));
-        html += '<tr><td><strong>' + escapeHtml(lavouraLabel(l.id)) + '</strong><br><span style="font-size:11px; color:var(--ink-soft);">' + escapeHtml(safrasDaLavoura(l.id).map(function(sf){ return talhaoNome(sf.talhaoId); }).join(', ')) + '</span></td>';
+        html += '<tr data-tip="lav|' + l.id + '"><td><strong>' + escapeHtml(lavouraLabel(l.id)) + '</strong><br><span style="font-size:11px; color:var(--ink-soft);">' + escapeHtml(safrasDaLavoura(l.id).map(function(sf){ return talhaoNome(sf.talhaoId); }).join(', ')) + '</span></td>';
         html += '<td>' + STATUS_LAVOURA_LABEL[statusLavoura(l)] + '</td>' + linhaNumeros(n) + '<td><button type="button" class="btn-edit" data-action="pdf-custo-lavoura" data-id="' + l.id + '" title="Relatório de custo de produção para imprimir ou salvar em PDF">📄 PDF</button></td></tr>';
       });
       html += '</tbody></table></div>';
@@ -6531,7 +6533,7 @@
       state.culturas.forEach(function(c){
         var sfsC = state.safras.filter(function(sf){ return sf.culturaId === c.id; });
         if(!sfsC.length) return;
-        html += '<tr><td>' + escapeHtml(c.nome) + '</td>' + linhaNumeros(numerosDeSafras(sfsC)) + '</tr>';
+        html += '<tr data-tip="cul|' + c.id + '"><td>' + escapeHtml(c.nome) + '</td>' + linhaNumeros(numerosDeSafras(sfsC)) + '</tr>';
       });
       html += '</tbody></table></div>';
     }
@@ -6543,7 +6545,7 @@
     } else {
       html += '<div class="paper table-wrap"><table><thead><tr><th>Máquina / equipamento</th><th>Categoria</th><th>Lançamentos</th><th>Custos pagos</th><th>Horas registradas (Diário + Colheita)</th><th>Horímetro</th><th>Custo/hora</th><th>Levado às safras</th></tr></thead><tbody>';
       maquinasComCusto.sort(function(a,b){ return b.valor - a.valor; }).forEach(function(x){
-        html += '<tr><td>' + escapeHtml(x.it.nome) + '</td><td>' + escapeHtml(x.it.categoria || '—') + '</td><td class="num">' + x.qtd + '</td><td class="num cost">' + fmtBRL(x.valor) + '</td>';
+        html += '<tr data-tip="maq|' + x.it.id + '"><td>' + escapeHtml(x.it.nome) + '</td><td>' + escapeHtml(x.it.categoria || '—') + '</td><td class="num">' + x.qtd + '</td><td class="num cost">' + fmtBRL(x.valor) + '</td>';
         html += '<td class="num">' + (x.horasReg > 0 ? fmtNum(x.horasReg) + ' h' : '—') + '</td><td class="num">' + (x.horim > 0 ? fmtNum(x.horim) + ' h' : '—') + '</td><td class="num">' + (x.ci.valor ? fmtBRL(x.ci.valor) + '<br><span style="font-size:11px; color:var(--ink-soft);">' + (x.ci.tipo === 'real' ? 'real' : 'referência') + '</span>' : '—') + '</td><td class="num">' + (x.horasReg && x.ci.valor ? fmtBRL(x.horasReg * x.ci.valor) : '—') + '</td></tr>';
       });
       html += '</tbody></table></div>';
@@ -6566,7 +6568,7 @@
         var custoPorHa = area > 0 ? (custos / area) : null;
         var totalSacas = producaoTotalEmSacas(safraIdsDoTalhao);
         var custoPorSaca = totalSacas > 0 ? (custos / totalSacas) : null;
-        html += '<tr>';
+        html += '<tr data-tip="tal|' + t.id + '">';
         html += '<td>' + escapeHtml(t.nome) + '</td>';
         html += '<td>' + (safra ? escapeHtml(culturaNome(safra.culturaId)) : '—') + '</td>';
         html += '<td class="num cost">' + fmtBRL(custos) + '</td>';
@@ -6628,7 +6630,7 @@
         var b = buckets[ym];
         var saldoMes = (b.entradaReal + b.entradaPrev) - (b.saidaReal + b.saidaPrev);
         acumulado += saldoMes;
-        html += '<tr>';
+        html += '<tr data-tip="mes|' + ym + '">';
         html += '<td>' + monthLabel(ym) + '</td>';
         html += '<td class="num growth">' + fmtBRL(b.entradaReal) + '</td>';
         html += '<td class="num cost">' + fmtBRL(b.saidaReal) + '</td>';
@@ -6684,7 +6686,7 @@
           .forEach(function(pid){
             var r = resumo[pid];
             var saldo = r.recebido - r.pago;
-            html += '<tr>';
+            html += '<tr data-tip="parc|' + pid + '">';
             html += '<td>' + escapeHtml(parceiroNome(pid)) + '</td>';
             html += '<td class="num cost">' + fmtBRL(r.pago) + '</td>';
             html += '<td class="num growth">' + fmtBRL(r.recebido) + '</td>';
@@ -6717,7 +6719,7 @@
         html += '<div class="paper table-wrap"><table><thead><tr><th>Data/Venc.</th><th>Tipo</th><th>Conta</th><th>Descrição</th><th>Status</th><th>Valor</th></tr></thead><tbody>';
         lancamentos.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(f){
           var st = f.status || 'Pago';
-          html += '<tr>';
+          html += '<tr data-tip-fin="' + f.id + '">';
           html += '<td>' + fmtDate(st === 'Pendente' ? f.vencimento : f.data) + '</td>';
           html += '<td><span class="badge tipo-' + f.tipo + '">' + (f.tipo === 'custo' ? 'Custo' : 'Receita') + '</span></td>';
           html += '<td>' + (f.contaId ? escapeHtml(contaLabel(f.contaId)) : escapeHtml(f.categoria || '—')) + '</td>';
@@ -6789,7 +6791,7 @@
       html += '<div class="paper table-wrap"><table><thead><tr><th>Conta</th><th>Orçado (ano)</th><th>Realizado</th><th>Diferença</th><th>% usado</th></tr></thead><tbody>';
       linhas.forEach(function(l){
         var estourou = l.tipo === 'custo' && l.orcado > 0 && l.realizado > l.orcado;
-        html += '<tr>';
+        html += '<tr data-tip="orc|' + l.contaId + '|' + orcamentoAnoSelecionado + '">';
         html += '<td>' + escapeHtml(contaLabel(l.contaId)) + '</td>';
         html += '<td class="num">' + (l.orcado ? fmtBRL(l.orcado) : '—') + '</td>';
         html += '<td class="num">' + fmtBRL(l.realizado) + '</td>';
@@ -6841,7 +6843,7 @@
           sgValor += st.valor; sgQtd += st.qtd;
           var percC = totalCustos ? st.valor/totalCustos*100 : 0;
           var percR = totalReceitas ? st.valor/totalReceitas*100 : 0;
-          linhasContas += '<tr style="font-weight:600;">';
+          linhasContas += '<tr data-tip="conta|' + c.id + '" style="font-weight:600;">';
           linhasContas += '<td style="padding-left:24px;">' + escapeHtml(c.nome) + '</td>';
           linhasContas += '<td class="num">' + (st.qtd ? fmtNum(st.qtd) : '—') + '</td>';
           linhasContas += '<td class="num">' + (st.precoMedio ? fmtBRL(st.precoMedio) : '—') + '</td>';
@@ -6851,7 +6853,7 @@
           linhasContas += '</tr>';
           st.entries.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(f){
             var docLabel = f.descricao || (f.parceiroId ? parceiroNome(f.parceiroId) : 'Lançamento');
-            linhasContas += '<tr style="font-size:12px; color:var(--ink-soft);">';
+            linhasContas += '<tr data-tip-fin="' + f.id + '" style="font-size:12px; color:var(--ink-soft);">';
             linhasContas += '<td style="padding-left:40px;">' + escapeHtml(docLabel) + (f.parceiroId ? ' — ' + escapeHtml(parceiroNome(f.parceiroId)) : '') + '</td>';
             linhasContas += '<td class="num">' + (f.quantidade ? fmtNum(f.quantidade) : '—') + '</td>';
             linhasContas += '<td class="num">—</td>';
@@ -6863,7 +6865,7 @@
         if(!linhasContas) return;
         var percSgC = totalCustos ? sgValor/totalCustos*100 : 0;
         var percSgR = totalReceitas ? sgValor/totalReceitas*100 : 0;
-        corpo += '<tr style="font-weight:700; background:var(--paper-2);">';
+        corpo += '<tr data-tip="sg|' + sg.id + '" style="font-weight:700; background:var(--paper-2);">';
         corpo += '<td>' + escapeHtml(sg.nome) + '</td>';
         corpo += '<td class="num">' + (sgQtd ? fmtNum(sgQtd) : '—') + '</td>';
         corpo += '<td class="num">—</td>';
@@ -6911,7 +6913,7 @@
     });
     var months = Object.keys(map).sort();
     return {
-      labels: months.map(monthLabel),
+      labels: months.map(monthLabel), tips: months.map(function(m){ return 'mes|' + m; }),
       custos: months.map(function(m){ return map[m].custo; }),
       receitas: months.map(function(m){ return map[m].receita; })
     };
@@ -6925,16 +6927,16 @@
     return {labels: labels, valores: labels.map(function(l){ return map[l]; })};
   }
   function resultadoPorTalhaoChart(){
-    var labels = [], valores = [], cores = [];
+    var labels = [], valores = [], cores = [], tips = [];
     state.talhoes.forEach(function(t){
       var safraIdsDoTalhao = state.safras.filter(function(s){ return s.talhaoId === t.id; }).map(function(s){ return s.id; });
       var custos = custosTotaisPorTalhao(t.id);
       var receitas = receitasTotaisPorTalhao(t.id);
       var estoqueValor = estoqueValorPorSafraIds(safraIdsDoTalhao);
       var resultado = receitas + estoqueValor - custos;
-      labels.push(t.nome); valores.push(Math.round(resultado * 100) / 100); cores.push(resultado >= 0 ? '#4F7942' : '#A23E2E');
+      labels.push(t.nome); valores.push(Math.round(resultado * 100) / 100); cores.push(resultado >= 0 ? '#4F7942' : '#A23E2E'); tips.push('tal|' + t.id);
     });
-    return {labels: labels, valores: valores, cores: cores};
+    return {labels: labels, valores: valores, cores: cores, tips: tips};
   }
   function saldoAcumuladoMensal(){
     var events = buildCashEvents();
@@ -6947,7 +6949,7 @@
     var months = Object.keys(buckets).sort();
     var acumulado = 0, serie = [];
     months.forEach(function(m){ acumulado += buckets[m]; serie.push(Math.round(acumulado * 100) / 100); });
-    return {labels: months.map(monthLabel), valores: serie};
+    return {labels: months.map(monthLabel), valores: serie, tips: months.map(function(m){ return 'mes|' + m; })};
   }
 
   function svgEscala(valores){
@@ -6990,7 +6992,7 @@
           var barY = padT + i*grupoH + grupoH*0.19 + di*barH;
           var x0 = padL + zeroPct*areaW, x1 = padL + valPct*areaW;
           var cor = Array.isArray(ds.cores) ? ds.cores[i] : (ds.cor || 'var(--accent)');
-          svg += '<rect x="' + Math.min(x0,x1) + '" y="' + barY + '" width="' + Math.abs(x1-x0) + '" height="' + barH*0.82 + '" fill="' + cor + '" rx="2"></rect>';
+          svg += '<rect' + (opts.tips && opts.tips[i] ? ' data-tip="' + escapeHtml(opts.tips[i]) + '"' : '') + ' x="' + Math.min(x0,x1) + '" y="' + barY + '" width="' + Math.abs(x1-x0) + '" height="' + barH*0.82 + '" fill="' + cor + '" rx="2"></rect>';
         });
         svg += '<text x="' + (padL-8) + '" y="' + (padT + i*grupoH + grupoH/2 + 4) + '" text-anchor="end" font-size="11" fill="var(--ink-soft)">' + escapeHtml(lab.length > 16 ? lab.slice(0,15)+'…' : lab) + '</text>';
       });
@@ -7005,6 +7007,7 @@
           var y0 = padT + areaH - zeroPct*areaH, y1 = padT + areaH - valPct*areaH;
           svg += '<rect x="' + barX + '" y="' + Math.min(y0,y1) + '" width="' + barW*0.82 + '" height="' + Math.abs(y1-y0) + '" fill="' + ds.cor + '" rx="2"></rect>';
         });
+        if(opts.tips && opts.tips[i]) svg += '<rect data-tip="' + escapeHtml(opts.tips[i]) + '" x="' + (padL + i*grupoW) + '" y="' + padT + '" width="' + grupoW + '" height="' + areaH + '" fill="transparent"></rect>';
         svg += '<text x="' + (padL + i*grupoW + grupoW/2) + '" y="' + (h-padB+16) + '" text-anchor="middle" font-size="10.5" fill="var(--ink-soft)">' + escapeHtml(lab) + '</text>';
       });
     }
@@ -7021,7 +7024,7 @@
     return svg + legenda;
   }
 
-  function svgDoughnutChart(labels, valores, cores){
+  function svgDoughnutChart(labels, valores, cores, tips){
     var total = valores.reduce(function(s,v){ return s + v; }, 0);
     if(total <= 0) return '<div style="padding:10px; font-size:13px; color:var(--ink-soft);">Sem valores pra mostrar.</div>';
     var cx = 110, cy = 110, rOut = 90, rIn = 52;
@@ -7036,7 +7039,7 @@
       var x1i = cx + rIn*Math.cos(a0), y1i = cy + rIn*Math.sin(a0);
       var largeArc = fatia > 180 ? 1 : 0;
       var d = 'M' + x0o + ',' + y0o + ' A' + rOut + ',' + rOut + ' 0 ' + largeArc + ' 1 ' + x1o + ',' + y1o + ' L' + x0i + ',' + y0i + ' A' + rIn + ',' + rIn + ' 0 ' + largeArc + ' 0 ' + x1i + ',' + y1i + ' Z';
-      svg += '<path d="' + d + '" fill="' + cores[i] + '" stroke="var(--paper)" stroke-width="1.5"><title>' + escapeHtml(lab) + '</title></path>';
+      svg += '<path' + (tips && tips[i] ? ' data-tip="' + escapeHtml(tips[i]) + '"' : '') + ' d="' + d + '" fill="' + cores[i] + '" stroke="var(--paper)" stroke-width="1.5">' + (tips && tips[i] ? '' : '<title>' + escapeHtml(lab) + '</title>') + '</path>';
       anguloAtual += fatia;
     });
     svg += '</svg>';
@@ -7049,7 +7052,7 @@
     return '<div style="display:flex; flex-direction:column; align-items:center;">' + svg + legenda + '</div>';
   }
 
-  function svgLineChart(labels, valores, cor){
+  function svgLineChart(labels, valores, cor, tips){
     var w = 640, h = 260, padL = 56, padR = 16, padT = 16, padB = 30;
     var areaW = w - padL - padR, areaH = h - padT - padB;
     var esc = svgEscala(valores);
@@ -7070,7 +7073,7 @@
     var areaPath = linhaPath + ' L' + pontos[pontos.length-1].x + ',' + zeroY + ' L' + pontos[0].x + ',' + zeroY + ' Z';
     svg += '<path d="' + areaPath + '" fill="' + cor + '" fill-opacity="0.15" stroke="none"></path>';
     svg += '<path d="' + linhaPath + '" fill="none" stroke="' + cor + '" stroke-width="2.2"></path>';
-    pontos.forEach(function(p){ svg += '<circle cx="' + p.x + '" cy="' + p.y + '" r="3" fill="' + cor + '"></circle>'; });
+    pontos.forEach(function(p, i){ svg += '<circle cx="' + p.x + '" cy="' + p.y + '" r="3" fill="' + cor + '"></circle>'; if(tips && tips[i]) svg += '<circle data-tip="' + escapeHtml(tips[i]) + '" cx="' + p.x + '" cy="' + p.y + '" r="10" fill="transparent"></circle>'; });
 
     var passoLabel = Math.ceil(n / 8);
     labels.forEach(function(lab, i){
@@ -7157,18 +7160,23 @@
       if(t < oy + 8) t = oy + Math.max(8, Math.min(vh - hh - 8, y + 16));
       c.style.left = l + 'px'; c.style.top = t + 'px';
     }
+    function conteudo(id){
+      if(id.indexOf('fin|') === 0){ var f = state.financeiro.find(function(r){ return r.id === id.slice(4); }); return f ? tipLancamentoHtml(f) : ''; }
+      try{ return tipAnaliseHtml(id); }catch(err){ console.error('caixa flutuante', id, err); return ''; }
+    }
+    function chaveDo(row){ return row.hasAttribute('data-tip-fin') ? 'fin|' + row.getAttribute('data-tip-fin') : row.getAttribute('data-tip'); }
     function mostrar(id, x, y, toque){
-      var f = state.financeiro.find(function(r){ return r.id === id; });
-      if(!f){ esconder(); return; }
-      var c = el(); c.innerHTML = tipLancamentoHtml(f); c.classList.toggle('toque', !!toque);
+      var html = conteudo(id);
+      if(!html){ esconder(); return; }
+      var c = el(); c.innerHTML = html; c.classList.toggle('toque', !!toque);
       posicionar(x, y); c.classList.add('on'); atual = id; rolagemInicial = window.scrollY;
     }
     function ignorar(t){ return !!(t.closest && t.closest('button, input, select, textarea, a, label')); }
     document.addEventListener('mouseover', function(e){
       if(Date.now() - ultimoToque < 800) return;
-      var row = e.target.closest ? e.target.closest('[data-tip-fin]') : null;
+      var row = e.target.closest ? e.target.closest('[data-tip-fin],[data-tip]') : null;
       if(!row || ignorar(e.target)){ if(atual) esconder(); return; }
-      var id = row.getAttribute('data-tip-fin');
+      var id = chaveDo(row);
       if(id === atual) return;
       clearTimeout(timer); var x = e.clientX, y = e.clientY;
       timer = setTimeout(function(){ mostrar(id, x, y, false); }, 250);
@@ -7180,7 +7188,7 @@
     });
     document.addEventListener('mouseout', function(e){
       if(Date.now() - ultimoToque < 800) return;
-      var row = e.target.closest ? e.target.closest('[data-tip-fin]') : null;
+      var row = e.target.closest ? e.target.closest('[data-tip-fin],[data-tip]') : null;
       if(row && (!e.relatedTarget || !row.contains(e.relatedTarget))){ esconder(); }
     });
     // celular / tablet: tocar na linha abre, tocar fora fecha
@@ -7188,9 +7196,9 @@
     document.addEventListener('click', function(e){
       if(Date.now() - ultimoToque > 800) return;
       if(caixa && caixa.contains(e.target)){ esconder(); return; }
-      var row = e.target.closest ? e.target.closest('[data-tip-fin]') : null;
+      var row = e.target.closest ? e.target.closest('[data-tip-fin],[data-tip]') : null;
       if(!row || ignorar(e.target)){ if(atual) esconder(); return; }
-      var id = row.getAttribute('data-tip-fin');
+      var id = chaveDo(row);
       if(id === atual){ esconder(); return; }
       var r = row.getBoundingClientRect();
       mostrar(id, Math.min(e.clientX, window.innerWidth - 20), r.bottom - 8, true);
@@ -7203,6 +7211,260 @@
     }, true);
     document.addEventListener('keydown', function(e){ if(e.key === 'Escape') esconder(); });
   })();
+  /* ---------------- Caixas flutuantes das abas de Análises ---------------- */
+  function tipEsc(v){ return escapeHtml(String(v == null ? '' : v)); }
+  function tipPct(v, tot){ return tot > 0 ? ' <span style="color:var(--ink-soft);">' + fmtNum(Math.round(v / tot * 1000) / 10) + '%</span>' : ''; }
+  // pares: [rótulo, valor-html]; vazio é pulado
+  function tipLinhas(pares){
+    var h = pares.filter(function(p){ return p && p[1] !== '' && p[1] != null; }).map(function(p){ return '<tr><td class="k">' + p[0] + '</td><td>' + p[1] + '</td></tr>'; }).join('');
+    return h ? '<table>' + h + '</table>' : '';
+  }
+  // obj {nome: valor}: os n maiores, com % e "outros"
+  function tipTop(obj, n, comPct){
+    var ks = Object.keys(obj).filter(function(k){ return Math.abs(obj[k]) > 0.004; }).sort(function(a, b){ return obj[b] - obj[a]; });
+    if(!ks.length) return '';
+    var tot = ks.reduce(function(s, k){ return s + obj[k]; }, 0);
+    var h = '<table>';
+    ks.slice(0, n).forEach(function(k){ h += '<tr><td>' + tipEsc(k) + '</td><td class="v">' + fmtBRL(obj[k]) + (comPct ? tipPct(obj[k], tot) : '') + '</td></tr>'; });
+    if(ks.length > n){ var resto = ks.slice(n).reduce(function(s, k){ return s + obj[k]; }, 0); h += '<tr><td style="color:var(--ink-soft);">+ ' + (ks.length - n) + ' outro(s)</td><td class="v" style="color:var(--ink-soft);">' + fmtBRL(resto) + (comPct ? tipPct(resto, tot) : '') + '</td></tr>'; }
+    return h + '</table>';
+  }
+  function tipLista(itens, n){ // itens [{t, v, cor}]
+    if(!itens.length) return '';
+    var h = '<table>';
+    itens.slice(0, n).forEach(function(it){ h += '<tr><td>' + it.t + '</td><td class="v"' + (it.cor ? ' style="color:' + it.cor + ';"' : '') + '>' + it.v + '</td></tr>'; });
+    if(itens.length > n) h += '<tr><td colspan="2" style="color:var(--ink-soft);">+ ' + (itens.length - n) + ' outro(s)</td></tr>';
+    return h + '</table>';
+  }
+  function tipCab(titulo, sub, tags){
+    var h = '<div class="tl-tit">' + titulo + '</div>';
+    if(sub) h += '<div class="tl-sub">' + sub + '</div>';
+    if(tags && tags.length) h += '<div class="tl-tags">' + tags.map(function(t){ return '<span style="background:' + t[1] + ';">' + t[0] + '</span>'; }).join('') + '</div>';
+    return h;
+  }
+  function tipSec(t){ return '<div class="tl-sec">' + t + '</div>'; }
+  function corValor(v){ return v >= 0 ? 'var(--growth-dark)' : 'var(--cost-dark)'; }
+  function nomeLanc(f){ var t = String(f.descricao || (f.contaId ? contaNome(f.contaId) : f.categoria) || 'Lançamento'); return t.length > 58 ? t.slice(0, 56) + '…' : t; }
+  function dataLanc(f){ return (f.status || 'Pago') === 'Pendente' ? (f.vencimento || f.data || '') : (f.data || f.vencimento || ''); }
+
+  // Custos de um grupo de safras, separados por origem (mesma conta da Rentabilidade)
+  function decomporCustosSafras(sfs){
+    var rateio = rentabilidadeIncluirGerais ? rateioCustosGeraisPorSafra() : {porSafra:{}};
+    var depr = rentabilidadeIncluirDepreciacao ? custosFixosPorSafra(depreciacaoAnualTotalFazenda()) : {};
+    var oport = rentabilidadeIncluirCustoOportunidade ? custosFixosPorSafra(custoOportunidadeAnualTotalFazenda(rentabilidadeTaxaOportunidade)) : {};
+    var r = {ins:0, maq:0, lanc:0, rt:0, dp:0, op:0, rec:0, area:0, itens:{}};
+    var add = function(k, v){ if(v) r.itens[k] = (r.itens[k] || 0) + v; };
+    var maqIds = {};
+    state.operacoes.forEach(function(o){ (o.maquinas || []).forEach(function(m){ maqIds[m.patrimonioId] = true; }); });
+    state.producao.forEach(function(p){ if(p.maquinaId && Number(p.horasUso) > 0) maqIds[p.maquinaId] = true; });
+    sfs.forEach(function(sf){
+      var somaLanc = function(x){ var v = valorDaSafraNoLancamento(x, sf.id); if(!v) return; r.lanc += v; add(x.contaId ? contaNome(x.contaId) : (x.categoria || 'Sem conta'), v); };
+      state.financeiro.forEach(function(f){ if(f.tipo === 'custo' && (f.status || 'Pago') !== 'Pendente') somaLanc(f); });
+      state.contasPagar.forEach(function(c){ if(c.status === 'Pago') somaLanc(c); });
+      state.operacoes.forEach(function(o){
+        if(o.custear === false) return;
+        var fr = fracaoOperacaoNaSafra(o, sf.id); if(!fr) return;
+        produtosDaOperacao(o).forEach(function(pp){ var v = fr * (Number(pp.custoTotal) || 0); r.ins += v; add(produtoNome(pp.produtoId), v); });
+      });
+      Object.keys(maqIds).forEach(function(mid){ var v = horasMaquinaSafra(mid, sf.id) * custoHoraMaquina(mid); if(v){ r.maq += v; add('🚜 ' + nomePatrimonio(mid), v); } });
+      r.rt += rateio.porSafra[sf.id] || 0; r.dp += depr[sf.id] || 0; r.op += oport[sf.id] || 0;
+      r.rec += receitaDiretaSafra(sf.id); r.area += areaPlantadaSafra(sf);
+    });
+    r.total = r.ins + r.maq + r.lanc + r.rt + r.dp + r.op;
+    var ids = sfs.map(function(x){ return x.id; });
+    r.sc = producaoTotalEmSacas(ids); r.est = estoqueValorPorSafraIds(ids);
+    r.res = r.rec + r.est - r.total;
+    return r;
+  }
+  function tipSafrasHtml(titulo, sub, sfs, tags){
+    var d = decomporCustosSafras(sfs);
+    var h = tipCab(titulo, sub, tags);
+    h += tipLinhas([
+      ['Área plantada', fmtHa(d.area)],
+      ['Produção', d.sc > 0 ? fmtNum(Math.round(d.sc * 10) / 10) + ' sc' + (d.area > 0 ? ' · <b>' + fmtNum(Math.round(d.sc / d.area * 10) / 10) + ' sc/ha</b>' : '') : ''],
+      ['Receitas', d.rec ? '<span style="color:var(--growth-dark);">' + fmtBRL(d.rec) + '</span>' + (d.sc > 0 && d.rec > 0 ? ' <span style="color:var(--ink-soft);">(' + fmtBRL(d.rec / d.sc) + '/sc colhida)</span>' : '') : ''],
+      ['Estoque projetado', d.est ? fmtBRL(d.est) : ''],
+      ['Resultado', '<b style="color:' + corValor(d.res) + ';">' + fmtBRL(d.res) + '</b>' + (d.total > 0 ? ' <span style="color:var(--ink-soft);">(' + fmtNum(Math.round(d.res / d.total * 1000) / 10) + '% s/ custo)</span>' : '')]
+    ]);
+    h += tipSec('Custos: ' + fmtBRL(d.total) + (d.area > 0 ? ' · ' + fmtBRL(d.total / d.area) + '/ha' : '') + (d.sc > 0 ? ' · ' + fmtBRL(d.total / d.sc) + '/sc' : ''));
+    var comp = [['Insumos (Diário de Campo)', d.ins], ['Máquinas (horas)', d.maq], ['Lançamentos', d.lanc], ['Rateio dos custos gerais', d.rt], ['Depreciação', d.dp], ['Custo de oportunidade', d.op]].filter(function(x){ return x[1]; });
+    if(comp.length) h += '<table>' + comp.map(function(x){ return '<tr><td>' + x[0] + '</td><td class="v">' + fmtBRL(x[1]) + tipPct(x[1], d.total) + '</td></tr>'; }).join('') + '</table>';
+    else h += '<div style="color:var(--ink-soft);">Nenhum custo lançado ainda.</div>';
+    var top = tipTop(d.itens, 5, true);
+    if(top) h += tipSec('Maiores itens de custo') + top;
+    return h;
+  }
+  function tipLavoura(id){
+    var l = lavouraPorId(id); if(!l) return '';
+    var sfs = safrasDaLavoura(id);
+    return tipSafrasHtml(tipEsc(lavouraLabel(id)), STATUS_LAVOURA_LABEL[statusLavoura(l)] + ' · ' + tipEsc(sfs.map(function(sf){ return talhaoNome(sf.talhaoId); }).join(', ')), sfs);
+  }
+  function tipCultura(id){
+    var sfs = state.safras.filter(function(sf){ return sf.culturaId === id; });
+    var lavs = {}; sfs.forEach(function(sf){ if(sf.lavouraId) lavs[sf.lavouraId] = true; });
+    return tipSafrasHtml(tipEsc(culturaNome(id)), Object.keys(lavs).length + ' lavoura(s) · ' + sfs.length + ' safra(s) em talhões', sfs);
+  }
+  function tipTalhao(id){
+    var t = state.talhoes.find(function(x){ return x.id === id; }); if(!t) return '';
+    var sfsT = state.safras.filter(function(sf){ return sf.talhaoId === id; }).sort(function(a, b){ return (b.anoAgricola || '').localeCompare(a.anoAgricola || ''); });
+    var atual = safraAtualDoTalhao(id);
+    var h = tipCab(tipEsc(t.nome), fmtHa(t.area) + (t.propriedadeId ? ' · ' + tipEsc(propriedadeNome(t.propriedadeId)) : '') + (t.tipoSolo ? ' · solo ' + tipEsc(t.tipoSolo) : ''), atual ? [[tipEsc(culturaNome(atual.culturaId)) + ' · ' + STATUS_LABEL[atual.status], '#7FA36D']] : []);
+    var porConta = {};
+    var somaT = function(x){ var v = valorDoTalhaoNoLancamento(x, id); if(v) porConta[x.contaId ? contaNome(x.contaId) : (x.categoria || 'Sem conta')] = (porConta[x.contaId ? contaNome(x.contaId) : (x.categoria || 'Sem conta')] || 0) + v; };
+    state.financeiro.forEach(function(f){ if(f.tipo === 'custo' && (f.status || 'Pago') !== 'Pendente') somaT(f); });
+    var custos = custosTotaisPorTalhao(id), receitas = receitasTotaisPorTalhao(id);
+    var extra = (rentabilidadeIncluirDepreciacao ? depreciacaoPorTalhao(id) : 0) + (rentabilidadeIncluirCustoOportunidade ? custoOportunidadePorTalhao(id, rentabilidadeTaxaOportunidade) : 0);
+    h += tipLinhas([['Custos lançados', fmtBRL(custos)], ['Depreciação / oportunidade', extra ? fmtBRL(extra) : ''], ['Receitas', receitas ? fmtBRL(receitas) : '']]);
+    var top = tipTop(porConta, 4, true);
+    if(top) h += tipSec('Onde foi o custo') + top;
+    if(sfsT.length){
+      h += tipSec('Safras neste talhão (custo direto · receita)');
+      h += tipLista(sfsT.map(function(sf){ var c = custoDiretoSafra(sf.id), rc = receitaDiretaSafra(sf.id); return {t: tipEsc(culturaNome(sf.culturaId)) + ' ' + tipEsc(sf.anoAgricola || '') + ' <span style="color:var(--ink-soft);">' + (STATUS_LABEL[sf.status] || '') + '</span>', v: fmtBRL(c) + (rc ? ' · <span style="color:var(--growth-dark);">' + fmtBRL(rc) + '</span>' : '')}; }), 4);
+    }
+    var an = ultimaAnaliseSoloDoTalhao(id);
+    if(an) h += tipSec('Última análise de solo') + '<div>' + fmtDate(an.dataColeta) + (an.ph != null ? ' · pH ' + fmtNum(an.ph) : '') + (an.saturacaoBases != null ? ' · V ' + fmtNum(an.saturacaoBases) + '%' : '') + (an.ctc != null ? ' · CTC ' + fmtNum(an.ctc) : '') + '</div>';
+    return h;
+  }
+  function tipMaquina(id){
+    var it = state.patrimonio.find(function(x){ return x.id === id; }); if(!it) return '';
+    var lancs = state.financeiro.filter(function(f){ return f.tipo === 'custo' && (f.status || 'Pago') !== 'Pendente' && destinoEfetivo(f) === 'maquina' && (f.maquinasIds || []).indexOf(id) !== -1; });
+    var porConta = {};
+    lancs.forEach(function(f){ var k = f.contaId ? contaNome(f.contaId) : (f.categoria || 'Sem conta'); porConta[k] = (porConta[k] || 0) + (Number(f.valor) || 0) / (f.maquinasIds || [1]).length; });
+    var ci = custoHoraMaquinaInfo(id), hReg = horasRegistradasMaquina(id), hHor = horasHorimetro(id);
+    var h = tipCab(tipEsc(it.nome), tipEsc(it.categoria || '') + (it.status ? ' · ' + tipEsc(it.status) : ''), []);
+    h += tipLinhas([
+      ['Custos pagos', fmtBRL(custosDaMaquina(id).valor) + ' <span style="color:var(--ink-soft);">(' + lancs.length + ' lançamento(s))</span>'],
+      ['Horas registradas', hReg ? fmtNum(hReg) + ' h <span style="color:var(--ink-soft);">(Diário + Colheita)</span>' : ''],
+      ['Horímetro', hHor ? fmtNum(hHor) + ' h' : ''],
+      ['Custo por hora', ci.valor ? '<b>' + fmtBRL(ci.valor) + '</b> <span style="color:var(--ink-soft);">(' + (ci.tipo === 'real' ? 'calculado' : 'referência do cadastro') + ')</span>' : '']
+    ]);
+    var top = tipTop(porConta, 4, true);
+    if(top) h += tipSec('Gastos por conta') + top;
+    var porSafra = [];
+    state.safras.forEach(function(sf){ var hh = horasMaquinaSafra(id, sf.id); if(hh > 0) porSafra.push({t: tipEsc(safraLabel(sf.id)), v: fmtNum(Math.round(hh * 10) / 10) + ' h · ' + fmtBRL(hh * ci.valor), n: hh}); });
+    porSafra.sort(function(a, b){ return b.n - a.n; });
+    if(porSafra.length) h += tipSec('Levado às safras') + tipLista(porSafra, 4);
+    var ult = lancs.slice().sort(function(a, b){ return dataLanc(b).localeCompare(dataLanc(a)); });
+    if(ult.length) h += tipSec('Últimos lançamentos') + tipLista(ult.map(function(f){ return {t: fmtDate(dataLanc(f)) + ' · ' + tipEsc(nomeLanc(f)), v: fmtBRL(f.valor)}; }), 3);
+    return h;
+  }
+  // Lançamentos de um mês (data do pagamento; pendentes pelo vencimento)
+  function tipMes(ym){
+    var itens = [];
+    state.financeiro.forEach(function(f){ var d = dataLanc(f); if(d.slice(0, 7) === ym) itens.push(f); });
+    var grupos = {entR:[], saiR:[], entP:[], saiP:[]};
+    itens.forEach(function(f){ var pend = (f.status || 'Pago') === 'Pendente'; grupos[(f.tipo === 'receita' ? 'ent' : 'sai') + (pend ? 'P' : 'R')].push(f); });
+    var soma = function(l){ return l.reduce(function(s, f){ return s + (Number(f.valor) || 0); }, 0); };
+    var h = tipCab(monthLabel(ym), itens.length + ' lançamento(s)', []);
+    var sec = function(lista, titulo, cor){
+      if(!lista.length) return '';
+      lista.sort(function(a, b){ return (Number(b.valor) || 0) - (Number(a.valor) || 0); });
+      return tipSec(titulo + ': ' + fmtBRL(soma(lista))) + tipLista(lista.map(function(f){ return {t: fmtDate(dataLanc(f)).slice(0, 5) + ' · ' + tipEsc(nomeLanc(f)), v: fmtBRL(f.valor), cor: cor}; }), 3);
+    };
+    h += sec(grupos.entR, 'Entradas realizadas', 'var(--growth-dark)') + sec(grupos.saiR, 'Saídas realizadas', 'var(--cost-dark)') + sec(grupos.entP, 'Entradas previstas', 'var(--growth-dark)') + sec(grupos.saiP, 'Saídas previstas', 'var(--cost-dark)');
+    if(!itens.length) h += '<div style="color:var(--ink-soft);">Sem lançamentos neste mês.</div>';
+    return h;
+  }
+  function tipParceiro(id){
+    var lancs = state.financeiro.filter(function(f){ return f.parceiroId === id; });
+    var pagos = lancs.filter(function(f){ return (f.status || 'Pago') !== 'Pendente'; }).sort(function(a, b){ return dataLanc(b).localeCompare(dataLanc(a)); });
+    var pend = lancs.filter(function(f){ return (f.status || 'Pago') === 'Pendente'; }).sort(function(a, b){ return dataLanc(a).localeCompare(dataLanc(b)); });
+    var porConta = {};
+    pagos.forEach(function(f){ var k = (f.tipo === 'receita' ? '↑ ' : '') + (f.contaId ? contaNome(f.contaId) : (f.categoria || 'Sem conta')); porConta[k] = (porConta[k] || 0) + (Number(f.valor) || 0); });
+    var h = tipCab(tipEsc(parceiroNome(id)), lancs.length + ' lançamento(s)' + (pagos.length ? ' · desde ' + fmtDate(dataLanc(pagos[pagos.length - 1])) : ''), []);
+    var ultP = pagos.find(function(f){ return f.tipo === 'custo'; }), ultR = pagos.find(function(f){ return f.tipo === 'receita'; });
+    h += tipLinhas([
+      ['Último pagamento', ultP ? fmtDate(dataLanc(ultP)) + ' · ' + fmtBRL(ultP.valor) : ''],
+      ['Último recebimento', ultR ? fmtDate(dataLanc(ultR)) + ' · ' + fmtBRL(ultR.valor) : '']
+    ]);
+    if(pend.length) h += tipSec('Próximos vencimentos') + tipLista(pend.map(function(f){ var atras = f.vencimento && f.vencimento < hojeISO(); return {t: fmtDate(dataLanc(f)) + (atras ? ' <b style="color:var(--cost-dark);">atrasada</b>' : '') + ' · ' + tipEsc(nomeLanc(f)), v: (f.tipo === 'receita' ? '+ ' : '− ') + fmtBRL(f.valor), cor: f.tipo === 'receita' ? 'var(--growth-dark)' : 'var(--cost-dark)'}; }), 3);
+    var top = tipTop(porConta, 4, true);
+    if(top) h += tipSec('Por conta (já pagos / recebidos)') + top;
+    return h;
+  }
+  function tipOrcamento(arg){
+    var ps = arg.split('|'), cid = ps[0], ano = parseInt(ps[1], 10);
+    var lancs = state.financeiro.filter(function(f){ return f.contaId === cid && (f.status || 'Pago') === 'Pago' && parseInt((f.data || '').slice(0, 4), 10) === ano; });
+    var orc = state.orcamentos.find(function(o){ return o.contaId === cid && o.ano === ano; });
+    var orcado = orc ? Number(orc.valorOrcado) || 0 : 0;
+    var real = lancs.reduce(function(s, f){ return s + (Number(f.valor) || 0); }, 0);
+    var hoje = new Date(), mesesDecorridos = ano < hoje.getFullYear() ? 12 : (ano === hoje.getFullYear() ? hoje.getMonth() + 1 : 0);
+    var proj = mesesDecorridos > 0 && mesesDecorridos < 12 ? real / mesesDecorridos * 12 : null;
+    var h = tipCab(tipEsc(contaLabel(cid)), String(ano) + ' · ' + (contaTipo(cid) === 'receita' ? 'receita' : 'despesa'), []);
+    h += tipLinhas([
+      ['Orçado', orcado ? fmtBRL(orcado) : 'sem orçamento'],
+      ['Realizado', fmtBRL(real) + ' <span style="color:var(--ink-soft);">(' + lancs.length + ' lançamento(s))</span>'],
+      ['Média por mês', mesesDecorridos ? fmtBRL(real / mesesDecorridos) : ''],
+      ['Ritmo até dezembro', proj !== null ? '<b>' + fmtBRL(proj) + '</b>' + (orcado ? ' <span style="color:' + (proj > orcado && contaTipo(cid) === 'custo' ? 'var(--cost-dark)' : 'var(--ink-soft)') + ';">(' + fmtNum(Math.round(proj / orcado * 100)) + '% do orçado)</span>' : '') : '']
+    ]);
+    var porMes = {};
+    lancs.forEach(function(f){ var m = parseInt(f.data.slice(5, 7), 10); porMes[m] = (porMes[m] || 0) + (Number(f.valor) || 0); });
+    var ms = Object.keys(porMes).sort(function(a, b){ return a - b; });
+    if(ms.length) h += tipSec('Por mês') + '<div style="display:flex; flex-wrap:wrap; gap:3px 12px;">' + ms.map(function(m){ return '<span>' + MESES[m - 1].slice(0, 3) + ' <b>' + fmtBRL(porMes[m]) + '</b></span>'; }).join('') + '</div>';
+    var maiores = lancs.slice().sort(function(a, b){ return (Number(b.valor) || 0) - (Number(a.valor) || 0); });
+    if(maiores.length) h += tipSec('Maiores lançamentos') + tipLista(maiores.map(function(f){ return {t: fmtDate(f.data) + ' · ' + tipEsc(nomeLanc(f)), v: fmtBRL(f.valor)}; }), 3);
+    return h;
+  }
+  function tipConta(cid){
+    var lancs = state.financeiro.filter(function(f){ return f.contaId === cid && (f.status || 'Pago') !== 'Pendente'; });
+    var pend = state.financeiro.filter(function(f){ return f.contaId === cid && f.status === 'Pendente'; });
+    var datas = lancs.map(dataLanc).filter(Boolean).sort();
+    var total = lancs.reduce(function(s, f){ return s + (Number(f.valor) || 0); }, 0);
+    var porParc = {}, porDest = {};
+    lancs.forEach(function(f){
+      var v = Number(f.valor) || 0;
+      porParc[f.parceiroId ? parceiroNome(f.parceiroId) : 'Sem parceiro'] = (porParc[f.parceiroId ? parceiroNome(f.parceiroId) : 'Sem parceiro'] || 0) + v;
+      var d = destinoEfetivo(f), k;
+      if(d === 'lavoura'){ partesDoLancamento(f).forEach(function(pt){ var sf = pt.safraId ? state.safras.find(function(x){ return x.id === pt.safraId; }) : null; k = sf ? lavouraLabel(sf.lavouraId) : 'Lavoura (sem safra)'; porDest[k] = (porDest[k] || 0) + (Number(pt.valor) || 0); }); return; }
+      k = DESTINO_LABEL[d] || d; porDest[k] = (porDest[k] || 0) + v;
+    });
+    var h = tipCab(tipEsc(contaLabel(cid)), lancs.length + ' lançamento(s) pago(s)' + (datas.length ? ' · ' + fmtDate(datas[0]) + ' a ' + fmtDate(datas[datas.length - 1]) : ''), []);
+    h += tipLinhas([
+      ['Total', '<b>' + fmtBRL(total) + '</b>'],
+      ['Média por lançamento', lancs.length ? fmtBRL(total / lancs.length) : ''],
+      ['Pendente', pend.length ? fmtBRL(pend.reduce(function(s, f){ return s + (Number(f.valor) || 0); }, 0)) + ' <span style="color:var(--ink-soft);">(' + pend.length + ')</span>' : '']
+    ]);
+    var tp = tipTop(porParc, 3, true); if(tp) h += tipSec('Por parceiro') + tp;
+    var td = tipTop(porDest, 4, true); if(td) h += tipSec('Para onde foi') + td;
+    return h;
+  }
+  function tipSubgrupo(sgid){
+    var sg = state.subgruposFinanceiro.find(function(x){ return x.id === sgid; }); if(!sg) return '';
+    var porConta = {}, n = 0;
+    state.financeiro.forEach(function(f){
+      if((f.status || 'Pago') === 'Pendente' || !f.contaId) return;
+      var c = state.contasFinanceiro.find(function(x){ return x.id === f.contaId; });
+      if(!c || c.subgrupoId !== sgid) return;
+      porConta[c.nome] = (porConta[c.nome] || 0) + (Number(f.valor) || 0); n++;
+    });
+    var h = tipCab(tipEsc(sg.nome), n + ' lançamento(s) pago(s)', []);
+    var top = tipTop(porConta, 6, true);
+    return h + (top ? tipSec('Contas') + top : '<div style="color:var(--ink-soft);">Sem lançamentos pagos.</div>');
+  }
+  function tipCategoria(cat){
+    var lancs = state.financeiro.filter(function(f){ return f.tipo === 'custo' && (f.categoria || '') === cat; });
+    var pagos = lancs.filter(function(f){ return (f.status || 'Pago') !== 'Pendente'; });
+    var total = lancs.reduce(function(s, f){ return s + (Number(f.valor) || 0); }, 0);
+    var h = tipCab(tipEsc(cat || 'Sem categoria'), lancs.length + ' lançamento(s) de custo', []);
+    h += tipLinhas([['Total', '<b>' + fmtBRL(total) + '</b>'], ['Pendente', lancs.length - pagos.length ? fmtBRL(total - pagos.reduce(function(s, f){ return s + (Number(f.valor) || 0); }, 0)) : '']]);
+    var maiores = lancs.slice().sort(function(a, b){ return (Number(b.valor) || 0) - (Number(a.valor) || 0); });
+    if(maiores.length) h += tipSec('Maiores lançamentos') + tipLista(maiores.map(function(f){ return {t: fmtDate(dataLanc(f)) + ' · ' + tipEsc(nomeLanc(f)), v: fmtBRL(f.valor)}; }), 4);
+    return h;
+  }
+  function tipAnaliseHtml(chave){
+    var i = chave.indexOf('|'), tipo = chave.slice(0, i), arg = chave.slice(i + 1);
+    if(tipo === 'lav') return tipLavoura(arg);
+    if(tipo === 'cul') return tipCultura(arg);
+    if(tipo === 'tal') return tipTalhao(arg);
+    if(tipo === 'maq') return tipMaquina(arg);
+    if(tipo === 'mes') return tipMes(arg);
+    if(tipo === 'parc') return tipParceiro(arg);
+    if(tipo === 'orc') return tipOrcamento(arg);
+    if(tipo === 'conta') return tipConta(arg);
+    if(tipo === 'sg') return tipSubgrupo(arg);
+    if(tipo === 'cat') return tipCategoria(arg);
+    return '';
+  }
   function lancamentoEstaFechado(f){
     return periodoFechado(f.data || f.vencimento || '');
   }
@@ -7603,26 +7865,26 @@
       document.getElementById('chart-mes').innerHTML = svgBarChart(mesData.labels, [
         {label:'Custos', data:mesData.custos, cor:'var(--cost)'},
         {label:'Receitas', data:mesData.receitas, cor:'var(--growth)'}
-      ]);
+      ], {tips: mesData.tips});
 
       var catData = custosPorCategoria();
       var palette = ['#C98A2B','#4F7942','#A23E2E','#8B8368','#7FA36D','#DFA84E','#9C6A1E','#3B5B32'];
       if(catData.labels.length){
-        document.getElementById('chart-categoria').innerHTML = svgDoughnutChart(catData.labels, catData.valores, catData.labels.map(function(_, i){ return palette[i % palette.length]; }));
+        document.getElementById('chart-categoria').innerHTML = svgDoughnutChart(catData.labels, catData.valores, catData.labels.map(function(_, i){ return palette[i % palette.length]; }), catData.labels.map(function(l){ return 'cat|' + l; }));
       } else {
         document.getElementById('chart-categoria').innerHTML = '<div style="padding:10px; font-size:13px; color:var(--ink-soft);">Nenhum custo "Pago" registrado ainda.</div>';
       }
 
       var talhaoData = resultadoPorTalhaoChart();
       if(talhaoData.labels.length){
-        document.getElementById('chart-talhao').innerHTML = svgBarChart(talhaoData.labels, [{data: talhaoData.valores, cores: talhaoData.cores}], {horizontal:true});
+        document.getElementById('chart-talhao').innerHTML = svgBarChart(talhaoData.labels, [{data: talhaoData.valores, cores: talhaoData.cores}], {horizontal:true, tips: talhaoData.tips});
       } else {
         document.getElementById('chart-talhao').innerHTML = '<div style="padding:10px; font-size:13px; color:var(--ink-soft);">Cadastre talhões para ver o resultado por área.</div>';
       }
 
       var saldoData = saldoAcumuladoMensal();
       if(saldoData.labels.length){
-        document.getElementById('chart-saldo').innerHTML = svgLineChart(saldoData.labels, saldoData.valores, 'var(--accent)');
+        document.getElementById('chart-saldo').innerHTML = svgLineChart(saldoData.labels, saldoData.valores, 'var(--accent)', saldoData.tips);
       } else {
         document.getElementById('chart-saldo').innerHTML = '<div style="padding:10px; font-size:13px; color:var(--ink-soft);">Sem lançamentos com data suficiente para projetar o saldo.</div>';
       }
