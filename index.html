@@ -975,7 +975,12 @@
         {name:'nome', type:'text', label:'Nome', required:true, placeholder:'Ex: Fazenda Santa Luzia'},
         {name:'areaTotal', type:'number', label:'Área total (ha)', extra:{step:'0.01', min:'0'}, placeholder:'0'},
         {name:'cidade', type:'text', label:'Cidade', placeholder:'Ex: Uberlândia'},
-        {name:'estado', type:'text', label:'UF', placeholder:'Ex: MG'}
+        {name:'estado', type:'text', label:'UF', placeholder:'Ex: MG'},
+        {name:'codigoCAR', type:'text', label:'Nº do CAR (recibo de inscrição)', placeholder:'Ex: PR-4100103-XXXX...'},
+        {name:'produtorNome', type:'text', label:'Produtor (nome para documentos)', placeholder:'Nome do produtor'},
+        {name:'produtorDocumento', type:'text', label:'CPF / CNPJ do produtor (opcional)', advanced:true, placeholder:''},
+        {name:'ccir', type:'text', label:'CCIR (opcional)', advanced:true, placeholder:''},
+        {name:'inscricaoEstadual', type:'text', label:'Inscrição estadual de produtor (opcional)', advanced:true, placeholder:''}
       ],
       columns: [
         {key:'nome', label:'Nome'},
@@ -3359,6 +3364,7 @@
       html += field('number', 'estoqueAtual', 'Estoque inicial', false, '0', {step:'0.001', min:'0'});
     }
     html += field('number', 'estoqueMinimo', 'Estoque mínimo', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.estoqueMinimo : undefined);
+    html += field('number', 'carenciaDias', 'Carência (dias) — defensivos', false, 'Ex: 30 (veja a bula)', {step:'1', min:'0'}, editingRecord && editingRecord.carenciaDias !== undefined ? editingRecord.carenciaDias : undefined);
     var cmCompras = editingRecord ? custoMedioComprasProduto(editingRecord.id) : 0;
     html += field('number', 'custoManual', 'Custo por ' + (editingRecord ? unidadeControle(editingRecord) || 'unidade' : 'unidade') + ' (R$) — opcional', false, cmCompras > 0 ? 'Compras: ' + cmCompras.toFixed(2) : '0,00', {step:'0.0001', min:'0'}, editingRecord && Number(editingRecord.custoManual) > 0 ? editingRecord.custoManual : undefined);
     html += '<p style="grid-column:1/-1; font-size:11px; color:var(--ink-soft); margin:-6px 0 0;">Deixe em branco para usar o custo médio das compras' + (cmCompras > 0 ? ' (hoje ' + fmtBRL(cmCompras) + ' por ' + escapeHtml(unidadeControle(editingRecord)) + ')' : '') + '. Preenchido, esse valor passa a valer para o custo das aplicações no Diário de Campo — as já lançadas são recalculadas ao salvar.</p>';
@@ -4200,6 +4206,8 @@
         if(p.estado) subParts.push(escapeHtml(p.estado));
         var subLine = subParts.join(' - ');
         if(p.areaTotal) subLine += (subLine ? ' · ' : '') + 'Área registrada: ' + fmtHa(p.areaTotal);
+        subLine += (subLine ? ' · ' : '') + (p.codigoCAR ? 'CAR ' + escapeHtml(p.codigoCAR) : '<span style="color:var(--cost-dark);">CAR não informado</span>');
+        if(p.contorno && p.contorno.length >= 3) subLine += ' · 🗺️ limite no mapa: ' + fmtHa(p.areaMapa || 0);
         html += '<div class="property-sub">' + (subLine || '—') + '</div></div>';
         html += '<div><button class="btn-edit" data-action="edit-generic" data-entity="propriedades" data-id="' + p.id + '">Editar</button>';
         html += '<button class="btn-del" data-action="del-generic" data-entity="propriedades" data-id="' + p.id + '">Remover</button></div>';
@@ -4511,7 +4519,7 @@
         html += '<td>' + STATUS_LAVOURA_LABEL[st] + '</td>';
         html += '<td class="num cost">' + fmtBRL(custoL) + '</td>';
         html += '<td class="num growth">' + fmtBRL(receitaL) + '</td>';
-        html += '<td><button class="btn-edit" data-action="renomear-lavoura" data-id="' + l.id + '">Apelido</button><button class="btn-edit" data-action="toggle-encerrar-lavoura" data-id="' + l.id + '">' + (l.encerrada ? 'Reabrir' : 'Encerrar') + '</button></td>';
+        html += '<td><button class="btn-edit" data-action="dossie-pdf" data-tipo="lavoura" data-id="' + l.id + '" title="Dossiê de rastreabilidade para comprador / certificadora">📄 Dossiê</button><button class="btn-edit" data-action="renomear-lavoura" data-id="' + l.id + '">Apelido</button><button class="btn-edit" data-action="toggle-encerrar-lavoura" data-id="' + l.id + '">' + (l.encerrada ? 'Reabrir' : 'Encerrar') + '</button></td>';
         html += '</tr>';
       });
       html += '</tbody></table></div>';
@@ -5919,6 +5927,12 @@
 
       var safraRastreio = rastreabilidadeSafraId ? state.safras.find(function(s){ return s.id === rastreabilidadeSafraId; }) : null;
       if(safraRastreio){
+        html += '<div class="paper" style="padding:12px 16px; margin-bottom:12px; display:flex; flex-direction:column; gap:8px;">';
+        html += botoesDossieHtml('safra', safraRastreio.id, 'Só este talhão:');
+        var lavDos = lavouraPorId(safraRastreio.lavouraId);
+        if(lavDos && safrasDaLavoura(lavDos.id).length > 1) html += botoesDossieHtml('lavoura', lavDos.id, 'Lavoura inteira (' + safrasDaLavoura(lavDos.id).length + ' talhões):');
+        html += '<p style="font-size:11.5px; color:var(--ink-soft); margin:0;">O dossiê junta produtor, CAR, mapa e coordenadas das áreas, aplicações com receituário e carência, colheita e destino, com uma conferência no final. O arquivo GeoJSON é o formato de geolocalização pedido pela lei europeia contra desmatamento (EUDR).</p>';
+        html += '</div>';
         html += '<div class="paper" style="padding:16px;">';
         html += '<p style="font-size:13px; margin:0 0 12px;"><strong>' + escapeHtml(safraLabel(safraRastreio.id)) + '</strong> — Talhão ' + escapeHtml(talhaoNome(safraRastreio.talhaoId)) + ', Cultura ' + escapeHtml(culturaNome(safraRastreio.culturaId)) + (safraRastreio.dataPlantio ? ', plantada em ' + fmtDate(safraRastreio.dataPlantio) : '') + '</p>';
 
@@ -7946,6 +7960,229 @@
     return false;
   }
   document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && mapaEd && mapaEd.gpsWatch === null) fecharMapa(); });
+  /* ---------------- Dossiê de rastreabilidade (para comprador, certificadora e EUDR) ---------------- */
+  var REGEX_DEFENSIVO = /defens|herbic|fungic|insetic|acaric|nemat|bactericida|agrot[oó]x/i;
+  function somarDiasISO(iso, dias){ if(!iso) return ''; var d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + (Number(dias) || 0)); return d.toISOString().slice(0, 10); }
+  function produtoPorId(id){ return state.produtos.find(function(p){ return p.id === id; }) || null; }
+  function ehDefensivo(produtoId){ var p = produtoPorId(produtoId); return !!(p && REGEX_DEFENSIVO.test((p.categoria || '') + ' ' + (p.nome || ''))); }
+  function centroidePoligono(pts){
+    if(!pts || !pts.length) return null;
+    var a = 0, cx = 0, cy = 0;
+    for(var i = 0; i < pts.length; i++){
+      var p = pts[i], q = pts[(i + 1) % pts.length], f = p[1] * q[0] - q[1] * p[0];
+      a += f; cx += (p[1] + q[1]) * f; cy += (p[0] + q[0]) * f;
+    }
+    if(Math.abs(a) < 1e-14) return [pts.reduce(function(s, p){ return s + p[0]; }, 0) / pts.length, pts.reduce(function(s, p){ return s + p[1]; }, 0) / pts.length];
+    return [cy / (3 * a), cx / (3 * a)];
+  }
+  function fmtCoord(v){ return (Math.round(v * 1e6) / 1e6).toFixed(6); }
+
+  // Junta tudo de um grupo de safras
+  function dadosDossie(sfs){
+    var talhoesIds = [], props = [];
+    sfs.forEach(function(sf){ if(talhoesIds.indexOf(sf.talhaoId) === -1) talhoesIds.push(sf.talhaoId); });
+    var talhoes = talhoesIds.map(function(id){ return state.talhoes.find(function(t){ return t.id === id; }); }).filter(Boolean);
+    talhoes.forEach(function(t){ var pr = t.propriedadeId ? state.propriedades.find(function(p){ return p.id === t.propriedadeId; }) : null; if(pr && props.indexOf(pr) === -1) props.push(pr); });
+    if(!props.length && state.propriedades.length === 1) props.push(state.propriedades[0]);
+    var sfIds = sfs.map(function(s){ return s.id; });
+    var colheitas = state.producao.filter(function(p){ return p.tipo === 'entrada' && sfIds.indexOf(p.safraId) !== -1; }).sort(function(a, b){ return (a.data || '').localeCompare(b.data || ''); });
+    var vendas = state.producao.filter(function(p){ return p.tipo === 'saida' && sfIds.indexOf(p.safraId) !== -1; }).sort(function(a, b){ return (a.data || '').localeCompare(b.data || ''); });
+    var primeiraColheitaPorSafra = {};
+    colheitas.forEach(function(c){ if(c.data && !primeiraColheitaPorSafra[c.safraId]) primeiraColheitaPorSafra[c.safraId] = c.data; });
+    var aplicacoes = [];
+    state.operacoes.forEach(function(o){
+      var aps = aplicacoesDaOperacao(o).filter(function(ap){ return sfIds.indexOf(ap.safraId) !== -1; });
+      if(!aps.length) return;
+      var area = aps.reduce(function(s, ap){ return s + (Number(ap.area) || 0); }, 0);
+      var fr = sfIds.reduce(function(s, id){ return s + fracaoOperacaoNaSafra(o, id); }, 0);
+      var prods = produtosDaOperacao(o);
+      var base = {op: o, data: o.data, tipo: o.tipo, area: area, talhoes: aps.map(function(ap){ return talhaoNome(ap.talhaoId); }).join(', '), safraIds: aps.map(function(ap){ return ap.safraId; })};
+      if(!prods.length){ aplicacoes.push(Object.assign({}, base, {produtoId: '', semProduto: true})); return; }
+      prods.forEach(function(pp){
+        var p = produtoPorId(pp.produtoId), car = p && p.carenciaDias !== undefined && p.carenciaDias !== '' && p.carenciaDias !== null ? Number(p.carenciaDias) : null;
+        var libera = car !== null && o.data ? somarDiasISO(o.data, car) : '';
+        var colh = base.safraIds.map(function(id){ return primeiraColheitaPorSafra[id]; }).filter(Boolean).sort()[0] || '';
+        var sit = 'na';
+        if(car !== null && o.data){ sit = colh ? (colh >= libera ? 'ok' : 'violada') : 'aguardando'; }
+        else if(ehDefensivo(pp.produtoId)) sit = 'sem-carencia';
+        aplicacoes.push(Object.assign({}, base, {produtoId: pp.produtoId, dose: Number(pp.dose) || 0, qtd: (Number(pp.quantidade) || 0) * (fr || 1), un: unidadeProduto(pp.produtoId) || pp.unidade || '', carencia: car, libera: libera, colheita: colh, situacao: sit, defensivo: ehDefensivo(pp.produtoId)}));
+      });
+    });
+    aplicacoes.sort(function(a, b){ return (a.data || '').localeCompare(b.data || ''); });
+    var semContorno = talhoes.filter(function(t){ return !(t.contorno && t.contorno.length >= 3); });
+    var opsDefensivo = {}; aplicacoes.forEach(function(a){ if(a.defensivo) opsDefensivo[a.op.id] = a.op; });
+    var semReceituario = Object.keys(opsDefensivo).map(function(k){ return opsDefensivo[k]; }).filter(function(o){ return !String(o.receituario || '').trim(); });
+    var primeiroRegistro = {};
+    talhoes.forEach(function(t){
+      var datas = [];
+      state.safras.forEach(function(sf){ if(sf.talhaoId === t.id){ if(sf.dataPlantio) datas.push(sf.dataPlantio); } });
+      state.operacoes.forEach(function(o){ if(o.data && aplicacoesDaOperacao(o).some(function(ap){ return ap.talhaoId === t.id; })) datas.push(o.data); });
+      state.producao.forEach(function(p){ var sf = state.safras.find(function(x){ return x.id === p.safraId; }); if(p.data && sf && sf.talhaoId === t.id) datas.push(p.data); });
+      (state.analisesSolo || []).forEach(function(a){ if(a.talhaoId === t.id && a.dataColeta) datas.push(a.dataColeta); });
+      datas.sort(); primeiroRegistro[t.id] = datas[0] || '';
+    });
+    return {sfs: sfs, talhoes: talhoes, props: props, colheitas: colheitas, vendas: vendas, aplicacoes: aplicacoes, semContorno: semContorno, semReceituario: semReceituario, primeiroRegistro: primeiroRegistro,
+      violadas: aplicacoes.filter(function(a){ return a.situacao === 'violada'; }), semCarencia: aplicacoes.filter(function(a){ return a.situacao === 'sem-carencia'; })};
+  }
+
+  // Desenho simples das áreas (SVG, sem internet)
+  function svgMapaDossie(talhoes, props){
+    var polis = [];
+    props.forEach(function(p){ if(p.contorno && p.contorno.length >= 3) polis.push({pts: p.contorno, tipo: 'prop', nome: p.nome}); });
+    talhoes.forEach(function(t){ if(t.contorno && t.contorno.length >= 3) polis.push({pts: t.contorno, tipo: 'tal', nome: t.nome}); });
+    if(!polis.length) return '';
+    var todos = [].concat.apply([], polis.map(function(p){ return p.pts; }));
+    var minLat = Math.min.apply(null, todos.map(function(p){ return p[0]; })), maxLat = Math.max.apply(null, todos.map(function(p){ return p[0]; }));
+    var minLng = Math.min.apply(null, todos.map(function(p){ return p[1]; })), maxLng = Math.max.apply(null, todos.map(function(p){ return p[1]; }));
+    var k = Math.cos((minLat + maxLat) / 2 * Math.PI / 180);
+    var W = 640, H = 340, pad = 18, larg = (maxLng - minLng) * k || 1e-6, alt = (maxLat - minLat) || 1e-6;
+    var esc = Math.min((W - 2 * pad) / larg, (H - 2 * pad) / alt);
+    var ox = (W - larg * esc) / 2, oy = (H - alt * esc) / 2;
+    var proj = function(p){ return [ox + (p[1] - minLng) * k * esc, oy + (maxLat - p[0]) * esc]; };
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%; max-width:640px; border:1px solid #bbb; background:#F4F6EE;">';
+    polis.forEach(function(pl){
+      var d = pl.pts.map(function(p, i){ var xy = proj(p); return (i ? 'L' : 'M') + xy[0].toFixed(1) + ',' + xy[1].toFixed(1); }).join(' ') + ' Z';
+      svg += pl.tipo === 'prop' ? '<path d="' + d + '" fill="none" stroke="#B08A1E" stroke-width="1.6" stroke-dasharray="6 4"></path>' : '<path d="' + d + '" fill="#A9C27A" fill-opacity="0.55" stroke="#3B5B32" stroke-width="1.4"></path>';
+    });
+    polis.filter(function(pl){ return pl.tipo === 'tal'; }).forEach(function(pl){ var c = proj(centroidePoligono(pl.pts)); svg += '<text x="' + c[0].toFixed(1) + '" y="' + c[1].toFixed(1) + '" text-anchor="middle" font-size="11" font-family="Arial" fill="#1d1d1d" font-weight="bold">' + escapeHtml(pl.nome) + '</text>'; });
+    // seta do norte e escala
+    var mPorPx = 1 / esc * 111320, barraM = [50, 100, 200, 250, 500, 1000, 2000, 5000].find(function(m){ return m / mPorPx >= 70; }) || 5000, barraPx = barraM / mPorPx;
+    svg += '<g font-family="Arial" font-size="10" fill="#333"><text x="' + (W - 22) + '" y="22" text-anchor="middle" font-weight="bold">N</text><path d="M' + (W - 22) + ',26 l-5,12 l5,-4 l5,4 Z" fill="#333"></path>';
+    svg += '<rect x="14" y="' + (H - 16) + '" width="' + barraPx.toFixed(1) + '" height="4" fill="#333"></rect><text x="14" y="' + (H - 20) + '">' + (barraM >= 1000 ? (barraM / 1000) + ' km' : barraM + ' m') + '</text></g>';
+    return svg + '</svg>';
+  }
+
+  function imprimirDossie(sfs, titulo){
+    if(!sfs.length) return;
+    var d = dadosDossie(sfs), hoje = hojeISO();
+    var codigo = 'RAST-' + hoje.replace(/-/g, '') + '-' + (sfs[0].id || '').replace(/[^a-z0-9]/gi, '').slice(-5).toUpperCase();
+    var cult = culturaNome(sfs[0].culturaId), ano = sfs[0].anoAgricola || '';
+    var h = '<p class="nota">Código do documento: <b>' + codigo + '</b> · Gerado pelo sistema de gestão da fazenda a partir dos registros de campo.</p>';
+    // 1. Produtor e propriedade
+    h += '<h2>1. Produtor e propriedade</h2><table><tbody>';
+    if(!d.props.length) h += '<tr><td colspan="4">Talhões sem propriedade vinculada.</td></tr>';
+    d.props.forEach(function(p){
+      h += '<tr><th style="width:20%;">Propriedade</th><td>' + escapeHtml(p.nome) + '</td><th style="width:16%;">Município / UF</th><td>' + escapeHtml([p.cidade, (p.estado || '').toUpperCase()].filter(Boolean).join(' / ') || '—') + '</td></tr>';
+      h += '<tr><th>Produtor</th><td>' + escapeHtml(p.produtorNome || '—') + (p.produtorDocumento ? ' · ' + escapeHtml(p.produtorDocumento) : '') + '</td><th>Nº do CAR</th><td>' + (p.codigoCAR ? escapeHtml(p.codigoCAR) : '<b style="color:#A23E2E;">não informado</b>') + '</td></tr>';
+      h += '<tr><th>CCIR / Inscrição estadual</th><td>' + escapeHtml([p.ccir, p.inscricaoEstadual].filter(Boolean).join(' · ') || '—') + '</td><th>Área do imóvel</th><td>' + (p.areaTotal ? fmtHa(p.areaTotal) : '—') + (p.contorno && p.contorno.length >= 3 ? ' · limite (CAR) no mapa: ' + fmtHa(p.areaMapa || areaPoligonoHa(p.contorno)) : '') + '</td></tr>';
+    });
+    h += '</tbody></table>';
+    // 2. Áreas
+    h += '<h2>2. Áreas de produção (geolocalização)</h2>';
+    var mapa = svgMapaDossie(d.talhoes, d.props);
+    if(mapa) h += mapa + '<p class="nota">Talhões em verde; limite do imóvel (CAR) tracejado. Coordenadas no sistema WGS84 / SIRGAS 2000 (graus decimais).</p>';
+    h += '<table><thead><tr><th>Talhão</th><th class="num">Área cadastrada</th><th class="num">Área no mapa</th><th>Ponto central (lat, long)</th><th>Contorno</th><th>Primeiro registro no sistema</th></tr></thead><tbody>';
+    d.talhoes.forEach(function(t){
+      var tem = t.contorno && t.contorno.length >= 3, c = tem ? centroidePoligono(t.contorno) : null;
+      h += '<tr><td>' + escapeHtml(t.nome) + '</td><td class="num">' + fmtHa(t.area) + '</td><td class="num">' + (tem ? fmtHa(t.areaMapa || areaPoligonoHa(t.contorno)) : '—') + '</td>';
+      h += '<td>' + (c ? fmtCoord(c[0]) + ', ' + fmtCoord(c[1]) : '—') + '</td><td>' + (tem ? t.contorno.length + ' vértices · ' + ({desenho: 'desenhado na imagem de satélite', gps: 'medido com GPS', arquivo: 'importado de arquivo (CAR/KML)'}[t.contornoOrigem] || 'mapa') + (t.contornoEm ? ' em ' + fmtDate(t.contornoEm) : '') : '<b style="color:#A23E2E;">sem contorno</b>') + '</td>';
+      h += '<td>' + (d.primeiroRegistro[t.id] ? fmtDate(d.primeiroRegistro[t.id]) : '—') + '</td></tr>';
+    });
+    h += '</tbody></table>';
+    if(d.talhoes.some(function(t){ return t.contorno && t.contorno.length >= 3; })) h += '<p class="nota">As coordenadas completas de cada contorno vão no arquivo GeoJSON/KML que acompanha este documento.</p>';
+    // 3. Ciclo
+    h += '<h2>3. Ciclo da cultura</h2><table><thead><tr><th>Talhão</th><th>Cultura / ano agrícola</th><th class="num">Área plantada</th><th>Plantio</th><th>Colheita</th><th>Situação</th></tr></thead><tbody>';
+    d.sfs.forEach(function(sf){
+      var cs = d.colheitas.filter(function(c){ return c.safraId === sf.id && c.data; });
+      h += '<tr><td>' + escapeHtml(talhaoNome(sf.talhaoId)) + '</td><td>' + escapeHtml(culturaNome(sf.culturaId)) + ' ' + escapeHtml(sf.anoAgricola || '') + '</td><td class="num">' + fmtHa(areaPlantadaSafra(sf)) + '</td>';
+      h += '<td>' + (sf.dataPlantio ? fmtDate(sf.dataPlantio) : '—') + '</td><td>' + (cs.length ? fmtDate(cs[0].data) + (cs.length > 1 ? ' a ' + fmtDate(cs[cs.length - 1].data) : '') : (sf.previsaoColheita ? 'previsão ' + fmtDate(sf.previsaoColheita) : '—')) + '</td><td>' + (STATUS_LABEL[sf.status] || '—') + '</td></tr>';
+    });
+    h += '</tbody></table>';
+    // 4. Aplicações
+    h += '<h2>4. Insumos e defensivos aplicados (Diário de Campo)</h2>';
+    var comProduto = d.aplicacoes.filter(function(a){ return !a.semProduto; });
+    if(!comProduto.length) h += '<p>Nenhuma aplicação registrada para estas áreas.</p>';
+    else {
+      h += '<table><thead><tr><th>Data</th><th>Atividade</th><th>Talhão</th><th>Produto</th><th class="num">Dose/ha</th><th class="num">Quantidade</th><th>Alvo</th><th>Receituário / resp. técnico</th><th>Carência</th></tr></thead><tbody>';
+      comProduto.forEach(function(a){
+        var o = a.op, sitTxt = {ok: '✔ respeitada', violada: '<b style="color:#A23E2E;">✖ colheita antes de ' + fmtDate(a.libera) + '</b>', aguardando: 'libera em ' + fmtDate(a.libera), 'sem-carencia': '<span style="color:#A23E2E;">não informada</span>', na: '—'}[a.situacao];
+        h += '<tr><td>' + fmtDate(a.data) + '</td><td>' + escapeHtml(a.tipo || '') + '</td><td>' + escapeHtml(a.talhoes) + '</td><td>' + escapeHtml(produtoNome(a.produtoId)) + '</td>';
+        h += '<td class="num">' + (a.dose ? fmtNum(Math.round(a.dose * 1000) / 1000) + ' ' + escapeHtml(a.un) : '—') + '</td><td class="num">' + fmtNum(Math.round(a.qtd * 1000) / 1000) + ' ' + escapeHtml(a.un) + '</td>';
+        h += '<td>' + escapeHtml(o.alvo || '—') + '</td><td>' + escapeHtml([o.receituario ? 'nº ' + o.receituario : '', o.responsavelTecnico].filter(Boolean).join(' · ') || (a.defensivo ? '' : '—')) + (a.defensivo && !String(o.receituario || '').trim() ? (o.responsavelTecnico ? '<br>' : '') + '<b style="color:#A23E2E;">sem receituário</b>' : '') + '</td>';
+        h += '<td>' + (a.carencia !== null && a.carencia !== undefined ? a.carencia + ' dias · ' : '') + sitTxt + '</td></tr>';
+      });
+      h += '</tbody></table>';
+    }
+    // 5. Colheita
+    h += '<h2>5. Colheita</h2>';
+    if(!d.colheitas.length) h += '<p>Nenhuma colheita registrada.</p>';
+    else {
+      h += '<table><thead><tr><th>Data</th><th>Talhão</th><th class="num">Quantidade</th><th class="num">Umidade</th><th>Local / observação</th></tr></thead><tbody>';
+      d.colheitas.forEach(function(c){ var sf = state.safras.find(function(x){ return x.id === c.safraId; }); h += '<tr><td>' + fmtDate(c.data) + '</td><td>' + escapeHtml(sf ? talhaoNome(sf.talhaoId) : '—') + '</td><td class="num">' + fmtNum(c.quantidade) + ' ' + escapeHtml(c.unidade || '') + '</td><td class="num">' + (c.umidade ? fmtNum(c.umidade) + '%' : '—') + '</td><td>' + escapeHtml(c.local || c.observacao || '—') + '</td></tr>'; });
+      h += '</tbody></table>';
+    }
+    // 6. Destino
+    h += '<h2>6. Destino da produção</h2>';
+    if(!d.vendas.length) h += '<p>Nenhuma saída / venda registrada.</p>';
+    else {
+      h += '<table><thead><tr><th>Data</th><th>Comprador / destino</th><th>Talhão</th><th class="num">Quantidade</th><th>Observação</th></tr></thead><tbody>';
+      d.vendas.forEach(function(v){ var sf = state.safras.find(function(x){ return x.id === v.safraId; }); h += '<tr><td>' + fmtDate(v.data) + '</td><td>' + escapeHtml(v.parceiroId ? parceiroNome(v.parceiroId) : '—') + '</td><td>' + escapeHtml(sf ? talhaoNome(sf.talhaoId) : '—') + '</td><td class="num">' + fmtNum(v.quantidade) + ' ' + escapeHtml(v.unidade || '') + '</td><td>' + escapeHtml(v.observacao || '—') + '</td></tr>'; });
+      h += '</tbody></table>';
+    }
+    // 7. Conferência
+    var chk = function(ok, txt, obs){ return '<tr><td style="width:28px; text-align:center; font-size:14px;">' + (ok === 'pend' ? '⏳' : (ok ? '✔' : '<span style="color:#A23E2E;">✖</span>')) + '</td><td>' + txt + (obs ? '<br><span class="nota">' + obs + '</span>' : '') + '</td></tr>'; };
+    var naoColhida = !d.colheitas.length && d.sfs.every(function(sf){ return sf.status !== 'colhida'; });
+    h += '<h2>7. Conferência (rastreabilidade e EUDR)</h2><table><tbody>';
+    h += chk(!d.semContorno.length, 'Todas as áreas com contorno georreferenciado (polígono)', d.semContorno.length ? 'Falta desenhar: ' + escapeHtml(d.semContorno.map(function(t){ return t.nome; }).join(', ')) + ' (aba Talhões → 🗺️).' : '');
+    h += chk(d.props.length && d.props.every(function(p){ return !!p.codigoCAR; }), 'Número do CAR informado', d.props.some(function(p){ return !p.codigoCAR; }) ? 'Informe em Propriedades → Editar.' : '');
+    h += chk(!d.semReceituario.length, 'Receituário agronômico em todas as aplicações de defensivos', d.semReceituario.length ? d.semReceituario.length + ' aplicação(ões) sem nº de receituário.' : '');
+    h += chk(!d.violadas.length && !d.semCarencia.length, 'Período de carência respeitado antes da colheita', d.violadas.length ? d.violadas.length + ' aplicação(ões) com colheita antes do fim da carência.' : (d.semCarencia.length ? d.semCarencia.length + ' defensivo(s) sem carência cadastrada (Produtos → Editar → Carência).' : ''));
+    h += chk(d.colheitas.length > 0 ? true : (naoColhida ? 'pend' : false), 'Colheita registrada', naoColhida ? 'Safra ainda não colhida.' : (d.colheitas.length ? '' : 'Safra marcada como colhida, mas sem registro na aba Colheita.'));
+    h += chk(d.vendas.length > 0 ? true : 'pend', 'Destino da produção registrado', d.vendas.length ? '' : 'Ainda sem saída / venda registrada.');
+    h += '</tbody></table>';
+    h += '<h2>8. Declaração do produtor</h2><p>Declaro que as informações acima conferem com os registros da propriedade e que as áreas de produção listadas <b>não foram objeto de desmatamento após 31/12/2020</b>, estando a propriedade regular perante o Cadastro Ambiental Rural (CAR) e a legislação brasileira aplicável.</p>';
+    h += '<div class="assin"><div>Produtor' + (d.props[0] && d.props[0].produtorNome ? '<br>' + escapeHtml(d.props[0].produtorNome) : '') + '</div><div>Responsável técnico</div><div>Local e data</div></div>';
+    var tituloDoc = titulo.indexOf(cult) !== -1 ? titulo : titulo + ' (' + cult + (ano ? ' ' + ano : '') + ')';
+    abrirImpressao('Dossiê de rastreabilidade — ' + tituloDoc, h);
+  }
+
+  function baixarArquivoTexto(nome, conteudo, tipo){
+    var blob = new Blob([conteudo], {type: tipo});
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nome;
+    document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+  function nomeArquivoSeguro(s){ return String(s || 'areas').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase(); }
+  // GeoJSON no formato aceito pelo sistema da UE (TRACES / EUDR): um polígono por área, em graus (long, lat)
+  function geoJsonAreas(sfs){
+    var d = dadosDossie(sfs);
+    var feats = d.talhoes.filter(function(t){ return t.contorno && t.contorno.length >= 3; }).map(function(t){
+      var pr = d.props.find(function(p){ return p.id === t.propriedadeId; }) || d.props[0] || {};
+      var anel = t.contorno.map(function(p){ return [Math.round(p[1] * 1e6) / 1e6, Math.round(p[0] * 1e6) / 1e6]; });
+      anel.push(anel[0].slice());
+      return {type: 'Feature', properties: {ProducerName: pr.produtorNome || pr.nome || '', ProducerCountry: 'BR', ProductionPlace: t.nome + (pr.nome ? ' - ' + pr.nome : ''), Area: Math.round((t.areaMapa || areaPoligonoHa(t.contorno)) * 10000) / 10000, CAR: pr.codigoCAR || '', Cultura: culturaNome(sfs[0].culturaId), AnoAgricola: sfs[0].anoAgricola || ''}, geometry: {type: 'Polygon', coordinates: [anel]}};
+    });
+    return {type: 'FeatureCollection', features: feats};
+  }
+  function kmlAreas(sfs){
+    var gj = geoJsonAreas(sfs);
+    var k = '<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>' + escapeHtml(culturaNome(sfs[0].culturaId) + ' ' + (sfs[0].anoAgricola || '')) + '</name>';
+    k += '<Style id="t"><LineStyle><color>ff2a5b3b</color><width>2</width></LineStyle><PolyStyle><color>667ac2a9</color></PolyStyle></Style>';
+    gj.features.forEach(function(f){ k += '<Placemark><name>' + escapeHtml(f.properties.ProductionPlace) + '</name><description>' + escapeHtml(fmtHa(f.properties.Area) + (f.properties.CAR ? ' · CAR ' + f.properties.CAR : '')) + '</description><styleUrl>#t</styleUrl><Polygon><outerBoundaryIs><LinearRing><coordinates>' + f.geometry.coordinates[0].map(function(c){ return c[0] + ',' + c[1] + ',0'; }).join(' ') + '</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>'; });
+    return k + '</Document></kml>';
+  }
+  function safrasDoDossie(tipo, id){
+    if(tipo === 'lavoura') return safrasDaLavoura(id);
+    var sf = state.safras.find(function(x){ return x.id === id; }); return sf ? [sf] : [];
+  }
+  function tituloDossie(tipo, id, sfs){ return tipo === 'lavoura' ? lavouraLabel(id) : (sfs[0] ? talhaoNome(sfs[0].talhaoId) : ''); }
+  function acaoDossie(action, btn){
+    var tipo = btn.dataset.tipo || 'safra', id = btn.dataset.id, sfs = safrasDoDossie(tipo, id);
+    if(!sfs.length){ alert('Não achei a safra.'); return; }
+    var titulo = tituloDossie(tipo, id, sfs);
+    if(action === 'dossie-pdf'){ imprimirDossie(sfs, titulo); return; }
+    var gj = geoJsonAreas(sfs);
+    if(!gj.features.length){ alert('Nenhum talhão desta ' + (tipo === 'lavoura' ? 'lavoura' : 'safra') + ' tem contorno desenhado ainda. Desenhe na aba Talhões (botão 🗺️).'); return; }
+    var base = 'areas-' + nomeArquivoSeguro(titulo.indexOf(sfs[0].anoAgricola || '§') !== -1 ? titulo : titulo + '-' + culturaNome(sfs[0].culturaId) + '-' + (sfs[0].anoAgricola || ''));
+    if(action === 'dossie-geojson') baixarArquivoTexto(base + '.geojson', JSON.stringify(gj, null, 1), 'application/geo+json');
+    if(action === 'dossie-kml') baixarArquivoTexto(base + '.kml', kmlAreas(sfs), 'application/vnd.google-earth.kml+xml');
+  }
+  function botoesDossieHtml(tipo, id, rotulo){
+    var est = 'font-family:inherit; font-size:12.5px; padding:6px 11px; border-radius:4px; border:1px solid var(--paper-line); background:var(--paper); color:var(--ink); cursor:pointer;';
+    return '<div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;"><span style="font-size:12px; font-weight:600;">' + rotulo + '</span>'
+      + '<button type="button" data-action="dossie-pdf" data-tipo="' + tipo + '" data-id="' + id + '" style="' + est + '">📄 Dossiê (imprimir / PDF)</button>'
+      + '<button type="button" data-action="dossie-geojson" data-tipo="' + tipo + '" data-id="' + id + '" style="' + est + '" title="Arquivo de geolocalização no formato usado pela EUDR">🌍 Áreas (GeoJSON · EUDR)</button>'
+      + '<button type="button" data-action="dossie-kml" data-tipo="' + tipo + '" data-id="' + id + '" style="' + est + '" title="Abre no Google Earth">🌍 Áreas (KML · Google Earth)</button></div>';
+  }
   function lancamentoEstaFechado(f){
     return periodoFechado(f.data || f.vencimento || '');
   }
@@ -9077,6 +9314,8 @@
         estoqueAtual: parseFloat(data.get('estoqueAtual')) || 0, estoqueMinimo: parseFloat(data.get('estoqueMinimo')) || 0
       };
       prodFields.custoManual = parseFloat(data.get('custoManual')) || 0;
+      var carTxt = String(data.get('carenciaDias') || '').trim();
+      prodFields.carenciaDias = carTxt === '' ? '' : Math.max(0, parseInt(carTxt, 10) || 0);
       if(prodEditingId) delete prodFields.estoqueAtual; // estoque só muda por compra, aplicação ou ajuste registrado
       lerEmbalagensDoDom();
       prodFields.embalagens = (produtoEmbRascunho ? produtoEmbRascunho.itens : []).map(function(e){ return {nome: String(e.nome || '').trim(), conteudo: parseFloat(e.conteudo) || 0}; }).filter(function(e){ return e.nome && e.conteudo > 0; });
@@ -9738,6 +9977,7 @@
     var action = btn.dataset.action;
     var id = btn.dataset.id;
     if(action.indexOf('mapa-') === 0 && acaoMapa(action, btn)) return;
+    if(action.indexOf('dossie-') === 0){ acaoDossie(action, btn); return; }
     if(action === 'abrir-mapa-talhao'){ abrirMapa({modo:'editar', talhaoId: id}); return; }
     if(action === 'abrir-mapa-fazenda'){ abrirMapa({modo:'visao'}); return; }
 
