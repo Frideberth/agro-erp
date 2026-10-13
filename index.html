@@ -2348,7 +2348,8 @@
       '<b>Máquinas e Patrimônio</b> → tratores, pulverizadores, colhedoras, com valor e vida útil (a depreciação sai daqui).',
       '<b>Produtos e Estoque</b> → os insumos. Escolha a unidade de controle (L, kg, un…) e as embalagens (galão 5 L, balde 20 L…).',
       '<b>Parceiros</b> e <b>Funcionários</b> → fornecedores, compradores, prestadores e a equipe.',
-      '<b>Lavouras e Safras</b> → crie a lavoura do ano (cultura + ano agrícola) marcando os talhões plantados.'
+      '<b>Lavouras e Safras</b> → crie a lavoura do ano (cultura + ano agrícola) marcando os talhões plantados. Informe a <b>produtividade esperada</b>: o planejamento de custo usa esse número.',
+      'Na <b>Rentabilidade</b>, abra 🏷️ Classificação das contas de despesa e confira se cada conta caiu na categoria certa (Insumos, Pessoas, Mecanização, Outros, Terra ou Fora do custo).'
     ]},
     {id:'plantar', titulo:'Plantar uma nova safra', passos:[
       'Vá em <b>Lavouras e Safras</b> → "Nova lavoura".',
@@ -2370,6 +2371,20 @@
       'Adicione os produtos com a dose por hectare ou por alqueire — a quantidade total é calculada e sai do estoque.',
       'Informe as máquinas e as horas: o custo entra na safra pelo custo/hora real de cada máquina.',
       'Preencha alvo, volume de calda, nº do receituário e responsável técnico. O botão 🧾 na lista imprime a ficha de aplicação.'
+    ]},
+    {id:'inspecionar', titulo:'Inspecionar a lavoura (pragas e doenças)', passos:[
+      'Defina uma rotina fixa, por exemplo terça e sexta, das 7h às 9h, sempre no mesmo horário.',
+      'No talhão, caminhe em zigue-zague e avalie vários pontos (folhas, frutos, solo, plantas). Anote a média.',
+      '<b>Inspeção de Campo</b> → escolha o talhão: os alvos aparecem pela cultura (café, soja, milho). Preencha só o que avaliou; use "Outro alvo" para o que não estiver na lista.',
+      'Ao salvar, o sistema avisa se algum alvo chegou ao <b>nível de ação</b>. Antes de usar os alertas, revise os níveis em ⚙️ Níveis de ação com o seu agrônomo.',
+      'A <b>Situação por talhão</b> mostra quem está há mais de 7 dias sem inspeção e se cada leitura subiu (▲) ou desceu (▼) desde a anterior.'
+    ]},
+    {id:'caderneta', titulo:'Colheita e processamento do café (Caderneta)', passos:[
+      '<b>Caderneta do Café</b> → escolha a lavoura de café, a unidade da apanha (medida, balaio, lata) e o valor padrão por unidade.',
+      'Todo dia, em <b>Apanha do dia</b>: data, talhão, tipo (pano, varrição ou derriça), valor, e uma linha por pessoa com a quantidade. "+ Pessoa" acrescenta linhas.',
+      'Na tabela <b>pessoa × semana</b>, use 💰 Lançar pagamento ao acertar com cada um: a despesa paga vai para Lançamentos, já na lavoura, e entra no custo.',
+      'Em <b>Processamento</b>, crie um lote para cada carga (volume em medidas) e mude a etapa: terreiro → secador → tulha → beneficiado. Anote secador, umidade, sacos de coco e bebida.',
+      'Com as sacas beneficiadas preenchidas, clique em ➜ Colheita: o lote entra em Colheita e Vendas (estoque e produtividade). O rendimento mostra quantas medidas deram uma saca.'
     ]},
     {id:'colher', titulo:'Colher e vender', passos:[
       '<b>Colheita e Vendas</b> → "Entrada de colheita": escolha a safra (talhão) e a quantidade colhida.',
@@ -2397,6 +2412,28 @@
       'Lançamentos "⚠️ A classificar" não entram em lavoura nenhuma: classifique no Financeiro (o Dashboard mostra quantos são).',
       'O botão 📄 PDF na Rentabilidade gera o relatório de custo de produção da lavoura para imprimir ou salvar.'
     ]},
+    {id:'senar', titulo:'Custo de produção pelo método SENAR (COE, COT e CT)', passos:[
+      '<b>Rentabilidade</b> → quadro "Custo de produção — método SENAR" → escolha a lavoura.',
+      '<b>COE</b> é o desembolso: insumos, pessoas, mecanização, outros gastos e juros de financiamentos. <b>COT</b> soma depreciação e pró-labore. <b>CT</b> soma ainda a remuneração da terra, do capital de giro e das máquinas.',
+      'O sistema monta tudo sozinho: lançamentos da lavoura, gerais rateados por área × mês, insumos do Diário, horas de máquina, juros das parcelas pagas e depreciação do Patrimônio. Frete com caminhão próprio e compra de máquinas ficam fora.',
+      'Em ⚙️ Parâmetros, informe seu pró-labore mensal e o arrendamento da região (R$/ha/ano). Talhão arrendado de terceiros usa o valor pago.',
+      'O <b>ponto de nivelamento</b> diz quantas sacas por hectare pagam cada nível de custo. O <b>Diagnóstico</b> aponta o que mais pesa.',
+      'No <b>Simulador</b>, mexa no preço, na produtividade e em cada categoria de custo para ver o lucro e o custo por saca do cenário. A tabela de <b>Sensibilidade</b> mostra o lucro por hectare de −30% a +30% em preço e produtividade.',
+      'Um lançamento fora do padrão da conta (ex.: extintor lançado em Insumos)? Em "De onde vem cada valor do COE" → Trocar a categoria de um lançamento.'
+    ]},
+    {id:'orcado', titulo:'Planejar a safra (modo Orçado)', passos:[
+      'No quadro do custo SENAR, clique em <b>Orçado (planejamento)</b>.',
+      'Informe a produtividade e o preço esperados.',
+      'Monte os itens por categoria: nº de vezes × quantidade × preço, por hectare ou valor total. Para começar rápido, use "Copiar R$/ha" do realizado de uma lavoura parecida e ajuste.',
+      'A tabela <b>Orçado × realizado</b> mostra quanto de cada categoria já foi gasto: amarelo passa de 85%, vermelho passa do orçado.',
+      'O simulador e a sensibilidade passam a usar o orçado: use antes de plantar para saber o preço e a produtividade que empatam.'
+    ]},
+    {id:'ocupacao', titulo:'Ver se máquinas e equipe estão sendo bem usadas', passos:[
+      '<b>Rentabilidade</b> → seção "Ocupação de máquinas e equipe (últimos 12 meses)".',
+      'Para cada máquina: horas usadas, custos, depreciação por ano e quanto de depreciação cada hora carrega. "Sem horas registradas" quer dizer falta de registro ou máquina parada.',
+      'Registre as horas no <b>Diário de Campo</b> e na <b>Colheita</b>, ou as leituras do horímetro em Máquinas e Patrimônio, para a conta ficar real.',
+      'Para a equipe: dias com atividade registrada (como responsável no Diário ou na Colheita) contra os meses de salário pago.'
+    ]},
     {id:'backup', titulo:'Backup e segurança', passos:[
       'Os dados ficam na nuvem (Netlify), separados por conta: cada pessoa entra com o próprio e-mail e senha e só vê os próprios dados. Em cada aparelho você entra uma vez; a sessão dura 30 dias.',
       'Troque a senha em <b>Configurações</b>. Esqueceu? O administrador cria uma nova; o próprio administrador usa "Esqueci a senha → Sou o administrador" com o código de recuperação do Netlify.',
@@ -2418,7 +2455,7 @@
     financiamentos: {t:'Financiamentos', txt:'Cadastre o contrato com valor, taxa ao ano, número de parcelas, periodicidade e 1º vencimento. Escolha o sistema: <b>parcela informada</b> (um valor só), <b>parcelas do contrato</b> (valor e data de cada uma, digitados em 📅 Parcelas), <b>SAC</b> ou <b>PRICE</b>. Se deu entrada, informe o valor e a data. "📅 Parcelas" mostra o cronograma com amortização, juros e saldo, e imprime. "Pagar parcela" dá baixa e lança a despesa no Financeiro.'},
     arrendamentos: {t:'Arrendamentos', txt:'Contratos de arrendamento de terra pagos ou recebidos, com valores e vencimentos.'},
     servicosPrestados: {t:'Serviços', txt:'Serviços que você contratou (colheita, frete…) ou prestou a outros. Cada serviço é um lançamento (despesa se contratou, receita se prestou) com quantidade × valor unitário — aparece também em Lançamentos e, se pendente, em Contas a Pagar ou a Receber.'},
-    rentabilidade: {t:'Rentabilidade', txt:'Resultado por lavoura, por cultura, por máquina e por talhão. As caixas no topo incluem custos gerais rateados, depreciação e custo de oportunidade. 📄 PDF gera o relatório de custo de produção da lavoura (por talhão, insumos, máquinas e contas).'},
+    rentabilidade: {t:'Rentabilidade', txt:'No topo, o <b>custo de produção pelo método SENAR</b> (COE → COT → CT) da lavoura escolhida, com diagnóstico, simulador, sensibilidade e o modo <b>Orçado</b> para planejar. Mais abaixo, a ocupação de máquinas e equipe. Resultado por lavoura, por cultura, por máquina e por talhão. As caixas no topo incluem custos gerais rateados, depreciação e custo de oportunidade. 📄 PDF gera o relatório de custo de produção da lavoura (por talhão, insumos, máquinas e contas).'},
     fluxoCaixa: {t:'Fluxo de Caixa', txt:'Entradas e saídas mês a mês, com o que já foi pago/recebido e o que está pendente.'},
     contaCorrente: {t:'Conta-Corrente', txt:'Extrato por parceiro: tudo que foi pago ou recebido de cada fornecedor, cliente ou prestador.'},
     orcamento: {t:'Orçado x Realizado', txt:'Planeje valores por conta e ano e compare com o que realmente aconteceu.'},
@@ -5518,7 +5555,7 @@
       var fim = a.dataFim || '', limiteAberto = addAnosISO(hoje, 1);
       for(var i = 0; i < 40; i++){
         var ini = addAnosISO(a.dataInicio, i);
-        if(fim && ini > fim) break;
+        if(fim && ini >= fim) break;
         if(!fim && ini > limiteAberto) break;
         var fimPer = addAnosISO(a.dataInicio, i + 1); fimPer = new Date(new Date(fimPer + 'T12:00:00').getTime() - 86400000).toISOString().slice(0, 10);
         if(fim && fimPer > fim) fimPer = fim;
@@ -6426,6 +6463,7 @@
     var soma = 0, qtd = 0;
     var somar = function(r, pago){
       if(!pago || destinoEfetivo(r) !== 'maquina') return;
+      if(categoriaSenarLancamento(r) === 'fora') return; // compra/entrada da máquina não é custo de operação
       var ms = r.maquinasIds || [];
       if(ms.indexOf(patrimonioId) === -1) return;
       soma += (Number(r.valor) || 0) / ms.length; qtd++;
@@ -6798,6 +6836,8 @@
   // Regras: destino Máquina → Mecanização; pagamento de arrendamento → Terra; senão, a categoria da conta
   function categoriaSenarLancamento(r){
     if(r.categoriaSenar) return r.categoriaSenar;
+    // compra de máquina/equipamento e entrada de financiamento ficam fora mesmo com destino Máquina: o custo entra pela depreciação do Patrimônio
+    if(r.contaId && categoriaSenarConta(r.contaId) === 'fora') return 'fora';
     if(destinoEfetivo(r) === 'maquina') return 'mecanizacao';
     if(r.origem === 'arrendamento') return 'terra';
     if(r.contaId) return categoriaSenarConta(r.contaId);
@@ -6922,7 +6962,7 @@
       var r = x.r, d = destinoEfetivo(r), v = 0, c;
       if(frete[r.id]) return;
       if(d === 'geral'){ v = Number(r.valor) || 0; c = categoriaSenarLancamento(r); }
-      else if(d === 'maquina'){ var ms = r.maquinasIds || []; if(!ms.length) return; v = ms.reduce(function(sm, mid){ return sm + fracaoNaoAlocadaMaquina(mid); }, 0) * (Number(r.valor) || 0) / ms.length; c = 'mecanizacao'; }
+      else if(d === 'maquina'){ var ms = r.maquinasIds || []; if(!ms.length) return; v = ms.reduce(function(sm, mid){ return sm + fracaoNaoAlocadaMaquina(mid); }, 0) * (Number(r.valor) || 0) / ms.length; c = categoriaSenarLancamento(r); }
       else return;
       if(!v || c === 'fora') return;
       itensRateio.push({valor: v, data: x.data, r: r, c: c});
