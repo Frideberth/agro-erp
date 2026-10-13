@@ -90,7 +90,7 @@
   .sidebar-footer{margin-top:auto; font-size:11px; color:#8A9174; line-height:1.5; padding:0 4px;}
 
   /* ---------- Main ---------- */
-  main{padding:28px 34px 60px; max-width:1640px;}
+  main{padding:28px 34px 60px; max-width:1640px; min-width:0;}
   .topbar{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:8px;}
   .topbar h1{font-family:'Zilla Slab', serif; font-size:28px; color:var(--paper); margin:0; font-weight:600;}
   .topbar .subtitle{color:#A0A88A; font-size:13px; margin-top:2px;}
@@ -279,6 +279,8 @@
   #tip-lanc td.v{text-align:right; white-space:nowrap; padding-left:10px;}
   #tip-lanc .tl-sub{font-size:11.5px; color:var(--ink-soft); margin:-2px 0 6px;}
 @media (max-width: 760px){ .csn-simgrid{ grid-template-columns:1fr !important; } }
+#tab-caderneta .stat-row, #tab-inspecao .stat-row{grid-template-columns:repeat(auto-fit, minmax(135px,1fr));}
+#tab-caderneta .field input, #tab-caderneta .field select{max-width:100%;}
 </style>
 </head>
 <body>
@@ -394,8 +396,10 @@
       <div class="nav-group-label" data-group="safra">Safra</div>
       <button class="nav-btn" data-tab="safras">Lavouras e Safras</button>
       <button class="nav-btn" data-tab="operacoes">Diário de Campo</button>
+      <button class="nav-btn" data-tab="inspecao">Inspeção de Campo</button>
       <button class="nav-btn" data-tab="chuvas">Chuvas</button>
       <button class="nav-btn" data-tab="producao">Colheita e Vendas</button>
+      <button class="nav-btn" data-tab="caderneta">Caderneta do Café</button>
       <button class="nav-btn" data-tab="vendasAntecipadas">Venda Antecipada</button>
       <div class="nav-group-label" data-group="financeiro">Financeiro</div>
       <button class="nav-btn" data-tab="financeiro">Lançamentos</button>
@@ -474,6 +478,8 @@
     <section id="tab-configuracoes" class="tab-content hidden"></section>
     <section id="tab-agro50" class="tab-content hidden"></section>
     <section id="tab-chuvas" class="tab-content hidden"></section>
+    <section id="tab-caderneta" class="tab-content hidden"></section>
+    <section id="tab-inspecao" class="tab-content hidden"></section>
   </main>
 </div>
 
@@ -483,7 +489,7 @@
 (function(){
   "use strict";
 
-  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas','sefazNotasPendentes','sefazItensRevisao','sefazProgresso','analisesSolo','imagensCampo','importsAplicados','lavouras','sefazResumos','ajustesEstoque','configUnidades','alertasLidos'];
+  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas','sefazNotasPendentes','sefazItensRevisao','sefazProgresso','analisesSolo','imagensCampo','importsAplicados','lavouras','sefazResumos','ajustesEstoque','configUnidades','alertasLidos','colheitaApanhas','cafeLotes','inspecoes'];
   var state = {};
   var editState = null; // {scope:'generic', entityKey, id} ou {scope:'talhoes'|'safras'|'operacoes'|'financeiro'|'producao', id}
   ALL_KEYS.forEach(function(k){ state[k] = []; });
@@ -517,6 +523,8 @@
     configuracoes: {title:'Configurações', subtitle:'Backup, certificado digital e troca de propriedade'},
     ajuda: {title:'Ajuda', subtitle:'Manual de uso: passo a passo e explicação de cada tela'},
     chuvas: {title:'Chuvas', subtitle:'Pluviometria e análise hídrica das propriedades'},
+    caderneta: {title:'Caderneta de Colheita e Processamento de Café', subtitle:'Apanha por pessoa, lotes do terreiro à tulha e rendimento do café'},
+    inspecao: {title:'Inspeção de Campo', subtitle:'Monitoramento de pragas, doenças e condição da lavoura por talhão'},
     agro50: {title:'AGRO5.0', subtitle:'Espaço para incorporar novas tecnologias e indicadores ao sistema, conforme sua realidade'}
   };
 
@@ -1287,7 +1295,7 @@
   function loadKey(key){
     return rawGet(currentWorkspaceId + '::' + key).then(function(v){ return v || []; });
   }
-  var CHAVES_PAPEL_CAMPO = ['operacoes', 'produtos', 'chuvas', 'imagensCampo'];
+  var CHAVES_PAPEL_CAMPO = ['operacoes', 'produtos', 'chuvas', 'imagensCampo', 'colheitaApanhas', 'cafeLotes', 'inspecoes'];
   var currentWorkspaceInfo = null; // {id, nome, compartilhado, papel, dono}
   var avisoSomenteLeitura = 0, carregandoWorkspace = false;
   function papelAtual(){ return currentWorkspaceInfo && currentWorkspaceInfo.compartilhado ? currentWorkspaceInfo.papel : 'dono'; }
@@ -2274,6 +2282,7 @@
     'financiamento': {label:'Financiamento', cor:'#A23E2E'},
     'vendaAntecipada': {label:'Venda Antecipada', cor:'#9C6A1E'},
     'relatorioHistorico': {label:'Relatório Histórico', cor:'#6B5D46'},
+    'caderneta': {label:'Caderneta do Café', cor:'#7A2738'},
     'contaPagar': {label:'Conta a pagar', cor:'#B5651D'},
     'contaReceber': {label:'Conta a receber', cor:'#4F7942'},
     'servico': {label:'Serviço', cor:'#3B6EA5'},
@@ -2398,6 +2407,8 @@
     painel: {t:'Dashboard', txt:'Resumo da fazenda e o painel <b>📋 Pendências</b>: tudo que precisa de atenção (lançamentos sem destino, contas vencidas, estoque negativo, produtos sem custo, safras com dados faltando, notas da SEFAZ esperando ciência, parcelas de financiamento). Clique em "abrir →" para ir direto à tela certa.'},
     safras: {t:'Lavouras e Safras', txt:'A <b>lavoura</b> é uma cultura num ano agrícola (ex.: Soja 2026/2027) plantada em um ou vários talhões. Cada talhão dentro dela é uma <b>safra</b>. Use os botões de ano acima da tabela de lavouras para filtrar. "Apelido" dá um nome curto (ex.: Milho Safrinha); "Encerrar" tira a lavoura da lista de destinos dos lançamentos. Inativar uma safra esconde ela dos formulários sem apagar o histórico.'},
     operacoes: {t:'Diário de Campo', txt:'Registre cada atividade como um receituário: lavoura e talhões, produtos com dose (por ha ou por alqueire), máquinas com horas, alvo, volume de calda, nº do receituário e responsável técnico. Os produtos saem do estoque na hora; editar ou remover devolve. O custo (insumos + máquinas) entra na safra. 🧾 imprime a ficha de aplicação.'},
+    caderneta: {t:'Caderneta do Café', txt:'No terreiro ou na lavoura: registre a apanha do dia (várias pessoas de uma vez), veja a tabela pessoa × semana e use 💰 Lançar pagamento para criar a despesa paga na lavoura. Em Processamento, crie lotes e acompanhe terreiro → secador → tulha → beneficiado; com as sacas beneficiadas, ➜ Colheita leva o lote para o estoque. O rendimento mostra quantas medidas deram uma saca.'},
+    inspecao: {t:'Inspeção de Campo', txt:'Rotina de monitoramento (ex.: terça e sexta, 7h–9h). Escolha o talhão: os alvos aparecem pela cultura (café, soja, milho), com o nível de ação de referência. A Situação por talhão mostra quem está há mais de 7 dias sem inspeção e o que passou do nível. Os níveis são editáveis em ⚙️.'},
     producao: {t:'Colheita e Vendas', txt:'Entradas de colheita somam no estoque de cada safra. Vendas podem sair de um talhão ou do <b>estoque geral</b> da cultura, com descontos (a receita líquida vai para o Financeiro). ▸ Raio-x mostra, por talhão, colhido, vendido, saldo e sc/ha. Saídas que são entrega de venda antecipada só se desfazem pela aba Venda Antecipada.'},
     vendasAntecipadas: {t:'Venda Antecipada', txt:'Contratos a termo. "✅ Efetivar venda" registra a entrega (baixa no estoque, calcula descontos e lança a receita). "↩️ Desfazer entrega" volta tudo como estava. Remover um contrato já entregue também desfaz a entrega.'},
     financeiro: {t:'Lançamentos', txt:'Todas as despesas e receitas. Cada lançamento tem uma <b>conta</b> do plano de contas (botão + cria conta nova) e um <b>destino</b>: lavoura, só talhão, máquina/equipamento ou geral (rateado). "⚠️ A classificar" lista os que ficaram sem destino — marque vários e classifique de uma vez. "Fechar período" trava um mês já conferido.'},
@@ -2482,6 +2493,8 @@
     safeRender('ajuda', renderAjuda);
     safeRender('servicosPrestados', renderServicosPrestados);
     safeRender('chuvas', renderChuvas);
+    safeRender('caderneta', renderCaderneta);
+    safeRender('inspecao', renderInspecao);
     safeRender('rentabilidade', renderRentabilidade);
     safeRender('fluxoCaixa', renderFluxoCaixa);
     safeRender('contaCorrente', renderContaCorrente);
@@ -6732,6 +6745,7 @@
     if(maqK.length){ h += '<h3>Máquinas</h3><table><thead><tr><th>Máquina</th><th class="num">Horas</th><th class="num">Custo/hora</th><th class="num">Custo</th></tr></thead><tbody>'; maqK.forEach(function(k){ h += '<tr><td>' + escapeHtml(nomePatrimonio(k)) + '</td><td class="num">' + fmtNum(porMaquina[k].horas) + ' h</td>' + b(custoHoraMaquina(k)) + b(porMaquina[k].valor) + '</tr>'; }); h += '</tbody></table>'; }
     var contaK = Object.keys(porConta).sort(function(a, c){ return porConta[c] - porConta[a]; });
     if(contaK.length){ h += '<h3>Lançamentos por conta</h3><table><thead><tr><th>Conta</th><th class="num">Valor</th><th class="num">R$/ha</th><th class="num">% do custo</th></tr></thead><tbody>'; contaK.forEach(function(k){ h += '<tr><td>' + escapeHtml(k) + '</td>' + b(porConta[k]) + '<td class="num">' + (T.area > 0 ? fmtBRL(porConta[k] / T.area) : '—') + '</td><td class="num">' + (T.total > 0 ? fmtNum(porConta[k] / T.total * 100) + '%' : '—') + '</td></tr>'; }); h += '</tbody></table>'; }
+    h += custoSenarPdfHtml(lavouraId);
     return h;
   }
   function imprimirCustoLavoura(lavouraIds, titulo){
@@ -6783,6 +6797,7 @@
   }
   // Regras: destino Máquina → Mecanização; pagamento de arrendamento → Terra; senão, a categoria da conta
   function categoriaSenarLancamento(r){
+    if(r.categoriaSenar) return r.categoriaSenar;
     if(destinoEfetivo(r) === 'maquina') return 'mecanizacao';
     if(r.origem === 'arrendamento') return 'terra';
     if(r.contaId) return categoriaSenarConta(r.contaId);
@@ -6886,7 +6901,7 @@
     var mapa = mapaSafrasAtivasPorMes();
     var ids = sfs.map(function(s){ return s.id; });
     var cat = {insumos:0, pessoas:0, mecanizacao:0, outros:0, juros:0, terra:0};
-    var porConta = {}, foraTotal = 0, freteTotal = 0;
+    var porConta = {}, foraTotal = 0, freteTotal = 0, itensLanc = [];
     var addConta = function(r, v, c){ var k = r.contaId ? contaNome(r.contaId) : (r.categoria || 'Sem conta'); var x = porConta[k + '|' + c] = porConta[k + '|' + c] || {conta: k, cat: c, valor: 0}; x.valor += v; };
     var lancs = [];
     state.financeiro.forEach(function(f){ if(f.tipo === 'custo' && (f.status || 'Pago') !== 'Pendente') lancs.push({r: f, data: f.data || f.vencimento || ''}); });
@@ -6899,7 +6914,7 @@
       if(frete[r.id]){ freteTotal += v; return; }
       var c = categoriaSenarLancamento(r);
       if(c === 'fora'){ foraTotal += v; return; }
-      cat[c] += v; addConta(r, v, c);
+      cat[c] += v; addConta(r, v, c); itensLanc.push({r: r, v: v, c: c, src: state.contasPagar.indexOf(r) !== -1 ? 'cp' : 'fin'});
     });
     // 2) gerais da fazenda e parte das máquinas sem horas registradas, rateados por área × mês
     var itensRateio = [];
@@ -6916,7 +6931,7 @@
       var a = alocarPorMesNasSafras([{valor: it.valor, data: it.data}], mapa);
       var v = ids.reduce(function(s, id){ return s + (a.porSafra[id] || 0); }, 0);
       if(!v) return;
-      cat[it.c] += v; addConta(it.r, v, it.c);
+      cat[it.c] += v; addConta(it.r, v, it.c); itensLanc.push({r: it.r, v: v, c: it.c, src: state.contasPagar.indexOf(it.r) !== -1 ? 'cp' : 'fin', rateado: true});
     });
     // 3) insumos aplicados (Diário de Campo) e horas de máquina
     var insDiario = 0, maqHoras = 0;
@@ -6949,7 +6964,7 @@
     var preco = sacas > 0 ? RB / sacas : 0;
     return {cat: cat, COE: COE, dep: dep, prolab: prolab, COT: COT, remTerra: remTerra, remCirc: remCirc, remBens: remBens, CT: CT,
       area: area, sacas: sacas, receitas: receitas, estoque: estoque, RB: RB, preco: preco,
-      MB: RB - COE, ML: RB - COT, LU: RB - CT, porConta: porConta, foraTotal: foraTotal, freteTotal: freteTotal,
+      MB: RB - COE, ML: RB - COT, LU: RB - CT, porConta: porConta, itensLanc: itensLanc, foraTotal: foraTotal, freteTotal: freteTotal,
       insDiario: insDiario, maqHoras: maqHoras, cap: cap, P: P, temArrendado: sfs.some(function(sf){ return talhaoArrendadoDeTerceiros(sf.talhaoId); })};
   }
   // Base do simulador: o realizado quando já há colheita e venda; senão a produtividade esperada das safras e a cotação da cultura
@@ -6957,6 +6972,7 @@
     var l = lavouraPorId(lavouraId) || {};
     var sfs = safrasDaLavoura(lavouraId), A = x.area;
     var prod = 0, oProd = 'colhida';
+    if(x.orc){ return {prod: Number(x.orc.prod) || 0, preco: Number(x.orc.preco) || 0, oProd: 'orçada', oPreco: 'orçado'}; }
     if(x.sacas > 0 && A > 0) prod = x.sacas / A;
     else {
       oProd = 'esperada';
@@ -6985,7 +7001,7 @@
   function custoSenarDiagnostico(x, base){
     var out = [], A = x.area, s = simCustoSenar(x, base, {});
     var stL = statusLavoura(lavouraPorId(custoSenarLavouraId));
-    if(stL === 'planejada' || stL === 'andamento') out.push(['aviso', 'Lavoura ainda em andamento', 'Os custos são só os lançados até hoje. O resultado e o simulador vão parecer melhores do que serão até a safra fechar: use os controles de custo para projetar o que ainda falta gastar.']);
+    if(!x.orc && (stL === 'planejada' || stL === 'andamento')) out.push(['aviso', 'Lavoura ainda em andamento', 'Os custos são só os lançados até hoje. O resultado e o simulador vão parecer melhores do que serão até a safra fechar: use os controles de custo para projetar o que ainda falta gastar.']);
     if(s.S > 0 && s.preco > 0){
       if(base.prod < s.pnCT) out.push(['ruim', 'Produtividade ' + (base.oProd === 'colhida' ? 'colhida' : 'esperada') + ' abaixo do ponto de nivelamento', 'Para cobrir o custo total a ' + fmtBRL(s.preco) + '/sc (' + base.oPreco + ') seriam ' + fmtNum(s.pnCT) + ' sc/ha; a lavoura ' + (base.oProd === 'colhida' ? 'colheu ' : 'espera ') + fmtNum(base.prod) + ' sc/ha.']);
       else out.push(['bom', 'Produtividade acima do ponto de nivelamento', 'Folga de ' + fmtNum(base.prod - s.pnCT) + ' sc/ha sobre os ' + fmtNum(s.pnCT) + ' sc/ha que pagam o custo total.']);
@@ -7048,7 +7064,9 @@
   }
   function atualizarSimCustoSenar(){
     if(!custoSenarLavouraId) return;
-    var x = custoSenarDeSafras(safrasDaLavoura(custoSenarLavouraId)), base = custoSenarBase(x, custoSenarLavouraId);
+    var x = custoSenarDeSafras(safrasDaLavoura(custoSenarLavouraId));
+    if(custoSenarModo === 'orcado') x = custoSenarOrcado(x, custoSenarLavouraId);
+    var base = custoSenarBase(x, custoSenarLavouraId);
     var f = {preco: function(v){ return fmtBRL(v); }, prod: function(v){ return fmtNum(v) + ' sc/ha'; }};
     ['preco','prod','insumos','pessoas','mecanizacao','outros','juros'].forEach(function(k){ var o = document.getElementById('csn-o-' + k); if(o) o.textContent = f[k] ? f[k](custoSenarSim[k]) : ((custoSenarSim[k] > 0 ? '+' : '') + custoSenarSim[k] + '%'); });
     var out = document.getElementById('csn-sim-out'); if(out) out.innerHTML = custoSenarSimOutHtml(x, base);
@@ -7060,6 +7078,539 @@
   });
   document.addEventListener('click', function(e){
     if(e.target && e.target.id === 'csn-sim-reset'){ custoSenarSim = null; renderRentabilidade(); }
+  });
+  /* ---------------- Custo SENAR — modo Orçado (planejamento por coeficientes) ---------------- */
+  var custoSenarModo = 'realizado';
+  var CAT_ORC = [{v:'insumos', l:'Insumos'}, {v:'pessoas', l:'Pessoas'}, {v:'mecanizacao', l:'Mecanização'}, {v:'outros', l:'Outros gastos'}, {v:'juros', l:'Juros'}];
+  function orcamentoSenarLavoura(lavouraId, criar){
+    var l = lavouraPorId(lavouraId); if(!l) return null;
+    if(!l.orcamentoSenar && criar) l.orcamentoSenar = {prod: 0, preco: 0, itens: []};
+    return l.orcamentoSenar || null;
+  }
+  function valorItemOrc(it, area){ var v = (Number(it.aplic) || 0) * (Number(it.qtd) || 0) * (Number(it.preco) || 0); return it.base === 'total' ? v : v * area; }
+  // Mesmo formato do realizado: as categorias do COE vêm do orçamento; depreciação, pró-labore e remunerações seguem o cálculo do período da lavoura
+  function custoSenarOrcado(x, lavouraId){
+    var o = orcamentoSenarLavoura(lavouraId) || {prod: 0, preco: 0, itens: []};
+    var cat = {insumos:0, pessoas:0, mecanizacao:0, outros:0, juros:0, terra: x.cat.terra};
+    o.itens.forEach(function(it){ if(cat[it.cat] !== undefined) cat[it.cat] += valorItemOrc(it, x.area); });
+    var COE = cat.insumos + cat.pessoas + cat.mecanizacao + cat.outros + cat.juros;
+    var remCirc = x.COE > 0 ? x.remCirc * COE / x.COE : COE * (1 - (Number(x.P.pctFinanciado) || 0) / 100) / 2 * (Number(x.P.taxaCirc) || 0) / 100;
+    var COT = COE + x.dep + x.prolab, CT = COT + cat.terra + x.remTerra + remCirc + x.remBens;
+    var sacas = x.area * (Number(o.prod) || 0), preco = Number(o.preco) || 0, RB = sacas * preco;
+    return Object.assign({}, x, {cat: cat, COE: COE, COT: COT, remCirc: remCirc, CT: CT, sacas: sacas, preco: preco, RB: RB, MB: RB - COE, ML: RB - COT, LU: RB - CT, orc: o});
+  }
+  function custoSenarOrcadoHtml(x, lavouraId){
+    var o = orcamentoSenarLavoura(lavouraId, true), xo = custoSenarOrcado(x, lavouraId), A = x.area;
+    var est = 'padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:12.5px;';
+    var pHa = function(v){ return A > 0 ? fmtBRL(v / A) : '—'; };
+    var h = '<p style="font-size:12.5px; margin:10px 0;">Monte o orçamento da lavoura por coeficientes: <b>nº de vezes × quantidade × preço</b>, por hectare (' + fmtHa(A) + ') ou valor total. Depreciação, pró-labore e remunerações são calculados igual ao realizado.</p>';
+    var fontes = (state.lavouras || []).filter(function(l){ return l.id !== lavouraId; }).map(function(l){ return '<option value="' + l.id + '">' + escapeHtml(lavouraLabel(l.id)) + '</option>'; }).join('');
+    h += '<div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin-bottom:10px;">';
+    h += '<label style="display:flex; flex-direction:column; gap:3px; font-size:12px;">Produtividade esperada (sc/ha)<input type="number" id="csn-orc-prod" value="' + (Number(o.prod) || '') + '" step="0.5" min="0" style="' + est + ' width:140px;"></label>';
+    h += '<label style="display:flex; flex-direction:column; gap:3px; font-size:12px;">Preço esperado (R$/sc)<input type="number" id="csn-orc-preco" value="' + (Number(o.preco) || '') + '" step="0.5" min="0" style="' + est + ' width:140px;"></label>';
+    if(fontes) h += '<span style="display:flex; gap:6px; align-items:flex-end; font-size:12px; margin-left:auto;"><label style="display:flex; flex-direction:column; gap:3px;">Começar pelo realizado de<select id="csn-orc-fonte" style="' + est + '">' + fontes + '</select></label><button type="button" id="csn-orc-copiar" class="btn-edit">Copiar R$/ha</button></span>';
+    h += '</div>';
+    h += '<div class="table-wrap"><table><thead><tr><th>Categoria</th><th>Item</th><th>Base</th><th class="num">Nº vezes</th><th class="num">Quantidade</th><th class="num">Preço unit. (R$)</th><th class="num">Total</th><th class="num">R$/ha</th><th></th></tr></thead><tbody>';
+    if(!o.itens.length) h += '<tr><td colspan="9" style="color:var(--ink-soft); font-size:12.5px;">Nenhum item ainda. Adicione linhas ou copie o realizado de outra lavoura parecida.</td></tr>';
+    o.itens.forEach(function(it, i){
+      var id = function(k){ return 'csn-orc-' + i + '-' + k; };
+      var tot = valorItemOrc(it, A);
+      h += '<tr><td><select id="' + id('cat') + '" class="csn-orc" data-i="' + i + '" data-k="cat" style="' + est + '">' + CAT_ORC.map(function(c){ return '<option value="' + c.v + '"' + (c.v === it.cat ? ' selected' : '') + '>' + c.l + '</option>'; }).join('') + '</select></td>';
+      h += '<td><input id="' + id('item') + '" class="csn-orc" data-i="' + i + '" data-k="item" value="' + escapeHtml(it.item || '') + '" style="' + est + ' width:200px;"></td>';
+      h += '<td><select id="' + id('base') + '" class="csn-orc" data-i="' + i + '" data-k="base" style="' + est + '"><option value="ha"' + (it.base !== 'total' ? ' selected' : '') + '>por hectare</option><option value="total"' + (it.base === 'total' ? ' selected' : '') + '>valor total</option></select></td>';
+      ['aplic','qtd','preco'].forEach(function(k){ h += '<td class="num"><input type="number" step="any" id="' + id(k) + '" class="csn-orc" data-i="' + i + '" data-k="' + k + '" value="' + (it[k] === '' || it[k] == null ? '' : it[k]) + '" style="' + est + ' width:90px; text-align:right;"></td>'; });
+      h += '<td class="num"><b>' + fmtBRL(tot) + '</b></td><td class="num">' + pHa(tot) + '</td><td><button type="button" class="btn-del" data-csn-orc-del="' + i + '" title="Remover">×</button></td></tr>';
+    });
+    h += '</tbody></table></div><button type="button" id="csn-orc-add" class="btn-edit" style="margin-top:6px;">+ Adicionar item</button>';
+    // orçado × realizado
+    h += '<div style="margin-top:16px; font-weight:700;">Orçado × realizado até hoje</div>';
+    h += '<div class="table-wrap"><table><thead><tr><th>Categoria</th><th class="num">Orçado</th><th class="num">Orçado R$/ha</th><th class="num">Realizado</th><th class="num">% do orçado</th><th class="num">Falta gastar</th></tr></thead><tbody>';
+    var linhaCmp = function(nome, vo, vr, forte){
+      var pct = vo > 0 ? vr / vo * 100 : null, cor = pct === null ? '' : (pct > 100 ? 'color:#A23E2E; font-weight:700;' : (pct > 85 ? 'color:#B7791F; font-weight:700;' : ''));
+      return '<tr' + (forte ? ' style="font-weight:700; border-top:2px solid var(--ink);"' : '') + '><td>' + nome + '</td><td class="num">' + fmtBRL(vo) + '</td><td class="num">' + pHa(vo) + '</td><td class="num">' + fmtBRL(vr) + '</td><td class="num" style="' + cor + '">' + (pct === null ? '—' : fmtNum(pct) + '%') + '</td><td class="num">' + (vo > 0 ? fmtBRL(vo - vr) : '—') + '</td></tr>';
+    };
+    CAT_ORC.forEach(function(c){ h += linhaCmp(c.l, xo.cat[c.v], x.cat[c.v]); });
+    h += linhaCmp('COE', xo.COE, x.COE, true) + linhaCmp('COT', xo.COT, x.COT, true) + linhaCmp('CT', xo.CT, x.CT, true);
+    h += '</tbody></table></div>';
+    var Sx = xo.sacas;
+    h += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; margin:12px 0;">';
+    var card = function(t, v, sub){ return '<div style="border:1px solid var(--paper-line); border-radius:6px; padding:10px 12px;"><div style="font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft);">' + t + '</div><div style="font-size:18px; font-weight:700; margin-top:2px;">' + v + '</div>' + (sub ? '<div style="font-size:11.5px; color:var(--ink-soft);">' + sub + '</div>' : '') + '</div>'; };
+    h += card('Custo total previsto por saca', Sx > 0 ? fmtBRL(xo.CT / Sx) : '—', Sx > 0 ? 'COE ' + fmtBRL(xo.COE / Sx) + ' · COT ' + fmtBRL(xo.COT / Sx) : 'informe a produtividade esperada');
+    h += card('Receita prevista', fmtBRL(xo.RB), Sx > 0 ? fmtNum(Sx) + ' sc × ' + fmtBRL(xo.preco) : '');
+    h += card('Lucro previsto', fmtBRL(xo.LU), A > 0 ? fmtBRL(xo.LU / A) + '/ha' : '');
+    h += card('Ponto de nivelamento', A > 0 && xo.preco > 0 ? fmtNum(xo.CT / A / xo.preco) + ' sc/ha' : '—', 'para pagar o custo total');
+    h += '</div>';
+    return {html: h, xo: xo};
+  }
+  function custoSenarSalvarOrc(){ saveKey('lavouras', state.lavouras); }
+  document.addEventListener('change', function(e){
+    var t = e.target; if(!t) return;
+    if(t.id === 'csn-orc-prod' || t.id === 'csn-orc-preco'){
+      var o = orcamentoSenarLavoura(custoSenarLavouraId, true); if(!o) return;
+      o[t.id === 'csn-orc-prod' ? 'prod' : 'preco'] = parseFloat(t.value) || 0; custoSenarSim = null; custoSenarSalvarOrc(); renderRentabilidade(); return;
+    }
+    if(t.classList && t.classList.contains('csn-orc')){
+      var o2 = orcamentoSenarLavoura(custoSenarLavouraId, true), it = o2 && o2.itens[+t.dataset.i]; if(!it) return;
+      var k = t.dataset.k; it[k] = (k === 'aplic' || k === 'qtd' || k === 'preco') ? (parseFloat(t.value) || 0) : t.value;
+      custoSenarSim = null; custoSenarSalvarOrc(); renderRentabilidade(); return;
+    }
+    if(t.classList && t.classList.contains('csn-lcat')){
+      var lista = t.dataset.src === 'cp' ? state.contasPagar : state.financeiro;
+      var r = lista.find(function(z){ return z.id === t.dataset.id; }); if(!r) return;
+      if(t.value) r.categoriaSenar = t.value; else delete r.categoriaSenar;
+      saveKey(t.dataset.src === 'cp' ? 'contasPagar' : 'financeiro', lista); custoSenarSim = null; renderRentabilidade(); return;
+    }
+  });
+  document.addEventListener('click', function(e){
+    var t = e.target; if(!t) return;
+    if(t.id === 'csn-modo-realizado' || t.id === 'csn-modo-orcado'){ custoSenarModo = t.id === 'csn-modo-orcado' ? 'orcado' : 'realizado'; custoSenarSim = null; renderRentabilidade(); return; }
+    if(t.id === 'csn-orc-add'){ var o = orcamentoSenarLavoura(custoSenarLavouraId, true); o.itens.push({cat:'insumos', item:'', base:'ha', aplic:1, qtd:0, preco:0}); custoSenarSalvarOrc(); renderRentabilidade(); return; }
+    if(t.dataset && t.dataset.csnOrcDel !== undefined){ var o3 = orcamentoSenarLavoura(custoSenarLavouraId, true); o3.itens.splice(+t.dataset.csnOrcDel, 1); custoSenarSim = null; custoSenarSalvarOrc(); renderRentabilidade(); return; }
+    if(t.id === 'csn-orc-copiar'){
+      var fonteId = (document.getElementById('csn-orc-fonte') || {}).value; if(!fonteId) return;
+      var xf = custoSenarDeSafras(safrasDaLavoura(fonteId)); if(!(xf.area > 0)) return;
+      var o4 = orcamentoSenarLavoura(custoSenarLavouraId, true), nomeF = lavouraLabel(fonteId);
+      CAT_ORC.forEach(function(c){ var v = xf.cat[c.v]; if(v > 0) o4.itens.push({cat: c.v, item: c.l + ' (como ' + nomeF + ')', base: 'ha', aplic: 1, qtd: 1, preco: Math.round(v / xf.area * 100) / 100}); });
+      if(!(Number(o4.prod) > 0) && xf.sacas > 0) o4.prod = Math.round(xf.sacas / xf.area * 10) / 10;
+      if(!(Number(o4.preco) > 0) && xf.preco > 0) o4.preco = Math.round(xf.preco * 100) / 100;
+      custoSenarSim = null; custoSenarSalvarOrc(); renderRentabilidade(); return;
+    }
+  });
+
+  /* ---------------- Ocupação de máquinas e equipe (últimos 12 meses) ---------------- */
+  function painelOcupacaoHtml(){
+    var hoje = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10);
+    var corte = (parseInt(hoje.slice(0,4), 10) - 1) + hoje.slice(4);
+    var noPeriodo = function(d){ return d && d >= corte && d <= hoje; };
+    // máquinas
+    var maqs = state.patrimonio.filter(function(it){ return (it.categoria === 'Máquina' || it.categoria === 'Veículo') && it.status !== 'Vendido' && (Number(it.valor) || 0) > 0; }).map(function(it){
+      var hReg = 0;
+      state.operacoes.forEach(function(o){ if(noPeriodo(o.data)) (o.maquinas || []).forEach(function(m){ if(m.patrimonioId === it.id) hReg += Number(m.horas) || 0; }); });
+      state.producao.forEach(function(p){ if(p.maquinaId === it.id && noPeriodo(p.data)) hReg += Number(p.horasUso) || 0; });
+      var ls = leiturasHorimetro(it.id).filter(function(l){ return noPeriodo(l.data); });
+      var hHor = ls.length >= 2 ? Math.max(Number(ls[ls.length - 1].leitura) - Number(ls[0].leitura), 0) : 0;
+      var horas = Math.max(hReg, hHor);
+      var custos = 0;
+      var somar = function(r, pago, data){ if(!pago || destinoEfetivo(r) !== 'maquina' || !noPeriodo(data)) return; var ms = r.maquinasIds || []; if(ms.indexOf(it.id) !== -1) custos += (Number(r.valor) || 0) / ms.length; };
+      state.financeiro.forEach(function(f){ somar(f, f.tipo === 'custo' && (f.status || 'Pago') !== 'Pendente', f.data || f.vencimento); });
+      state.contasPagar.forEach(function(c){ somar(c, c.status === 'Pago', c.dataPagamento || c.vencimento); });
+      var dep = depreciacaoAnualItem(it);
+      return {it: it, hReg: hReg, hHor: hHor, horas: horas, custos: custos, dep: dep};
+    }).sort(function(a, b){ return b.dep - a.dep; });
+    var h = '<div class="section-title">Ocupação de máquinas e equipe (últimos 12 meses)</div>';
+    h += '<div class="paper table-wrap"><table><thead><tr><th>Máquina / veículo</th><th class="num">Horas usadas</th><th class="num">Custos pagos</th><th class="num">Depreciação/ano</th><th class="num">Depreciação por hora</th><th class="num">Custo total por hora</th><th>Leitura</th></tr></thead><tbody>';
+    var paradas = 0, depParada = 0;
+    maqs.forEach(function(m){
+      var leit, cor = '';
+      if(m.horas <= 0){ leit = 'Sem horas registradas'; cor = 'color:#A23E2E; font-weight:700;'; paradas++; depParada += m.dep; }
+      else if(m.dep / m.horas > 150){ leit = 'Pouco usada para o valor'; cor = 'color:#B7791F; font-weight:700;'; }
+      else leit = 'Uso compatível';
+      h += '<tr><td>' + escapeHtml(m.it.nome) + '</td><td class="num">' + (m.horas > 0 ? fmtNum(m.horas) + ' h' + (m.hHor > m.hReg ? '<br><span style="font-size:10.5px; color:var(--ink-soft);">horímetro</span>' : '') : '—') + '</td><td class="num">' + (m.custos ? fmtBRL(m.custos) : '—') + '</td><td class="num">' + fmtBRL(m.dep) + '</td><td class="num">' + (m.horas > 0 ? fmtBRL(m.dep / m.horas) : '—') + '</td><td class="num">' + (m.horas > 0 ? fmtBRL((m.dep + m.custos) / m.horas) : '—') + '</td><td style="' + cor + '">' + leit + '</td></tr>';
+    });
+    h += '</tbody></table></div>';
+    if(paradas) h += '<div class="paper note-box" style="margin-top:8px;">' + paradas + ' máquina(s) sem nenhuma hora registrada no Diário, na Colheita ou no horímetro nos últimos 12 meses somam <b>' + fmtBRL(depParada) + '</b> de depreciação por ano. Se ainda trabalham, registre as horas; se estão paradas ou vendidas, atualize o Patrimônio.</div>';
+    // equipe
+    var eq = state.equipe.map(function(m){
+      var meses = {}, pago = 0, dias = {};
+      state.financeiro.forEach(function(f){ if(f.tipo === 'custo' && f.membroId === m.id && (f.status || 'Pago') !== 'Pendente' && noPeriodo(f.data || f.vencimento)){ pago += Number(f.valor) || 0; if(categoriaSenarLancamento(f) === 'pessoas' && /sal[aá]rio/i.test(contaNome(f.contaId) + ' ' + (f.descricao || ''))) meses[(f.data || f.vencimento).slice(0,7)] = true; } });
+      state.operacoes.forEach(function(o){ if(o.responsavelId === m.id && noPeriodo(o.data)) dias[o.data] = true; });
+      state.producao.forEach(function(p){ if(p.responsavelId === m.id && noPeriodo(p.data)) dias[p.data] = true; });
+      var nMeses = Object.keys(meses).length, nDias = Object.keys(dias).length, disp = nMeses * 21;
+      return {m: m, pago: pago, nMeses: nMeses, nDias: nDias, disp: disp};
+    }).filter(function(x){ return x.pago > 0 || x.nDias > 0; });
+    if(eq.length){
+      h += '<div class="paper table-wrap" style="margin-top:12px;"><table><thead><tr><th>Pessoa</th><th>Vínculo</th><th class="num">Pago no período</th><th class="num">Meses com salário</th><th class="num">Dias com atividade registrada</th><th class="num">Ocupação registrada</th><th class="num">Custo por dia registrado</th></tr></thead><tbody>';
+      eq.forEach(function(x){
+        var oc = x.disp > 0 ? x.nDias / x.disp * 100 : null;
+        h += '<tr><td>' + escapeHtml(x.m.nome) + '</td><td>' + escapeHtml(x.m.papel || '—') + '</td><td class="num">' + fmtBRL(x.pago) + '</td><td class="num">' + (x.nMeses || '—') + '</td><td class="num">' + x.nDias + '</td><td class="num">' + (oc === null ? '—' : fmtNum(oc) + '%') + '</td><td class="num">' + (x.nDias > 0 ? fmtBRL(x.pago / x.nDias) : '—') + '</td></tr>';
+      });
+      h += '</tbody></table></div>';
+      h += '<div class="paper note-box" style="margin-top:8px;">A ocupação conta só os dias em que a pessoa aparece como responsável no Diário de Campo ou na Colheita, contra 21 dias úteis por mês de salário pago. Serviços gerais (manutenção, cercas, estradas) não aparecem; para a conta ficar completa, registre essas atividades no Diário também.</div>';
+    }
+    return h;
+  }
+
+  /* ---------------- Custo SENAR no PDF da lavoura ---------------- */
+  function custoSenarPdfHtml(lavouraId){
+    var x = custoSenarDeSafras(safrasDaLavoura(lavouraId)), A = x.area, S = x.sacas;
+    var lin = function(n, v, f){ return '<tr' + (f ? ' style="font-weight:bold;"' : '') + '><td>' + n + '</td><td class="num">' + fmtBRL(v) + '</td><td class="num">' + (A > 0 ? fmtBRL(v / A) : '—') + '</td><td class="num">' + (S > 0 ? fmtBRL(v / S) : '—') + '</td><td class="num">' + (x.CT > 0 ? fmtNum(v / x.CT * 100) + '%' : '—') + '</td></tr>'; };
+    var h = '<h3>Custo de produção — método SENAR</h3><table><thead><tr><th>Item</th><th class="num">R$ total</th><th class="num">R$/ha</th><th class="num">R$/saca</th><th class="num">% do CT</th></tr></thead><tbody>';
+    h += lin('Insumos', x.cat.insumos) + lin('Pessoas', x.cat.pessoas) + lin('Mecanização', x.cat.mecanizacao) + lin('Outros gastos', x.cat.outros) + lin('Juros de financiamentos', x.cat.juros) + lin('COE · custo operacional efetivo', x.COE, true);
+    h += lin('Depreciação', x.dep) + lin('Pró-labore', x.prolab) + lin('COT · custo operacional total', x.COT, true);
+    h += (x.cat.terra ? lin('Arrendamento pago', x.cat.terra) : '') + lin('Remuneração da terra própria', x.remTerra) + lin('Remuneração do capital de giro', x.remCirc) + lin('Remuneração dos bens de capital', x.remBens) + lin('CT · custo total', x.CT, true);
+    h += '</tbody></table>';
+    h += '<table><tbody><tr><th>Receita</th><td class="num">' + fmtBRL(x.RB) + '</td><th>Preço médio</th><td class="num">' + (S > 0 ? fmtBRL(x.preco) + '/sc' : '—') + '</td></tr>';
+    h += '<tr><th>Margem bruta</th><td class="num">' + fmtBRL(x.MB) + '</td><th>Ponto de nivelamento (CT)</th><td class="num">' + (A > 0 && x.preco > 0 ? fmtNum(x.CT / A / x.preco) + ' sc/ha' : '—') + '</td></tr>';
+    h += '<tr><th>Margem líquida</th><td class="num">' + fmtBRL(x.ML) + '</td><th>Produtividade</th><td class="num">' + (A > 0 && S > 0 ? fmtNum(S / A) + ' sc/ha' : '—') + '</td></tr>';
+    h += '<tr><th>Lucro (receita − CT)</th><td class="num">' + fmtBRL(x.LU) + '</td><th>Lucratividade</th><td class="num">' + (x.RB > 0 ? fmtNum(x.ML / x.RB * 100) + '%' : '—') + '</td></tr></tbody></table>';
+    var dg = custoSenarDiagnostico(x, custoSenarBase(x, lavouraId));
+    if(dg.length) h += '<p class="nota">' + dg.map(function(d){ return '<b>' + escapeHtml(d[1]) + '.</b> ' + escapeHtml(d[2]); }).join('<br>') + '</p>';
+    var orc = orcamentoSenarLavoura(lavouraId);
+    if(orc && orc.itens && orc.itens.length){
+      var xo = custoSenarOrcado(x, lavouraId);
+      h += '<h3>Orçado × realizado</h3><table><thead><tr><th>Categoria</th><th class="num">Orçado</th><th class="num">Realizado</th><th class="num">% do orçado</th></tr></thead><tbody>';
+      CAT_ORC.forEach(function(c){ h += '<tr><td>' + c.l + '</td><td class="num">' + fmtBRL(xo.cat[c.v]) + '</td><td class="num">' + fmtBRL(x.cat[c.v]) + '</td><td class="num">' + (xo.cat[c.v] > 0 ? fmtNum(x.cat[c.v] / xo.cat[c.v] * 100) + '%' : '—') + '</td></tr>'; });
+      h += '<tr style="font-weight:bold;"><td>CT</td><td class="num">' + fmtBRL(xo.CT) + '</td><td class="num">' + fmtBRL(x.CT) + '</td><td class="num">' + (xo.CT > 0 ? fmtNum(x.CT / xo.CT * 100) + '%' : '—') + '</td></tr></tbody></table>';
+    }
+    return h;
+  }
+  /* ================= Caderneta de Colheita e Processamento de Café ================= */
+  function ehCulturaCafe(culturaId){ return /caf/i.test(semAcento(culturaNome(culturaId))); }
+  function cfgCaderneta(){
+    var c = configUnidades();
+    if(!c.caderneta) c.caderneta = {unidade: 'medida', valorPadrao: 0};
+    return c.caderneta;
+  }
+  var ccLavouraId = '', ccLinhas = null, ccMsg = '', ccForm = null;
+  function ccLavourasCafe(){
+    return (state.lavouras || []).filter(function(l){ return ehCulturaCafe(l.culturaId); }).sort(function(a, b){ return (b.anoAgricola || '').localeCompare(a.anoAgricola || ''); });
+  }
+  function ccPago(a){ return !!a.financeiroId && state.financeiro.some(function(f){ return f.id === a.financeiroId; }); }
+  function ccPessoaNome(a){ return a.pessoaId ? membroNome(a.pessoaId) : (a.pessoaNome || '—'); }
+  function ccChavePessoa(a){ return a.pessoaId ? 'm:' + a.pessoaId : 'n:' + semAcento(a.pessoaNome || '').trim(); }
+  function ccSemanaInicio(d){ var dt = new Date(d + 'T12:00:00'); var dow = (dt.getDay() + 6) % 7; dt.setDate(dt.getDate() - dow); return dt.toISOString().slice(0,10); }
+  function ccResumo(lavouraId){
+    var sids = safrasDaLavoura(lavouraId).map(function(s){ return s.id; });
+    var ap = (state.colheitaApanhas || []).filter(function(a){ return sids.indexOf(a.safraId) !== -1; });
+    var lotes = (state.cafeLotes || []).filter(function(l){ return sids.indexOf(l.safraId) !== -1; });
+    var qtd = ap.reduce(function(s, a){ return s + (Number(a.quantidade) || 0); }, 0);
+    var custo = ap.reduce(function(s, a){ return s + (Number(a.quantidade) || 0) * (Number(a.valorUnit) || 0); }, 0);
+    var coco = lotes.reduce(function(s, l){ return s + (Number(l.sacosCoco) || 0); }, 0);
+    var benef = lotes.reduce(function(s, l){ return s + (Number(l.sacasBenef) || 0); }, 0);
+    var volLotesBenef = lotes.filter(function(l){ return Number(l.sacasBenef) > 0; }).reduce(function(s, l){ return s + (Number(l.volume) || 0); }, 0);
+    var cocoLotesBenef = lotes.filter(function(l){ return Number(l.sacasBenef) > 0; }).reduce(function(s, l){ return s + (Number(l.sacosCoco) || 0); }, 0);
+    return {ap: ap, lotes: lotes, qtd: qtd, custo: custo, coco: coco, benef: benef,
+      rendVol: benef > 0 && volLotesBenef > 0 ? volLotesBenef / benef : 0, rendCoco: benef > 0 && cocoLotesBenef > 0 ? cocoLotesBenef / benef : 0};
+  }
+  var CC_ETAPAS = [{v:'terreiro', l:'Terreiro'}, {v:'secador', l:'Secador'}, {v:'tulha', l:'Tulha (coco seco)'}, {v:'beneficiado', l:'Beneficiado'}];
+  function renderCaderneta(){
+    var el = document.getElementById('tab-caderneta'); if(!el) return;
+    if(el.querySelector('#cc-data')) ccLerFormDom();
+    var lavs = ccLavourasCafe();
+    if(!lavs.length){ el.innerHTML = '<div class="paper empty-state">Nenhuma lavoura de café cadastrada. Crie uma em Lavouras e Safras.</div>'; return; }
+    if(!ccLavouraId || !lavs.some(function(l){ return l.id === ccLavouraId; })) ccLavouraId = lavs[0].id;
+    var cfg = cfgCaderneta(), un = cfg.unidade || 'medida';
+    var r = ccResumo(ccLavouraId), sfs = safrasDaLavoura(ccLavouraId);
+    var est = 'padding:7px 8px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;';
+    var hoje = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10);
+    var h = '<div class="paper form-card" style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">';
+    h += '<div class="field"><label for="cc-lavoura">Lavoura de café</label><select id="cc-lavoura">' + lavs.map(function(l){ return '<option value="' + l.id + '"' + (l.id === ccLavouraId ? ' selected' : '') + '>' + escapeHtml(lavouraLabel(l.id)) + '</option>'; }).join('') + '</select></div>';
+    h += '<div class="field"><label for="cc-cfg-unidade">Unidade da apanha</label><input id="cc-cfg-unidade" value="' + escapeHtml(un) + '" style="width:120px;"></div>';
+    h += '<div class="field"><label for="cc-cfg-valor">Valor padrão por ' + escapeHtml(un) + ' (R$)</label><input type="number" step="0.01" id="cc-cfg-valor" value="' + (Number(cfg.valorPadrao) || '') + '" style="width:140px;"></div>';
+    h += '</div>';
+    if(ccMsg){ h += '<div class="paper note-box" style="margin:0 0 14px;">' + ccMsg + '</div>'; ccMsg = ''; }
+    h += '<div class="stat-row">';
+    h += statCard('Apanhado', fmtNum(r.qtd) + ' ' + escapeHtml(un));
+    h += statCard('Custo da apanha', fmtBRL(r.custo), 'cost');
+    h += statCard('Sacos de coco seco', fmtNum(r.coco));
+    h += statCard('Sacas beneficiadas', fmtNum(r.benef), 'growth');
+    h += statCard('Rendimento', r.rendVol ? fmtNum(r.rendVol) + ' ' + escapeHtml(un) + '/sc' : '—');
+    h += statCard('Apanha por saca', r.benef > 0 ? fmtBRL(r.custo / r.benef) : '—');
+    h += '</div>';
+    // ---- apanha do dia
+    if(!ccLinhas) ccLinhas = [{pessoa: '', qtd: ''}];
+    var nomes = {};
+    state.equipe.forEach(function(m){ nomes[m.nome] = true; });
+    (state.colheitaApanhas || []).forEach(function(a){ if(a.pessoaNome) nomes[a.pessoaNome] = true; });
+    h += '<div class="section-title">Apanha do dia</div><div class="paper form-card">';
+    h += '<div class="entry-form" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; align-items:end;">';
+    var F = ccForm || {};
+    h += '<div class="field"><label for="cc-data">Data</label><input type="date" id="cc-data" value="' + (F.data || hoje) + '"></div>';
+    h += '<div class="field"><label for="cc-safra">Talhão</label><select id="cc-safra">' + sfs.map(function(s){ return '<option value="' + s.id + '"' + (F.safra === s.id ? ' selected' : '') + '>' + escapeHtml(talhaoNome(s.talhaoId)) + '</option>'; }).join('') + '</select></div>';
+    h += '<div class="field"><label for="cc-tipo">Tipo</label><select id="cc-tipo">' + [['apanha','Apanha no pano'],['varricao','Varrição'],['derrica','Derriça mecânica']].map(function(o){ return '<option value="' + o[0] + '"' + (F.tipo === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>';
+    h += '<div class="field"><label for="cc-valor">R$ por ' + escapeHtml(un) + '</label><input type="number" step="0.01" id="cc-valor" value="' + (F.valor != null && F.valor !== '' ? F.valor : (Number(cfg.valorPadrao) || '')) + '"></div>';
+    h += '</div>';
+    h += '<datalist id="cc-nomes">' + Object.keys(nomes).sort().map(function(n){ return '<option value="' + escapeHtml(n) + '">'; }).join('') + '</datalist>';
+    h += '<div style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">';
+    ccLinhas.forEach(function(l, i){
+      h += '<div style="display:flex; gap:8px; align-items:center;"><input list="cc-nomes" class="cc-linha" data-i="' + i + '" data-k="pessoa" id="cc-l-' + i + '-pessoa" placeholder="Nome de quem apanhou" value="' + escapeHtml(l.pessoa) + '" style="' + est + ' flex:1; min-width:0;">';
+      h += '<input type="number" step="0.5" min="0" class="cc-linha" data-i="' + i + '" data-k="qtd" id="cc-l-' + i + '-qtd" placeholder="' + escapeHtml(un) + 's" value="' + escapeHtml(l.qtd) + '" style="' + est + ' width:110px; text-align:right;">';
+      h += '<button type="button" class="btn-del" data-cc-linha-del="' + i + '" title="Tirar linha">×</button></div>';
+    });
+    h += '</div><div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;"><button type="button" class="btn-edit" id="cc-linha-add">+ Pessoa</button><button type="button" class="btn" id="cc-salvar-apanha">Salvar apanha do dia</button></div>';
+    h += '</div>';
+    // ---- pessoa × semana
+    var semanas = {}, pessoas = {};
+    r.ap.forEach(function(a){
+      var s = ccSemanaInicio(a.data || hoje); semanas[s] = true;
+      var k = ccChavePessoa(a), p = pessoas[k] = pessoas[k] || {nome: ccPessoaNome(a), sem: {}, qtd: 0, valor: 0, aPagar: 0, ids: []};
+      var q = Number(a.quantidade) || 0, v = q * (Number(a.valorUnit) || 0);
+      p.sem[s] = (p.sem[s] || 0) + q; p.qtd += q; p.valor += v;
+      if(!ccPago(a)){ p.aPagar += v; p.ids.push(a.id); }
+    });
+    var semList = Object.keys(semanas).sort();
+    h += '<div class="section-title">Apanha por pessoa e semana</div>';
+    if(!r.ap.length) h += '<div class="paper empty-state">Nenhuma apanha registrada nesta lavoura ainda.</div>';
+    else {
+      h += '<div class="paper table-wrap"><table><thead><tr><th>Pessoa</th>' + semList.map(function(s){ return '<th class="num">Sem. ' + fmtDate(s).slice(0,5) + '</th>'; }).join('') + '<th class="num">Total</th><th class="num">Valor</th><th class="num">A pagar</th><th></th></tr></thead><tbody>';
+      Object.keys(pessoas).map(function(k){ return pessoas[k]; }).sort(function(a, b){ return b.qtd - a.qtd; }).forEach(function(p){
+        h += '<tr><td>' + escapeHtml(p.nome) + '</td>' + semList.map(function(s){ return '<td class="num">' + (p.sem[s] ? fmtNum(p.sem[s]) : '—') + '</td>'; }).join('') + '<td class="num"><b>' + fmtNum(p.qtd) + '</b></td><td class="num">' + fmtBRL(p.valor) + '</td><td class="num">' + (p.aPagar > 0 ? '<b>' + fmtBRL(p.aPagar) + '</b>' : '<span style="color:var(--ink-soft);">pago</span>') + '</td>';
+        h += '<td>' + (p.aPagar > 0 ? '<button type="button" class="btn-edit" data-cc-pagar="' + p.ids.join(',') + '" title="Lança a despesa paga em Lançamentos, na lavoura">💰 Lançar pagamento</button>' : '') + '</td></tr>';
+      });
+      var totSem = semList.map(function(s){ return r.ap.filter(function(a){ return ccSemanaInicio(a.data || hoje) === s; }).reduce(function(t, a){ return t + (Number(a.quantidade) || 0); }, 0); });
+      h += '<tr style="font-weight:700;"><td>Total</td>' + totSem.map(function(v){ return '<td class="num">' + fmtNum(v) + '</td>'; }).join('') + '<td class="num">' + fmtNum(r.qtd) + '</td><td class="num">' + fmtBRL(r.custo) + '</td><td></td><td></td></tr>';
+      h += '</tbody></table></div>';
+      h += '<details class="paper" style="margin-top:8px; padding:10px 14px; font-size:13px;"><summary style="cursor:pointer;">Registros (' + r.ap.length + ')</summary><div class="table-wrap" style="margin-top:8px;"><table><thead><tr><th>Data</th><th>Talhão</th><th>Pessoa</th><th>Tipo</th><th class="num">Qtd</th><th class="num">R$/un</th><th>Pago</th><th></th></tr></thead><tbody>';
+      r.ap.slice().sort(function(a, b){ return (b.data || '').localeCompare(a.data || ''); }).forEach(function(a){
+        var sf = state.safras.find(function(s){ return s.id === a.safraId; });
+        h += '<tr><td>' + fmtDate(a.data) + '</td><td>' + escapeHtml(sf ? talhaoNome(sf.talhaoId) : '—') + '</td><td>' + escapeHtml(ccPessoaNome(a)) + '</td><td>' + ({apanha:'Pano', varricao:'Varrição', derrica:'Derriça'}[a.tipo] || '—') + '</td><td class="num">' + fmtNum(a.quantidade) + '</td><td class="num">' + fmtBRL(a.valorUnit) + '</td><td>' + (a.financeiroId ? '✓' : '—') + '</td><td>' + (a.financeiroId ? '' : '<button type="button" class="btn-del" data-cc-del-apanha="' + a.id + '">×</button>') + '</td></tr>';
+      });
+      h += '</tbody></table></div></details>';
+    }
+    // ---- lotes
+    h += '<div class="section-title">Processamento: lotes do terreiro à saca</div>';
+    h += '<div class="paper form-card"><div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; align-items:end;">';
+    var prox = 'L' + String(((state.cafeLotes || []).filter(function(l){ return safrasDaLavoura(ccLavouraId).some(function(s){ return s.id === l.safraId; }); }).length + 1)).padStart(2, '0');
+    h += '<div class="field"><label for="cc-lote-codigo">Lote</label><input id="cc-lote-codigo" value="' + prox + '"></div>';
+    h += '<div class="field"><label for="cc-lote-data">Entrada</label><input type="date" id="cc-lote-data" value="' + hoje + '"></div>';
+    h += '<div class="field"><label for="cc-lote-safra">Talhão</label><select id="cc-lote-safra">' + sfs.map(function(s){ return '<option value="' + s.id + '">' + escapeHtml(talhaoNome(s.talhaoId)) + '</option>'; }).join('') + '</select></div>';
+    h += '<div class="field"><label for="cc-lote-origem">Origem</label><select id="cc-lote-origem"><option>Pano</option><option>Varrição</option><option>Derriça mecânica</option></select></div>';
+    h += '<div class="field"><label for="cc-lote-volume">Volume (' + escapeHtml(un) + 's)</label><input type="number" step="0.5" id="cc-lote-volume"></div>';
+    h += '<div class="field"><label for="cc-lote-etapa">Está no</label><select id="cc-lote-etapa">' + CC_ETAPAS.map(function(e){ return '<option value="' + e.v + '">' + e.l + '</option>'; }).join('') + '</select></div>';
+    h += '<button type="button" class="btn" id="cc-lote-add">Criar lote</button></div></div>';
+    if(r.lotes.length){
+      var porEtapa = {}; r.lotes.forEach(function(l){ porEtapa[l.etapa] = (porEtapa[l.etapa] || 0) + 1; });
+      h += '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">' + CC_ETAPAS.map(function(e, i){ return '<span class="paper" style="padding:6px 12px; font-size:12.5px;"><b>' + (porEtapa[e.v] || 0) + '</b> ' + e.l + (i < CC_ETAPAS.length - 1 ? ' →' : '') + '</span>'; }).join('') + '</div>';
+      h += '<div class="paper table-wrap"><table><thead><tr><th>Lote</th><th>Entrada</th><th>Talhão · origem</th><th class="num">Volume</th><th>Etapa</th><th>Secador / local</th><th class="num">Umidade %</th><th class="num">Sacos coco</th><th class="num">Sacas benef.</th><th>Tipo / bebida</th><th class="num">' + escapeHtml(un) + '/sc</th><th></th></tr></thead><tbody>';
+      r.lotes.slice().sort(function(a, b){ return (a.codigo || '').localeCompare(b.codigo || '', 'pt-BR', {numeric:true}); }).forEach(function(l){
+        var sf = state.safras.find(function(s){ return s.id === l.safraId; });
+        var inp = function(k, w, tipo){ return '<input ' + (tipo === 'n' ? 'type="number" step="any" ' : '') + 'class="cc-lote" data-id="' + l.id + '" data-k="' + k + '" id="cc-lt-' + l.id + '-' + k + '" value="' + escapeHtml(l[k] == null ? '' : l[k]) + '" style="' + est + ' width:' + w + 'px;' + (tipo === 'n' ? ' text-align:right;' : '') + '">'; };
+        h += '<tr><td><b>' + escapeHtml(l.codigo) + '</b></td><td>' + fmtDate(l.data) + '</td><td>' + escapeHtml(sf ? talhaoNome(sf.talhaoId) : '—') + ' · ' + escapeHtml(l.origem || '') + '</td><td class="num">' + inp('volume', 70, 'n') + '</td>';
+        h += '<td><select class="cc-lote" data-id="' + l.id + '" data-k="etapa" id="cc-lt-' + l.id + '-etapa" style="' + est + '">' + CC_ETAPAS.map(function(e){ return '<option value="' + e.v + '"' + (l.etapa === e.v ? ' selected' : '') + '>' + e.l + '</option>'; }).join('') + '</select></td>';
+        h += '<td>' + inp('local', 110) + '</td><td class="num">' + inp('umidade', 60, 'n') + '</td><td class="num">' + inp('sacosCoco', 70, 'n') + '</td><td class="num">' + inp('sacasBenef', 70, 'n') + '</td><td>' + inp('bebida', 110) + '</td>';
+        h += '<td class="num">' + (Number(l.sacasBenef) > 0 && Number(l.volume) > 0 ? fmtNum(l.volume / l.sacasBenef) : '—') + '</td><td style="white-space:nowrap;">';
+        if(l.producaoId && !state.producao.some(function(p){ return p.id === l.producaoId; })) l.producaoId = '';
+        if(l.producaoId) h += '<span style="font-size:11.5px; color:var(--growth-dark, #4F7A3A);">✓ na Colheita</span>';
+        else if(Number(l.sacasBenef) > 0) h += '<button type="button" class="btn-edit" data-cc-lote-colheita="' + l.id + '" title="Cria a entrada em Colheita e Vendas (estoque e rentabilidade)">➜ Colheita</button>';
+        if(!l.producaoId) h += '<button type="button" class="btn-del" data-cc-lote-del="' + l.id + '">×</button>';
+        h += '</td></tr>';
+      });
+      h += '</tbody></table></div>';
+    }
+    h += '<div class="paper note-box">A apanha registrada aqui vira custo da lavoura quando você usa <b>💰 Lançar pagamento</b>: o sistema cria a despesa paga em Lançamentos, já com destino na lavoura, e ela entra em Pessoas no custo SENAR. Um lote com sacas beneficiadas vai para <b>Colheita e Vendas</b> pelo botão ➜ Colheita, entrando no estoque e na produtividade. O rendimento compara o volume do lote com as sacas beneficiadas dele.</div>';
+    el.innerHTML = h;
+  }
+  function ccContaApanha(){
+    var custo = state.contasFinanceiro.filter(function(c){ return contaTipo(c.id) === 'custo'; });
+    return custo.find(function(c){ return /apanha|cata de caf|colheita manual/i.test(c.nome); })
+      || custo.find(function(c){ return /cata/i.test(c.nome); })
+      || custo.find(function(c){ return c.id === 'ct-diaria'; }) || null;
+  }
+  function ccLerFormDom(){
+    var g = function(id){ var e = document.getElementById(id); return e ? e.value : null; };
+    if(document.getElementById('cc-data')) ccForm = {data: g('cc-data'), safra: g('cc-safra'), tipo: g('cc-tipo'), valor: g('cc-valor')};
+  }
+  function ccLerLinhasDom(){
+    ccLerFormDom();
+    if(!ccLinhas) return;
+    document.querySelectorAll('.cc-linha').forEach(function(inp){ var l = ccLinhas[+inp.dataset.i]; if(l) l[inp.dataset.k] = inp.value; });
+  }
+  document.addEventListener('change', function(e){
+    var t = e.target; if(!t) return;
+    if(t.id === 'cc-lavoura'){ ccLavouraId = t.value; ccForm = null; renderCaderneta(); return; }
+    if(t.id === 'cc-cfg-unidade' || t.id === 'cc-cfg-valor'){
+      ccLerLinhasDom();
+      var cfg = cfgCaderneta(); if(t.id === 'cc-cfg-unidade') cfg.unidade = t.value.trim() || 'medida'; else cfg.valorPadrao = parseFloat(t.value) || 0;
+      saveKey('configUnidades', state.configUnidades); renderCaderneta(); return;
+    }
+    if(t.classList && t.classList.contains('cc-lote')){
+      var l = (state.cafeLotes || []).find(function(x){ return x.id === t.dataset.id; }); if(!l) return;
+      var k = t.dataset.k; l[k] = (k === 'volume' || k === 'umidade' || k === 'sacosCoco' || k === 'sacasBenef') ? (t.value === '' ? '' : parseFloat(t.value) || 0) : t.value;
+      if(k === 'sacasBenef' && Number(l.sacasBenef) > 0 && l.etapa !== 'beneficiado') l.etapa = 'beneficiado';
+      saveKey('cafeLotes', state.cafeLotes); renderCaderneta(); return;
+    }
+  });
+  document.addEventListener('click', function(e){
+    var t = e.target; if(!t || !t.closest) return;
+    if(t.id === 'cc-linha-add'){ ccLerLinhasDom(); ccLinhas.push({pessoa: '', qtd: ''}); renderCaderneta(); var ult = document.getElementById('cc-l-' + (ccLinhas.length - 1) + '-pessoa'); if(ult) ult.focus(); return; }
+    if(t.dataset && t.dataset.ccLinhaDel !== undefined){ ccLerLinhasDom(); ccLinhas.splice(+t.dataset.ccLinhaDel, 1); if(!ccLinhas.length) ccLinhas.push({pessoa: '', qtd: ''}); renderCaderneta(); return; }
+    if(t.id === 'cc-salvar-apanha'){
+      ccLerLinhasDom();
+      var data = document.getElementById('cc-data').value, safraId = document.getElementById('cc-safra').value, tipo = document.getElementById('cc-tipo').value, valor = parseFloat(document.getElementById('cc-valor').value) || 0;
+      if(!data || !safraId){ ccMsg = 'Escolha a data e o talhão.'; renderCaderneta(); return; }
+      if(!Array.isArray(state.colheitaApanhas)) state.colheitaApanhas = [];
+      var n = 0;
+      ccLinhas.forEach(function(l){
+        var q = parseFloat(String(l.qtd).replace(',', '.')) || 0, nome = String(l.pessoa || '').trim(); if(!nome || q <= 0) return;
+        var m = state.equipe.find(function(x){ return semAcento(x.nome).trim() === semAcento(nome); });
+        state.colheitaApanhas.push({id: uid(), data: data, safraId: safraId, tipo: tipo, pessoaId: m ? m.id : '', pessoaNome: m ? '' : nome, quantidade: q, valorUnit: valor, criadoEm: Date.now()});
+        n++;
+      });
+      if(!n){ ccMsg = 'Preencha pelo menos uma pessoa com a quantidade.'; renderCaderneta(); return; }
+      saveKey('colheitaApanhas', state.colheitaApanhas);
+      ccForm = {data: data, safra: safraId, tipo: tipo, valor: String(valor || '')}; ccLinhas = [{pessoa: '', qtd: ''}]; ccMsg = '✓ ' + n + ' registro(s) de apanha salvos.';
+      renderCaderneta(); return;
+    }
+    if(t.dataset && t.dataset.ccDelApanha){ state.colheitaApanhas = state.colheitaApanhas.filter(function(a){ return a.id !== t.dataset.ccDelApanha; }); saveKey('colheitaApanhas', state.colheitaApanhas); renderCaderneta(); return; }
+    if(t.dataset && t.dataset.ccPagar){
+      var ids = t.dataset.ccPagar.split(','), aps = state.colheitaApanhas.filter(function(a){ return ids.indexOf(a.id) !== -1 && !ccPago(a); });
+      if(!aps.length) return;
+      var hoje = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10);
+      if(periodoFechado(hoje)){ ccMsg = 'O mês atual está fechado no Financeiro. Reabra-o para lançar o pagamento.'; renderCaderneta(); return; }
+      var porSafra = {}, total = 0, qtdT = 0;
+      aps.forEach(function(a){ var v = (Number(a.quantidade) || 0) * (Number(a.valorUnit) || 0); porSafra[a.safraId] = (porSafra[a.safraId] || 0) + v; total += v; qtdT += Number(a.quantidade) || 0; });
+      if(total <= 0){ ccMsg = 'Esses registros estão sem valor por unidade. Informe o R$ por unidade antes de lançar o pagamento.'; renderCaderneta(); return; }
+      var conta = ccContaApanha(), finId = uid(), nome = ccPessoaNome(aps[0]);
+      var partes = Object.keys(porSafra).map(function(sid){ var sf = state.safras.find(function(s){ return s.id === sid; }); return {talhaoId: sf ? sf.talhaoId : '', safraId: sid, valor: Math.round(porSafra[sid] * 100) / 100}; });
+      state.financeiro.push({id: finId, origem: 'caderneta', destino: 'lavoura', partes: partes, contaId: conta ? conta.id : '', tipo: 'custo', categoria: conta ? conta.nome : 'Apanha de café',
+        valor: Math.round(total * 100) / 100, quantidade: qtdT, unidade: cfgCaderneta().unidade, valorUnitario: 0, peso: 0, status: 'Pago', data: hoje, vencimento: hoje,
+        talhoesIds: partes.map(function(p){ return p.talhaoId; }).filter(Boolean), talhaoId: '', parceiroId: '', membroId: aps[0].pessoaId || '',
+        descricao: 'Apanha de café — ' + nome + ' (' + fmtNum(qtdT) + ' ' + cfgCaderneta().unidade + ')', categoriaSenar: 'pessoas', criadoEm: Date.now()});
+      aps.forEach(function(a){ a.financeiroId = finId; });
+      saveKey('financeiro', state.financeiro); saveKey('colheitaApanhas', state.colheitaApanhas);
+      ccMsg = '✓ Pagamento de ' + fmtBRL(total) + ' para ' + escapeHtml(nome) + ' lançado em Lançamentos' + (conta ? ' (conta ' + escapeHtml(conta.nome) + ')' : ' — sem conta: escolha a conta no lançamento') + '.';
+      renderAll(); return;
+    }
+    if(t.id === 'cc-lote-add'){
+      var safraL = document.getElementById('cc-lote-safra').value; if(!safraL) return;
+      if(!Array.isArray(state.cafeLotes)) state.cafeLotes = [];
+      state.cafeLotes.push({id: uid(), codigo: document.getElementById('cc-lote-codigo').value || 'Lote', data: document.getElementById('cc-lote-data').value, safraId: safraL,
+        origem: document.getElementById('cc-lote-origem').value, volume: parseFloat(document.getElementById('cc-lote-volume').value) || 0, etapa: document.getElementById('cc-lote-etapa').value,
+        local: '', umidade: '', sacosCoco: '', sacasBenef: '', bebida: '', criadoEm: Date.now()});
+      saveKey('cafeLotes', state.cafeLotes); renderCaderneta(); return;
+    }
+    if(t.dataset && t.dataset.ccLoteDel){ state.cafeLotes = state.cafeLotes.filter(function(l){ return l.id !== t.dataset.ccLoteDel; }); saveKey('cafeLotes', state.cafeLotes); renderCaderneta(); return; }
+    if(t.dataset && t.dataset.ccLoteColheita){
+      var lt = state.cafeLotes.find(function(l){ return l.id === t.dataset.ccLoteColheita; }); if(!lt || lt.producaoId || !(Number(lt.sacasBenef) > 0)) return;
+      var pid = uid();
+      state.producao.push({id: pid, safraId: lt.safraId, tipo: 'entrada', quantidade: Number(lt.sacasBenef), unidade: 'sc', data: lt.dataBenef || new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10),
+        qualidade: lt.bebida || '', umidade: lt.umidade || '', localArmazenagem: lt.local || '', precoUnitario: 0, parceiroId: '', responsavelId: '', maquinaId: '', horasUso: 0,
+        observacao: 'Lote ' + lt.codigo + ' (Caderneta do Café)', cafeLoteId: lt.id, criadoEm: Date.now()});
+      lt.producaoId = pid; lt.etapa = 'beneficiado';
+      saveKey('producao', state.producao); saveKey('cafeLotes', state.cafeLotes);
+      ccMsg = '✓ Lote ' + escapeHtml(lt.codigo) + ': ' + fmtNum(lt.sacasBenef) + ' sc entraram em Colheita e Vendas.';
+      renderAll(); return;
+    }
+  });
+
+  /* ================= Inspeção de Campo ================= */
+  // Níveis de referência para começar (MIP/Embrapa/Procafé); editáveis — confirme com seu agrônomo
+  var INS_ALVOS = {
+    cafe: [
+      {k:'broca', alvo:'Broca-do-café', medida:'% de frutos broqueados', nivel:3},
+      {k:'bicho', alvo:'Bicho-mineiro', medida:'% de folhas minadas (3º/4º par)', nivel:30},
+      {k:'ferrugem', alvo:'Ferrugem', medida:'% de folhas com pústula', nivel:5},
+      {k:'cercospora', alvo:'Cercosporiose', medida:'% de folhas com lesão', nivel:10},
+      {k:'acaro', alvo:'Ácaro-vermelho', medida:'% de folhas com ácaro', nivel:0}
+    ],
+    soja: [
+      {k:'lagartas', alvo:'Lagartas desfolhadoras', medida:'lagartas grandes por metro (pano)', nivel:20},
+      {k:'percevejos', alvo:'Percevejos', medida:'percevejos por metro (pano)', nivel:2},
+      {k:'desfolha', alvo:'Desfolha', medida:'% de desfolha', nivel:30},
+      {k:'ferrugem', alvo:'Ferrugem-asiática', medida:'% de folíolos com sintoma', nivel:0}
+    ],
+    milho: [
+      {k:'cartucho', alvo:'Lagarta-do-cartucho', medida:'% de plantas com folhas raspadas', nivel:20},
+      {k:'cigarrinha', alvo:'Cigarrinha-do-milho', medida:'cigarrinhas por planta', nivel:0},
+      {k:'percevejo', alvo:'Percevejo barriga-verde', medida:'percevejos por m²', nivel:0}
+    ]
+  };
+  function insChaveCultura(culturaId){ var n = semAcento(culturaNome(culturaId)); return /caf/.test(n) ? 'cafe' : (/soja/.test(n) ? 'soja' : (/milho/.test(n) ? 'milho' : '')); }
+  function insNiveis(){ var c = configUnidades(); if(!c.niveisInspecao) c.niveisInspecao = {}; return c.niveisInspecao; }
+  function insNivel(cult, a){ var nv = insNiveis()[cult + ':' + a.k]; return nv !== undefined ? Number(nv) : a.nivel; }
+  var insTalhaoId = '', insMsg = '';
+  // Safra em curso no talhão: não colhida, de lavoura não encerrada, do ano agrícola mais recente
+  function insSafraAtiva(talhaoId){
+    var c = state.safras.filter(function(s){ var l = lavouraPorId(s.lavouraId); return s.talhaoId === talhaoId && s.status !== 'colhida' && !(l && l.encerrada); })
+      .sort(function(a, b){ return (b.anoAgricola || '').localeCompare(a.anoAgricola || ''); });
+    return c[0] || null;
+  }
+  function insAlvosDoTalhao(talhaoId){ var sf = insSafraAtiva(talhaoId); var cult = sf ? insChaveCultura(sf.culturaId) : ''; return {sf: sf, cult: cult, alvos: INS_ALVOS[cult] || []}; }
+  function renderInspecao(){
+    var el = document.getElementById('tab-inspecao'); if(!el) return;
+    if(!state.talhoes.length){ el.innerHTML = '<div class="paper empty-state">Cadastre talhões para registrar inspeções.</div>'; return; }
+    if(!insTalhaoId || !state.talhoes.some(function(t){ return t.id === insTalhaoId; })) insTalhaoId = state.talhoes[0].id;
+    var ins = (state.inspecoes || []).slice().sort(function(a, b){ return (b.data || '').localeCompare(a.data || '') || (b.criadoEm || 0) - (a.criadoEm || 0); });
+    var hoje = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10);
+    var dias = function(d){ return Math.round((new Date(hoje + 'T12:00:00') - new Date(d + 'T12:00:00')) / 86400000); };
+    var acima = function(i){ return (i.alvos || []).filter(function(a){ return a.nivel > 0 && Number(a.valor) >= a.nivel; }); };
+    // situação por talhão (talhões com safra em andamento ou planejada)
+    var talAtivos = state.talhoes.filter(function(t){ return !!insSafraAtiva(t.id); });
+    var rec = 0, alert = 0;
+    var linhas = talAtivos.map(function(t){
+      var dele = ins.filter(function(i){ return i.talhaoId === t.id; }), ult = dele[0], ant = dele[1];
+      if(ult && dias(ult.data) <= 7) rec++;
+      var ac = ult ? acima(ult) : []; if(ac.length) alert++;
+      return {t: t, ult: ult, ant: ant, ac: ac};
+    });
+    var h = '<div class="stat-row">' + statCard('Talhões com lavoura', String(talAtivos.length)) + statCard('Inspecionados nos últimos 7 dias', rec + ' de ' + talAtivos.length, rec < talAtivos.length ? 'cost' : 'growth') + statCard('Talhões com alvo no nível de ação', String(alert), alert ? 'cost' : '') + statCard('Última inspeção', ins[0] ? fmtDate(ins[0].data) : '—') + '</div>';
+    if(insMsg){ h += '<div class="paper note-box" style="margin:0 0 14px;">' + insMsg + '</div>'; insMsg = ''; }
+    h += '<div class="section-title">Situação por talhão</div>';
+    if(!linhas.length) h += '<div class="paper empty-state">Nenhum talhão com lavoura em andamento.</div>';
+    else {
+      h += '<div class="paper table-wrap"><table><thead><tr><th>Talhão</th><th>Lavoura</th><th>Última inspeção</th><th>No nível de ação</th><th>Leituras (vs anterior)</th><th></th></tr></thead><tbody>';
+      linhas.forEach(function(x){
+        var sf = insSafraAtiva(x.t.id);
+        var atraso = !x.ult ? '<span class="badge" style="background:#DFA84E; color:#1F2410;">nunca</span>' : (dias(x.ult.data) > 7 ? fmtDate(x.ult.data) + ' <span class="badge" style="background:#DFA84E; color:#1F2410;">' + dias(x.ult.data) + ' dias</span>' : fmtDate(x.ult.data) + ' <span style="font-size:11px; color:var(--ink-soft);">(' + dias(x.ult.data) + ' d)</span>');
+        var leit = x.ult ? (x.ult.alvos || []).filter(function(a){ return a.valor !== '' && a.valor != null; }).map(function(a){
+          var pa = x.ant ? (x.ant.alvos || []).find(function(b){ return b.alvo === a.alvo; }) : null;
+          var seta = pa && pa.valor !== '' && pa.valor != null ? (Number(a.valor) > Number(pa.valor) ? ' ▲' : (Number(a.valor) < Number(pa.valor) ? ' ▼' : ' =')) : '';
+          return escapeHtml(a.alvo) + ': <b>' + fmtNum(a.valor) + '</b>' + seta;
+        }).join(' · ') : '—';
+        h += '<tr><td><b>' + escapeHtml(x.t.nome) + '</b></td><td>' + (sf ? escapeHtml(lavouraLabel(sf.lavouraId)) : '—') + '</td><td>' + atraso + '</td><td>' + (x.ac.length ? x.ac.map(function(a){ return '<span class="badge" style="background:var(--cost); color:#fff; margin-right:4px;">' + escapeHtml(a.alvo) + ' ' + fmtNum(a.valor) + '</span>'; }).join('') : (x.ult ? '<span style="color:var(--ink-soft); font-size:12px;">nenhum</span>' : '—')) + '</td><td style="font-size:12px;">' + leit + '</td><td><button type="button" class="btn-edit" data-ins-talhao="' + x.t.id + '">+ Inspecionar</button></td></tr>';
+      });
+      h += '</tbody></table></div>';
+    }
+    // formulário
+    var info = insAlvosDoTalhao(insTalhaoId);
+    h += '<div class="section-title" id="ins-form-titulo">Nova inspeção</div><div class="paper form-card">';
+    h += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; align-items:end;">';
+    h += '<div class="field"><label for="ins-data">Data</label><input type="date" id="ins-data" value="' + hoje + '"></div>';
+    h += '<div class="field"><label for="ins-talhao">Talhão</label><select id="ins-talhao">' + state.talhoes.map(function(t){ return '<option value="' + t.id + '"' + (t.id === insTalhaoId ? ' selected' : '') + '>' + escapeHtml(t.nome) + '</option>'; }).join('') + '</select></div>';
+    h += '<div class="field"><label for="ins-resp">Quem inspecionou</label><select id="ins-resp"><option value="">—</option>' + state.equipe.map(function(m){ return '<option value="' + m.id + '">' + escapeHtml(m.nome) + '</option>'; }).join('') + '</select></div>';
+    h += '<div class="field"><label for="ins-pontos">Pontos amostrados</label><input type="number" min="0" id="ins-pontos" placeholder="ex.: 10"></div>';
+    h += '</div>';
+    h += '<p style="font-size:12px; color:var(--ink-soft); margin:10px 0 6px;">' + (info.sf ? 'Lavoura: <b>' + escapeHtml(lavouraLabel(info.sf.lavouraId)) + '</b>. ' : 'Talhão sem lavoura em andamento. ') + 'Caminhe em zigue-zague e anote a média dos pontos. Deixe em branco o que não avaliou.</p>';
+    h += '<div class="table-wrap"><table><thead><tr><th>Alvo</th><th>Como medir</th><th class="num">Resultado</th><th class="num">Nível de ação</th></tr></thead><tbody>';
+    info.alvos.forEach(function(a){ var nv = insNivel(info.cult, a); h += '<tr><td><b>' + escapeHtml(a.alvo) + '</b></td><td style="font-size:12px;">' + escapeHtml(a.medida) + '</td><td class="num"><input type="number" step="any" min="0" class="ins-valor" data-k="' + a.k + '" id="ins-v-' + a.k + '" style="width:90px; text-align:right; padding:6px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5;"></td><td class="num">' + (nv > 0 ? fmtNum(nv) : '<span style="color:var(--ink-soft);">—</span>') + '</td></tr>'; });
+    h += '<tr><td><input id="ins-outro-alvo" placeholder="Outro alvo (praga, doença, daninha)" style="width:100%; padding:6px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5;"></td><td><input id="ins-outro-medida" placeholder="como mediu" style="width:100%; padding:6px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5;"></td><td class="num"><input type="number" step="any" min="0" id="ins-outro-valor" style="width:90px; text-align:right; padding:6px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5;"></td><td></td></tr>';
+    h += '</tbody></table></div>';
+    h += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-top:10px;">';
+    h += '<div class="field"><label for="ins-solo">Solo</label><select id="ins-solo"><option value="">—</option><option>Úmido</option><option>Seco</option><option>Rachado</option><option>Compactado</option><option>Encharcado</option></select></div>';
+    h += '<div class="field"><label for="ins-plantas">Plantas</label><select id="ins-plantas"><option value="">—</option><option>Uniformes</option><option>Desuniformes</option><option>Amareladas</option><option>Murchas</option><option>Vigorosas</option></select></div>';
+    h += '<div class="field" style="grid-column:1/-1;"><label for="ins-obs">Observações</label><textarea id="ins-obs" rows="3" placeholder="Manchas, mordidas, cor das folhas, pontos de erosão, daninhas..."></textarea></div>';
+    h += '</div><div style="margin-top:10px;"><button type="button" class="btn" id="ins-salvar">Salvar inspeção</button></div></div>';
+    // histórico
+    h += '<div class="section-title">Histórico</div>';
+    if(!ins.length) h += '<div class="paper empty-state">Nenhuma inspeção registrada ainda.</div>';
+    else {
+      h += '<div class="paper table-wrap"><table><thead><tr><th>Data</th><th>Talhão</th><th>Quem</th><th>Leituras</th><th>Campo</th><th></th></tr></thead><tbody>';
+      ins.slice(0, 80).forEach(function(i){
+        h += '<tr><td>' + fmtDate(i.data) + '</td><td>' + escapeHtml(talhaoNome(i.talhaoId)) + '</td><td>' + (i.responsavelId ? escapeHtml(membroNome(i.responsavelId)) : '—') + '</td><td style="font-size:12px;">' + (i.alvos || []).map(function(a){ var al = a.nivel > 0 && Number(a.valor) >= a.nivel; return (al ? '<b style="color:var(--cost-dark);">' : '') + escapeHtml(a.alvo) + ' ' + fmtNum(a.valor) + (al ? ' ⚠️</b>' : ''); }).join(' · ') + '</td><td style="font-size:12px;">' + escapeHtml([i.solo, i.plantas, i.observacao].filter(Boolean).join(' · ')) + '</td><td><button type="button" class="btn-del" data-ins-del="' + i.id + '">×</button></td></tr>';
+      });
+      h += '</tbody></table></div>';
+    }
+    // níveis
+    h += '<details class="paper" style="margin-top:14px; padding:10px 14px; font-size:13px;"><summary style="cursor:pointer;">⚙️ Níveis de ação</summary><p style="font-size:12px; color:var(--ink-soft);">Valores de referência para começar. Ajuste com o seu agrônomo, pela região e pela fase da lavoura. Zero = sem nível (só acompanha).</p><div class="table-wrap"><table><thead><tr><th>Cultura</th><th>Alvo</th><th>Medida</th><th class="num">Nível de ação</th></tr></thead><tbody>';
+    Object.keys(INS_ALVOS).forEach(function(cu){ INS_ALVOS[cu].forEach(function(a){ h += '<tr><td>' + ({cafe:'Café', soja:'Soja', milho:'Milho'})[cu] + '</td><td>' + escapeHtml(a.alvo) + '</td><td style="font-size:12px;">' + escapeHtml(a.medida) + '</td><td class="num"><input type="number" step="any" min="0" class="ins-nivel" data-c="' + cu + ':' + a.k + '" id="ins-n-' + cu + '-' + a.k + '" value="' + insNivel(cu, a) + '" style="width:80px; text-align:right; padding:5px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5;"></td></tr>'; }); });
+    h += '</tbody></table></div></details>';
+    el.innerHTML = h;
+  }
+  document.addEventListener('change', function(e){
+    var t = e.target; if(!t) return;
+    if(t.id === 'ins-talhao'){ insTalhaoId = t.value; var d = document.getElementById('ins-data').value; renderInspecao(); document.getElementById('ins-data').value = d; return; }
+    if(t.classList && t.classList.contains('ins-nivel')){ insNiveis()[t.dataset.c] = parseFloat(t.value) || 0; saveKey('configUnidades', state.configUnidades); return; }
+  });
+  document.addEventListener('click', function(e){
+    var t = e.target; if(!t) return;
+    if(t.dataset && t.dataset.insTalhao){ insTalhaoId = t.dataset.insTalhao; renderInspecao(); var ft = document.getElementById('ins-form-titulo'); if(ft) ft.scrollIntoView({behavior:'smooth', block:'start'}); return; }
+    if(t.dataset && t.dataset.insDel){ state.inspecoes = state.inspecoes.filter(function(i){ return i.id !== t.dataset.insDel; }); saveKey('inspecoes', state.inspecoes); renderInspecao(); return; }
+    if(t.id === 'ins-salvar'){
+      var talhaoId = document.getElementById('ins-talhao').value, data = document.getElementById('ins-data').value;
+      if(!talhaoId || !data){ insMsg = 'Escolha a data e o talhão.'; renderInspecao(); return; }
+      var info = insAlvosDoTalhao(talhaoId), alvos = [];
+      info.alvos.forEach(function(a){ var v = document.getElementById('ins-v-' + a.k).value; if(v !== '') alvos.push({alvo: a.alvo, medida: a.medida, valor: parseFloat(v) || 0, nivel: insNivel(info.cult, a)}); });
+      var oa = document.getElementById('ins-outro-alvo').value.trim(), ov = document.getElementById('ins-outro-valor').value;
+      if(oa) alvos.push({alvo: oa, medida: document.getElementById('ins-outro-medida').value.trim(), valor: ov === '' ? '' : parseFloat(ov) || 0, nivel: 0});
+      var obs = document.getElementById('ins-obs').value.trim(), solo = document.getElementById('ins-solo').value, plantas = document.getElementById('ins-plantas').value;
+      if(!alvos.length && !obs && !solo && !plantas){ insMsg = 'Preencha pelo menos um resultado ou uma observação.'; renderInspecao(); return; }
+      if(!Array.isArray(state.inspecoes)) state.inspecoes = [];
+      var reg = {id: uid(), data: data, talhaoId: talhaoId, safraId: info.sf ? info.sf.id : '', responsavelId: document.getElementById('ins-resp').value, pontos: parseFloat(document.getElementById('ins-pontos').value) || 0, alvos: alvos, solo: solo, plantas: plantas, observacao: obs, criadoEm: Date.now()};
+      state.inspecoes.push(reg); saveKey('inspecoes', state.inspecoes);
+      var ac = alvos.filter(function(a){ return a.nivel > 0 && Number(a.valor) >= a.nivel; });
+      insMsg = '✓ Inspeção de ' + escapeHtml(talhaoNome(talhaoId)) + ' salva.' + (ac.length ? ' <b style="color:var(--cost-dark);">⚠️ No nível de ação: ' + ac.map(function(a){ return escapeHtml(a.alvo) + ' (' + fmtNum(a.valor) + ' ≥ ' + fmtNum(a.nivel) + ')'; }).join(', ') + '.</b>' : '');
+      renderInspecao(); return;
+    }
   });
   var custoSenarLavouraId = '';
   var custoSenarMostrarContas = false;
@@ -7091,7 +7642,14 @@
     var h = '<div class="section-title" style="margin-top:0;">Custo de produção — método SENAR</div>';
     h += '<div class="paper form-card" style="margin-bottom:20px;">';
     h += '<div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center; justify-content:space-between;"><label style="display:flex; gap:8px; align-items:center; font-size:13px;">Lavoura <select id="csn-lavoura" style="' + est + '">' + opts + '</select></label>';
-    h += '<span style="font-size:13px; font-weight:700; color:' + cor + ';">● ' + status + '</span></div>';
+    h += (custoSenarModo === 'orcado' ? '' : '<span style="font-size:13px; font-weight:700; color:' + cor + ';">● ' + status + '</span>') + '</div>';
+    var btnModo = function(id, lab, ativo){ return '<button type="button" id="' + id + '" class="btn-edit" style="' + (ativo ? 'background:var(--ink); color:#FCFCF5; border-color:var(--ink);' : '') + '">' + lab + '</button>'; };
+    h += '<div style="display:flex; gap:6px; margin-top:10px;">' + btnModo('csn-modo-realizado', 'Realizado', custoSenarModo !== 'orcado') + btnModo('csn-modo-orcado', 'Orçado (planejamento)', custoSenarModo === 'orcado') + '</div>';
+    if(custoSenarModo === 'orcado'){
+      var rOrc = custoSenarOrcadoHtml(x, custoSenarLavouraId);
+      h += rOrc.html + custoSenarSimHtml(rOrc.xo, custoSenarLavouraId) + '</div>';
+      return h;
+    }
     h += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; margin:14px 0;">';
     var card = function(t, v, sub){ return '<div style="border:1px solid var(--paper-line); border-radius:6px; padding:10px 12px;"><div style="font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft);">' + t + '</div><div style="font-size:18px; font-weight:700; margin-top:2px;">' + v + '</div>' + (sub ? '<div style="font-size:11.5px; color:var(--ink-soft);">' + sub + '</div>' : '') + '</div>'; };
     h += card('Custo total por saca', pSc(x.CT), 'COE ' + pSc(x.COE) + ' · COT ' + pSc(x.COT));
@@ -7134,6 +7692,18 @@
     if(x.freteTotal) fora.push(fmtBRL(x.freteTotal) + ' de frete com caminhão próprio');
     if(x.foraTotal) fora.push(fmtBRL(x.foraTotal) + ' em contas marcadas como "Fora do custo"');
     if(fora.length) h += '<p style="font-size:12px; color:var(--ink-soft); margin:6px 0 0;">Ficaram fora desta lavoura: ' + fora.join(' e ') + '.</p>';
+    if(x.itensLanc.length){
+      var agr = {};
+      x.itensLanc.forEach(function(it){ var a = agr[it.r.id] = agr[it.r.id] || {r: it.r, v: 0, c: it.c, src: it.src, rateado: it.rateado}; a.v += it.v; });
+      var lst = Object.keys(agr).map(function(k){ return agr[k]; }).sort(function(a, b){ return b.v - a.v; });
+      h += '<details style="margin-top:8px;"><summary style="cursor:pointer; font-size:12.5px;">Trocar a categoria de um lançamento (' + lst.length + ')</summary><p style="font-size:12px; color:var(--ink-soft); margin:6px 0;">Use quando um lançamento não combina com a categoria da conta (ex.: um extintor lançado na conta Insumos).</p><div class="table-wrap"><table><thead><tr><th>Data</th><th>Descrição</th><th>Conta</th><th class="num">Nesta lavoura</th><th>Categoria</th></tr></thead><tbody>';
+      lst.forEach(function(a){
+        var r = a.r, padrao = (function(){ var s = r.categoriaSenar; delete r.categoriaSenar; var c = categoriaSenarLancamento(r); if(s) r.categoriaSenar = s; return c; })();
+        h += '<tr><td>' + (r.data ? fmtDate(r.data) : '—') + '</td><td>' + escapeHtml((r.descricao || '').slice(0, 70)) + (a.rateado ? ' <span style="font-size:10.5px; color:var(--ink-soft);">(rateado)</span>' : '') + '</td><td>' + escapeHtml(r.contaId ? contaNome(r.contaId) : (r.categoria || '—')) + '</td><td class="num">' + fmtBRL(a.v) + '</td>';
+        h += '<td><select class="csn-lcat" data-id="' + r.id + '" data-src="' + a.src + '" style="' + est + '"><option value="">Da conta: ' + CAT_SENAR_LABEL[padrao] + '</option>' + CAT_SENAR.map(function(o){ return '<option value="' + o.v + '"' + (r.categoriaSenar === o.v ? ' selected' : '') + '>' + o.l + '</option>'; }).join('') + '</select></td></tr>';
+      });
+      h += '</tbody></table></div></details>';
+    }
     h += '</details>';
     // parâmetros
     var inp = function(id, lab, v, step, dica){ return '<label style="display:flex; flex-direction:column; gap:3px; font-size:12px;">' + lab + '<input type="number" id="csn-p-' + id + '" value="' + (Number(v) || 0) + '" min="0" step="' + step + '" style="' + est + ' width:150px;">' + (dica ? '<span style="font-size:11px; color:var(--ink-soft); max-width:220px;">' + dica + '</span>' : '') + '</label>'; };
@@ -7261,6 +7831,8 @@
       });
       html += '</tbody></table></div>';
     }
+
+    html += painelOcupacaoHtml();
 
     html += '<div class="section-title">Por talhão</div>';
     if(!state.talhoes.length){
