@@ -278,6 +278,7 @@
   [data-tip-fin],[data-tip]{cursor:default;}
   #tip-lanc td.v{text-align:right; white-space:nowrap; padding-left:10px;}
   #tip-lanc .tl-sub{font-size:11.5px; color:var(--ink-soft); margin:-2px 0 6px;}
+@media (max-width: 760px){ .csn-simgrid{ grid-template-columns:1fr !important; } }
 </style>
 </head>
 <body>
@@ -6740,6 +6741,423 @@
     corpo += '<p class="nota">Custos pagos com destino na lavoura + insumos aplicados no Diário de Campo (custo médio) + horas de máquina × custo/hora real' + (opc.length ? ' + ' + opc.join(', ') : '') + '. Contas pendentes não entram. As opções seguem as caixas marcadas na aba Rentabilidade.</p>';
     abrirImpressao(titulo, corpo);
   }
+  /* ---------------- Custo de produção — método SENAR (COE → COT → CT) ---------------- */
+  var CAT_SENAR = [
+    {v:'insumos', l:'Insumos'}, {v:'pessoas', l:'Pessoas'}, {v:'mecanizacao', l:'Mecanização'},
+    {v:'outros', l:'Outros gastos'}, {v:'terra', l:'Terra (arrendamento pago)'}, {v:'fora', l:'Fora do custo'}
+  ];
+  var CAT_SENAR_LABEL = {insumos:'Insumos', pessoas:'Pessoas', mecanizacao:'Mecanização', outros:'Outros gastos', juros:'Juros de financiamentos', terra:'Terra (arrendamento pago)', fora:'Fora do custo'};
+  // Classificação proposta para as contas que já existem (o usuário pode trocar na própria tela)
+  var CAT_SENAR_PADRAO_ID = {
+    'ct-acaricida':'insumos', 'ct-adjuvante':'insumos', 'ct-outros-defensivos':'insumos', 'ct-fertilizante-liquido':'insumos', 'ct-fert-solido-base':'insumos',
+    'ct-fungicida':'insumos', 'ct-herbicida':'insumos', 'ct-inseticida':'insumos', 'ct-semente-milho':'insumos', 'ct-semente-soja':'insumos', 'ct-sementes-outras':'insumos',
+    'ct-insumos-gerais':'insumos',
+    'ct-aplic-agroquimico':'mecanizacao', 'ct-colheita-despesa':'mecanizacao', 'ct-frete-despesa':'mecanizacao', 'ct-plantio':'mecanizacao',
+    'ct-servicos-contratados':'mecanizacao', 'ct-combustivel':'mecanizacao', 'ct-manutencao-maquinas':'mecanizacao', 'ct-outros-operacional':'mecanizacao',
+    'ct-capina':'pessoas', 'ct-servicos-gerais':'pessoas', 'ct-salario':'pessoas', 'ct-diaria':'pessoas', 'ct-empreitada':'pessoas', 'ct-servico-admin':'pessoas',
+    'ct-mao-de-obra':'mecanizacao',
+    'ct-seguro-producao':'outros', 'ct-conservacao-solo':'outros', 'ct-energia-eletrica':'outros', 'ct-outros-admin':'outros',
+    'ct-maquinario':'fora', 'ct-arrendamento':'terra'
+  };
+  function semAcento(s){ return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+  // Sugestão pelo nome, para contas criadas depois
+  function categoriaSenarPorNome(nome){
+    var n = semAcento(nome);
+    if(!n) return 'outros';
+    if(/aquisi|maquinario|investiment|banco|emprestim|financiament/.test(n)) return 'fora';
+    if(/arrend/.test(n)) return 'terra';
+    if(/semente|adubo|fertiliz|herbic|fungic|inseti|acaric|defensiv|adjuvan|oleo|calcar|gesso|insumo|corretiv|foliar/.test(n)) return 'insumos';
+    if(/salari|fgts|inss|diaria|empreitad|cata|capina|colheita manual|ferias|13|funcionari/.test(n)) return 'pessoas';
+    if(/peca|manuten|combust|diesel|frete|aplic|plantio|colheita|pneu|lubrif|mecan|torno|seguro de bens/.test(n)) return 'mecanizacao';
+    return 'outros';
+  }
+  function categoriaSenarPadraoConta(c){
+    if(!c) return 'outros';
+    if(CAT_SENAR_PADRAO_ID[c.id]) return CAT_SENAR_PADRAO_ID[c.id];
+    return categoriaSenarPorNome(c.nome);
+  }
+  function categoriaSenarConta(contaId){
+    var c = state.contasFinanceiro.find(function(x){ return x.id === contaId; });
+    if(!c) return 'outros';
+    return c.categoriaSenar || categoriaSenarPadraoConta(c);
+  }
+  // Regras: destino Máquina → Mecanização; pagamento de arrendamento → Terra; senão, a categoria da conta
+  function categoriaSenarLancamento(r){
+    if(destinoEfetivo(r) === 'maquina') return 'mecanizacao';
+    if(r.origem === 'arrendamento') return 'terra';
+    if(r.contaId) return categoriaSenarConta(r.contaId);
+    return categoriaSenarPorNome(r.categoria);
+  }
+  // Frete com caminhão próprio: a despesa tem um par igual em receita (serviço prestado de frete). Os dois ficam fora.
+  function idsFreteProprio(){
+    var ehFrete = function(r){ return /frete/i.test((r.servico && r.servico.tipo) || '') || /frete/i.test(contaNome(r.contaId)) || /frete/i.test(r.categoria || ''); };
+    var receitas = state.financeiro.filter(function(f){ return f.tipo === 'receita' && ehFrete(f); });
+    var usados = {}, ids = {};
+    state.financeiro.forEach(function(f){
+      if(f.tipo !== 'custo' || !ehFrete(f)) return;
+      var par = receitas.find(function(rc){ return !usados[rc.id] && Math.abs((Number(rc.valor) || 0) - (Number(f.valor) || 0)) < 0.05 && (rc.data || '') === (f.data || ''); });
+      if(par){ usados[par.id] = true; ids[f.id] = true; ids[par.id] = true; }
+    });
+    return ids;
+  }
+  function configCustoSenar(){
+    var cfg = configUnidades();
+    if(!cfg.custoSenar){
+      // arrendamento de referência: média dos arrendamentos pagos ativos (R$/ha/ano)
+      var vt = 0, at = 0;
+      (state.arrendamentos || []).forEach(function(a){ if(a.tipo === 'Pago' && a.status !== 'Encerrado' && Number(a.areaHa) > 0 && Number(a.valor) > 0){ vt += Number(a.valor) * ((a.periodicidade || 'Anual') === 'Mensal' ? 12 : 1); at += Number(a.areaHa); } });
+      cfg.custoSenar = {prolaboreMensal: 0, arrendHa: at > 0 ? Math.round(vt / at) : 0, taxaCirc: 6, pctFinanciado: 0, taxaBens: 6};
+    }
+    return cfg.custoSenar;
+  }
+  // Talhões arrendados de terceiros: a terra já é paga (lançamentos de arrendamento), não leva a remuneração de referência
+  function talhaoArrendadoDeTerceiros(talhaoId){
+    return (state.arrendamentos || []).some(function(a){ return a.tipo === 'Pago' && a.status !== 'Encerrado' && a.talhaoId === talhaoId; });
+  }
+  // Distribui valores datados entre as safras ativas no mês, pela área plantada (opcional: só as safras de um talhão)
+  function alocarPorMesNasSafras(itens, mapa){
+    mapa = mapa || mapaSafrasAtivasPorMes();
+    var porSafra = {}, naoAlocado = 0;
+    var safraTalhao = {}; state.safras.forEach(function(s){ safraTalhao[s.id] = s.talhaoId; });
+    itens.forEach(function(it){
+      var ativas = it.data ? (mapa[it.data.slice(0,7)] || []) : [];
+      if(it.talhaoId) ativas = ativas.filter(function(a){ return safraTalhao[a.safraId] === it.talhaoId; });
+      var areaAtiva = ativas.reduce(function(s,a){ return s + a.area; }, 0);
+      if(areaAtiva <= 0){ naoAlocado += it.valor; return; }
+      ativas.forEach(function(a){ porSafra[a.safraId] = (porSafra[a.safraId] || 0) + it.valor * a.area / areaAtiva; });
+    });
+    return {porSafra: porSafra, naoAlocado: naoAlocado};
+  }
+  // Juros das parcelas já pagas de todos os financiamentos (custeio, investimento e aquisição), na data do pagamento
+  function jurosPagosFinanciamentos(){
+    var out = [];
+    state.financiamentos.forEach(function(f){
+      var pagas = Number(f.parcelasPagas) || 0; if(!pagas) return;
+      var cr = cronogramaFinanciamento(f), pgs = f.pagamentos || [];
+      var P0 = Number(f.valorTotal) || 0, n0 = cr.length, vp0 = Number(f.valorParcela) || 0;
+      // "Parcela informada" preenchida com o total do contrato (parcela × nº de parcelas muito acima do financiado): juros = (total − financiado) ÷ nº de parcelas
+      var parcelaEhTotal = (f.sistemaAmortizacao || 'Informado') === 'Informado' && n0 > 1 && vp0 * n0 > P0 * 1.5 && vp0 <= P0 * 1.6;
+      cr.forEach(function(l, i){
+        if(i >= pagas) return;
+        var pg = pgs.find(function(p){ return p.n === l.n; });
+        var j = parcelaEhTotal ? Math.max(vp0 - P0, 0) / n0 : (Number(l.juros) || 0) + (Number(l.jurosCarencia) || 0);
+        if(pg && Number(pg.valor) > 0) j = Math.min(j, Number(pg.valor));
+        if(j > 0) out.push({valor: j, data: (pg && pg.data) || l.vencimento || '', talhaoId: f.talhaoId || '', finId: f.id});
+      });
+    });
+    return out;
+  }
+  function jurosPorSafra(){
+    var areaTot = areaTotalFazenda(), res = {};
+    if(areaTot <= 0) return res;
+    var mapa = mapaSafrasAtivasPorMes(), safraTalhao = {}, ocup = {};
+    state.safras.forEach(function(s){ safraTalhao[s.id] = s.talhaoId; });
+    Object.keys(mapa).forEach(function(ym){ mapa[ym].forEach(function(a){ var k = safraTalhao[a.safraId] + '|' + ym; ocup[k] = (ocup[k] || 0) + 1; }); });
+    jurosPagosFinanciamentos().forEach(function(j){
+      if(!j.data) return;
+      var fim = j.data.slice(0,7), y = parseInt(fim.slice(0,4), 10), m = parseInt(fim.slice(5,7), 10);
+      for(var i = 0; i < 12; i++){
+        var ym = y + '-' + (m < 10 ? '0' : '') + m;
+        (mapa[ym] || []).forEach(function(a){
+          if(j.talhaoId && safraTalhao[a.safraId] !== j.talhaoId) return;
+          var base = j.talhaoId ? (Number((state.talhoes.find(function(t){ return t.id === j.talhaoId; }) || {}).area) || a.area) : areaTot;
+          res[a.safraId] = (res[a.safraId] || 0) + j.valor / 12 * a.area / base / ocup[safraTalhao[a.safraId] + '|' + ym];
+        });
+        m--; if(m < 1){ m = 12; y--; }
+      }
+    });
+    return res;
+  }
+  // Capital próprio em bens: valor do Patrimônio menos o saldo devedor dos financiamentos de investimento/aquisição
+  function capitalProprioBens(){
+    var valor = state.patrimonio.reduce(function(s, it){ return s + (Number(it.valor) || 0); }, 0);
+    var saldo = 0;
+    state.financiamentos.forEach(function(f){
+      if(f.status === 'Quitado' || (f.tipo !== 'Investimento' && f.tipo !== 'Aquisição')) return;
+      var pagas = Number(f.parcelasPagas) || 0, cr = cronogramaFinanciamento(f);
+      saldo += pagas > 0 && cr[pagas - 1] ? Number(cr[pagas - 1].saldo) || 0 : Number(f.valorTotal) || 0;
+    });
+    return {valor: valor, saldo: saldo, proprio: Math.max(0, valor - saldo)};
+  }
+  // Cálculo completo de um grupo de safras (normalmente uma lavoura)
+  function custoSenarDeSafras(sfs){
+    var P = configCustoSenar();
+    var frete = idsFreteProprio();
+    var mapa = mapaSafrasAtivasPorMes();
+    var ids = sfs.map(function(s){ return s.id; });
+    var cat = {insumos:0, pessoas:0, mecanizacao:0, outros:0, juros:0, terra:0};
+    var porConta = {}, foraTotal = 0, freteTotal = 0;
+    var addConta = function(r, v, c){ var k = r.contaId ? contaNome(r.contaId) : (r.categoria || 'Sem conta'); var x = porConta[k + '|' + c] = porConta[k + '|' + c] || {conta: k, cat: c, valor: 0}; x.valor += v; };
+    var lancs = [];
+    state.financeiro.forEach(function(f){ if(f.tipo === 'custo' && (f.status || 'Pago') !== 'Pendente') lancs.push({r: f, data: f.data || f.vencimento || ''}); });
+    state.contasPagar.forEach(function(c){ if(c.status === 'Pago') lancs.push({r: c, data: c.dataPagamento || c.vencimento || ''}); });
+    // 1) direto na lavoura
+    lancs.forEach(function(x){
+      var r = x.r, v = 0;
+      sfs.forEach(function(sf){ v += valorDaSafraNoLancamento(r, sf.id); });
+      if(!v) return;
+      if(frete[r.id]){ freteTotal += v; return; }
+      var c = categoriaSenarLancamento(r);
+      if(c === 'fora'){ foraTotal += v; return; }
+      cat[c] += v; addConta(r, v, c);
+    });
+    // 2) gerais da fazenda e parte das máquinas sem horas registradas, rateados por área × mês
+    var itensRateio = [];
+    lancs.forEach(function(x){
+      var r = x.r, d = destinoEfetivo(r), v = 0, c;
+      if(frete[r.id]) return;
+      if(d === 'geral'){ v = Number(r.valor) || 0; c = categoriaSenarLancamento(r); }
+      else if(d === 'maquina'){ var ms = r.maquinasIds || []; if(!ms.length) return; v = ms.reduce(function(sm, mid){ return sm + fracaoNaoAlocadaMaquina(mid); }, 0) * (Number(r.valor) || 0) / ms.length; c = 'mecanizacao'; }
+      else return;
+      if(!v || c === 'fora') return;
+      itensRateio.push({valor: v, data: x.data, r: r, c: c});
+    });
+    itensRateio.forEach(function(it){
+      var a = alocarPorMesNasSafras([{valor: it.valor, data: it.data}], mapa);
+      var v = ids.reduce(function(s, id){ return s + (a.porSafra[id] || 0); }, 0);
+      if(!v) return;
+      cat[it.c] += v; addConta(it.r, v, it.c);
+    });
+    // 3) insumos aplicados (Diário de Campo) e horas de máquina
+    var insDiario = 0, maqHoras = 0;
+    sfs.forEach(function(sf){ insDiario += custoInsumosSafra(sf.id); maqHoras += custoMaquinasSafra(sf.id); });
+    cat.insumos += insDiario; cat.mecanizacao += maqHoras;
+    // 4) juros de financiamentos: cada pagamento cobre os 12 meses até ele; cada mês vai às lavouras ativas pela área ÷ área da fazenda
+    var jur = jurosPorSafra();
+    cat.juros = ids.reduce(function(s, id){ return s + (jur[id] || 0); }, 0);
+    var COE = cat.insumos + cat.pessoas + cat.mecanizacao + cat.outros + cat.juros;
+    // COT: depreciação + pró-labore, pelos meses que a lavoura ocupa a terra × área ÷ área da fazenda
+    var somaFix = function(mapaFix){ return ids.reduce(function(s, id){ return s + (mapaFix[id] || 0); }, 0); };
+    var dep = somaFix(custosFixosPorSafra(depreciacaoAnualTotalFazenda()));
+    var prolab = somaFix(custosFixosPorSafra((Number(P.prolaboreMensal) || 0) * 12));
+    var COT = COE + dep + prolab;
+    // CT: remunerações (custo de oportunidade)
+    var areaTot = areaTotalFazenda();
+    var terraRef = custosFixosPorSafra((Number(P.arrendHa) || 0) * areaTot);
+    var remTerra = sfs.reduce(function(s, sf){ return s + (talhaoArrendadoDeTerceiros(sf.talhaoId) ? 0 : (terraRef[sf.id] || 0)); }, 0);
+    var remCirc = COE * (1 - Math.min(100, Number(P.pctFinanciado) || 0) / 100) / 2 * (Number(P.taxaCirc) || 0) / 100;
+    var cap = capitalProprioBens();
+    var remBens = somaFix(custosFixosPorSafra(cap.proprio / 2 * (Number(P.taxaBens) || 0) / 100));
+    var CT = COT + cat.terra + remTerra + remCirc + remBens;
+    var area = sfs.reduce(function(s, sf){ return s + areaPlantadaSafra(sf); }, 0);
+    var sacas = producaoTotalEmSacas(ids);
+    var receitas = sfs.reduce(function(s, sf){ return s + receitaDiretaSafra(sf.id); }, 0);
+    // a receita do frete próprio é interna: sai junto com a despesa
+    state.financeiro.forEach(function(f){ if(f.tipo === 'receita' && frete[f.id] && (f.status || 'Pago') !== 'Pendente') sfs.forEach(function(sf){ receitas -= valorDaSafraNoLancamento(f, sf.id); }); });
+    var estoque = estoqueValorPorSafraIds(ids);
+    var RB = receitas + estoque;
+    var preco = sacas > 0 ? RB / sacas : 0;
+    return {cat: cat, COE: COE, dep: dep, prolab: prolab, COT: COT, remTerra: remTerra, remCirc: remCirc, remBens: remBens, CT: CT,
+      area: area, sacas: sacas, receitas: receitas, estoque: estoque, RB: RB, preco: preco,
+      MB: RB - COE, ML: RB - COT, LU: RB - CT, porConta: porConta, foraTotal: foraTotal, freteTotal: freteTotal,
+      insDiario: insDiario, maqHoras: maqHoras, cap: cap, P: P, temArrendado: sfs.some(function(sf){ return talhaoArrendadoDeTerceiros(sf.talhaoId); })};
+  }
+  // Base do simulador: o realizado quando já há colheita e venda; senão a produtividade esperada das safras e a cotação da cultura
+  function custoSenarBase(x, lavouraId){
+    var l = lavouraPorId(lavouraId) || {};
+    var sfs = safrasDaLavoura(lavouraId), A = x.area;
+    var prod = 0, oProd = 'colhida';
+    if(x.sacas > 0 && A > 0) prod = x.sacas / A;
+    else {
+      oProd = 'esperada';
+      var pe = sfs.reduce(function(s, sf){ return s + (Number(sf.produtividadeEsperada) || 0) * areaPlantadaSafra(sf); }, 0);
+      prod = A > 0 ? pe / A : 0;
+    }
+    var preco = x.preco, oPreco = 'recebido';
+    if(!(preco > 0)){ preco = cotacaoCultura(l.culturaId); oPreco = 'cotação'; }
+    return {prod: prod, preco: preco, oProd: oProd, oPreco: oPreco};
+  }
+  // Cenário: os custos de cada categoria variam em %, a receita = área × produtividade × preço; o capital de giro acompanha o COE
+  function simCustoSenar(x, base, o){
+    o = o || {};
+    var m = function(k){ return 1 + (Number(o[k]) || 0) / 100; };
+    var cat = {insumos: x.cat.insumos * m('insumos'), pessoas: x.cat.pessoas * m('pessoas'), mecanizacao: x.cat.mecanizacao * m('mecanizacao'), outros: x.cat.outros * m('outros'), juros: x.cat.juros * m('juros')};
+    var COE = cat.insumos + cat.pessoas + cat.mecanizacao + cat.outros + cat.juros;
+    var COT = COE + x.dep + x.prolab;
+    var remCirc = x.COE > 0 ? x.remCirc * COE / x.COE : 0;
+    var CT = COT + x.cat.terra + x.remTerra + remCirc + x.remBens;
+    var prod = o.prod != null ? Number(o.prod) : base.prod, preco = o.preco != null ? Number(o.preco) : base.preco;
+    var A = x.area, S = A * prod, RB = S * preco;
+    return {cat: cat, COE: COE, COT: COT, CT: CT, A: A, S: S, prod: prod, preco: preco, RB: RB, MB: RB - COE, ML: RB - COT, LU: RB - CT,
+      ctSc: S > 0 ? CT / S : 0, coeSc: S > 0 ? COE / S : 0, pnCT: A > 0 && preco > 0 ? CT / A / preco : 0, lucr: RB > 0 ? (RB - COT) / RB * 100 : 0};
+  }
+  var custoSenarSim = null;
+  function custoSenarDiagnostico(x, base){
+    var out = [], A = x.area, s = simCustoSenar(x, base, {});
+    var stL = statusLavoura(lavouraPorId(custoSenarLavouraId));
+    if(stL === 'planejada' || stL === 'andamento') out.push(['aviso', 'Lavoura ainda em andamento', 'Os custos são só os lançados até hoje. O resultado e o simulador vão parecer melhores do que serão até a safra fechar: use os controles de custo para projetar o que ainda falta gastar.']);
+    if(s.S > 0 && s.preco > 0){
+      if(base.prod < s.pnCT) out.push(['ruim', 'Produtividade ' + (base.oProd === 'colhida' ? 'colhida' : 'esperada') + ' abaixo do ponto de nivelamento', 'Para cobrir o custo total a ' + fmtBRL(s.preco) + '/sc (' + base.oPreco + ') seriam ' + fmtNum(s.pnCT) + ' sc/ha; a lavoura ' + (base.oProd === 'colhida' ? 'colheu ' : 'espera ') + fmtNum(base.prod) + ' sc/ha.']);
+      else out.push(['bom', 'Produtividade acima do ponto de nivelamento', 'Folga de ' + fmtNum(base.prod - s.pnCT) + ' sc/ha sobre os ' + fmtNum(s.pnCT) + ' sc/ha que pagam o custo total.']);
+    } else out.push(['aviso', 'Sem produtividade ou preço para comparar', 'Informe a produtividade esperada na safra ou a cotação da cultura para ver o ponto de nivelamento.']);
+    var nomes = {insumos:'Insumos', pessoas:'Pessoas', mecanizacao:'Mecanização', outros:'Outros gastos', juros:'Juros'};
+    var maior = Object.keys(nomes).sort(function(a, b){ return x.cat[b] - x.cat[a]; })[0];
+    if(x.COE > 0) out.push(['info', nomes[maior] + ' é ' + fmtNum(x.cat[maior] / x.COE * 100) + '% do desembolso', fmtBRL(x.cat[maior]) + ' na lavoura' + (A > 0 ? ', ' + fmtBRL(x.cat[maior] / A) + '/ha' : '') + '. É onde 10% de economia pesa mais: ' + fmtBRL(x.cat[maior] * 0.1) + '.']);
+    if(x.CT > 0 && x.dep / x.CT > 0.25) out.push(['aviso', 'Depreciação é ' + fmtNum(x.dep / x.CT * 100) + '% do custo total', 'O parque de máquinas pesa mais que o desembolso desta lavoura em muitos itens. Vale conferir se o Patrimônio tem itens vendidos ou valores e vida útil desatualizados.']);
+    if(x.COE > 0 && x.cat.juros / x.COE > 0.15) out.push(['aviso', 'Juros são ' + fmtNum(x.cat.juros / x.COE * 100) + '% do desembolso', fmtBRL(x.cat.juros) + ' de juros de financiamentos caíram nesta lavoura.']);
+    if(!x.prolab) out.push(['info', 'Pró-labore está zerado', 'Sem a sua retirada, o custo operacional total fica menor do que o real. Preencha em Parâmetros.']);
+    return out;
+  }
+  function custoSenarSimHtml(x, lavouraId){
+    var base = custoSenarBase(x, lavouraId);
+    if(!custoSenarSim || custoSenarSim.lav !== lavouraId) custoSenarSim = {lav: lavouraId, preco: base.preco, prod: base.prod, insumos: 0, pessoas: 0, mecanizacao: 0, outros: 0, juros: 0};
+    var cor = {ruim:'#A23E2E', aviso:'#B7791F', bom:'#4F7A3A', info:'#3B6EA5'};
+    var h = '<div style="margin-top:16px;"><div style="font-weight:700; margin-bottom:6px;">Diagnóstico</div><div style="display:flex; flex-direction:column; gap:6px;">';
+    custoSenarDiagnostico(x, base).forEach(function(d){ h += '<div style="border-left:4px solid ' + cor[d[0]] + '; padding:6px 10px; background:rgba(0,0,0,0.025); border-radius:0 4px 4px 0;"><div style="font-weight:700; font-size:13px; color:' + cor[d[0]] + ';">' + escapeHtml(d[1]) + '</div><div style="font-size:12.5px;">' + escapeHtml(d[2]) + '</div></div>'; });
+    h += '</div></div>';
+    var sl = function(k, lab, min, max, step, val){ return '<div style="padding:6px 0; border-bottom:1px solid var(--paper-line);"><div style="display:flex; justify-content:space-between; gap:8px; font-size:12.5px;"><label for="csn-s-' + k + '"><b>' + lab + '</b></label><output id="csn-o-' + k + '" style="font-weight:700;"></output></div><input type="range" id="csn-s-' + k + '" data-k="' + k + '" min="' + min + '" max="' + max + '" step="' + step + '" value="' + val + '" style="width:100%;"></div>'; };
+    var S = custoSenarSim;
+    h += '<div style="margin-top:18px; font-weight:700;">Simulador — e se…?</div>';
+    h += '<p style="font-size:12px; color:var(--ink-soft); margin:2px 0 8px;">Base: produtividade ' + base.oProd + ' (' + fmtNum(base.prod) + ' sc/ha) e preço ' + base.oPreco + ' (' + fmtBRL(base.preco) + '/sc). Os custos variam por categoria; depreciação, pró-labore e remunerações ficam fixos.</p>';
+    h += '<div style="display:grid; grid-template-columns:minmax(0,320px) minmax(0,1fr); gap:16px; align-items:start;" class="csn-simgrid">';
+    h += '<div>' + sl('preco', 'Preço da saca', 0, Math.max(10, Math.ceil(base.preco * 2.5)), 0.5, S.preco) + sl('prod', 'Produtividade', 0, Math.max(10, Math.ceil(base.prod * 2)), 0.5, S.prod)
+      + sl('insumos', 'Insumos', -50, 50, 1, S.insumos) + sl('pessoas', 'Pessoas', -50, 50, 1, S.pessoas) + sl('mecanizacao', 'Mecanização', -50, 50, 1, S.mecanizacao) + sl('outros', 'Outros gastos', -50, 50, 1, S.outros) + sl('juros', 'Juros', -100, 50, 1, S.juros)
+      + '<button type="button" id="csn-sim-reset" class="btn-edit" style="margin-top:8px;">Voltar à base</button></div>';
+    h += '<div id="csn-sim-out"></div></div>';
+    h += '<div style="margin-top:18px; font-weight:700;">Sensibilidade do lucro por hectare</div><p style="font-size:12px; color:var(--ink-soft); margin:2px 0 8px;">Lucro no custo total (R$/ha) variando preço e produtividade a partir da base. A célula marcada é a base.</p>';
+    h += custoSenarHeatHtml(x, base);
+    return h;
+  }
+  function custoSenarSimOutHtml(x, base){
+    var b = simCustoSenar(x, base, {}), c = simCustoSenar(x, base, custoSenarSim);
+    var k = function(t, v, vb, f, bomSubir){ var d = v - vb, cls = Math.abs(d) < 0.005 ? 'var(--ink-soft)' : ((d > 0) === bomSubir ? '#4F7A3A' : '#A23E2E');
+      return '<div style="border:1px solid var(--paper-line); border-radius:6px; padding:8px 10px;"><div style="font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft);">' + t + '</div><div style="font-size:17px; font-weight:700;">' + f(v) + '</div><div style="font-size:11.5px; font-weight:700; color:' + cls + ';">' + (Math.abs(d) < 0.005 ? 'igual à base' : (d > 0 ? '+' : '−') + f(Math.abs(d)) + ' vs base') + '</div></div>'; };
+    var A = c.A || 1;
+    var h = '<div style="font-size:13px; margin-bottom:8px;">Neste cenário, para empatar no custo total seriam <b>' + fmtNum(c.pnCT) + ' sc/ha</b>' + (c.S > 0 ? ' ou vender a <b>' + fmtBRL(c.ctSc) + '</b> a saca' : '') + '.</div>';
+    h += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px;">';
+    h += k('Lucro por hectare', c.LU / A, b.LU / A, fmtBRL, true) + k('Lucro na lavoura', c.LU, b.LU, fmtBRL, true) + k('Lucratividade', c.lucr, b.lucr, function(v){ return fmtNum(v) + '%'; }, true);
+    h += k('Custo total por saca', c.ctSc, b.ctSc, fmtBRL, false) + k('COE por saca', c.coeSc, b.coeSc, fmtBRL, false) + k('Ponto de nivelamento', c.pnCT, b.pnCT, function(v){ return fmtNum(v) + ' sc/ha'; }, false);
+    h += '</div>';
+    return h;
+  }
+  function custoSenarHeatHtml(x, base){
+    var passos = [-30, -20, -10, 0, 10, 20, 30];
+    if(!(base.prod > 0) || !(base.preco > 0)) return '<p style="font-size:12px; color:var(--ink-soft);">Sem produtividade e preço de base para montar a tabela.</p>';
+    var vals = passos.map(function(dp){ return passos.map(function(dq){ var s = simCustoSenar(x, base, {prod: base.prod * (1 + dp / 100), preco: base.preco * (1 + dq / 100)}); return s.A > 0 ? s.LU / s.A : 0; }); });
+    var mx = Math.max.apply(null, vals.reduce(function(a, r){ return a.concat(r.map(Math.abs)); }, [1]));
+    var h = '<div class="table-wrap"><table><thead><tr><th>sc/ha \\ preço</th>' + passos.map(function(q){ return '<th class="num">' + (q > 0 ? '+' : '') + q + '%<br><span style="font-weight:400;">' + fmtBRL(base.preco * (1 + q / 100)) + '</span></th>'; }).join('') + '</tr></thead><tbody>';
+    passos.forEach(function(dp, i){
+      h += '<tr><td><b>' + (dp > 0 ? '+' : '') + dp + '%</b> ' + fmtNum(base.prod * (1 + dp / 100)) + '</td>';
+      passos.forEach(function(dq, j){
+        var v = vals[i][j], a = Math.min(1, Math.abs(v) / mx) * 0.45 + 0.06;
+        h += '<td class="num" style="background:' + (v >= 0 ? 'rgba(79,122,58,' : 'rgba(162,62,46,') + a.toFixed(2) + ');' + (dp === 0 && dq === 0 ? ' outline:2px solid #1d1d1d; outline-offset:-2px; font-weight:700;' : '') + '">' + fmtBRL(v) + '</td>';
+      });
+      h += '</tr>';
+    });
+    return h + '</tbody></table></div>';
+  }
+  function atualizarSimCustoSenar(){
+    if(!custoSenarLavouraId) return;
+    var x = custoSenarDeSafras(safrasDaLavoura(custoSenarLavouraId)), base = custoSenarBase(x, custoSenarLavouraId);
+    var f = {preco: function(v){ return fmtBRL(v); }, prod: function(v){ return fmtNum(v) + ' sc/ha'; }};
+    ['preco','prod','insumos','pessoas','mecanizacao','outros','juros'].forEach(function(k){ var o = document.getElementById('csn-o-' + k); if(o) o.textContent = f[k] ? f[k](custoSenarSim[k]) : ((custoSenarSim[k] > 0 ? '+' : '') + custoSenarSim[k] + '%'); });
+    var out = document.getElementById('csn-sim-out'); if(out) out.innerHTML = custoSenarSimOutHtml(x, base);
+  }
+  document.addEventListener('input', function(e){
+    if(!e.target || !e.target.id || e.target.id.indexOf('csn-s-') !== 0 || !custoSenarSim) return;
+    custoSenarSim[e.target.dataset.k] = parseFloat(e.target.value) || 0;
+    atualizarSimCustoSenar();
+  });
+  document.addEventListener('click', function(e){
+    if(e.target && e.target.id === 'csn-sim-reset'){ custoSenarSim = null; renderRentabilidade(); }
+  });
+  var custoSenarLavouraId = '';
+  var custoSenarMostrarContas = false;
+  function lavouraPadraoCustoSenar(){
+    var ls = (state.lavouras || []).slice().sort(function(a,b){ return (b.anoAgricola || '').localeCompare(a.anoAgricola || ''); });
+    var comProd = ls.find(function(l){ return producaoTotalEmSacas(safrasDaLavoura(l.id).map(function(s){ return s.id; })) > 0; });
+    return (comProd || ls[0] || {}).id || '';
+  }
+  function custoSenarHtml(){
+    if(!(state.lavouras || []).length) return '';
+    if(!custoSenarLavouraId || !lavouraPorId(custoSenarLavouraId)) custoSenarLavouraId = lavouraPadraoCustoSenar();
+    var x = custoSenarDeSafras(safrasDaLavoura(custoSenarLavouraId));
+    var A = x.area, S = x.sacas;
+    var pHa = function(v){ return A > 0 ? fmtBRL(v / A) : '—'; };
+    var pSc = function(v){ return S > 0 ? fmtBRL(v / S) : '—'; };
+    var pCt = function(v){ return x.CT > 0 ? fmtNum(v / x.CT * 100) + '%' : '—'; };
+    var linha = function(nome, v, forte){ return '<tr' + (forte ? ' style="font-weight:700; border-top:2px solid var(--ink);"' : '') + '><td>' + nome + '</td><td class="num">' + fmtBRL(v) + '</td><td class="num">' + pHa(v) + '</td><td class="num">' + pSc(v) + '</td><td class="num">' + pCt(v) + '</td></tr>'; };
+    var pn = function(v){ return A > 0 && x.preco > 0 ? fmtNum(v / A / x.preco) + ' sc/ha' : '—'; };
+    var prod = A > 0 && S > 0 ? S / A : 0;
+    var status, cor;
+    if(!S){ status = 'Sem produção registrada: o custo por saca aparece depois da colheita'; cor = 'var(--ink-soft)'; }
+    else if(x.preco >= x.CT / S){ status = 'O preço médio paga o custo total'; cor = 'var(--growth, #4F7A3A)'; }
+    else if(x.preco >= x.COT / S){ status = 'Paga o custo operacional, não o total'; cor = '#B7791F'; }
+    else if(x.preco >= x.COE / S){ status = 'Paga só o desembolso (COE)'; cor = '#B7791F'; }
+    else { status = 'O preço médio não paga nem o desembolso'; cor = 'var(--cost, #A23E2E)'; }
+    var opts = (state.lavouras || []).slice().sort(function(a,b){ return (b.anoAgricola || '').localeCompare(a.anoAgricola || '') || lavouraLabel(a.id).localeCompare(lavouraLabel(b.id), 'pt-BR'); })
+      .map(function(l){ return '<option value="' + l.id + '"' + (l.id === custoSenarLavouraId ? ' selected' : '') + '>' + escapeHtml(lavouraLabel(l.id)) + '</option>'; }).join('');
+    var est = 'padding:6px 8px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;';
+    var h = '<div class="section-title" style="margin-top:0;">Custo de produção — método SENAR</div>';
+    h += '<div class="paper form-card" style="margin-bottom:20px;">';
+    h += '<div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center; justify-content:space-between;"><label style="display:flex; gap:8px; align-items:center; font-size:13px;">Lavoura <select id="csn-lavoura" style="' + est + '">' + opts + '</select></label>';
+    h += '<span style="font-size:13px; font-weight:700; color:' + cor + ';">● ' + status + '</span></div>';
+    h += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; margin:14px 0;">';
+    var card = function(t, v, sub){ return '<div style="border:1px solid var(--paper-line); border-radius:6px; padding:10px 12px;"><div style="font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft);">' + t + '</div><div style="font-size:18px; font-weight:700; margin-top:2px;">' + v + '</div>' + (sub ? '<div style="font-size:11.5px; color:var(--ink-soft);">' + sub + '</div>' : '') + '</div>'; };
+    h += card('Custo total por saca', pSc(x.CT), 'COE ' + pSc(x.COE) + ' · COT ' + pSc(x.COT));
+    h += card('Preço médio recebido', S > 0 ? fmtBRL(x.preco) : '—', 'receitas + estoque ÷ sacas');
+    h += card('Produtividade', prod ? fmtNum(prod) + ' sc/ha' : '—', 'empata no CT com ' + pn(x.CT));
+    h += card('Lucro (receita − CT)', fmtBRL(x.LU), A > 0 ? fmtBRL(x.LU / A) + '/ha' : '');
+    h += '</div>';
+    h += '<div class="table-wrap"><table><thead><tr><th>Item</th><th class="num">R$ total</th><th class="num">R$/ha</th><th class="num">R$/saca</th><th class="num">% do CT</th></tr></thead><tbody>';
+    h += linha('Insumos', x.cat.insumos) + linha('Pessoas', x.cat.pessoas) + linha('Mecanização', x.cat.mecanizacao) + linha('Outros gastos', x.cat.outros) + linha('Juros de financiamentos', x.cat.juros);
+    h += linha('COE · custo operacional efetivo', x.COE, true);
+    h += linha('Depreciação', x.dep) + linha('Pró-labore', x.prolab);
+    h += linha('COT · custo operacional total', x.COT, true);
+    h += (x.cat.terra ? linha('Arrendamento pago', x.cat.terra) : '') + linha('Remuneração da terra própria', x.remTerra) + linha('Remuneração do capital de giro', x.remCirc) + linha('Remuneração dos bens de capital', x.remBens);
+    h += linha('CT · custo total', x.CT, true);
+    h += '</tbody></table></div>';
+    h += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; margin-top:14px;">';
+    h += '<div class="table-wrap"><table><tbody>';
+    h += '<tr><td>Receita (vendas + estoque projetado)</td><td class="num">' + fmtBRL(x.RB) + '</td></tr>';
+    h += '<tr><td>Margem bruta (receita − COE)</td><td class="num">' + fmtBRL(x.MB) + '</td></tr>';
+    h += '<tr><td>Margem líquida (receita − COT)</td><td class="num">' + fmtBRL(x.ML) + '</td></tr>';
+    h += '<tr><td>Lucratividade (margem líquida ÷ receita)</td><td class="num">' + (x.RB > 0 ? fmtNum(x.ML / x.RB * 100) + '%' : '—') + '</td></tr>';
+    h += '<tr><td>Relação benefício/custo (receita ÷ CT)</td><td class="num">' + (x.CT > 0 ? fmtNum(x.RB / x.CT) : '—') + '</td></tr>';
+    h += '</tbody></table></div><div class="table-wrap"><table><tbody>';
+    h += '<tr><td>Ponto de nivelamento no COE</td><td class="num">' + pn(x.COE) + '</td></tr>';
+    h += '<tr><td>Ponto de nivelamento no COT</td><td class="num">' + pn(x.COT) + '</td></tr>';
+    h += '<tr><td>Ponto de nivelamento no CT</td><td class="num">' + pn(x.CT) + '</td></tr>';
+    h += '<tr><td>Produtividade colhida</td><td class="num">' + (prod ? fmtNum(prod) + ' sc/ha' : '—') + '</td></tr>';
+    h += '<tr><td>Área plantada · produção</td><td class="num">' + fmtHa(A) + ' · ' + (S > 0 ? fmtNum(S) + ' sc' : '—') + '</td></tr>';
+    h += '</tbody></table></div></div>';
+    h += custoSenarSimHtml(x, custoSenarLavouraId);
+    // detalhe por conta
+    var contas = Object.keys(x.porConta).map(function(k){ return x.porConta[k]; }).sort(function(a, b){ return b.valor - a.valor; });
+    if(x.insDiario) contas.unshift({conta: 'Insumos aplicados (Diário de Campo)', cat: 'insumos', valor: x.insDiario});
+    if(x.maqHoras) contas.unshift({conta: 'Horas de máquina (Diário e Colheita)', cat: 'mecanizacao', valor: x.maqHoras});
+    if(x.cat.juros) contas.push({conta: 'Juros das parcelas pagas (Financiamentos)', cat: 'juros', valor: x.cat.juros});
+    h += '<details style="margin-top:12px; font-size:13px;"><summary style="cursor:pointer;">De onde vem cada valor do COE</summary><div class="table-wrap" style="margin-top:8px;"><table><thead><tr><th>Origem / conta</th><th>Categoria</th><th class="num">R$</th><th class="num">R$/ha</th></tr></thead><tbody>';
+    contas.forEach(function(c){ h += '<tr><td>' + escapeHtml(c.conta) + '</td><td>' + CAT_SENAR_LABEL[c.cat] + '</td><td class="num">' + fmtBRL(c.valor) + '</td><td class="num">' + pHa(c.valor) + '</td></tr>'; });
+    h += '</tbody></table></div>';
+    var fora = [];
+    if(x.freteTotal) fora.push(fmtBRL(x.freteTotal) + ' de frete com caminhão próprio');
+    if(x.foraTotal) fora.push(fmtBRL(x.foraTotal) + ' em contas marcadas como "Fora do custo"');
+    if(fora.length) h += '<p style="font-size:12px; color:var(--ink-soft); margin:6px 0 0;">Ficaram fora desta lavoura: ' + fora.join(' e ') + '.</p>';
+    h += '</details>';
+    // parâmetros
+    var inp = function(id, lab, v, step, dica){ return '<label style="display:flex; flex-direction:column; gap:3px; font-size:12px;">' + lab + '<input type="number" id="csn-p-' + id + '" value="' + (Number(v) || 0) + '" min="0" step="' + step + '" style="' + est + ' width:150px;">' + (dica ? '<span style="font-size:11px; color:var(--ink-soft); max-width:220px;">' + dica + '</span>' : '') + '</label>'; };
+    h += '<details style="margin-top:10px; font-size:13px;"><summary style="cursor:pointer;">⚙️ Parâmetros do método (valem para todas as lavouras)</summary><div style="display:flex; gap:16px; flex-wrap:wrap; margin-top:10px;">';
+    h += inp('prolaboreMensal', 'Pró-labore mensal (R$)', x.P.prolaboreMensal, 100, 'Sua retirada; rateada pela área e pelos meses de cada lavoura.');
+    h += inp('arrendHa', 'Arrendamento da região (R$/ha/ano)', x.P.arrendHa, 10, 'Remuneração da terra própria. Talhões arrendados de terceiros usam o valor pago.');
+    h += inp('taxaCirc', 'Juro do capital de giro (% a.a.)', x.P.taxaCirc, 0.5, 'Sobre metade do COE não financiado.');
+    h += inp('pctFinanciado', '% do custeio financiado', x.P.pctFinanciado, 5, 'Essa parte já paga juros de verdade.');
+    h += inp('taxaBens', 'Remuneração dos bens (% a.a.)', x.P.taxaBens, 0.5, 'Sobre metade do capital próprio em bens: ' + fmtBRL(x.cap.proprio) + ' (Patrimônio ' + fmtBRL(x.cap.valor) + ' − saldo financiado ' + fmtBRL(x.cap.saldo) + ').');
+    h += '</div></details>';
+    // classificação das contas
+    h += '<details id="csn-contas"' + (custoSenarMostrarContas ? ' open' : '') + ' style="margin-top:10px; font-size:13px;"><summary style="cursor:pointer;">🏷️ Classificação das contas de despesa</summary>';
+    h += '<p style="font-size:12px; color:var(--ink-soft); margin:8px 0;">Cada conta de despesa cai numa categoria do método. Regras fixas: lançamento com destino <b>Máquina</b> vai sempre para Mecanização; parcela de financiamento entra só com os juros; compra para estoque só vira custo quando o insumo é aplicado no Diário de Campo.</p>';
+    h += '<div class="table-wrap"><table><thead><tr><th>Grupo</th><th>Conta</th><th>Categoria</th></tr></thead><tbody>';
+    state.contasFinanceiro.filter(function(c){ return contaTipo(c.id) === 'custo'; }).slice().sort(function(a, b){ return contaLabel(a.id).localeCompare(contaLabel(b.id), 'pt-BR'); }).forEach(function(c){
+      var atual = c.categoriaSenar || categoriaSenarPadraoConta(c);
+      h += '<tr><td>' + escapeHtml(subgrupoNome(c.subgrupoId)) + '</td><td>' + escapeHtml(c.nome) + (c.categoriaSenar ? '' : ' <span style="font-size:10.5px; color:var(--ink-soft);">(sugerida)</span>') + '</td><td><select class="csn-cat" data-conta="' + c.id + '" style="' + est + '">' + CAT_SENAR.map(function(o){ return '<option value="' + o.v + '"' + (o.v === atual ? ' selected' : '') + '>' + o.l + '</option>'; }).join('') + '</select></td></tr>';
+    });
+    h += '</tbody></table></div></details>';
+    if(S > 0 && !x.RB) h += '<p style="font-size:12px; color:var(--cost, #A23E2E); margin:8px 0 0;">Esta lavoura tem ' + fmtNum(S) + ' sc colhidas, mas nenhuma venda nem estoque com preço. Sem receita, margens e lucro saem negativos: registre a venda na Colheita para fechar a conta.</p>';
+    if(x.temArrendado) h += '<p style="font-size:12px; color:var(--ink-soft); margin:8px 0 0;">Esta lavoura tem talhão arrendado de terceiros: nele a terra entra pelo valor pago, sem a remuneração de referência.</p>';
+    h += '</div>';
+    return h;
+  }
   function renderRentabilidade(){
     var el = document.getElementById('tab-rentabilidade');
     var html = '';
@@ -6761,6 +7179,8 @@
       if(rentabilidadeIncluirCustoOportunidade) extra += custoOportunidadePorTalhao(talhaoId, rentabilidadeTaxaOportunidade);
       return extra;
     };
+
+    html += custoSenarHtml();
 
     // ---------- Por lavoura (custos diretos da lavoura + opcionais rateados por área × tempo) ----------
     var rateioGerais = rentabilidadeIncluirGerais ? rateioCustosGeraisPorSafra() : {porSafra:{}, naoAlocado:0};
@@ -6877,6 +7297,7 @@
     html += '<div class="paper note-box"><strong>Por lavoura / por cultura:</strong> custos e receitas lançados direto na lavoura (destino "Lavoura"), pagos/recebidos. Custos gerais e de máquinas (destinos "Geral" e "Máquina / equipamento") só entram se você ligar a opção, rateados entre as lavouras ativas em cada mês, pela área plantada. Depreciação e custo de oportunidade entram pelos meses em que a lavoura ocupa a terra × área plantada ÷ área total da fazenda. Custos "só talhão" não entram em lavoura.<br><strong>Por talhão:</strong> tudo que já caiu no talhão, de qualquer lavoura e de qualquer ano, mais os custos "só talhão".</div>';
 
     el.innerHTML = html;
+    atualizarSimCustoSenar();
   }
 
   /* ---------------- Fluxo de Caixa ---------------- */
@@ -9034,6 +9455,16 @@
     if(e.target && e.target.closest && e.target.closest('#form-operacao') && (e.target.name === 'tanqueLitros' || e.target.name === 'volumeCalda')) atualizarCalcTanque();
   });
   document.addEventListener('change', function(e){
+    if(e.target && e.target.id === 'csn-lavoura'){ custoSenarLavouraId = e.target.value; custoSenarSim = null; renderRentabilidade(); return; }
+    if(e.target && e.target.id && e.target.id.indexOf('csn-p-') === 0){
+      var cfgCsn = configCustoSenar(); cfgCsn[e.target.id.slice(6)] = parseFloat(e.target.value) || 0;
+      saveKey('configUnidades', state.configUnidades); renderRentabilidade(); return;
+    }
+    if(e.target && e.target.classList && e.target.classList.contains('csn-cat')){
+      var ctCsn = state.contasFinanceiro.find(function(c){ return c.id === e.target.dataset.conta; });
+      if(ctCsn){ ctCsn.categoriaSenar = e.target.value; saveKey('contasFinanceiro', state.contasFinanceiro); }
+      custoSenarMostrarContas = true; renderRentabilidade(); return;
+    }
     if(e.target && e.target.name === 'tipo' && e.target.closest && e.target.closest('#form-operacao')) atualizarCalcTanque();
     if(e.target && e.target.type === 'number' && e.target.closest && e.target.closest('#diario-dinamico') && diarioRascunho){
       lerRascunhoDiarioDoDom(); renderDiarioDinamico(); return;
