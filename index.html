@@ -801,10 +801,14 @@
         {name:'parceiroId', type:'select', label:'Arrendador / Arrendatário', optionsFn: parceiroOptionsFn},
         {name:'talhaoId', type:'select', label:'Talhão (opcional)', optionsFn: talhaoOptionsFn},
         {name:'areaHa', type:'number', label:'Área (ha)', extra:{step:'0.01', min:'0'}, placeholder:'0'},
-        {name:'valor', type:'number', label:'Valor (R$)', required:true, extra:{step:'0.01', min:'0'}, placeholder:'0,00'},
+        {name:'formaPagamento', type:'select', label:'Pagamento em', options:[{value:'Reais', label:'Dinheiro (R$)'}, {value:'Sacas', label:'Sacas de produto'}]},
+        {name:'valor', type:'number', label:'Valor em R$ (se for em dinheiro)', extra:{step:'0.01', min:'0'}, placeholder:'0,00'},
+        {name:'sacas', type:'number', label:'Sacas (se for em produto)', extra:{step:'0.01', min:'0'}, placeholder:'Ex: 120'},
+        {name:'culturaSacasId', type:'select', label:'Produto das sacas', optionsFn: function(){ return [{value:'', label:'—'}].concat(state.culturas.map(function(c){ return {value:c.id, label:c.nome}; })); }},
         {name:'periodicidade', type:'select', label:'Periodicidade', options:[{value:'Anual', label:'Anual'}, {value:'Mensal', label:'Mensal'}, {value:'Por Safra', label:'Por Safra'}]},
+        {name:'vencimento', type:'text', label:'Vencimento anual (dia/mês)', placeholder:'Ex: 30/04'},
         {name:'dataInicio', type:'date', label:'Início do contrato'},
-        {name:'dataFim', type:'date', label:'Fim do contrato (opcional)'},
+        {name:'dataFim', type:'date', label:'Fim do contrato'},
         {name:'status', type:'select', label:'Status', options:[{value:'Ativo', label:'Ativo'}, {value:'Encerrado', label:'Encerrado'}]},
         {name:'observacao', type:'text', label:'Observação', placeholder:''}
       ],
@@ -2271,7 +2275,8 @@
     'relatorioHistorico': {label:'Relatório Histórico', cor:'#6B5D46'},
     'contaPagar': {label:'Conta a pagar', cor:'#B5651D'},
     'contaReceber': {label:'Conta a receber', cor:'#4F7942'},
-    'servico': {label:'Serviço', cor:'#3B6EA5'}
+    'servico': {label:'Serviço', cor:'#3B6EA5'},
+    'arrendamento': {label:'Arrendamento', cor:'#8B6B3D'}
   };
 
   var ENTIDADES_BUSCA_GLOBAL = [
@@ -5483,26 +5488,231 @@
   }
 
   /* ---------------- Arrendamentos, Financiamentos, Serviços Prestados ---------------- */
+  /* ---------------- Arrendamentos: ativos / novo / encerrados, anos do contrato e pagamentos (R$ ou sacas) ---------------- */
+  var arrendView = 'ativos', arrendPagando = null;
+  function ehArrendSacas(a){ return a.formaPagamento === 'Sacas'; }
+  function culturaArrend(a){ return a.culturaSacasId ? culturaNome(a.culturaSacasId) : 'produto'; }
+  function cotacaoCultura(culturaId){ var c = state.cotacoes.find(function(x){ return x.culturaId === culturaId; }); return c ? Number(c.preco) || 0 : 0; }
+  function fmtSc(v){ return fmtNum(Math.round((Number(v) || 0) * 100) / 100) + ' sc'; }
+  function addAnosISO(iso, n){ var p = iso.split('-'); var d = new Date(parseInt(p[0], 10) + n, parseInt(p[1], 10) - 1, parseInt(p[2], 10)); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function diaMesDoTexto(t){ var m = /^\s*(\d{1,2})\s*[\/\-.]\s*(\d{1,2})/.exec(t || ''); return m ? {d: parseInt(m[1], 10), m: parseInt(m[2], 10)} : null; }
+  function devidoPorAno(a){ var mult = a.periodicidade === 'Mensal' ? 12 : 1; return ehArrendSacas(a) ? (Number(a.sacas) || 0) * mult : (Number(a.valor) || 0) * mult; }
+  // Lista dos anos do contrato (pelo início e fim); sem datas, usa só os anos que já têm pagamento
+  function anosArrendamento(a){
+    var anos = [], hoje = hojeISO(), pags = a.pagamentos || [];
+    if(a.dataInicio){
+      var fim = a.dataFim || '', limiteAberto = addAnosISO(hoje, 1);
+      for(var i = 0; i < 40; i++){
+        var ini = addAnosISO(a.dataInicio, i);
+        if(fim && ini > fim) break;
+        if(!fim && ini > limiteAberto) break;
+        var fimPer = addAnosISO(a.dataInicio, i + 1); fimPer = new Date(new Date(fimPer + 'T12:00:00').getTime() - 86400000).toISOString().slice(0, 10);
+        if(fim && fimPer > fim) fimPer = fim;
+        var venc = fimPer, dm = diaMesDoTexto(a.vencimento);
+        if(dm){
+          var y = parseInt(ini.slice(0, 4), 10), cand = y + '-' + String(dm.m).padStart(2, '0') + '-' + String(dm.d).padStart(2, '0');
+          if(cand < ini) cand = (y + 1) + '-' + String(dm.m).padStart(2, '0') + '-' + String(dm.d).padStart(2, '0');
+          venc = cand;
+        }
+        var y0 = parseInt(ini.slice(0, 4), 10), y1 = parseInt(fimPer.slice(0, 4), 10);
+        anos.push({ref: y0 === y1 ? String(y0) : y0 + '/' + y1, n: i + 1, inicio: ini, fim: fimPer, vencimento: venc});
+      }
+    }
+    pags.forEach(function(p){ if(!anos.some(function(x){ return x.ref === p.anoRef; })) anos.push({ref: p.anoRef, n: null, inicio: '', fim: '', vencimento: ''}); });
+    anos.sort(function(x, y){ return x.ref.localeCompare(y.ref); });
+    anos.forEach(function(x){
+      x.devido = devidoPorAno(a);
+      x.pags = pags.filter(function(p){ return p.anoRef === x.ref; });
+      x.pagoSc = x.pags.reduce(function(s, p){ return s + (Number(p.sacas) || 0); }, 0);
+      x.pagoR = x.pags.reduce(function(s, p){ return s + (Number(p.valor) || 0); }, 0);
+      var pago = ehArrendSacas(a) ? x.pagoSc : x.pagoR;
+      x.restante = Math.max(x.devido - pago, 0);
+      x.situacao = x.devido > 0 && pago >= x.devido - 0.005 ? 'pago' : (pago > 0 ? 'parcial' : (x.vencimento && x.vencimento < hoje ? 'atrasado' : (x.inicio && x.inicio > hoje ? 'futuro' : 'pendente')));
+    });
+    return anos;
+  }
+  // Estoques de colheita com saldo da cultura das sacas (safra, lavoura ou estoque geral)
+  function estoquesDaCultura(culturaId){
+    var mapa = estoquePorSafra(), lista = [];
+    Object.keys(mapa).forEach(function(k){
+      var saldo = mapa[k].entrada - mapa[k].saida; if(saldo <= 0.004) return;
+      var cid = '';
+      if(k.indexOf('cul:') === 0) cid = k.slice(4);
+      else if(k.indexOf('lav:') === 0){ var lv = lavouraPorId(k.slice(4)); cid = lv ? lv.culturaId : ''; }
+      else { var sf = state.safras.find(function(x){ return x.id === k; }); cid = sf ? sf.culturaId : ''; }
+      if(culturaId && cid !== culturaId) return;
+      lista.push({chave: k, saldo: saldo, unidade: mapa[k].unidade || 'sc', label: safraLabel(k)});
+    });
+    return lista.sort(function(x, y){ return y.saldo - x.saldo; });
+  }
+  function contaArrendamento(tipo){
+    var ct = state.contasFinanceiro.find(function(c){ return /arrend/i.test(c.nome) && contaTipo(c.id) === tipo; });
+    if(ct) return ct.id;
+    var sg = state.subgruposFinanceiro.find(function(s){ return s.tipo === tipo && /operac/i.test(s.nome); }) || state.subgruposFinanceiro.find(function(s){ return s.tipo === tipo; });
+    if(!sg) return '';
+    var nova = {id: uid(), nome: tipo === 'custo' ? 'Arrendamento de terra' : 'Arrendamento', subgrupoId: sg.id, criadoEm: Date.now()};
+    state.contasFinanceiro.push(nova); saveKey('contasFinanceiro', state.contasFinanceiro);
+    return nova.id;
+  }
+  function badgeSituacaoArrend(s){
+    var m = {pago: ['✅ Pago', '#7FA36D'], parcial: ['Parcial', '#DFA84E'], atrasado: ['Atrasado', '#A23E2E'], pendente: ['A pagar', '#DFA84E'], futuro: ['Futuro', '#C9C3A4']}[s] || ['—', '#C9C3A4'];
+    return '<span class="badge" style="background:' + m[1] + '; color:' + (s === 'atrasado' ? '#fff' : '#1F2410') + ';">' + m[0] + '</span>';
+  }
+  function cartaoArrendamentoHtml(a){
+    var sac = ehArrendSacas(a), anos = anosArrendamento(a), cot = sac ? cotacaoCultura(a.culturaSacasId) : 0;
+    var recebe = a.tipo === 'Recebido', verbo = recebe ? 'receber' : 'pagar';
+    var h = '<div class="paper" style="padding:14px 18px; margin-bottom:16px;' + (a.status !== 'Ativo' ? ' opacity:.8;' : '') + '">';
+    h += '<div style="display:flex; flex-wrap:wrap; justify-content:space-between; gap:10px; align-items:flex-start;">';
+    h += '<div><div style="font-family:\'Zilla Slab\',serif; font-size:18px; font-weight:700;">' + escapeHtml(a.nome || 'Arrendamento') + ' <span class="badge" style="background:' + (recebe ? '#7FA36D' : '#D08370') + '; color:#fff; font-size:11px; vertical-align:middle;">' + (recebe ? 'Eu recebo (terra minha)' : 'Eu pago (terra de terceiro)') + '</span></div>';
+    var sub = [];
+    if(a.parceiroId) sub.push((recebe ? 'Arrendatário: ' : 'Arrendador: ') + escapeHtml(parceiroNome(a.parceiroId)));
+    if(a.talhaoId) sub.push('Talhão ' + escapeHtml(talhaoNome(a.talhaoId)));
+    if(Number(a.areaHa)) sub.push(fmtHa(a.areaHa) + ' (' + fmtNum(Math.round(a.areaHa / alqueireHa() * 100) / 100) + ' alq)');
+    sub.push(a.dataInicio ? 'Contrato de ' + fmtDate(a.dataInicio) + (a.dataFim ? ' a ' + fmtDate(a.dataFim) : ' (sem data de fim)') : '<span style="color:var(--cost-dark);">sem data de início</span>');
+    h += '<div style="font-size:12.5px; color:var(--ink-soft); margin-top:2px;">' + sub.join(' · ') + '</div>';
+    var val = sac ? '<b>' + fmtSc(a.sacas) + ' de ' + escapeHtml(culturaArrend(a)) + '</b> por ' + (a.periodicidade === 'Mensal' ? 'mês' : (a.periodicidade === 'Por Safra' ? 'safra' : 'ano')) + (Number(a.areaHa) && Number(a.sacas) ? ' (' + fmtNum(Math.round(a.sacas / a.areaHa * 100) / 100) + ' sc/ha)' : '') + (cot ? ' · hoje ≈ ' + fmtBRL(devidoPorAno(a) * cot) + ' pela cotação de ' + fmtBRL(cot) + '/sc' : '')
+      : '<b>' + fmtBRL(a.valor) + '</b> por ' + (a.periodicidade === 'Mensal' ? 'mês' : (a.periodicidade === 'Por Safra' ? 'safra' : 'ano')) + (Number(a.areaHa) && Number(a.valor) ? ' (' + fmtBRL(a.valor / a.areaHa) + '/ha)' : '');
+    h += '<div style="font-size:13.5px; margin-top:4px;">' + val + (a.vencimento ? ' · vence todo ano em <b>' + escapeHtml(a.vencimento) + '</b>' : '') + '</div>';
+    if(a.observacao) h += '<div style="font-size:12px; color:var(--ink-soft); margin-top:2px;">' + escapeHtml(a.observacao) + '</div>';
+    h += '</div><div style="display:flex; gap:4px; flex-wrap:wrap;"><button class="btn-edit" data-action="edit-generic" data-entity="arrendamentos" data-id="' + a.id + '">Editar</button>';
+    h += '<button class="btn-edit" data-action="arrend-status" data-id="' + a.id + '">' + (a.status === 'Ativo' ? 'Encerrar' : 'Reativar') + '</button><button class="btn-del" data-action="del-generic" data-entity="arrendamentos" data-id="' + a.id + '">Remover</button></div></div>';
+    // anos
+    h += '<div style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin:12px 0 4px;">📅 Anos do contrato</div>';
+    if(!anos.length){
+      h += '<div style="font-size:12.5px; color:var(--ink-soft);">Informe o <b>início</b> (e o fim) do contrato em <b>Editar</b> para montar a lista dos anos arrendados.</div>';
+    } else {
+      h += '<div class="table-wrap"><table class="sem-ordenacao"><thead><tr><th>Ano</th><th>Período</th><th>Vencimento</th><th class="num">Devido</th><th>' + (recebe ? 'Recebido' : 'Pago') + '</th><th>Situação</th><th></th></tr></thead><tbody>';
+      var tDev = 0, tPago = 0, tPagoR = 0;
+      anos.forEach(function(x){
+        tDev += x.devido; tPago += sac ? x.pagoSc : x.pagoR; tPagoR += x.pagoR;
+        var chave = a.id + '|' + x.ref;
+        h += '<tr><td><b>' + x.ref + '</b>' + (x.n ? '<br><span style="font-size:11px; color:var(--ink-soft);">' + x.n + 'º ano</span>' : '') + '</td>';
+        h += '<td style="font-size:12px;">' + (x.inicio ? fmtDate(x.inicio) + ' a ' + fmtDate(x.fim) : '—') + '</td><td>' + (x.vencimento ? fmtDate(x.vencimento) : '—') + '</td>';
+        h += '<td class="num">' + (sac ? fmtSc(x.devido) : fmtBRL(x.devido)) + '</td><td style="font-size:12px;">';
+        if(!x.pags.length) h += '—';
+        x.pags.forEach(function(p){ h += '<div>' + fmtDate(p.data) + ' · ' + (Number(p.sacas) ? '<b>' + fmtSc(p.sacas) + '</b>' + (Number(p.precoSaca) ? ' × ' + fmtBRL(p.precoSaca) : '') + ' = ' : '') + '<b>' + fmtBRL(p.valor) + '</b>' + (p.financeiroId ? ' <span title="Lançado no Financeiro">🔗</span>' : '') + (p.producaoId ? ' <span title="Saiu do estoque de colheita">📦</span>' : '') + ' <button type="button" data-action="arrend-pag-remover" data-id="' + a.id + '" data-pag="' + p.id + '" title="Apagar este pagamento" style="border:none; background:none; color:var(--cost-dark); cursor:pointer; font-size:12px;">✕</button></div>'; });
+        if(x.situacao === 'parcial') h += '<div style="color:var(--cost-dark);">falta ' + (sac ? fmtSc(x.restante) : fmtBRL(x.restante)) + '</div>';
+        h += '</td><td>' + badgeSituacaoArrend(x.situacao) + '</td><td>' + (x.situacao !== 'pago' && a.status === 'Ativo' ? '<button type="button" class="btn" data-action="arrend-pag-abrir" data-chave="' + escapeHtml(chave) + '" style="padding:5px 11px; font-size:12px; white-space:nowrap;">' + (recebe ? '💵 Registrar recebimento' : '💰 Registrar pagamento') + '</button>' : '') + '</td></tr>';
+        if(arrendPagando === chave){
+          var est = 'padding:6px 8px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;';
+          h += '<tr style="background:var(--paper-2);"><td colspan="7" style="padding:10px 12px;"><div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;">';
+          h += '<div class="field" style="margin:0;"><label>Data</label><input type="date" id="arr-pag-data" value="' + hojeISO() + '" style="' + est + '"></div>';
+          if(sac){
+            h += '<div class="field" style="margin:0;"><label>Sacas de ' + escapeHtml(culturaArrend(a)) + '</label><input type="number" id="arr-pag-sacas" step="0.01" min="0" value="' + (Math.round(x.restante * 100) / 100) + '" style="width:110px; ' + est + '"></div>';
+            h += '<div class="field" style="margin:0;"><label>Preço da saca (R$)</label><input type="number" id="arr-pag-preco" step="0.01" min="0" value="' + (cot || '') + '" placeholder="cotação do dia" style="width:120px; ' + est + '"></div>';
+            h += '<div style="font-size:13px; padding-bottom:8px;">= <b id="arr-pag-equiv">' + fmtBRL(x.restante * cot) + '</b></div>';
+          } else {
+            h += '<div class="field" style="margin:0;"><label>Valor (R$)</label><input type="number" id="arr-pag-valor" step="0.01" min="0" value="' + (Math.round(x.restante * 100) / 100) + '" style="width:130px; ' + est + '"></div>';
+          }
+          if(sac && !recebe){
+            var ests = estoquesDaCultura(a.culturaSacasId);
+            if(ests.length){
+              h += '<div class="field" style="margin:0;"><label><input type="checkbox" id="arr-pag-estoque"> Tirar as sacas do estoque (Colheita)</label><select id="arr-pag-estoque-safra" style="' + est + ' max-width:280px;">' + ests.map(function(e){ return '<option value="' + escapeHtml(e.chave) + '">' + escapeHtml(e.label) + ' — saldo ' + fmtNum(Math.round(e.saldo * 100) / 100) + ' ' + escapeHtml(e.unidade) + '</option>'; }).join('') + '</select></div>';
+            }
+          }
+          h += '<label style="display:flex; align-items:center; gap:6px; font-size:12.5px; padding-bottom:8px;"><input type="checkbox" id="arr-pag-fin" checked> Lançar no Financeiro (' + (recebe ? 'receita' : 'despesa') + (a.talhaoId && !recebe ? ', no talhão ' + escapeHtml(talhaoNome(a.talhaoId)) : '') + ')</label>';
+          h += '<button type="button" class="btn" data-action="arrend-pag-salvar" data-id="' + a.id + '" data-ano="' + x.ref + '">Confirmar</button><button type="button" class="btn-cancel" data-action="arrend-pag-cancelar">Cancelar</button></div>';
+          if(sac) h += '<p style="font-size:11.5px; color:var(--ink-soft); margin:6px 0 0;">O preço da saca serve para saber quanto o pagamento vale em reais (vai para o Financeiro e para o custo). Se pagou parte em sacas e parte em dinheiro, registre duas vezes.</p>';
+          h += '</td></tr>';
+        }
+      });
+      h += '<tr style="font-weight:600;"><td colspan="3">Total do contrato</td><td class="num">' + (sac ? fmtSc(tDev) : fmtBRL(tDev)) + '</td><td>' + (sac ? fmtSc(tPago) + ' · ' : '') + fmtBRL(tPagoR) + '</td><td colspan="2">' + (tDev - tPago > 0.005 ? 'Falta ' + (sac ? fmtSc(tDev - tPago) : fmtBRL(tDev - tPago)) : '') + '</td></tr>';
+      h += '</tbody></table></div>';
+    }
+    return h + '</div>';
+  }
   function renderArrendamentos(){
     var el = document.getElementById('tab-arrendamentos');
+    if(editState && editState.scope === 'generic' && editState.entityKey === 'arrendamentos') arrendView = 'novo';
     var ativos = state.arrendamentos.filter(function(a){ return a.status === 'Ativo'; });
+    var encerrados = state.arrendamentos.filter(function(a){ return a.status !== 'Ativo'; });
     var areaTotal = ativos.reduce(function(s,a){ return s + (Number(a.areaHa)||0); }, 0);
-    var totalPago = ativos.filter(function(a){ return a.tipo === 'Pago'; }).reduce(function(s,a){ return s + (Number(a.valor)||0); }, 0);
-    var totalRecebido = ativos.filter(function(a){ return a.tipo === 'Recebido'; }).reduce(function(s,a){ return s + (Number(a.valor)||0); }, 0);
-
+    var porAnoR = ativos.filter(function(a){ return !ehArrendSacas(a); }).reduce(function(s,a){ return s + devidoPorAno(a) * (a.tipo === 'Recebido' ? 0 : 1); }, 0);
+    var sacasPorCult = {};
+    ativos.filter(function(a){ return ehArrendSacas(a) && a.tipo !== 'Recebido'; }).forEach(function(a){ var k = culturaArrend(a); sacasPorCult[k] = (sacasPorCult[k] || 0) + devidoPorAno(a); });
+    var atrasados = 0; ativos.forEach(function(a){ anosArrendamento(a).forEach(function(x){ if(x.situacao === 'atrasado') atrasados++; }); });
     var html = '<div class="stat-row">';
     html += statCard('Contratos ativos', ativos.length);
     html += statCard('Área arrendada', fmtHa(areaTotal));
-    html += statCard('Valor pago (ativos)', fmtBRL(totalPago), 'cost');
-    html += statCard('Valor recebido (ativos)', fmtBRL(totalRecebido), 'growth');
+    html += statCard('A pagar por ano (R$)', fmtBRL(porAnoR), 'cost');
+    html += statCard('A pagar por ano (sacas)', Object.keys(sacasPorCult).length ? Object.keys(sacasPorCult).map(function(k){ return fmtSc(sacasPorCult[k]) + ' ' + k; }).join(' + ') : '—', 'cost');
+    html += statCard('Anos em atraso', atrasados, atrasados ? 'cost' : '');
     html += '</div>';
-    html += buildGenericFormHtml('arrendamentos');
-    html += buildGenericTableHtml('arrendamentos');
-    html += '<div class="paper note-box">Este módulo controla os contratos de arrendamento. Para lançar os pagamentos ou recebimentos efetivos, use a aba Lançamentos com a conta "Arrendamento", referenciando este contrato na descrição.</div>';
+    var estChip = function(on){ return 'font-family:inherit; font-size:14px; font-weight:600; padding:10px 18px; border-radius:6px; cursor:pointer; border:2px solid ' + (on ? 'var(--accent)' : 'var(--paper-line)') + '; background:' + (on ? 'var(--accent)' : 'var(--paper)') + '; color:' + (on ? '#fff' : 'var(--ink)') + ';'; };
+    html += '<div style="display:flex; flex-wrap:wrap; gap:10px; margin:0 0 16px;">';
+    html += '<button type="button" data-action="arrend-view" data-view="ativos" style="' + estChip(arrendView === 'ativos') + '">📋 Arrendamentos ativos (' + ativos.length + ')</button>';
+    html += '<button type="button" data-action="arrend-view" data-view="novo" style="' + estChip(arrendView === 'novo') + '">' + (editState && editState.scope === 'generic' && editState.entityKey === 'arrendamentos' ? '✏️ Editando arrendamento' : '➕ Novo arrendamento') + '</button>';
+    if(encerrados.length) html += '<button type="button" data-action="arrend-view" data-view="encerrados" style="' + estChip(arrendView === 'encerrados') + '">🗂️ Encerrados (' + encerrados.length + ')</button>';
+    html += '</div>';
+    if(arrendView === 'novo'){
+      html += buildGenericFormHtml('arrendamentos');
+      html += '<div class="paper note-box">Escolha <b>Pagamento em: Sacas</b> quando o arrendamento for pago em produto (ex.: 12 sc de soja por alqueire). O <b>início</b> e o <b>fim</b> do contrato montam a lista dos anos; o <b>vencimento anual</b> (dia/mês) diz quando cada ano vence.</div>';
+    } else {
+      var lista = arrendView === 'encerrados' ? encerrados : ativos;
+      if(!lista.length) html += '<div class="paper empty-state">' + (arrendView === 'encerrados' ? 'Nenhum arrendamento encerrado.' : 'Nenhum arrendamento ativo. Clique em "➕ Novo arrendamento".') + '</div>';
+      lista.slice().sort(function(a, b){ return (a.nome || '').localeCompare(b.nome || '', 'pt-BR'); }).forEach(function(a){ html += cartaoArrendamentoHtml(a); });
+      html += '<div class="paper note-box">Em cada ano, "Registrar pagamento" guarda a data, as sacas (com o preço do dia) ou o valor, e já lança a despesa no Financeiro com a conta "Arrendamento de terra", no talhão do contrato.</div>';
+    }
     el.innerHTML = html;
   }
+  function acaoArrend(action, btn){
+    if(action === 'arrend-view'){ arrendView = btn.dataset.view; arrendPagando = null; if(arrendView !== 'novo' && editState && editState.scope === 'generic' && editState.entityKey === 'arrendamentos') editState = null; renderArrendamentos(); return true; }
+    if(action === 'arrend-pag-abrir'){ arrendPagando = arrendPagando === btn.dataset.chave ? null : btn.dataset.chave; renderArrendamentos(); return true; }
+    if(action === 'arrend-pag-cancelar'){ arrendPagando = null; renderArrendamentos(); return true; }
+    var a = state.arrendamentos.find(function(x){ return x.id === btn.dataset.id; });
+    if(!a) return false;
+    if(action === 'arrend-status'){ a.status = a.status === 'Ativo' ? 'Encerrado' : 'Ativo'; saveKey('arrendamentos', state.arrendamentos); renderAll(); return true; }
+    if(action === 'arrend-pag-remover'){
+      var pg = (a.pagamentos || []).find(function(p){ return p.id === btn.dataset.pag; }); if(!pg) return true;
+      if(!window.confirm('Apagar o pagamento de ' + fmtDate(pg.data) + ' (' + fmtBRL(pg.valor) + ')?' + (pg.financeiroId ? ' O lançamento no Financeiro também será apagado.' : ''))) return true;
+      a.pagamentos = a.pagamentos.filter(function(p){ return p.id !== pg.id; });
+      if(pg.financeiroId){ state.financeiro = state.financeiro.filter(function(f){ return f.id !== pg.financeiroId; }); saveKey('financeiro', state.financeiro); }
+      if(pg.producaoId){ state.producao = state.producao.filter(function(x){ return x.id !== pg.producaoId; }); saveKey('producao', state.producao); }
+      saveKey('arrendamentos', state.arrendamentos); renderAll(); return true;
+    }
+    if(action === 'arrend-pag-salvar'){
+      var sac = ehArrendSacas(a), data = (document.getElementById('arr-pag-data') || {}).value || hojeISO();
+      var sacas = sac ? parseFloat((document.getElementById('arr-pag-sacas') || {}).value) || 0 : 0;
+      var preco = sac ? parseFloat((document.getElementById('arr-pag-preco') || {}).value) || 0 : 0;
+      var valor = sac ? Math.round(sacas * preco * 100) / 100 : parseFloat((document.getElementById('arr-pag-valor') || {}).value) || 0;
+      if(sac && !(sacas > 0)){ alert('Informe quantas sacas.'); return true; }
+      if(!sac && !(valor > 0)){ alert('Informe o valor.'); return true; }
+      if(sac && !(preco > 0) && !window.confirm('Sem o preço da saca, o pagamento fica sem valor em reais e não entra no Financeiro nem no custo. Continuar?')) return true;
+      var pag = {id: uid(), anoRef: btn.dataset.ano, data: data, sacas: sacas, precoSaca: preco, valor: valor, criadoEm: Date.now()};
+      var chkEst = document.getElementById('arr-pag-estoque');
+      if(sac && chkEst && chkEst.checked){
+        var chaveEst = (document.getElementById('arr-pag-estoque-safra') || {}).value;
+        var infoEst = estoquesDaCultura(a.culturaSacasId).find(function(e){ return e.chave === chaveEst; });
+        if(infoEst && sacas > infoEst.saldo + 0.004 && !window.confirm('O estoque escolhido tem só ' + fmtNum(infoEst.saldo) + ' ' + infoEst.unidade + '. Tirar ' + fmtNum(sacas) + ' mesmo assim (o saldo fica negativo)?')) return true;
+        var saidaEst = {id: uid(), safraId: chaveEst, tipo: 'saida', quantidade: sacas, unidade: infoEst ? infoEst.unidade : 'sc', precoUnitario: 0, data: data, parceiroId: a.parceiroId || '', observacao: 'Pagamento de arrendamento — ' + (a.nome || '') + ' ' + pag.anoRef, arrendamentoId: a.id, criadoEm: Date.now()};
+        state.producao.push(saidaEst); saveKey('producao', state.producao); pag.producaoId = saidaEst.id;
+      }
+      var lancar = (document.getElementById('arr-pag-fin') || {}).checked && valor > 0;
+      if(lancar){
+        var recebe = a.tipo === 'Recebido', tipo = recebe ? 'receita' : 'custo', cid = contaArrendamento(tipo);
+        var f = {id: uid(), origem: 'arrendamento', contaId: cid, tipo: tipo, categoria: cid ? contaNome(cid) : 'Arrendamento', valor: valor, quantidade: sacas || 0, unidade: sacas ? 'sc' : '', peso: 0, status: 'Pago', data: data, vencimento: '', parceiroId: a.parceiroId || '', membroId: '',
+          descricao: 'Arrendamento ' + (a.nome || '') + ' — ' + pag.anoRef + (sacas ? ' (' + fmtNum(sacas) + ' sc de ' + culturaArrend(a) + (preco ? ' × ' + fmtBRL(preco) : '') + ')' : ''), arrendamentoId: a.id, criadoEm: Date.now()};
+        if(sacas && preco) f.valorUnitario = preco;
+        aplicarDestino(f, a.talhaoId && !recebe ? {destino: 'talhao', talhoes: [a.talhaoId], partes: []} : {destino: 'geral', partes: []});
+        state.financeiro.push(f); saveKey('financeiro', state.financeiro); pag.financeiroId = f.id;
+      }
+      a.pagamentos = (a.pagamentos || []).concat([pag]);
+      saveKey('arrendamentos', state.arrendamentos); arrendPagando = null; renderAll(); return true;
+    }
+    return false;
+  }
+  document.addEventListener('input', function(e){
+    if(e.target && (e.target.id === 'arr-pag-sacas' || e.target.id === 'arr-pag-preco')){
+      var s = parseFloat((document.getElementById('arr-pag-sacas') || {}).value) || 0, p = parseFloat((document.getElementById('arr-pag-preco') || {}).value) || 0;
+      var el = document.getElementById('arr-pag-equiv'); if(el) el.textContent = fmtBRL(s * p);
+    }
+  });
+  // depois de salvar o formulário de arrendamento, volta para a lista de ativos
+  document.addEventListener('submit', function(e){ if(e.target && e.target.dataset && e.target.dataset.form === 'generic' && e.target.dataset.entity === 'arrendamentos') arrendView = 'ativos'; }, true);
 
   var financiamentoCronogramaId = null;
+  var financiamentosVerQuitados = false;
+  var parcelasVerPagas = false;
   function cronogramaFinanciamentoHtml(paraImpressao){
     var f = state.financiamentos.find(function(x){ return x.id === financiamentoCronogramaId; });
     if(!f) return '';
@@ -5516,9 +5726,17 @@
     if(cr.jurosCarencia) h += '<p style="font-size:12px; margin:0 0 8px;">Os juros da carência (' + fmtBRL(cr.jurosCarencia) + ') foram somados ao saldo e são pagos junto com as parcelas — por isso o saldo começa maior que o valor financiado.</p>';
     if(!financiamentoTemCronograma(f)) h += '<p style="font-size:12px; color:var(--cost-dark);">⚠️ ' + (ehContrato ? 'Digite o valor de cada parcela na tabela e clique em "Salvar parcelas".' : 'Sem valor de parcela: escolha SAC ou PRICE, ou informe o valor da parcela do contrato (Editar).') + '</p>';
     if(editavel) h += '<p style="font-size:12px; margin:0 0 8px;">Digite o vencimento e o valor de cada parcela como estão no contrato e clique em <strong>Salvar parcelas</strong>' + (parcelasDaObservacao(f.observacao).length ? ', ou use <strong>Ler da observação</strong>' : '') + '.</p>';
+    var nPagasCr = cr.filter(function(l){ return l.paga; }).length, nAbertasCr = cr.length - nPagasCr;
+    if(!paraImpressao){
+      var estChipP = function(on){ return 'font-family:inherit; font-size:12.5px; font-weight:600; padding:6px 12px; border-radius:6px; cursor:pointer; border:2px solid ' + (on ? 'var(--accent)' : 'var(--paper-line)') + '; background:' + (on ? 'var(--accent)' : 'var(--paper)') + '; color:' + (on ? '#fff' : 'var(--ink)') + ';'; };
+      h += '<div style="display:flex; flex-wrap:wrap; gap:8px; margin:0 0 8px;"><button type="button" data-action="parc-ver-pagas" data-ver="0" style="' + estChipP(!parcelasVerPagas) + '">⏳ A pagar (' + nAbertasCr + ')</button><button type="button" data-action="parc-ver-pagas" data-ver="1" style="' + estChipP(parcelasVerPagas) + '">✅ Pagas (' + nPagasCr + ')</button></div>';
+    }
+    var crVer = paraImpressao ? cr : cr.filter(function(l){ return parcelasVerPagas ? l.paga : !l.paga; });
+    if(!crVer.length) h += '<p style="font-size:12.5px;">' + (parcelasVerPagas ? 'Nenhuma parcela paga ainda.' : '✅ Todas as parcelas estão pagas. Veja em "✅ Pagas".') + '</p>';
+    else {
     h += '<div class="table-wrap"><table class="sem-ordenacao"><thead><tr><th>#</th><th>Vencimento</th><th>Amortização</th><th>Juros</th><th>Parcela</th><th>Saldo depois</th><th>Situação</th></tr></thead><tbody>';
     var tA = 0, tJ = 0, tP = 0;
-    cr.forEach(function(l){
+    crVer.forEach(function(l){
       var situ = l.paga ? '✅ Paga' + (l.pagamento ? ' em ' + fmtDate(l.pagamento.data) + (Math.abs((Number(l.pagamento.valor) || 0) - l.parcela) > 0.01 ? ' (' + fmtBRL(l.pagamento.valor) + ')' : '') : '') : (l.vencimento && l.vencimento < hoje ? '⚠️ Vencida' : 'A vencer');
       tA += l.amortizacao; tJ += l.juros + (l.jurosCarencia || 0); tP += l.parcela;
       var estIn = 'padding:4px 6px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:12.5px;';
@@ -5528,13 +5746,15 @@
       }
       h += '<tr' + (l.paga ? ' style="opacity:0.65;"' : '') + '><td>' + l.n + '</td><td>' + (l.vencimento ? fmtDate(l.vencimento) : '—') + '</td><td class="num">' + fmtBRL(l.amortizacao) + '</td><td class="num">' + fmtBRL(l.juros + (l.jurosCarencia || 0)) + (l.jurosCarencia ? '<br><span style="font-size:10.5px;">inclui ' + fmtBRL(l.jurosCarencia) + ' da carência</span>' : '') + '</td><td class="num"><strong>' + fmtBRL(l.parcela) + '</strong></td><td class="num">' + fmtBRL(l.saldo) + '</td><td>' + situ + '</td></tr>';
     });
-    h += '<tr style="font-weight:600;"><td colspan="2">Total</td><td class="num">' + fmtBRL(tA) + '</td><td class="num">' + fmtBRL(tJ) + '</td><td class="num">' + fmtBRL(tP) + '</td><td></td><td></td></tr>';
+    h += '<tr style="font-weight:600;"><td colspan="2">' + (paraImpressao ? 'Total' : (parcelasVerPagas ? 'Total pago' : 'Total a pagar')) + '</td><td class="num">' + fmtBRL(tA) + '</td><td class="num">' + fmtBRL(tJ) + '</td><td class="num">' + fmtBRL(tP) + '</td><td></td><td></td></tr>';
     h += '</tbody></table></div>';
+    }
     if(editavel){
       h += '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;"><button type="button" class="btn" data-action="salvar-parcelas-contrato">Salvar parcelas</button>';
       if(parcelasDaObservacao(f.observacao).length) h += '<button type="button" class="btn-edit" data-action="ler-parcelas-observacao">Ler da observação</button>';
       h += '</div>';
-      if(Math.abs(tP - (Number(f.valorTotal) || 0)) > 0.01 && tP > 0) h += '<p style="font-size:11.5px; color:var(--ink-soft); margin:6px 0 0;">Soma das parcelas: ' + fmtBRL(tP) + ' · valor financiado: ' + fmtBRL(f.valorTotal) + (tP > (Number(f.valorTotal) || 0) ? ' — a diferença aparece como juros.' : ' — as parcelas somam menos que o financiado; confira.') + '</p>';
+      var tPAll = cr.reduce(function(sm, l){ return sm + l.parcela; }, 0);
+      if(Math.abs(tPAll - (Number(f.valorTotal) || 0)) > 0.01 && tPAll > 0) h += '<p style="font-size:11.5px; color:var(--ink-soft); margin:6px 0 0;">Soma das parcelas: ' + fmtBRL(tPAll) + ' · valor financiado: ' + fmtBRL(f.valorTotal) + (tPAll > (Number(f.valorTotal) || 0) ? ' — a diferença aparece como juros.' : ' — as parcelas somam menos que o financiado; confira.') + '</p>';
     }
     return h + (paraImpressao ? '' : '</div>');
   }
@@ -5556,13 +5776,26 @@
     html += statCard('Juros previstos', fmtBRL(Math.max(totalJurosPrevisto,0)), 'cost');
     html += '</div>';
     html += buildGenericFormHtml('financiamentos');
-    html += buildGenericTableHtml('financiamentos');
+    var quitadosF = state.financiamentos.filter(function(f){ return f.status !== 'Ativo'; });
+    var estChipF = function(on){ return 'font-family:inherit; font-size:13px; font-weight:600; padding:7px 14px; border-radius:6px; cursor:pointer; border:2px solid ' + (on ? 'var(--accent)' : 'var(--paper-line)') + '; background:' + (on ? 'var(--accent)' : 'var(--paper)') + '; color:' + (on ? '#fff' : 'var(--ink)') + ';'; };
+    html += '<div style="display:flex; flex-wrap:wrap; gap:8px; margin:0 0 10px;">';
+    html += '<button type="button" data-action="fin-ver-quitados" data-ver="0" style="' + estChipF(!financiamentosVerQuitados) + '">📋 Ativos (' + ativos.length + ')</button>';
+    html += '<button type="button" data-action="fin-ver-quitados" data-ver="1" style="' + estChipF(financiamentosVerQuitados) + '">✅ Quitados (' + quitadosF.length + ')</button>';
+    html += '</div>';
+    var listaVerF = financiamentosVerQuitados ? quitadosF : ativos;
+    if(!listaVerF.length && state.financiamentos.length) html += '<div class="paper empty-state">' + (financiamentosVerQuitados ? 'Nenhum financiamento quitado.' : 'Nenhum financiamento ativo. Os quitados estão no botão "✅ Quitados".') + '</div>';
+    else {
+      var listaOriginalF = state.financiamentos;
+      state.financiamentos = listaVerF;
+      try{ html += buildGenericTableHtml('financiamentos'); } finally { state.financiamentos = listaOriginalF; }
+    }
     html += cronogramaFinanciamentoHtml(false);
     html += '<div class="paper note-box">📅 <strong>Parcelas</strong> mostra o cronograma de cada contrato (vencimento, amortização, juros, saldo). Escolha o sistema: <strong>Parcela informada</strong> usa um valor único de parcela; <strong>Parcelas do contrato</strong> deixa digitar o vencimento e o valor de cada parcela (em 📅 Parcelas); <strong>SAC</strong> (amortização constante, juros sobre o saldo — comum no crédito rural) e <strong>PRICE</strong> (parcelas iguais) calculam as parcelas pela taxa ao ano, número de parcelas e datas. As datas das parcelas saem do 1º vencimento (ou, se vazio, contando para trás da data final). "Pagar parcela" dá baixa na próxima, lança a despesa no Financeiro (a conta do financiamento precisa estar escolhida) e guarda o valor e a data realmente pagos.</div>';
     el.innerHTML = html;
   }
 
   var TIPOS_SERVICO = ['Colheita', 'Frete', 'Plantio', 'Pulverização', 'Diversos'];
+  var servicosVerPagos = false;
   function renderServicosPrestados(){
     var el = document.getElementById('tab-servicosPrestados');
     var lista = state.financeiro.filter(function(f){ return !!f.servico; }).sort(function(a, b){ return ((b.data || b.vencimento || '')).localeCompare(a.data || a.vencimento || ''); });
@@ -5588,7 +5821,19 @@
     html += '<div class="field-with-add"><div style="flex:1;">' + selectField('contaId', 'Conta (plano de contas)', [{value:'', label:'— escolha a conta —'}].concat(state.contasFinanceiro.map(function(c){ return {value:c.id, label:(contaTipo(c.id) === 'receita' ? '↑ ' : '↓ ') + contaLabel(c.id)}; }).sort(function(x, y){ return x.label.localeCompare(y.label, 'pt-BR'); })), '') + '</div><button type="button" class="btn-add-inline" data-action="open-conta-modal" title="Nova conta">+</button></div>';
     html += '<div id="destino-servico" data-destino-widget="1" style="grid-column: 1 / -1; display:flex; flex-direction:column; gap:8px; padding:10px 0 6px; border-top:1px dashed var(--paper-line); margin-top:4px;"></div>';
     html += '<button type="submit" class="btn">Adicionar</button></form></div>';
-    if(!lista.length) html += '<div class="paper empty-state">Nenhum serviço registrado ainda.</div>';
+    var svPend = lista.filter(function(f){ return f.status === 'Pendente'; }).sort(function(a, b){ return (a.vencimento || a.data || '9').localeCompare(b.vencimento || b.data || '9'); });
+    var svPagos = lista.filter(function(f){ return f.status !== 'Pendente'; });
+    if(lista.length){
+      var estChipS = function(on){ return 'font-family:inherit; font-size:13px; font-weight:600; padding:7px 14px; border-radius:6px; cursor:pointer; border:2px solid ' + (on ? 'var(--accent)' : 'var(--paper-line)') + '; background:' + (on ? 'var(--accent)' : 'var(--paper)') + '; color:' + (on ? '#fff' : 'var(--ink)') + ';'; };
+      html += '<div style="display:flex; flex-wrap:wrap; gap:8px; margin:0 0 10px;">';
+      html += '<button type="button" data-action="sv-ver-pagos" data-ver="0" style="' + estChipS(!servicosVerPagos) + '">⏳ Pendentes (' + svPend.length + ')</button>';
+      html += '<button type="button" data-action="sv-ver-pagos" data-ver="1" style="' + estChipS(servicosVerPagos) + '">✅ Pagos / recebidos (' + svPagos.length + ')</button>';
+      html += '</div>';
+    }
+    var listaTodos = lista;
+    lista = servicosVerPagos ? svPagos : svPend;
+    if(!listaTodos.length) html += '<div class="paper empty-state">Nenhum serviço registrado ainda.</div>';
+    else if(!lista.length) html += '<div class="paper empty-state">' + (servicosVerPagos ? 'Nenhum serviço pago ou recebido ainda.' : '✅ Nenhum serviço pendente. Os já pagos estão no botão "Pagos / recebidos".') + '</div>';
     else {
       html += '<div class="paper"><div class="table-wrap"><table><thead><tr><th>Data</th><th>Direção</th><th>Tipo</th><th>Prestador / cliente</th><th>Descrição</th><th>Quantidade</th><th>Valor</th><th>Situação</th><th></th></tr></thead><tbody>';
       lista.forEach(function(f){
@@ -10080,6 +10325,7 @@
     if(action.indexOf('mapa-') === 0 && acaoMapa(action, btn)) return;
     if(action.indexOf('dossie-') === 0){ acaoDossie(action, btn); return; }
     if(action === 'carencia-usar-bula'){ aplicarBulaNoForm(); return; }
+    if(action.indexOf('arrend-') === 0 && acaoArrend(action, btn)) return;
     if(action === 'abrir-mapa-talhao'){ abrirMapa({modo:'editar', talhaoId: id}); return; }
     if(action === 'abrir-mapa-fazenda'){ abrirMapa({modo:'visao'}); return; }
 
@@ -11089,6 +11335,9 @@
       renderPainel();
       return;
     }
+    if(action === 'sv-ver-pagos'){ servicosVerPagos = btn.dataset.ver === '1'; renderServicosPrestados(); return; }
+    if(action === 'parc-ver-pagas'){ parcelasVerPagas = btn.dataset.ver === '1'; renderFinanciamentos(); return; }
+    if(action === 'fin-ver-quitados'){ financiamentosVerQuitados = btn.dataset.ver === '1'; renderFinanciamentos(); return; }
     if(action === 'toggle-safras-inativas'){ safrasOcultarInativas = !safrasOcultarInativas; try{ localStorage.setItem('agro-ocultar-safras-inativas', safrasOcultarInativas ? '1' : '0'); }catch(e){} renderSafras(); return; }
     if(action === 'abrir-rastreabilidade'){
       rastreabilidadeSafraId = id; renderSafras();
