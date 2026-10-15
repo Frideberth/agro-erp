@@ -7545,7 +7545,8 @@
       {k:'bicho', alvo:'Bicho-mineiro', medida:'% de folhas minadas (3º/4º par)', nivel:30},
       {k:'ferrugem', alvo:'Ferrugem', medida:'% de folhas com pústula', nivel:5},
       {k:'cercospora', alvo:'Cercosporiose', medida:'% de folhas com lesão', nivel:10},
-      {k:'acaro', alvo:'Ácaro-vermelho', medida:'% de folhas com ácaro', nivel:0}
+      {k:'acaro', alvo:'Ácaro-vermelho', medida:'% de folhas com ácaro', nivel:0},
+      {k:'cigarra', alvo:'Cigarra-do-cafeeiro', medida:'ninfas por planta (cavar sob a saia)', nivel:0}
     ],
     soja: [
       {k:'lagartas', alvo:'Lagartas desfolhadoras', medida:'lagartas grandes por metro (pano)', nivel:20},
@@ -7582,7 +7583,12 @@
     {k:'adubfoliar', nome:'Adubação foliar', meses:[9,10,11,12,1,2,3], modo:'mes', dica:'Micronutrientes (B, Zn) — pode ir junto com a calda.'},
     {k:'plantio', nome:'Plantio das mudas', meses:[10,11,12,1,2,3], modo:'janela', dica:'Com o solo úmido, no início das chuvas.'},
     {k:'desbrota', nome:'Desbrotas', meses:[1,2,3,4,5,6,7,8,9,10,11,12], modo:'mes', dica:'Principalmente em lavouras podadas.'},
-    {k:'colheita', nome:'Colheita', meses:[4,5,6,7,8,9], modo:'mes', dica:'Lance a apanha na Caderneta do Café ou em Colheita e Vendas.'}
+    {k:'colheita', nome:'Colheita', meses:[4,5,6,7,8,9], modo:'mes', dica:'Lance a apanha na Caderneta do Café ou em Colheita e Vendas.'},
+    // extras (vêm desligados; ligue em "Ver o calendário do ano" se fizer no seu sítio)
+    {k:'preparo', nome:'Preparo do solo', meses:[8,9,10,11,12], modo:'janela', extra:true, dica:'Para área nova ou renovação: correção, sulcamento ou coveamento antes do plantio.'},
+    {k:'mudas', nome:'Produção de mudas', meses:[1,2,3,4,5,6], modo:'janela', extra:true, dica:'Viveiro próprio para plantar nas próximas águas.'},
+    {k:'intercalar', nome:'Cultura intercalar', meses:[11,12,1,2,3,4], modo:'janela', extra:true, dica:'Feijão, milho ou adubo verde nas entrelinhas (lavoura nova ou podada).'},
+    {k:'cigarra', nome:'Controle da cigarra', meses:[10,11,12], modo:'janela', extra:true, dica:'Inseticida sistêmico no solo no início das chuvas, se a inspeção achar ninfas.'}
   ];
   // Épocas de monitoramento das pragas e doenças do café (referência geral, não está no calendário da Emater): ligam à Inspeção de Campo
   var CAL_CAFE_MONITOR = [
@@ -7590,10 +7596,12 @@
     {k:'bicho', alvo:'Bicho-mineiro', meses:[5,6,7,8,9,10], dica:'Seca e calor favorecem.'},
     {k:'ferrugem', alvo:'Ferrugem', meses:[12,1,2,3,4,5,6], dica:'Começa com as chuvas e tem pico no outono.'},
     {k:'cercospora', alvo:'Cercosporiose', meses:[12,1,2,3,4,5], dica:'Lavouras mal nutridas ou estressadas.'},
-    {k:'acaro', alvo:'Ácaro-vermelho', meses:[6,7,8,9], dica:'Veranicos e estiagem.'}
+    {k:'acaro', alvo:'Ácaro-vermelho', meses:[6,7,8,9], dica:'Veranicos e estiagem.'},
+    {k:'cigarra', alvo:'Cigarra-do-cafeeiro', meses:[9,10,11,12], seAtivo:'cigarra', dica:'Revoada no início das chuvas; procure cascas no tronco e furos no chão sob a saia.'}
   ];
+  function calAtivo(at){ var cfg = calCfg(); return at.extra ? !!cfg.ligados[at.k] : !cfg.desligados[at.k]; }
   function calHoje(){ return new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10); }
-  function calCfg(){ var c = configUnidades(); if(!c.calendarioCafe) c.calendarioCafe = {marcas:{}, desligados:{}}; if(!c.calendarioCafe.marcas) c.calendarioCafe.marcas = {}; if(!c.calendarioCafe.desligados) c.calendarioCafe.desligados = {}; return c.calendarioCafe; }
+  function calCfg(){ var c = configUnidades(); if(!c.calendarioCafe) c.calendarioCafe = {marcas:{}, desligados:{}}; if(!c.calendarioCafe.marcas) c.calendarioCafe.marcas = {}; if(!c.calendarioCafe.desligados) c.calendarioCafe.desligados = {}; if(!c.calendarioCafe.ligados) c.calendarioCafe.ligados = {}; return c.calendarioCafe; }
   function calTalhoesCafe(){ return state.talhoes.filter(function(t){ var sf = insSafraAtiva(t.id); return sf && insChaveCultura(sf.culturaId) === 'cafe'; }); }
   // janela contínua (pode virar o ano) que contém o mês; devolve {ini:'AAAA-MM-01', fim:'AAAA-MM-31', id:'AAAA-MM'}
   function calJanela(meses, ano, mes){
@@ -7620,7 +7628,8 @@
       calagem: /calcar|gesso|calagem|gessagem/, poda: /poda|recepa|esqueletamento|decote/, desbrota: /desbrot/, plantio: /plantio|muda/,
       mato: /capina|rocad|rocag|rocadeira|herbicid|mato|daninh|capim|glifosat|pre[ -]?emergente|dessecan|trapoeraba|braquiaria/,
       adubfoliar: /foliar/, adubsolo: /adubac|adubo|formulado|ureia|cloreto|sulfato de amonio|nitrato|npk|\b\d{2}[- ]\d{2}[- ]\d{2}\b|cobertura/,
-      foliar: /analise foliar|amostra de folha/, solo: /analise de solo|amostra de solo/
+      foliar: /analise foliar|amostra de folha/, solo: /analise de solo|amostra de solo/,
+      preparo: /preparo|aragem|gradagem|subsolag|sulcament|coveament|enleiramento/, mudas: /viveiro|sementeira|producao de mudas/, intercalar: /intercalar|entrelinha|adubo verde|crotalaria|braquiaria na entrelinha/, cigarra: /cigarra/
     };
     var achou = null;
     var guarda = function(d, onde){ if(!achou || d > achou.data) achou = {data: d, onde: onde}; };
@@ -7645,7 +7654,7 @@
     hoje = hoje || calHoje();
     if(!calTalhoesCafe().length) return [];
     var mes = parseInt(hoje.slice(5,7), 10), cfg = calCfg();
-    return CAL_CAFE.filter(function(at){ return at.meses.indexOf(mes) !== -1 && !cfg.desligados[at.k]; }).map(function(at){
+    return CAL_CAFE.filter(function(at){ return at.meses.indexOf(mes) !== -1 && calAtivo(at); }).map(function(at){
       var per = calPeriodo(at, hoje), marca = cfg.marcas[at.k + ':' + per.id] || null, reg = calRegistro(at, per);
       return {at: at, per: per, reg: reg, marca: marca, st: reg || (marca && marca.st === 'feito') ? 'feito' : (marca && marca.st === 'pular' ? 'pulado' : 'pendente')};
     });
@@ -7655,7 +7664,7 @@
     hoje = hoje || calHoje();
     var tal = calTalhoesCafe(); if(!tal.length) return [];
     var mes = parseInt(hoje.slice(5,7), 10), lim = new Date(new Date(hoje + 'T12:00:00').getTime() - 30 * 86400000).toISOString().slice(0,10);
-    return CAL_CAFE_MONITOR.filter(function(m){ return m.meses.indexOf(mes) !== -1; }).map(function(m){
+    return CAL_CAFE_MONITOR.filter(function(m){ if(m.seAtivo){ var atM = CAL_CAFE.find(function(a){ return a.k === m.seAtivo; }); if(atM && !calAtivo(atM)) return false; } return m.meses.indexOf(mes) !== -1; }).map(function(m){
       var faltam = tal.filter(function(t){ return !(state.inspecoes || []).some(function(i){ return i.talhaoId === t.id && i.data >= lim && (i.alvos || []).some(function(a){ return a.alvo === m.alvo && a.valor !== '' && a.valor != null; }); }); });
       return {m: m, faltam: faltam, total: tal.length};
     });
@@ -7699,16 +7708,18 @@
     if(calGradeAberta){
       h += '<div class="table-wrap" style="margin-top:6px;"><table class="sem-ordenacao" style="font-size:12px;"><thead><tr><th>Atividade</th>' + MESES.map(function(m, i){ return '<th style="text-align:center; padding:4px 2px;' + (i + 1 === mes ? ' background:var(--accent); color:#fff;' : '') + '">' + m + '</th>'; }).join('') + '<th>Avisar</th></tr></thead><tbody>';
       var linha = function(nome, meses, extra){ return '<td><b>' + escapeHtml(nome) + '</b></td>' + MESES.map(function(m, i){ var on = meses.indexOf(i + 1) !== -1; return '<td style="text-align:center; padding:3px 2px;">' + (on ? '<span style="display:inline-block; width:14px; height:14px; border-radius:3px; background:' + (i + 1 === mes ? 'var(--accent)' : '#E8B86A') + ';"></span>' : '') + '</td>'; }).join('') + '<td>' + extra + '</td>'; };
-      CAL_CAFE.forEach(function(at){ h += '<tr>' + linha(at.nome, at.meses, pode ? '<label style="font-size:12px; white-space:nowrap;"><input type="checkbox" class="cal-liga" data-k="' + at.k + '"' + (cfg.desligados[at.k] ? '' : ' checked') + '> sim</label>' : (cfg.desligados[at.k] ? 'não' : 'sim')) + '</tr>'; });
+      CAL_CAFE.forEach(function(at){ h += '<tr>' + linha(at.nome + (at.extra ? ' *' : ''), at.meses, pode ? '<label style="font-size:12px; white-space:nowrap;"><input type="checkbox" class="cal-liga" data-k="' + at.k + '"' + (calAtivo(at) ? ' checked' : '') + '> sim</label>' : (calAtivo(at) ? 'sim' : 'não')) + '</tr>'; });
       h += '<tr><td colspan="14" style="font-size:11.5px; font-weight:600; padding-top:8px;">Monitoramento (Inspeção de Campo)</td></tr>';
       CAL_CAFE_MONITOR.forEach(function(m){ h += '<tr>' + linha(m.alvo, m.meses, '') + '</tr>'; });
-      h += '</tbody></table></div><p style="font-size:11px; color:var(--ink-soft); margin:6px 0 0;">Atividades: Calendário do Cafeicultor, Emater-MG (2024). As épocas de monitoramento de pragas e doenças são uma referência geral para o café no Sul/Sudeste — ajuste com o seu agrônomo. Desligue o que não se aplica (ex.: plantio de mudas, se não vai plantar).</p>';
+      h += '</tbody></table></div><p style="font-size:11px; color:var(--ink-soft); margin:6px 0 0;">Atividades: Calendário do Cafeicultor, Emater-MG (2024). As épocas de monitoramento de pragas e doenças são uma referência geral para o café no Sul/Sudeste — ajuste com o seu agrônomo. Desligue o que não se aplica (ex.: plantio de mudas, se não vai plantar). * Atividades extras, de um calendário sem autor identificado: vêm desligadas — ligue as que fizer.</p>';
     }
     return h + '</div>';
   }
   document.addEventListener('change', function(e){
     var t = e.target; if(!t || !t.classList || !t.classList.contains('cal-liga')) return;
-    var cfg = calCfg(); if(t.checked) delete cfg.desligados[t.dataset.k]; else cfg.desligados[t.dataset.k] = true;
+    var cfg = calCfg(), atL = CAL_CAFE.find(function(a){ return a.k === t.dataset.k; });
+    if(atL && atL.extra){ if(t.checked) cfg.ligados[t.dataset.k] = true; else delete cfg.ligados[t.dataset.k]; }
+    else { if(t.checked) delete cfg.desligados[t.dataset.k]; else cfg.desligados[t.dataset.k] = true; }
     saveKey('configUnidades', state.configUnidades); renderInspecao(); if(typeof renderPainel === 'function') try{ renderPainel(); }catch(er){}
   });
   function renderInspecao(){
