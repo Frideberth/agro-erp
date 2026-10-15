@@ -2598,6 +2598,20 @@
     add(parcProx.length, '🏦', 'parcela(s) de financiamento vencida(s) ou vencendo em 30 dias — ' + fmtBRL(parcProx.reduce(function(sm, l){ return sm + l.parcela; }, 0)), 'financiamentos', '', parcProx.some(function(l){ return l.vencimento < hoje; }));
     var resumos = (state.sefazResumos || []).filter(function(r){ return r.status === 'aguardando' || r.status === 'ciencia'; });
     add(resumos.length, '🧾', 'nota(s) da SEFAZ só com resumo — dar ciência e baixar', 'compras', 'sefaz');
+    // Calendário do café + Inspeção de Campo
+    try{
+      var calPend = calAtividadesDoMes(hoje).filter(function(x){ return x.st === 'pendente'; });
+      add(calPend.length, '☕', 'atividade(s) do calendário do café para ' + ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][parseInt(hoje.slice(5,7), 10) - 1] + ' ainda sem registro: ' + calPend.map(function(x){ return x.at.nome; }).join(', '), 'inspecao');
+      var calMon = calMonitorDoMes(hoje).filter(function(x){ return x.faltam.length; });
+      add(calMon.length, '🔎', 'alvo(s) da época sem inspeção nos últimos 30 dias no café: ' + calMon.map(function(x){ return x.m.alvo; }).join(', '), 'inspecao');
+      var limIns = new Date(new Date(hoje + 'T12:00:00').getTime() - 15 * 86400000).toISOString().slice(0,10), lim30 = new Date(new Date(hoje + 'T12:00:00').getTime() - 30 * 86400000).toISOString().slice(0,10);
+      var talLav = state.talhoes.filter(function(t){ var sfL = insSafraAtiva(t.id); return sfL && sfL.status !== 'planejada'; });
+      var ultIns = function(t){ return (state.inspecoes || []).filter(function(i){ return i.talhaoId === t.id; }).sort(function(a, b){ return (b.data || '').localeCompare(a.data || '') || (b.criadoEm || 0) - (a.criadoEm || 0); })[0]; };
+      var semIns = talLav.filter(function(t){ var u = ultIns(t); return !u || u.data < limIns; });
+      add(semIns.length, '🌿', 'talhão(ões) com lavoura sem inspeção há mais de 15 dias: ' + semIns.slice(0, 5).map(function(t){ return t.nome; }).join(', ') + (semIns.length > 5 ? '…' : ''), 'inspecao');
+      var noNivel = talLav.filter(function(t){ var u = ultIns(t); return u && u.data >= lim30 && (u.alvos || []).some(function(a){ return a.nivel > 0 && Number(a.valor) >= a.nivel; }); });
+      add(noNivel.length, '🐛', 'talhão(ões) com praga/doença no nível de ação na última inspeção: ' + noNivel.map(function(t){ var u = ultIns(t); return t.nome + ' (' + (u.alvos || []).filter(function(a){ return a.nivel > 0 && Number(a.valor) >= a.nivel; }).map(function(a){ return a.alvo; }).join(', ') + ')'; }).join('; '), 'inspecao', '', true);
+    }catch(errCalP){ console.error(errCalP); }
     return itens;
   }
   function alertasInteligentesLista(){
@@ -7556,6 +7570,147 @@
     return c[0] || null;
   }
   function insAlvosDoTalhao(talhaoId){ var sf = insSafraAtiva(talhaoId); var cult = sf ? insChaveCultura(sf.culturaId) : ''; return {sf: sf, cult: cult, alvos: INS_ALVOS[cult] || []}; }
+  /* ===== Calendário do cafeicultor (Emater-MG, 2024) — avisos do mês ligados ao Diário, Análises, Colheita e Inspeção ===== */
+  // modo 'mes' = lembra todo mês da janela até registrar no mês; 'janela' = uma vez por janela (some quando registrar)
+  var CAL_CAFE = [
+    {k:'solo', nome:'Análise de solo', meses:[4,5,6,7], modo:'janela', dica:'Planta em repouso e solo seco: boa hora de coletar e comprar o adubo antes.'},
+    {k:'foliar', nome:'Análise foliar', meses:[11,12,1,2], modo:'janela', dica:'Coletar o 3º/4º par de folhas de ramos produtivos, no meio da planta.'},
+    {k:'calagem', nome:'Calagem / Gessagem', meses:[3,4,7,8,9], modo:'janela', dica:'Conforme a análise de solo.'},
+    {k:'poda', nome:'Podas', meses:[7,8,9], modo:'janela', dica:'Logo depois da colheita (recepa, esqueletamento, decote).'},
+    {k:'mato', nome:'Manejo do mato', meses:[10,11,12,1,2,3,4], modo:'mes', dica:'Roçada, capina ou herbicida nas águas.'},
+    {k:'adubsolo', nome:'Adubação via solo', meses:[8,9,10,11,12,1,2,3], modo:'mes', dica:'Parcelar nas chuvas.'},
+    {k:'adubfoliar', nome:'Adubação foliar', meses:[9,10,11,12,1,2,3], modo:'mes', dica:'Micronutrientes (B, Zn) — pode ir junto com a calda.'},
+    {k:'plantio', nome:'Plantio das mudas', meses:[10,11,12,1,2,3], modo:'janela', dica:'Com o solo úmido, no início das chuvas.'},
+    {k:'desbrota', nome:'Desbrotas', meses:[1,2,3,4,5,6,7,8,9,10,11,12], modo:'mes', dica:'Principalmente em lavouras podadas.'},
+    {k:'colheita', nome:'Colheita', meses:[4,5,6,7,8,9], modo:'mes', dica:'Lance a apanha na Caderneta do Café ou em Colheita e Vendas.'}
+  ];
+  // Épocas de monitoramento das pragas e doenças do café (referência geral, não está no calendário da Emater): ligam à Inspeção de Campo
+  var CAL_CAFE_MONITOR = [
+    {k:'broca', alvo:'Broca-do-café', meses:[11,12,1,2,3,4], dica:'Do chumbinho até a colheita, quando a broca sai dos frutos velhos (trânsito).'},
+    {k:'bicho', alvo:'Bicho-mineiro', meses:[5,6,7,8,9,10], dica:'Seca e calor favorecem.'},
+    {k:'ferrugem', alvo:'Ferrugem', meses:[12,1,2,3,4,5,6], dica:'Começa com as chuvas e tem pico no outono.'},
+    {k:'cercospora', alvo:'Cercosporiose', meses:[12,1,2,3,4,5], dica:'Lavouras mal nutridas ou estressadas.'},
+    {k:'acaro', alvo:'Ácaro-vermelho', meses:[6,7,8,9], dica:'Veranicos e estiagem.'}
+  ];
+  function calHoje(){ return new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10); }
+  function calCfg(){ var c = configUnidades(); if(!c.calendarioCafe) c.calendarioCafe = {marcas:{}, desligados:{}}; if(!c.calendarioCafe.marcas) c.calendarioCafe.marcas = {}; if(!c.calendarioCafe.desligados) c.calendarioCafe.desligados = {}; return c.calendarioCafe; }
+  function calTalhoesCafe(){ return state.talhoes.filter(function(t){ var sf = insSafraAtiva(t.id); return sf && insChaveCultura(sf.culturaId) === 'cafe'; }); }
+  // janela contínua (pode virar o ano) que contém o mês; devolve {ini:'AAAA-MM-01', fim:'AAAA-MM-31', id:'AAAA-MM'}
+  function calJanela(meses, ano, mes){
+    if(meses.length >= 12) return {ini: ano + '-01-01', fim: ano + '-12-31', id: String(ano)};
+    var a = ano, m = mes, voltas = 0;
+    while(voltas < 12){ var pm = m === 1 ? 12 : m - 1, pa = m === 1 ? a - 1 : a; if(meses.indexOf(pm) === -1) break; m = pm; a = pa; voltas++; }
+    var a2 = ano, m2 = mes; voltas = 0;
+    while(voltas < 12){ var nm = m2 === 12 ? 1 : m2 + 1, na = m2 === 12 ? a2 + 1 : a2; if(meses.indexOf(nm) === -1) break; m2 = nm; a2 = na; voltas++; }
+    var ult = new Date(a2, m2, 0).getDate();
+    return {ini: a + '-' + String(m).padStart(2,'0') + '-01', fim: a2 + '-' + String(m2).padStart(2,'0') + '-' + String(ult).padStart(2,'0'), id: a + '-' + String(m).padStart(2,'0')};
+  }
+  function calPeriodo(at, hoje){
+    var ano = parseInt(hoje.slice(0,4), 10), mes = parseInt(hoje.slice(5,7), 10);
+    if(at.modo === 'mes') return {ini: hoje.slice(0,7) + '-01', fim: hoje.slice(0,7) + '-31', id: hoje.slice(0,7), rot: 'neste mês'};
+    var j = calJanela(at.meses, ano, mes); j.rot = 'nesta época'; return j;
+  }
+  // procura no sistema um registro da atividade no período (nos talhões de café)
+  function calRegistro(at, per){
+    var cafe = {}; calTalhoesCafe().forEach(function(t){ cafe[t.id] = true; });
+    var noPer = function(d){ return d && d >= per.ini && d <= per.fim; };
+    var opCafe = function(o){ if(cafe[o.talhaoId]) return true; return (o.aplicacoes || []).some(function(a){ return cafe[a.talhaoId]; }); };
+    var txtOp = function(o){ return semAcento([o.tipo, o.alvo, o.observacao].concat((o.produtos || []).map(function(p){ var pr = state.produtos.find(function(x){ return x.id === p.produtoId; }); return pr ? pr.nome + ' ' + (pr.categoria || '') : ''; })).concat(o.produtoId ? [produtoNome(o.produtoId)] : []).join(' ')); };
+    var regras = {
+      calagem: /calcar|gesso|calagem|gessagem/, poda: /poda|recepa|esqueletamento|decote/, desbrota: /desbrot/, plantio: /plantio|muda/,
+      mato: /capina|rocad|rocag|rocadeira|herbicid|mato|daninh|capim|glifosat|pre[ -]?emergente|dessecan|trapoeraba|braquiaria/,
+      adubfoliar: /foliar/, adubsolo: /adubac|adubo|formulado|ureia|cloreto|sulfato de amonio|nitrato|npk|\b\d{2}[- ]\d{2}[- ]\d{2}\b|cobertura/,
+      foliar: /analise foliar|amostra de folha/, solo: /analise de solo|amostra de solo/
+    };
+    var achou = null;
+    var guarda = function(d, onde){ if(!achou || d > achou.data) achou = {data: d, onde: onde}; };
+    if(at.k === 'solo') (state.analisesSolo || []).forEach(function(a){ var d = a.dataColeta || (a.criadoEm ? new Date(a.criadoEm).toISOString().slice(0,10) : ''); if(cafe[a.talhaoId] && noPer(d)) guarda(d, 'Análise de Solo'); });
+    if(at.k === 'colheita'){
+      (state.colheitaApanhas || []).forEach(function(a){ var sf = state.safras.find(function(s){ return s.id === a.safraId; }); if(sf && insChaveCultura(sf.culturaId) === 'cafe' && noPer(a.data)) guarda(a.data, 'Caderneta do Café'); });
+      state.producao.forEach(function(p){ if(p.tipo !== 'entrada') return; var sf = state.safras.find(function(s){ return s.id === p.safraId; }); if(sf && insChaveCultura(sf.culturaId) === 'cafe' && noPer(p.data)) guarda(p.data, 'Colheita e Vendas'); });
+    }
+    var rx = regras[at.k];
+    if(rx) state.operacoes.forEach(function(o){
+      if(!noPer(o.data) || !opCafe(o)) return;
+      var tx = txtOp(o);
+      if(at.k === 'adubsolo' && (/foliar/.test(tx) || !(/adubac/.test(semAcento(o.tipo)) || rx.test(tx)) || /pulveriz/.test(semAcento(o.tipo)))) return;
+      if(at.k === 'mato' && /capina|rocad|rocag/.test(semAcento(o.tipo))){ guarda(o.data, 'Diário de Campo'); return; }
+      if(at.k === 'plantio' && !/plantio/.test(semAcento(o.tipo))) return;
+      if(rx.test(tx)) guarda(o.data, 'Diário de Campo');
+    });
+    return achou;
+  }
+  // situação de cada atividade do mês: {at, per, reg, marca, st:'feito'|'pulado'|'pendente'}
+  function calAtividadesDoMes(hoje){
+    hoje = hoje || calHoje();
+    if(!calTalhoesCafe().length) return [];
+    var mes = parseInt(hoje.slice(5,7), 10), cfg = calCfg();
+    return CAL_CAFE.filter(function(at){ return at.meses.indexOf(mes) !== -1 && !cfg.desligados[at.k]; }).map(function(at){
+      var per = calPeriodo(at, hoje), marca = cfg.marcas[at.k + ':' + per.id] || null, reg = calRegistro(at, per);
+      return {at: at, per: per, reg: reg, marca: marca, st: reg || (marca && marca.st === 'feito') ? 'feito' : (marca && marca.st === 'pular' ? 'pulado' : 'pendente')};
+    });
+  }
+  // monitoramento: alvos da época e se houve inspeção com esse alvo nos últimos 30 dias em cada talhão de café
+  function calMonitorDoMes(hoje){
+    hoje = hoje || calHoje();
+    var tal = calTalhoesCafe(); if(!tal.length) return [];
+    var mes = parseInt(hoje.slice(5,7), 10), lim = new Date(new Date(hoje + 'T12:00:00').getTime() - 30 * 86400000).toISOString().slice(0,10);
+    return CAL_CAFE_MONITOR.filter(function(m){ return m.meses.indexOf(mes) !== -1; }).map(function(m){
+      var faltam = tal.filter(function(t){ return !(state.inspecoes || []).some(function(i){ return i.talhaoId === t.id && i.data >= lim && (i.alvos || []).some(function(a){ return a.alvo === m.alvo && a.valor !== '' && a.valor != null; }); }); });
+      return {m: m, faltam: faltam, total: tal.length};
+    });
+  }
+  function calEmEpoca(alvo, hoje){ var mes = parseInt((hoje || calHoje()).slice(5,7), 10); var m = CAL_CAFE_MONITOR.find(function(x){ return x.alvo === alvo; }); return !!(m && m.meses.indexOf(mes) !== -1); }
+  var calGradeAberta = false;
+  function calendarioCafeHtml(){
+    var tal = calTalhoesCafe(); if(!tal.length) return '';
+    var hoje = calHoje(), mes = parseInt(hoje.slice(5,7), 10), cfg = calCfg();
+    var pode = typeof podeGravarChave !== 'function' || podeGravarChave('configUnidades');
+    var ats = calAtividadesDoMes(hoje), mon = calMonitorDoMes(hoje);
+    var estB = 'font-family:inherit; font-size:11.5px; padding:3px 9px; border-radius:4px; border:1px solid var(--paper-line); background:var(--paper); color:var(--ink); cursor:pointer; white-space:nowrap;';
+    var h = '<div class="section-title">☕ Calendário do café — ' + ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][mes - 1] + '</div><div class="paper" style="padding:12px 16px; margin-bottom:14px;">';
+    h += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 8px;">Talhões de café: ' + tal.map(function(t){ return escapeHtml(t.nome); }).join(', ') + '. O sistema marca como feito sozinho quando acha o registro (Diário de Campo, Análise de Solo, Caderneta, Colheita e Vendas).</p>';
+    if(!ats.length) h += '<p style="font-size:13px;">Nenhuma atividade do calendário neste mês.</p>';
+    ats.forEach(function(x){
+      var cor = x.st === 'feito' ? 'var(--growth, #6B8E4E)' : (x.st === 'pulado' ? '#B9B49A' : '#DFA84E');
+      h += '<div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:6px 10px; margin:0 0 4px; border:1px solid var(--paper-line); border-left:4px solid ' + cor + '; border-radius:4px; background:var(--paper-2); font-size:13px;">';
+      h += '<span style="width:20px;">' + (x.st === 'feito' ? '✅' : (x.st === 'pulado' ? '➖' : '⏳')) + '</span><span style="flex:1; min-width:200px;"><b>' + escapeHtml(x.at.nome) + '</b> <span style="font-size:11.5px; color:var(--ink-soft);">· ' + (x.at.modo === 'mes' ? 'todo mês da época' : 'uma vez na época (' + x.at.meses.map(function(m){ return MESES[m-1]; }).join(', ') + ')') + ' · ' + escapeHtml(x.at.dica) + '</span>';
+      if(x.reg) h += '<br><span style="font-size:11.5px; color:var(--growth-dark, #4E6B3F);">Registrado em ' + fmtDate(x.reg.data) + ' (' + x.reg.onde + ')</span>';
+      else if(x.marca) h += '<br><span style="font-size:11.5px; color:var(--ink-soft);">' + (x.marca.st === 'feito' ? 'Marcado como feito' : 'Pulado') + ' ' + x.per.rot + ' em ' + fmtDate(x.marca.em) + '</span>';
+      h += '</span>';
+      if(pode && !x.reg){
+        if(x.st === 'pendente') h += '<button type="button" data-action="cal-marca" data-k="' + x.at.k + '" data-per="' + x.per.id + '" data-st="feito" style="' + estB + '">✓ Feito</button><button type="button" data-action="cal-marca" data-k="' + x.at.k + '" data-per="' + x.per.id + '" data-st="pular" style="' + estB + '" title="Não lembrar mais ' + x.per.rot + '">Pular ' + (x.at.modo === 'mes' ? 'este mês' : 'esta época') + '</button>';
+        else h += '<button type="button" data-action="cal-marca" data-k="' + x.at.k + '" data-per="' + x.per.id + '" data-st="" style="' + estB + '">Desfazer</button>';
+      }
+      h += '</div>';
+    });
+    if(mon.length){
+      h += '<div style="font-weight:600; font-size:13px; margin:12px 0 6px;">🔎 Monitorar nesta época (Inspeção de Campo, últimos 30 dias)</div>';
+      mon.forEach(function(x){
+        var ok = !x.faltam.length;
+        h += '<div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:6px 10px; margin:0 0 4px; border:1px solid var(--paper-line); border-left:4px solid ' + (ok ? 'var(--growth, #6B8E4E)' : '#DFA84E') + '; border-radius:4px; background:var(--paper-2); font-size:13px;">';
+        h += '<span style="width:20px;">' + (ok ? '✅' : '🔎') + '</span><span style="flex:1; min-width:200px;"><b>' + escapeHtml(x.m.alvo) + '</b> <span style="font-size:11.5px; color:var(--ink-soft);">· ' + escapeHtml(x.m.dica) + '</span><br><span style="font-size:11.5px;">' + (ok ? 'Avaliado em todos os talhões de café.' : 'Falta avaliar em: ' + x.faltam.map(function(t){ return escapeHtml(t.nome); }).join(', ')) + '</span></span>';
+        if(!ok) h += '<button type="button" data-ins-talhao="' + x.faltam[0].id + '" style="' + estB + '">Inspecionar ' + escapeHtml(x.faltam[0].nome) + ' →</button>';
+        h += '</div>';
+      });
+    }
+    // grade do ano
+    h += '<div style="margin-top:8px;"><button type="button" data-action="cal-grade" style="font-family:inherit; font-size:12px; background:none; border:none; padding:2px 0; color:var(--ink-soft); text-decoration:underline; cursor:pointer;">' + (calGradeAberta ? 'Ocultar o calendário do ano' : 'Ver o calendário do ano / ligar e desligar atividades') + '</button></div>';
+    if(calGradeAberta){
+      h += '<div class="table-wrap" style="margin-top:6px;"><table class="sem-ordenacao" style="font-size:12px;"><thead><tr><th>Atividade</th>' + MESES.map(function(m, i){ return '<th style="text-align:center; padding:4px 2px;' + (i + 1 === mes ? ' background:var(--accent); color:#fff;' : '') + '">' + m + '</th>'; }).join('') + '<th>Avisar</th></tr></thead><tbody>';
+      var linha = function(nome, meses, extra){ return '<td><b>' + escapeHtml(nome) + '</b></td>' + MESES.map(function(m, i){ var on = meses.indexOf(i + 1) !== -1; return '<td style="text-align:center; padding:3px 2px;">' + (on ? '<span style="display:inline-block; width:14px; height:14px; border-radius:3px; background:' + (i + 1 === mes ? 'var(--accent)' : '#E8B86A') + ';"></span>' : '') + '</td>'; }).join('') + '<td>' + extra + '</td>'; };
+      CAL_CAFE.forEach(function(at){ h += '<tr>' + linha(at.nome, at.meses, pode ? '<label style="font-size:12px; white-space:nowrap;"><input type="checkbox" class="cal-liga" data-k="' + at.k + '"' + (cfg.desligados[at.k] ? '' : ' checked') + '> sim</label>' : (cfg.desligados[at.k] ? 'não' : 'sim')) + '</tr>'; });
+      h += '<tr><td colspan="14" style="font-size:11.5px; font-weight:600; padding-top:8px;">Monitoramento (Inspeção de Campo)</td></tr>';
+      CAL_CAFE_MONITOR.forEach(function(m){ h += '<tr>' + linha(m.alvo, m.meses, '') + '</tr>'; });
+      h += '</tbody></table></div><p style="font-size:11px; color:var(--ink-soft); margin:6px 0 0;">Atividades: Calendário do Cafeicultor, Emater-MG (2024). As épocas de monitoramento de pragas e doenças são uma referência geral para o café no Sul/Sudeste — ajuste com o seu agrônomo. Desligue o que não se aplica (ex.: plantio de mudas, se não vai plantar).</p>';
+    }
+    return h + '</div>';
+  }
+  document.addEventListener('change', function(e){
+    var t = e.target; if(!t || !t.classList || !t.classList.contains('cal-liga')) return;
+    var cfg = calCfg(); if(t.checked) delete cfg.desligados[t.dataset.k]; else cfg.desligados[t.dataset.k] = true;
+    saveKey('configUnidades', state.configUnidades); renderInspecao(); if(typeof renderPainel === 'function') try{ renderPainel(); }catch(er){}
+  });
   function renderInspecao(){
     var el = document.getElementById('tab-inspecao'); if(!el) return;
     if(!state.talhoes.length){ el.innerHTML = '<div class="paper empty-state">Cadastre talhões para registrar inspeções.</div>'; return; }
@@ -7575,6 +7730,7 @@
     });
     var h = '<div class="stat-row">' + statCard('Talhões com lavoura', String(talAtivos.length)) + statCard('Inspecionados nos últimos 7 dias', rec + ' de ' + talAtivos.length, rec < talAtivos.length ? 'cost' : 'growth') + statCard('Talhões com alvo no nível de ação', String(alert), alert ? 'cost' : '') + statCard('Última inspeção', ins[0] ? fmtDate(ins[0].data) : '—') + '</div>';
     if(insMsg){ h += '<div class="paper note-box" style="margin:0 0 14px;">' + insMsg + '</div>'; insMsg = ''; }
+    try{ h += calendarioCafeHtml(); }catch(errCal){ console.error(errCal); }
     h += '<div class="section-title">Situação por talhão</div>';
     if(!linhas.length) h += '<div class="paper empty-state">Nenhum talhão com lavoura em andamento.</div>';
     else {
@@ -7602,7 +7758,7 @@
     h += '</div>';
     h += '<p style="font-size:12px; color:var(--ink-soft); margin:10px 0 6px;">' + (info.sf ? 'Lavoura: <b>' + escapeHtml(lavouraLabel(info.sf.lavouraId)) + '</b>. ' : 'Talhão sem lavoura em andamento. ') + 'Caminhe em zigue-zague e anote a média dos pontos. Deixe em branco o que não avaliou.</p>';
     h += '<div class="table-wrap"><table><thead><tr><th>Alvo</th><th>Como medir</th><th class="num">Resultado</th><th class="num">Nível de ação</th></tr></thead><tbody>';
-    info.alvos.forEach(function(a){ var nv = insNivel(info.cult, a); h += '<tr><td><b>' + escapeHtml(a.alvo) + '</b></td><td style="font-size:12px;">' + escapeHtml(a.medida) + '</td><td class="num"><input type="number" step="any" min="0" class="ins-valor" data-k="' + a.k + '" id="ins-v-' + a.k + '" style="width:90px; text-align:right; padding:6px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5;"></td><td class="num">' + (nv > 0 ? fmtNum(nv) : '<span style="color:var(--ink-soft);">—</span>') + '</td></tr>'; });
+    info.alvos.forEach(function(a){ var nv = insNivel(info.cult, a); h += '<tr><td><b>' + escapeHtml(a.alvo) + '</b>' + (info.cult === 'cafe' && calEmEpoca(a.alvo) ? ' <span class="badge" style="background:#DFA84E; color:#1F2410; font-size:10.5px;" title="Época de monitorar este alvo">📅 época</span>' : '') + '</td><td style="font-size:12px;">' + escapeHtml(a.medida) + '</td><td class="num"><input type="number" step="any" min="0" class="ins-valor" data-k="' + a.k + '" id="ins-v-' + a.k + '" style="width:90px; text-align:right; padding:6px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5;"></td><td class="num">' + (nv > 0 ? fmtNum(nv) : '<span style="color:var(--ink-soft);">—</span>') + '</td></tr>'; });
     h += '<tr><td><input id="ins-outro-alvo" placeholder="Outro alvo (praga, doença, daninha)" style="width:100%; padding:6px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5;"></td><td><input id="ins-outro-medida" placeholder="como mediu" style="width:100%; padding:6px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5;"></td><td class="num"><input type="number" step="any" min="0" id="ins-outro-valor" style="width:90px; text-align:right; padding:6px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5;"></td><td></td></tr>';
     h += '</tbody></table></div>';
     h += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-top:10px;">';
@@ -12398,6 +12554,12 @@
       saveKey('alertasLidos', state.alertasLidos); dashAlertasAbertos = true; renderPainel(); return;
     }
     if(action === 'toggle-alertas-lidos'){ dashAlertasLidosAbertos = !dashAlertasLidosAbertos; renderPainel(); return; }
+    if(action === 'cal-grade'){ calGradeAberta = !calGradeAberta; renderInspecao(); return; }
+    if(action === 'cal-marca'){
+      var cfgCal = calCfg(), chCal = btn.dataset.k + ':' + btn.dataset.per;
+      if(btn.dataset.st) cfgCal.marcas[chCal] = {st: btn.dataset.st, em: calHoje()}; else delete cfgCal.marcas[chCal];
+      saveKey('configUnidades', state.configUnidades); renderInspecao(); try{ renderPainel(); }catch(erCal){} return;
+    }
     if(action === 'toggle-dash-alertas'){ dashAlertasAbertos = !dashAlertasAbertos; renderPainel(); return; }
     if(action === 'chuvas-secao'){ chuvasSecao = btn.dataset.filtro || 'pluviometria'; renderChuvas(); return; }
     if(action === 'abrir-secao-agro50'){
