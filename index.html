@@ -87,6 +87,11 @@
   }
   .nav-btn:hover{background:rgba(255,255,255,0.05); color:var(--paper);}
   .nav-btn.active{background:var(--accent); color:#FFFFFF; font-weight:600;}
+  .nav-btn.nav-sub, .nav-btn.nav-oculta, .nav-btn.nav-sem-permissao{display:none !important;}
+  #sub-abas{display:flex; flex-wrap:wrap; gap:6px; margin:-8px 0 18px;}
+  #sub-abas:empty{display:none;}
+  #sub-abas button{font-family:inherit; font-size:13px; font-weight:600; padding:7px 14px; border-radius:6px; cursor:pointer; border:2px solid var(--paper-line); background:var(--paper); color:var(--ink);}
+  #sub-abas button.on{border-color:var(--accent); background:var(--accent); color:#fff;}
   .sidebar-footer{margin-top:auto; font-size:11px; color:#8A9174; line-height:1.5; padding:0 4px;}
 
   /* ---------- Main ---------- */
@@ -395,37 +400,37 @@
       <button class="nav-btn active" data-tab="painel">Dashboard</button>
       <div class="nav-group-label" data-group="safra">Safra</div>
       <button class="nav-btn" data-tab="safras">Lavouras e Safras</button>
-      <button class="nav-btn" data-tab="operacoes">Diário de Campo</button>
-      <button class="nav-btn" data-tab="inspecao">Inspeção de Campo</button>
-      <button class="nav-btn" data-tab="chuvas">Chuvas</button>
-      <button class="nav-btn" data-tab="producao">Colheita e Vendas</button>
+      <button class="nav-btn" data-tab="operacoes" data-hub="campo">Campo</button>
+      <button class="nav-btn nav-sub" data-tab="inspecao">Inspeção de Campo</button>
+      <button class="nav-btn nav-sub" data-tab="chuvas">Chuvas</button>
+      <button class="nav-btn" data-tab="producao" data-hub="colheita">Colheita e Vendas</button>
+      <button class="nav-btn nav-sub" data-tab="vendasAntecipadas">Venda Antecipada</button>
       <button class="nav-btn" data-tab="caderneta">Caderneta do Café</button>
-      <button class="nav-btn" data-tab="vendasAntecipadas">Venda Antecipada</button>
       <div class="nav-group-label" data-group="financeiro">Financeiro</div>
-      <button class="nav-btn" data-tab="financeiro">Lançamentos</button>
-      <button class="nav-btn" data-tab="contasPagar">Contas a Pagar</button>
-      <button class="nav-btn" data-tab="contasReceber">Contas a Receber</button>
+      <button class="nav-btn" data-tab="financeiro" data-hub="lancamentos">Lançamentos</button>
+      <button class="nav-btn nav-sub" data-tab="contasPagar">Contas a Pagar</button>
+      <button class="nav-btn nav-sub" data-tab="contasReceber">Contas a Receber</button>
       <button class="nav-btn" data-tab="compras">Compras e NF-e</button>
-      <button class="nav-btn" data-tab="financiamentos">Financiamentos</button>
-      <button class="nav-btn" data-tab="arrendamentos">Arrendamentos</button>
+      <button class="nav-btn" data-tab="financiamentos" data-hub="contratos">Contratos</button>
+      <button class="nav-btn nav-sub" data-tab="arrendamentos">Arrendamentos</button>
       <button class="nav-btn" data-tab="servicosPrestados">Serviços</button>
       <div class="nav-group-label" data-group="analise">Análises</div>
       <button class="nav-btn" data-tab="rentabilidade">Rentabilidade</button>
-      <button class="nav-btn" data-tab="fluxoCaixa">Fluxo de Caixa</button>
-      <button class="nav-btn" data-tab="contaCorrente">Conta-Corrente</button>
-      <button class="nav-btn" data-tab="orcamento">Orçado x Realizado</button>
-      <button class="nav-btn" data-tab="relatorios">Relatórios</button>
-      <button class="nav-btn" data-tab="indicadores">Indicadores</button>
+      <button class="nav-btn" data-tab="fluxoCaixa" data-hub="caixa">Caixa</button>
+      <button class="nav-btn nav-sub" data-tab="contaCorrente">Conta-Corrente</button>
+      <button class="nav-btn" data-tab="relatorios" data-hub="relatorios">Relatórios</button>
+      <button class="nav-btn nav-sub" data-tab="orcamento">Orçado x Realizado</button>
+      <button class="nav-btn nav-sub" data-tab="indicadores">Indicadores</button>
       <div class="nav-group-label" data-group="cadastros">Cadastros</div>
-      <button class="nav-btn" data-tab="propriedades">Propriedades</button>
-      <button class="nav-btn" data-tab="talhoes">Talhões</button>
-      <button class="nav-btn" data-tab="culturas">Culturas</button>
+      <button class="nav-btn" data-tab="propriedades" data-hub="propriedades">Propriedades e Talhões</button>
+      <button class="nav-btn nav-sub" data-tab="talhoes">Talhões</button>
       <button class="nav-btn" data-tab="produtos">Produtos e Estoque</button>
-      <button class="nav-btn" data-tab="parceiros">Parceiros</button>
-      <button class="nav-btn" data-tab="equipe">Funcionários</button>
+      <button class="nav-btn" data-tab="parceiros" data-hub="pessoas">Pessoas</button>
+      <button class="nav-btn nav-sub" data-tab="equipe">Funcionários</button>
       <button class="nav-btn" data-tab="patrimonio">Máquinas e Patrimônio</button>
       <div class="nav-group-label" data-group="ferramentas">Ferramentas</div>
-      <button class="nav-btn" data-tab="configuracoes">Configurações</button>
+      <button class="nav-btn" data-tab="configuracoes" data-hub="config">Configurações</button>
+      <button class="nav-btn nav-sub" data-tab="culturas">Culturas</button>
       <button class="nav-btn" data-tab="ajuda">❓ Ajuda</button>
     </nav>
     <div class="sidebar-footer">
@@ -448,6 +453,7 @@
       </div>
       <div id="loading-indicator">Carregando dados…</div>
     </div>
+    <div id="sub-abas"></div>
 
     <section id="tab-painel" class="tab-content"></section>
     <section id="tab-propriedades" class="tab-content hidden"></section>
@@ -1517,10 +1523,11 @@
       } else faixa.style.display = 'none';
     }
     // papel "campo": só Diário de Campo, Produtos (estoque) e Ajuda
-    var permitidasCampo = ['operacoes', 'chuvas', 'produtos', 'ajuda', 'configuracoes'];
-    document.querySelectorAll('#nav .nav-btn').forEach(function(b){ b.style.display = (pa === 'campo' && permitidasCampo.indexOf(b.dataset.tab) === -1) ? 'none' : ''; });
+    var permitidasCampo = PERMITIDAS_CAMPO;
+    document.querySelectorAll('#nav .nav-btn').forEach(function(b){ b.classList.toggle('nav-sem-permissao', pa === 'campo' && permitidasCampo.indexOf(b.dataset.tab) === -1); });
     document.querySelectorAll('#nav .nav-group-label').forEach(function(l){ l.style.visibility = pa === 'campo' ? 'hidden' : ''; });
-    if(pa === 'campo') switchTab('operacoes');
+    if(pa === 'campo') switchTab('operacoes'); else desenharSubAbas(abaAtual);
+    atualizarMenuEnxuto();
   }
   function selectWorkspace(id){
     currentWorkspaceId = id;
@@ -2487,10 +2494,49 @@
     el.innerHTML = h;
   }
   var abaAtual = 'painel';
+  // Menu enxuto: telas parentes ficam juntas num item só, com abas em cima da página
+  var NAV_HUBS = [
+    {id:'campo', tabs:[['operacoes','Diário de Campo'],['inspecao','Inspeção de Campo'],['chuvas','Chuvas']]},
+    {id:'colheita', tabs:[['producao','Colheita e Vendas'],['vendasAntecipadas','Venda Antecipada']]},
+    {id:'lancamentos', tabs:[['financeiro','Todos os lançamentos'],['contasPagar','A pagar'],['contasReceber','A receber']]},
+    {id:'contratos', tabs:[['financiamentos','Financiamentos'],['arrendamentos','Arrendamentos']]},
+    {id:'caixa', tabs:[['fluxoCaixa','Fluxo de Caixa'],['contaCorrente','Conta-Corrente']]},
+    {id:'relatorios', tabs:[['relatorios','Relatórios'],['orcamento','Orçado x Realizado'],['indicadores','Indicadores']]},
+    {id:'propriedades', tabs:[['propriedades','Propriedades'],['talhoes','Talhões']]},
+    {id:'pessoas', tabs:[['parceiros','Parceiros'],['equipe','Funcionários']]},
+    {id:'config', tabs:[['configuracoes','Configurações'],['culturas','Culturas']]}
+  ];
+  var PERMITIDAS_CAMPO = ['operacoes', 'inspecao', 'chuvas', 'caderneta', 'produtos', 'ajuda', 'configuracoes'];
+  function abaPermitida(tab){ return !(typeof papelAtual === 'function' && papelAtual() === 'campo' && PERMITIDAS_CAMPO.indexOf(tab) === -1); }
+  function hubDaAba(tab){ return NAV_HUBS.find(function(h){ return h.tabs.some(function(t){ return t[0] === tab; }); }) || null; }
+  var hubUltimaAba = {};
+  function desenharSubAbas(tab){
+    var box = document.getElementById('sub-abas'); if(!box) return;
+    var hub = hubDaAba(tab), abas = hub ? hub.tabs.filter(function(t){ return abaPermitida(t[0]); }) : [];
+    if(abas.length < 2){ box.innerHTML = ''; return; }
+    box.innerHTML = abas.map(function(t){ return '<button type="button" data-subaba="' + t[0] + '" class="' + (t[0] === tab ? 'on' : '') + '">' + t[1] + '</button>'; }).join('');
+  }
+  document.addEventListener('click', function(e){
+    var b = e.target.closest && e.target.closest('#sub-abas [data-subaba]'); if(!b) return;
+    switchTab(b.dataset.subaba); window.scrollTo(0, 0);
+  });
+  var MENU_OCULTAS_KEY = 'fazenda-menu-ocultas';
+  function menuOcultas(){ try{ var r = window.localStorage.getItem(MENU_OCULTAS_KEY); return r ? JSON.parse(r) : []; }catch(e){ return []; } }
+  function temCafe(){ return state.culturas.some(function(c){ return /caf/.test(semAcento(c.nome)) && state.safras.some(function(s){ return s.culturaId === c.id; }); }); }
+  function atualizarMenuEnxuto(){
+    var oc = menuOcultas(), cafe = true; try{ cafe = temCafe(); }catch(e){}
+    document.querySelectorAll('#nav .nav-btn').forEach(function(b){
+      var t = b.dataset.tab, esconder = t !== 'painel' && t !== 'configuracoes' && t !== 'ajuda' && oc.indexOf(t) !== -1;
+      if(t === 'caderneta' && !cafe) esconder = true;
+      b.classList.toggle('nav-oculta', esconder);
+    });
+  }
   function switchTab(tab){
     abaAtual = tab;
+    var hubSw = hubDaAba(tab); if(hubSw) hubUltimaAba[hubSw.id] = tab;
     var bAj = document.getElementById('btn-ajuda-tela'); if(bAj) bAj.style.display = (tab === 'ajuda') ? 'none' : '';
-    document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.tab === tab); });
+    document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.tab === tab || (!!hubSw && b.dataset.hub === hubSw.id)); });
+    desenharSubAbas(tab);
     document.querySelectorAll('.tab-content').forEach(function(sec){ sec.classList.toggle('hidden', sec.id !== 'tab-' + tab); });
     document.getElementById('page-title').textContent = pageMeta[tab].title;
     document.getElementById('page-subtitle').textContent = pageMeta[tab].subtitle;
@@ -2539,6 +2585,7 @@
     safeRender('relatorios', renderRelatorios);
     safeRender('indicadores', renderIndicadores);
     safeRender('configuracoes', renderConfiguracoes);
+    try{ atualizarMenuEnxuto(); }catch(eMenu){}
   }
 
   function statCard(label, value, valueClass){
@@ -2607,7 +2654,12 @@
       var limIns = new Date(new Date(hoje + 'T12:00:00').getTime() - 15 * 86400000).toISOString().slice(0,10), lim30 = new Date(new Date(hoje + 'T12:00:00').getTime() - 30 * 86400000).toISOString().slice(0,10);
       var talLav = state.talhoes.filter(function(t){ var sfL = insSafraAtiva(t.id); return sfL && sfL.status !== 'planejada'; });
       var ultIns = function(t){ return (state.inspecoes || []).filter(function(i){ return i.talhaoId === t.id; }).sort(function(a, b){ return (b.data || '').localeCompare(a.data || '') || (b.criadoEm || 0) - (a.criadoEm || 0); })[0]; };
-      var semIns = talLav.filter(function(t){ var u = ultIns(t); return !u || u.data < limIns; });
+      var lavF = lavourasEmFase(hoje), critAtr = lavF.filter(function(x){ return x.atrasada; }), critIds = {};
+      critAtr.forEach(function(x){ critIds[x.t.id] = true; });
+      add(critAtr.length, '🌱', 'lavoura(s) de soja/milho em fase crítica sem inspeção há mais de 7 dias: ' + critAtr.map(function(x){ return x.t.nome + ' (' + x.fs.def.nome + ', ' + x.fs.dap + ' dias — ' + x.fs.fase.nome + ')'; }).join('; '), 'inspecao', '', true);
+      var tfPend = []; lavF.forEach(function(x){ x.tarefas.forEach(function(tk){ if(tk.st === 'pendente') tfPend.push(tk.tf.nome + ' — ' + x.t.nome); }); });
+      add(tfPend.length, '📌', 'tarefa(s) da fase da lavoura: ' + tfPend.join('; '), 'inspecao');
+      var semIns = talLav.filter(function(t){ var u = ultIns(t); return !critIds[t.id] && (!u || u.data < limIns); });
       add(semIns.length, '🌿', 'talhão(ões) com lavoura sem inspeção há mais de 15 dias: ' + semIns.slice(0, 5).map(function(t){ return t.nome; }).join(', ') + (semIns.length > 5 ? '…' : ''), 'inspecao');
       var noNivel = talLav.filter(function(t){ var u = ultIns(t); return u && u.data >= lim30 && (u.alvos || []).some(function(a){ return a.nivel > 0 && Number(a.valor) >= a.nivel; }); });
       add(noNivel.length, '🐛', 'talhão(ões) com praga/doença no nível de ação na última inspeção: ' + noNivel.map(function(t){ var u = ultIns(t); return t.nome + ' (' + (u.alvos || []).filter(function(a){ return a.nivel > 0 && Number(a.valor) >= a.nivel; }).map(function(a){ return a.alvo; }).join(', ') + ')'; }).join('; '), 'inspecao', '', true);
@@ -7549,15 +7601,23 @@
       {k:'cigarra', alvo:'Cigarra-do-cafeeiro', medida:'ninfas por planta (cavar sob a saia)', nivel:0}
     ],
     soja: [
+      {k:'estande', alvo:'Estande', medida:'plantas por metro de linha', nivel:0},
+      {k:'elasmo', alvo:'Lagarta-elasmo', medida:'% de plantas cortadas/atacadas', nivel:0},
       {k:'lagartas', alvo:'Lagartas desfolhadoras', medida:'lagartas grandes por metro (pano)', nivel:20},
       {k:'percevejos', alvo:'Percevejos', medida:'percevejos por metro (pano)', nivel:2},
       {k:'desfolha', alvo:'Desfolha', medida:'% de desfolha', nivel:30},
-      {k:'ferrugem', alvo:'Ferrugem-asiática', medida:'% de folíolos com sintoma', nivel:0}
+      {k:'ferrugem', alvo:'Ferrugem-asiática', medida:'% de folíolos com sintoma', nivel:0},
+      {k:'moscabranca', alvo:'Mosca-branca', medida:'ninfas por folíolo', nivel:0},
+      {k:'dfc', alvo:'Doenças de final de ciclo', medida:'% de folhas com sintoma', nivel:0}
     ],
     milho: [
+      {k:'estande', alvo:'Estande', medida:'plantas por metro de linha', nivel:0},
+      {k:'elasmo', alvo:'Lagarta-elasmo', medida:'% de plantas cortadas/atacadas', nivel:0},
       {k:'cartucho', alvo:'Lagarta-do-cartucho', medida:'% de plantas com folhas raspadas', nivel:20},
       {k:'cigarrinha', alvo:'Cigarrinha-do-milho', medida:'cigarrinhas por planta', nivel:0},
-      {k:'percevejo', alvo:'Percevejo barriga-verde', medida:'percevejos por m²', nivel:0}
+      {k:'percevejo', alvo:'Percevejo barriga-verde', medida:'percevejos por m²', nivel:0},
+      {k:'espiga', alvo:'Lagarta-da-espiga', medida:'% de espigas atacadas', nivel:0},
+      {k:'foliares', alvo:'Doenças foliares', medida:'% da folha da espiga com lesões', nivel:0}
     ]
   };
   function insChaveCultura(culturaId){ var n = semAcento(culturaNome(culturaId)); return /caf/.test(n) ? 'cafe' : (/soja/.test(n) ? 'soja' : (/milho/.test(n) ? 'milho' : '')); }
@@ -7670,6 +7730,111 @@
     });
   }
   function calEmEpoca(alvo, hoje){ var mes = parseInt((hoje || calHoje()).slice(5,7), 10); var m = CAL_CAFE_MONITOR.find(function(x){ return x.alvo === alvo; }); return !!(m && m.meses.indexOf(mes) !== -1); }
+  /* ===== Soja e milho: fases pelos dias após o plantio (referência geral Embrapa/MIP; ajuste com o agrônomo) ===== */
+  // limites em dias para o ciclo padrão; se a safra tiver plantio e previsão de colheita, as fases se ajustam ao ciclo real
+  var FASES_LAVOURA = {
+    soja: {ciclo:120, nome:'Soja', fases:[
+      {ate:15, nome:'Emergência (VE–V2)', critica:true, alvos:['estande','elasmo','lagartas'], dica:'Conferir estande e falhas; lagarta-elasmo, corós e tamanduá cortam plântulas.'},
+      {ate:40, nome:'Vegetativo (V3–V8)', alvos:['lagartas','desfolha'], dica:'Lagartas desfolhadoras, vaquinha e tripes; controle do mato.'},
+      {ate:65, nome:'Floração (R1–R2)', critica:true, alvos:['lagartas','moscabranca','ferrugem','desfolha'], dica:'Helicoverpa e falsa-medideira; mosca-branca; ferrugem-asiática começa no fechamento das linhas.'},
+      {ate:100, nome:'Vagem e enchimento (R3–R6)', critica:true, alvos:['percevejos','ferrugem','dfc','desfolha'], dica:'Fase mais crítica para percevejos; ferrugem e doenças de final de ciclo.'},
+      {ate:9999, nome:'Maturação (R7–R8)', alvos:['percevejos'], dica:'Dessecação (se usar) e colheita.'}
+    ], tarefas:[
+      {k:'pos', nome:'Herbicida pós-emergente', de:15, ate:35, rx:/herbicid|pos[ -]?emerg|glifos|cletodim|haloxif|fomesaf|clorimur|mato|daninh/, dica:'Mato pequeno, antes de fechar as linhas.'},
+      {k:'dessec', nome:'Dessecação / colheita', de:100, ate:130, rx:/dessec|paraquat|diquat|glufosin|saflufen|colheita/, dica:'Com os grãos maduros (R7).'}
+    ]},
+    milho: {ciclo:130, nome:'Milho', fases:[
+      {ate:20, nome:'Emergência (VE–V4)', critica:true, alvos:['estande','cigarrinha','percevejo','elasmo'], dica:'Estande; cigarrinha (enfezamento) e percevejo barriga-verde são críticos agora.'},
+      {ate:60, nome:'Vegetativo (V4–VT)', critica:true, alvos:['cartucho','cigarrinha','percevejo'], dica:'Pico da lagarta-do-cartucho; cigarrinha até V8 (~35 dias).'},
+      {ate:90, nome:'Pendoamento e espiga (VT–R2)', alvos:['foliares','espiga','cartucho'], dica:'Doenças foliares (cercosporiose, mancha-branca, ferrugem) e lagarta-da-espiga.'},
+      {ate:9999, nome:'Enchimento e maturação (R3–R6)', alvos:['foliares'], dica:'Acompanhar umidade do grão e programar a colheita.'}
+    ], tarefas:[
+      {k:'cobertura', nome:'Adubação de cobertura (N)', de:20, ate:35, rx:/ureia|nitrato|sulfato de amonio|cobertura|nitrogen|\b\d{2}[- ]00[- ]\d{2}\b/, dica:'V4–V6, com o solo úmido.'},
+      {k:'pos', nome:'Herbicida pós-emergente', de:15, ate:35, rx:/herbicid|pos[ -]?emerg|atrazin|tembotri|nicosulfur|mesotri|glifos|mato|daninh/, dica:'Antes de V6.'}
+    ]}
+  };
+  function insFaseSafra(sf, hoje){
+    if(!sf) return null;
+    var cult = insChaveCultura(sf.culturaId), def = FASES_LAVOURA[cult]; if(!def) return null;
+    hoje = hoje || calHoje();
+    if(!sf.dataPlantio) return {cult: cult, def: def, semPlantio: true};
+    var dap = Math.round((new Date(hoje + 'T12:00:00') - new Date(sf.dataPlantio + 'T12:00:00')) / 86400000);
+    if(dap < 0) return {cult: cult, def: def, futuro: true, dap: dap};
+    var ciclo = def.ciclo;
+    if(sf.previsaoColheita){ var c = Math.round((new Date(sf.previsaoColheita + 'T12:00:00') - new Date(sf.dataPlantio + 'T12:00:00')) / 86400000); if(c >= 70 && c <= 200) ciclo = c; }
+    var esc = ciclo / def.ciclo, i = 0;
+    while(i < def.fases.length - 1 && dap > Math.round(def.fases[i].ate * esc)) i++;
+    var f = def.fases[i];
+    return {cult: cult, def: def, dap: dap, ciclo: ciclo, esc: esc, fase: f, idx: i, passou: dap > ciclo + 20};
+  }
+  function insAlvoNaEpoca(info, a){
+    if(info.cult === 'cafe') return calEmEpoca(a.alvo);
+    var fs = insFaseSafra(info.sf); return !!(fs && fs.fase && fs.fase.alvos.indexOf(a.k) !== -1);
+  }
+  // lavouras anuais (soja/milho) com a fase atual, tarefas da fase e situação da inspeção
+  function lavourasEmFase(hoje){
+    hoje = hoje || calHoje();
+    var cfg = calCfg(), out = [];
+    state.talhoes.forEach(function(t){
+      var sf = insSafraAtiva(t.id); if(!sf) return;
+      var fs = insFaseSafra(sf, hoje); if(!fs) return;
+      var ult = (state.inspecoes || []).filter(function(i){ return i.talhaoId === t.id; }).sort(function(a, b){ return (b.data || '').localeCompare(a.data || '') || (b.criadoEm || 0) - (a.criadoEm || 0); })[0] || null;
+      var diasIns = ult ? Math.round((new Date(hoje + 'T12:00:00') - new Date(ult.data + 'T12:00:00')) / 86400000) : null;
+      var tarefas = [];
+      if(fs.fase && !fs.passou) fs.def.tarefas.forEach(function(tf){
+        var de = Math.round(tf.de * fs.esc), ate = Math.round(tf.ate * fs.esc);
+        if(fs.dap < de || fs.dap > ate + 10) return;
+        var ini = new Date(new Date(sf.dataPlantio + 'T12:00:00').getTime() + Math.max(de - 10, 0) * 86400000).toISOString().slice(0,10);
+        var reg = null;
+        state.operacoes.forEach(function(o){
+          if(!o.data || o.data < ini || o.data > hoje) return;
+          var noTal = o.talhaoId === t.id || o.safraId === sf.id || (o.aplicacoes || []).some(function(a){ return a.talhaoId === t.id || a.safraId === sf.id; });
+          if(!noTal) return;
+          var tx = semAcento([o.tipo, o.alvo, o.observacao].concat((o.produtos || []).map(function(p){ var pr = state.produtos.find(function(x){ return x.id === p.produtoId; }); return pr ? pr.nome + ' ' + (pr.categoria || '') : ''; })).concat(o.produtoId ? [produtoNome(o.produtoId)] : []).join(' '));
+          if(tf.rx.test(tx) && (!reg || o.data > reg.data)) reg = {data: o.data};
+        });
+        if(tf.k === 'dessec') state.producao.forEach(function(p){ if(p.tipo === 'entrada' && p.safraId === sf.id && p.data >= ini && (!reg || p.data > reg.data)) reg = {data: p.data}; });
+        var marca = cfg.marcas['tf:' + sf.id + ':' + tf.k] || null;
+        tarefas.push({tf: tf, de: de, ate: ate, reg: reg, marca: marca, st: reg || (marca && marca.st === 'feito') ? 'feito' : (marca && marca.st === 'pular' ? 'pulado' : 'pendente')});
+      });
+      out.push({t: t, sf: sf, fs: fs, ult: ult, diasIns: diasIns, tarefas: tarefas, atrasada: !!(fs.fase && !fs.passou && fs.fase.critica && (diasIns === null || diasIns > 7))});
+    });
+    return out;
+  }
+  function lavourasFaseHtml(){
+    var ls = lavourasEmFase(); if(!ls.length) return '';
+    var hoje = calHoje(), pode = typeof podeGravarChave !== 'function' || podeGravarChave('configUnidades');
+    var estB = 'font-family:inherit; font-size:11.5px; padding:3px 9px; border-radius:4px; border:1px solid var(--paper-line); background:var(--paper); color:var(--ink); cursor:pointer; white-space:nowrap;';
+    var nomesAlvo = function(cult, ks){ return ks.map(function(k){ var a = (INS_ALVOS[cult] || []).find(function(x){ return x.k === k; }); return a ? a.alvo : k; }); };
+    var h = '<div class="section-title">🌱 Soja e milho — fase de cada lavoura</div><div class="paper" style="padding:12px 16px; margin-bottom:14px;">';
+    h += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 8px;">A fase é contada pelos dias desde o plantio. Se a safra tiver previsão de colheita, as fases se ajustam ao ciclo da cultivar. Nas fases críticas, o ideal é inspecionar toda semana.</p>';
+    ls.forEach(function(x){
+      var fs = x.fs, cor = '#B9B49A', corpo = '';
+      if(fs.semPlantio && x.sf.status === 'planejada'){ corpo = 'Planejada. Quando plantar, informe a data de plantio em Lavouras e Safras para o sistema acompanhar as fases.'; }
+      else if(fs.semPlantio){ corpo = '<span style="color:var(--cost-dark);">Sem data de plantio — informe em Lavouras e Safras para o sistema saber a fase.</span>'; cor = '#DFA84E'; }
+      else if(fs.futuro){ corpo = 'Plantio previsto para ' + fmtDate(x.sf.dataPlantio) + ' (daqui a ' + (-fs.dap) + ' dias).'; }
+      else if(fs.passou){ corpo = fs.dap + ' dias desde o plantio — já passou do ciclo (' + fs.ciclo + ' dias). Se já colheu, marque a safra como colhida.'; }
+      else {
+        cor = fs.fase.critica ? (x.atrasada ? 'var(--cost, #A23E2E)' : '#DFA84E') : 'var(--growth, #6B8E4E)';
+        corpo = '<b>' + fs.dap + ' dias</b> · ' + escapeHtml(fs.fase.nome) + (fs.fase.critica ? ' <span class="badge" style="background:#DFA84E; color:#1F2410; font-size:10.5px;">fase crítica</span>' : '') + (fs.ciclo !== fs.def.ciclo ? ' <span style="font-size:11px; color:var(--ink-soft);">(ciclo de ' + fs.ciclo + ' dias)</span>' : '');
+        corpo += '<br><span style="font-size:12px;">🔎 Monitorar: <b>' + nomesAlvo(fs.cult, fs.fase.alvos).map(escapeHtml).join(', ') + '</b> — ' + escapeHtml(fs.fase.dica) + '</span>';
+        corpo += '<br><span style="font-size:11.5px; color:' + (x.atrasada ? 'var(--cost-dark)' : 'var(--ink-soft)') + ';">Última inspeção: ' + (x.ult ? fmtDate(x.ult.data) + ' (' + x.diasIns + ' dias)' : 'nunca') + (x.atrasada ? ' — inspecionar esta semana' : '') + '</span>';
+      }
+      h += '<div style="display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap; padding:7px 10px; margin:0 0 5px; border:1px solid var(--paper-line); border-left:4px solid ' + cor + '; border-radius:4px; background:var(--paper-2); font-size:13px;">';
+      h += '<span style="min-width:150px;"><b>' + escapeHtml(x.t.nome) + '</b><br><span style="font-size:11.5px; color:var(--ink-soft);">' + escapeHtml(fs.def.nome) + (x.sf.dataPlantio ? ' · plantio ' + fmtDate(x.sf.dataPlantio) : '') + '</span></span>';
+      h += '<span style="flex:1; min-width:220px;">' + corpo;
+      x.tarefas.forEach(function(tk){
+        h += '<div style="margin-top:5px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:12px;"><span>' + (tk.st === 'feito' ? '✅' : (tk.st === 'pulado' ? '➖' : '📌')) + ' <b>' + escapeHtml(tk.tf.nome) + '</b> <span style="color:var(--ink-soft);">(' + tk.de + '–' + tk.ate + ' dias · ' + escapeHtml(tk.tf.dica) + ')' + (tk.reg ? ' · registrado em ' + fmtDate(tk.reg.data) : '') + '</span></span>';
+        if(pode && !tk.reg) h += tk.st === 'pendente' ? '<button type="button" data-action="cal-marca" data-k="tf" data-per="' + x.sf.id + ':' + tk.tf.k + '" data-st="feito" style="' + estB + '">✓ Feito</button><button type="button" data-action="cal-marca" data-k="tf" data-per="' + x.sf.id + ':' + tk.tf.k + '" data-st="pular" style="' + estB + '">Pular</button>' : '<button type="button" data-action="cal-marca" data-k="tf" data-per="' + x.sf.id + ':' + tk.tf.k + '" data-st="" style="' + estB + '">Desfazer</button>';
+        h += '</div>';
+      });
+      h += '</span>';
+      if(!fs.semPlantio && !fs.futuro && !fs.passou) h += '<button type="button" data-ins-talhao="' + x.t.id + '" style="' + estB + '">Inspecionar →</button>';
+      else if(fs.semPlantio) h += '<button type="button" data-action="ir-pendencia" data-tab="safras" data-filtro="" style="' + estB + '">Informar plantio →</button>';
+      h += '</div>';
+    });
+    return h + '<p style="font-size:11px; color:var(--ink-soft); margin:6px 0 0;">Fases e alvos: referência geral (Embrapa / manejo integrado de pragas). Ajuste os níveis de ação com o seu agrônomo.</p></div>';
+  }
   var calGradeAberta = false;
   function calendarioCafeHtml(){
     var tal = calTalhoesCafe(); if(!tal.length) return '';
@@ -7742,6 +7907,7 @@
     var h = '<div class="stat-row">' + statCard('Talhões com lavoura', String(talAtivos.length)) + statCard('Inspecionados nos últimos 7 dias', rec + ' de ' + talAtivos.length, rec < talAtivos.length ? 'cost' : 'growth') + statCard('Talhões com alvo no nível de ação', String(alert), alert ? 'cost' : '') + statCard('Última inspeção', ins[0] ? fmtDate(ins[0].data) : '—') + '</div>';
     if(insMsg){ h += '<div class="paper note-box" style="margin:0 0 14px;">' + insMsg + '</div>'; insMsg = ''; }
     try{ h += calendarioCafeHtml(); }catch(errCal){ console.error(errCal); }
+    try{ h += lavourasFaseHtml(); }catch(errFase){ console.error(errFase); }
     h += '<div class="section-title">Situação por talhão</div>';
     if(!linhas.length) h += '<div class="paper empty-state">Nenhum talhão com lavoura em andamento.</div>';
     else {
@@ -7769,7 +7935,7 @@
     h += '</div>';
     h += '<p style="font-size:12px; color:var(--ink-soft); margin:10px 0 6px;">' + (info.sf ? 'Lavoura: <b>' + escapeHtml(lavouraLabel(info.sf.lavouraId)) + '</b>. ' : 'Talhão sem lavoura em andamento. ') + 'Caminhe em zigue-zague e anote a média dos pontos. Deixe em branco o que não avaliou.</p>';
     h += '<div class="table-wrap"><table><thead><tr><th>Alvo</th><th>Como medir</th><th class="num">Resultado</th><th class="num">Nível de ação</th></tr></thead><tbody>';
-    info.alvos.forEach(function(a){ var nv = insNivel(info.cult, a); h += '<tr><td><b>' + escapeHtml(a.alvo) + '</b>' + (info.cult === 'cafe' && calEmEpoca(a.alvo) ? ' <span class="badge" style="background:#DFA84E; color:#1F2410; font-size:10.5px;" title="Época de monitorar este alvo">📅 época</span>' : '') + '</td><td style="font-size:12px;">' + escapeHtml(a.medida) + '</td><td class="num"><input type="number" step="any" min="0" class="ins-valor" data-k="' + a.k + '" id="ins-v-' + a.k + '" style="width:90px; text-align:right; padding:6px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5;"></td><td class="num">' + (nv > 0 ? fmtNum(nv) : '<span style="color:var(--ink-soft);">—</span>') + '</td></tr>'; });
+    info.alvos.forEach(function(a){ var nv = insNivel(info.cult, a); h += '<tr><td><b>' + escapeHtml(a.alvo) + '</b>' + (insAlvoNaEpoca(info, a) ? ' <span class="badge" style="background:#DFA84E; color:#1F2410; font-size:10.5px;" title="Época / fase de monitorar este alvo">📅 ' + (info.cult === 'cafe' ? 'época' : 'fase') + '</span>' : '') + '</td><td style="font-size:12px;">' + escapeHtml(a.medida) + '</td><td class="num"><input type="number" step="any" min="0" class="ins-valor" data-k="' + a.k + '" id="ins-v-' + a.k + '" style="width:90px; text-align:right; padding:6px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5;"></td><td class="num">' + (nv > 0 ? fmtNum(nv) : '<span style="color:var(--ink-soft);">—</span>') + '</td></tr>'; });
     h += '<tr><td><input id="ins-outro-alvo" placeholder="Outro alvo (praga, doença, daninha)" style="width:100%; padding:6px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5;"></td><td><input id="ins-outro-medida" placeholder="como mediu" style="width:100%; padding:6px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5;"></td><td class="num"><input type="number" step="any" min="0" id="ins-outro-valor" style="width:90px; text-align:right; padding:6px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5;"></td><td></td></tr>';
     h += '</tbody></table></div>';
     h += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-top:10px;">';
@@ -10090,6 +10256,16 @@
     html += '<button type="button" class="btn" data-action="switch-workspace">Trocar propriedade</button>';
     html += '</div>';
 
+    html += '<div class="section-title">Menu lateral</div><div class="paper form-card">';
+    html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 10px;">Desmarque as telas que você não usa para elas saírem do menu (vale para este aparelho). Elas continuam funcionando pelos avisos do Dashboard e pela busca. A Caderneta do Café só aparece quando há safra de café.</p>';
+    var ocM = menuOcultas();
+    html += '<div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:6px 14px;">';
+    document.querySelectorAll('#nav .nav-btn').forEach(function(b){
+      var t = b.dataset.tab; if(b.classList.contains('nav-sub') || t === 'painel' || t === 'configuracoes' || t === 'ajuda' || !abaPermitida(t)) return;
+      html += '<label style="font-size:13px; display:flex; gap:6px; align-items:center;"><input type="checkbox" class="menu-mostrar" data-tab="' + t + '"' + (ocM.indexOf(t) === -1 ? ' checked' : '') + '> ' + escapeHtml(b.textContent) + '</label>';
+    });
+    html += '</div></div>';
+
     el.innerHTML = html;
     verificarStatusCertificado();
   }
@@ -10197,7 +10373,11 @@
     }
   }
   function initNavGroups(){
-    var collapsed = getCollapsedGroups();
+    var collapsed = getCollapsedGroups(), labels = Array.prototype.slice.call(document.querySelectorAll('.nav-group-label'));
+    // um grupo aberto por vez: mantém só o primeiro que estava aberto
+    var aberto = labels.find(function(l){ return collapsed.indexOf(l.dataset.group) === -1; });
+    collapsed = labels.filter(function(l){ return l !== aberto; }).map(function(l){ return l.dataset.group; });
+    saveCollapsedGroups(collapsed);
     document.querySelectorAll('.nav-group-label').forEach(function(label){
       setGroupCollapsed(label, collapsed.indexOf(label.dataset.group) !== -1);
     });
@@ -10209,7 +10389,8 @@
     while(prev && !prev.classList.contains('nav-group-label')) prev = prev.previousElementSibling;
     if(prev && prev.classList.contains('collapsed')){
       setGroupCollapsed(prev, false);
-      var collapsed = getCollapsedGroups().filter(function(g){ return g !== prev.dataset.group; });
+      var collapsed = [];
+      document.querySelectorAll('.nav-group-label').forEach(function(o){ if(o !== prev){ setGroupCollapsed(o, true); collapsed.push(o.dataset.group); } });
       saveCollapsedGroups(collapsed);
     }
   }
@@ -10222,14 +10403,22 @@
       setGroupCollapsed(label, isCollapsed);
       var collapsed = getCollapsedGroups().filter(function(g){ return g !== label.dataset.group; });
       if(isCollapsed) collapsed.push(label.dataset.group);
+      else document.querySelectorAll('.nav-group-label').forEach(function(o){ if(o !== label){ setGroupCollapsed(o, true); if(collapsed.indexOf(o.dataset.group) === -1) collapsed.push(o.dataset.group); } });
       saveCollapsedGroups(collapsed);
       return;
     }
     var btn = e.target.closest('.nav-btn');
     if(!btn) return;
+    if(btn.dataset.hub && hubUltimaAba[btn.dataset.hub] && abaPermitida(hubUltimaAba[btn.dataset.hub])){ switchTab(hubUltimaAba[btn.dataset.hub]); return; }
     switchTab(btn.dataset.tab);
   });
 
+  document.addEventListener('change', function(e){
+    var t = e.target; if(!t || !t.classList || !t.classList.contains('menu-mostrar')) return;
+    var oc = menuOcultas().filter(function(x){ return x !== t.dataset.tab; }); if(!t.checked) oc.push(t.dataset.tab);
+    try{ window.localStorage.setItem(MENU_OCULTAS_KEY, JSON.stringify(oc)); }catch(er){}
+    atualizarMenuEnxuto();
+  });
   document.addEventListener('input', function(e){
     if(e.target && e.target.closest && e.target.closest('#form-operacao') && (e.target.name === 'tanqueLitros' || e.target.name === 'volumeCalda')) atualizarCalcTanque();
   });
