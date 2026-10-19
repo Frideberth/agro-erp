@@ -141,6 +141,10 @@
   .plot.status-planejada{background-color:#C9C3A4;}
   .plot.status-colhida{background-color:#7FA36D;}
   .plot.status-none{background-color:#DCD2AE; opacity:.75;}
+  .plot.plot-croqui{background-color:var(--paper-2, #EEEEDF) !important; background-image:none; opacity:1;}
+  .plot.plot-croqui svg.croqui{position:absolute; inset:6px; width:calc(100% - 12px); height:calc(100% - 12px); pointer-events:none;}
+  .plot.plot-croqui > div, .plot.plot-croqui .plot-cta{position:relative; z-index:1;}
+  .plot.plot-croqui .plot-name, .plot.plot-croqui .plot-area, .plot.plot-croqui .plot-crop{text-shadow:0 0 3px #F5F5EA, 0 0 3px #F5F5EA, 0 0 2px #F5F5EA;}
   .plot .plot-name{font-family:'Zilla Slab', serif; font-weight:600; font-size:14px;}
   .plot .plot-area{font-family:'JetBrains Mono', monospace; font-size:11px; opacity:.85;}
   .plot .plot-crop{font-size:12px; font-weight:600;}
@@ -1942,7 +1946,13 @@
   function safraAtualDoTalhao(talhaoId){
     var list = state.safras.filter(function(s){ return s.talhaoId === talhaoId; });
     if(!list.length) return null;
-    list.sort(function(a,b){ return (b.criadoEm||0) - (a.criadoEm||0); });
+    // a mais recente pelo ano agrícola; no mesmo ano, a em andamento vem antes da planejada e da colhida
+    var ordemSt = {andamento:0, planejada:1, colhida:2};
+    list.sort(function(a,b){
+      return (b.anoAgricola || '').localeCompare(a.anoAgricola || '')
+        || ((ordemSt[a.status] !== undefined ? ordemSt[a.status] : 3) - (ordemSt[b.status] !== undefined ? ordemSt[b.status] : 3))
+        || (b.criadoEm||0) - (a.criadoEm||0);
+    });
     return list[0];
   }
   function ultimaAnaliseSoloDoTalhao(talhaoId){
@@ -2864,12 +2874,27 @@
     if(!state.talhoes.length){
       html += '<div class="paper empty-state">Nenhum talhão cadastrado ainda. Vá até a aba <strong>Talhões</strong> para mapear a primeira área da propriedade.</div>';
     } else {
+      var COR_STATUS_CROQUI = {andamento:'#DFA84E', planejada:'#C9C3A4', colhida:'#7FA36D'};
+      // desenho do contorno do talhão (croqui), na escala do próprio talhão
+      var croquiSvg = function(cont, cor, id){
+        if(!Array.isArray(cont) || cont.length < 3) return '';
+        var lat0 = cont.reduce(function(s, p){ return s + Number(p[0]); }, 0) / cont.length, k = Math.cos(lat0 * Math.PI / 180);
+        var pts = cont.map(function(p){ return [Number(p[1]) * k, -Number(p[0])]; });
+        var xs = pts.map(function(p){ return p[0]; }), ys = pts.map(function(p){ return p[1]; });
+        var x0 = Math.min.apply(null, xs), y0 = Math.min.apply(null, ys), w = Math.max.apply(null, xs) - x0, h = Math.max.apply(null, ys) - y0;
+        if(!(w > 0) || !(h > 0)) return '';
+        var esc = 100 / Math.max(w, h), W = w * esc, H = h * esc;
+        var d = pts.map(function(p, i){ return (i ? 'L' : 'M') + ((p[0] - x0) * esc).toFixed(2) + ' ' + ((p[1] - y0) * esc).toFixed(2); }).join(' ') + ' Z';
+        var pid = 'cq' + String(id).replace(/[^a-zA-Z0-9]/g, '');
+        return '<svg class="croqui" viewBox="-4 -4 ' + (W + 8).toFixed(2) + ' ' + (H + 8).toFixed(2) + '" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><defs><pattern id="' + pid + '" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(100)"><rect width="5" height="5" fill="' + cor + '"/><rect width="1" height="5" fill="rgba(0,0,0,0.10)"/></pattern></defs><path d="' + d + '" fill="url(#' + pid + ')" stroke="rgba(40,30,10,0.55)" stroke-width="1.2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>';
+      };
       html += '<div class="plot-map">';
       state.talhoes.forEach(function(t){
         var safra = safraAtualDoTalhao(t.id);
         var statusClass = safra ? 'status-' + safra.status : 'status-none';
         var statusLabel = safra ? STATUS_LABEL[safra.status] : 'Sem safra';
-        html += '<button type="button" class="plot ' + statusClass + '" data-talhao-id="' + t.id + '" title="Registrar atividade no talhão ' + escapeHtml(t.nome) + '">';
+        var cq = croquiSvg(t.contorno, safra ? (COR_STATUS_CROQUI[safra.status] || '#DCD2AE') : '#DCD2AE', t.id);
+        html += '<button type="button" class="plot ' + statusClass + (cq ? ' plot-croqui' : '') + '" data-talhao-id="' + t.id + '" title="Registrar atividade no talhão ' + escapeHtml(t.nome) + '">' + cq;
         html += '<div><div class="plot-name">' + escapeHtml(t.nome) + '</div><div class="plot-area">' + fmtHa(t.area) + '</div></div>';
         html += '<div><div class="plot-crop">' + (safra ? escapeHtml(culturaNome(safra.culturaId)) : '—') + '</div><span class="plot-status">' + statusLabel + '</span></div>';
         html += '<span class="plot-cta">+ Atividade</span>';
