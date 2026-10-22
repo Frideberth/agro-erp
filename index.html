@@ -1863,6 +1863,58 @@
           marcarImportAplicado('carencias-bula-v1');
         })();
         (function(){
+          // Arrumação dos produtos (out/2026): junta duplicados, corrige categorias e completa carências que faltavam
+          if(importJaAplicado('fix-produtos-out26-v1')) return;
+          if(typeof podeGravarChave === 'function' && !podeGravarChave('produtos')) return;
+          var porId = function(id){ return state.produtos.find(function(x){ return x.id === id; }); };
+          var juntar = function(idManter, idRemover, embExtra){
+            var pM = porId(idManter), pR = porId(idRemover); if(!pM || !pR) return;
+            if(normUnidade(pM.unidade) !== normUnidade(pR.unidade)) return;
+            state.compras.forEach(function(c){ if(c.produtoId === idRemover) c.produtoId = idManter; });
+            state.operacoes.forEach(function(o){ if(o.produtoId === idRemover) o.produtoId = idManter; (o.produtos || []).forEach(function(pp){ if(pp.produtoId === idRemover) pp.produtoId = idManter; }); });
+            (state.ajustesEstoque || []).forEach(function(a){ if(a.produtoId === idRemover){ a.produtoId = idManter; a.observacao = ((a.observacao || '') + ' [era ' + pR.nome + ']').trim(); } });
+            (state.sefazItensRevisao || []).forEach(function(it){ if(it.produtoId === idRemover) it.produtoId = idManter; });
+            pM.estoqueAtual = Math.round(((Number(pM.estoqueAtual) || 0) + (Number(pR.estoqueAtual) || 0)) * 1000) / 1000;
+            if(pR.conversoesNota){ pM.conversoesNota = pM.conversoesNota || {}; Object.keys(pR.conversoesNota).forEach(function(k){ if(pM.conversoesNota[k] === undefined) pM.conversoesNota[k] = pR.conversoesNota[k]; }); }
+            pM.embalagens = pM.embalagens || [];
+            (pR.embalagens || []).concat(embExtra ? [embExtra] : []).forEach(function(e){ if(!pM.embalagens.some(function(x){ return x.nome === e.nome; })) pM.embalagens.push(e); });
+            if(!pM.estoqueMinimo && pR.estoqueMinimo) pM.estoqueMinimo = pR.estoqueMinimo;
+            if(!pM.custoManual && pR.custoManual) pM.custoManual = pR.custoManual;
+            state.produtos = state.produtos.filter(function(x){ return x.id !== idRemover; });
+          };
+          juntar('8c51802a-8886-45d3-b006-ea693e2c3cd8', '011ba130-4cdd-4aea-925f-f1b0b29e5d18');           // Fertipar 20-00-20 (2 notas)
+          juntar('0f0daafb-415a-4027-b52f-6c0298f8ba99', '453251b7-878a-408c-913c-e99198d281f9', {nome: 'Bombona', conteudo: 20}); // Aureo 5 L + 20 L
+          if(!state.categoriasProduto.some(function(c){ return semAcento(c.nome) === 'adjuvante'; })) state.categoriasProduto.push({id: uid(), nome: 'Adjuvante', criadoEm: Date.now()});
+          var CATS = {
+            'ec572450-16f6-4466-a94b-819ec3108afb': 'Defensivo', '8436f4f6-1886-4afa-8d29-b8f9a5fdf91a': 'Defensivo', '09314710-9fc9-4bda-9f5d-9cb1473584f5': 'Defensivo',
+            '92527bbf-acf2-4a1c-ac4d-69c0ff4d2345': 'Defensivo', 'f799f58d-5a57-4407-a9db-2b55cd304b8c': 'Defensivo', 'c0d138a7-a33e-4965-926b-7dfdb4c3620f': 'Defensivo',
+            '0f0daafb-415a-4027-b52f-6c0298f8ba99': 'Adjuvante', 'a9e2c1f3-2de2-468c-b9e6-a8e1e8f0fec2': 'Adjuvante', 'ed52f1ba-d07c-48ed-95e8-78d16b853031': 'Adjuvante',
+            '6610a017-260e-4f1a-aaa6-693156d130ca': 'Fertilizante Foliar'
+          };
+          Object.keys(CATS).forEach(function(id){ var p = porId(id); if(p) p.categoria = CATS[id]; });
+          ['f799f58d-5a57-4407-a9db-2b55cd304b8c', 'c0d138a7-a33e-4965-926b-7dfdb4c3620f'].forEach(function(id){
+            var p = porId(id); if(!p || (p.carencias && Object.keys(p.carencias).length)) return;
+            var b = bulaCarenciaDoNome(p.nome); if(!b) return;
+            p.carencias = Object.assign({}, b.car); p.carenciaObs = b.obs; p.carenciaFonte = b.fonte;
+          });
+          saveKey('produtos', state.produtos); saveKey('compras', state.compras); saveKey('operacoes', state.operacoes); saveKey('ajustesEstoque', state.ajustesEstoque); saveKey('categoriasProduto', state.categoriasProduto);
+          if(state.sefazItensRevisao && state.sefazItensRevisao.length) saveKey('sefazItensRevisao', state.sefazItensRevisao);
+          marcarImportAplicado('fix-produtos-out26-v1');
+        })();
+        (function(){
+          // Princípio ativo, classe e modo de ação (IRAC/FRAC/HRAC) dos produtos já cadastrados — out/2026. Só preenche o que estiver vazio.
+          if(importJaAplicado('ativos-bula-v1')) return;
+          if(typeof podeGravarChave === 'function' && !podeGravarChave('produtos')) return;
+          var mudou = false;
+          state.produtos.forEach(function(p){
+            if(p.principioAtivo) return;
+            var c = ativoCatalogoDoNome(p.nome); if(!c) return;
+            p.classe = c.classe; p.principioAtivo = c.ativo; p.modoAcao = c.modo; p.ativoFonte = 'Bulas (Agrolink / Revista Cultivar / ADAPAR), out/2026'; mudou = true;
+          });
+          if(mudou) saveKey('produtos', state.produtos);
+          marcarImportAplicado('ativos-bula-v1');
+        })();
+        (function(){
           // Correção pontual: Cletodim da NF 1015 lançado duas vezes (6 BD × R$ 630 = 120 L × R$ 31,50); fica só o do produto atual
           if(importJaAplicado('fix-cletodim-nf1015-v1')) return;
           if(typeof podeGravarChave === 'function' && !podeGravarChave('financeiro')) return;
@@ -2671,8 +2723,12 @@
       add(tfPend.length, '📌', 'tarefa(s) da fase da lavoura: ' + tfPend.join('; '), 'inspecao');
       var semIns = talLav.filter(function(t){ var u = ultIns(t); return !critIds[t.id] && (!u || u.data < limIns); });
       add(semIns.length, '🌿', 'talhão(ões) com lavoura sem inspeção há mais de 15 dias: ' + semIns.slice(0, 5).map(function(t){ return t.nome; }).join(', ') + (semIns.length > 5 ? '…' : ''), 'inspecao');
-      var noNivel = talLav.filter(function(t){ var u = ultIns(t); return u && u.data >= lim30 && (u.alvos || []).some(function(a){ return a.nivel > 0 && Number(a.valor) >= a.nivel; }); });
-      add(noNivel.length, '🐛', 'talhão(ões) com praga/doença no nível de ação na última inspeção: ' + noNivel.map(function(t){ var u = ultIns(t); return t.nome + ' (' + (u.alvos || []).filter(function(a){ return a.nivel > 0 && Number(a.valor) >= a.nivel; }).map(function(a){ return a.alvo; }).join(', ') + ')'; }).join('; '), 'inspecao', '', true);
+      var acaoT = [], reinsT = [];
+      talLav.forEach(function(t){ var sa = situacaoAcaoTalhao(t.id, hoje); var u = sa.itens[0] && sa.itens[0].ins;
+        var ac = sa.itens.filter(function(x){ return x.st === 'acao'; }); if(ac.length && u.data >= lim30) acaoT.push(t.nome + ' (' + ac.map(function(x){ return x.a.alvo + (x.naoResolveu ? ', não resolveu após aplicação' : ''); }).join(', ') + ')');
+        var re = sa.itens.filter(function(x){ return x.st === 'reinspecionar'; }); if(re.length) reinsT.push(t.nome + ' (' + re.map(function(x){ return x.a.alvo; }).join(', ') + ')'); });
+      add(acaoT.length, '🐛', 'talhão(ões) com praga/doença no nível de ação e sem aplicação registrada: ' + acaoT.join('; '), 'inspecao', '', true);
+      add(reinsT.length, '🔁', 'talhão(ões) para reinspecionar depois da aplicação: ' + reinsT.join('; '), 'inspecao');
     }catch(errCalP){ console.error(errCalP); }
     return itens;
   }
@@ -3527,6 +3583,7 @@
     }
     html += field('number', 'estoqueMinimo', 'Estoque mínimo', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.estoqueMinimo : undefined);
     html += camposCarenciaHtml(editingRecord);
+    html += camposAtivoHtml(editingRecord);
     var cmCompras = editingRecord ? custoMedioComprasProduto(editingRecord.id) : 0;
     html += field('number', 'custoManual', 'Custo por ' + (editingRecord ? unidadeControle(editingRecord) || 'unidade' : 'unidade') + ' (R$) — opcional', false, cmCompras > 0 ? 'Compras: ' + cmCompras.toFixed(2) : '0,00', {step:'0.0001', min:'0'}, editingRecord && Number(editingRecord.custoManual) > 0 ? editingRecord.custoManual : undefined);
     html += '<p style="grid-column:1/-1; font-size:11px; color:var(--ink-soft); margin:-6px 0 0;">Deixe em branco para usar o custo médio das compras' + (cmCompras > 0 ? ' (hoje ' + fmtBRL(cmCompras) + ' por ' + escapeHtml(unidadeControle(editingRecord)) + ')' : '') + '. Preenchido, esse valor passa a valer para o custo das aplicações no Diário de Campo — as já lançadas são recalculadas ao salvar.</p>';
@@ -3547,7 +3604,7 @@
       html += '<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Categoria</th><th>Unidade</th><th>Embalagens</th><th>Estoque</th><th>Custo médio</th><th>Mínimo</th><th></th></tr></thead><tbody>';
       state.produtos.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(p){
         html += '<tr>';
-        html += '<td>' + escapeHtml(p.nome) + '</td>';
+        html += '<td>' + escapeHtml(p.nome) + (p.principioAtivo ? '<br><span style="font-size:11px; color:var(--ink-soft);">🧬 ' + escapeHtml(p.principioAtivo) + (p.modoAcao ? ' · ' + escapeHtml(p.modoAcao) : '') + '</span>' : '') + '</td>';
         html += '<td>' + escapeHtml(p.categoria || '—') + '</td>';
         var unP = unidadeControle(p);
         html += '<td>' + escapeHtml(unP || '—') + '</td>';
@@ -5247,28 +5304,32 @@
 
     var html = '';
     html += '<div class="paper note-box" style="margin-top:0;">Colheita e venda de produção agora têm controle próprio na aba <strong>Colheita</strong>, com vínculo automático ao estoque e ao financeiro.</div>';
-    html += '<div class="paper form-card"><h3>' + (editingRecord ? 'Editar atividade' : 'Nova atividade') + '</h3>';
+    if(!editingRecord) html += bannerAcaoDiarioHtml();
+    var acPre = !editingRecord && diarioAcaoInspecao ? diarioAcaoInspecao : null;
+    var insPre = acPre ? (state.inspecoes || []).find(function(i){ return i.id === acPre.inspecaoId; }) : null;
+    var tipoPulvPre = acPre ? ((tiposDisponiveis.find(function(t){ return /pulveriz/i.test(semAcento(t.nome)); }) || {}).nome) : undefined;
+    html += '<div class="paper form-card"><h3>' + (editingRecord ? 'Editar atividade' : (acPre ? 'Nova aplicação (ação da inspeção)' : 'Nova atividade')) + '</h3>';
     if(!tiposDisponiveis.length){
       html += '<div class="empty-state">Nenhum tipo de atividade cadastrado ainda. <button type="button" class="btn" data-action="open-tipo-modal" style="margin-top:10px;">+ Cadastrar tipo de atividade</button></div>';
     } else {
       html += '<form class="entry-form" id="form-operacao"' + (editingRecord ? ' data-editing-id="' + editingRecord.id + '"' : '') + '>';
       html += '<div class="field-with-add">';
-      html += '<div style="flex:1;">' + selectField('tipo', 'Tipo', tiposDisponiveis.map(function(t){ return {value:t.nome, label:t.nome}; }), editingRecord ? editingRecord.tipo : undefined) + '</div>';
+      html += '<div style="flex:1;">' + selectField('tipo', 'Tipo', tiposDisponiveis.map(function(t){ return {value:t.nome, label:t.nome}; }), editingRecord ? editingRecord.tipo : tipoPulvPre) + '</div>';
       html += '<button type="button" class="btn-add-inline" data-action="open-tipo-modal" title="Novo tipo de atividade">+</button>';
       html += '</div>';
-      html += field('date', 'data', 'Data', false, '', {}, editingRecord ? editingRecord.data : undefined);
+      html += field('date', 'data', 'Data', false, '', {}, editingRecord ? editingRecord.data : (acPre ? calHoje() : undefined));
       html += selectField('parceiroId', 'Parceiro (opcional)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })), editingRecord ? editingRecord.parceiroId : undefined);
       html += selectField('responsavelId', 'Responsável (opcional)', [{value:'', label:'—'}].concat(state.equipe.map(function(m){ return {value:m.id, label:m.nome}; })), editingRecord ? editingRecord.responsavelId : undefined);
       html += '<div id="diario-dinamico" style="grid-column: 1 / -1; border-top:1px dashed var(--paper-line); margin-top:4px;"></div>';
       html += '<div style="grid-column:1/-1; font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin:8px 0 -4px;">📋 Dados do receituário (opcional)</div>';
-      html += field('text', 'alvo', 'Alvo (praga, doença ou planta daninha)', false, 'Ex: Ferrugem, buva', {}, editingRecord ? editingRecord.alvo : undefined);
+      html += field('text', 'alvo', 'Alvo (praga, doença ou planta daninha)', false, 'Ex: Ferrugem, buva', {}, editingRecord ? editingRecord.alvo : (acPre ? acPre.alvos.join(', ') : undefined));
       html += field('number', 'volumeCalda', 'Volume de calda (L/ha)', false, '0', {step:'1', min:'0'}, editingRecord ? editingRecord.volumeCalda : undefined);
       html += '<div class="field" id="campo-tanque"><label for="f-tanqueLitros">Tamanho do tanque (L)</label><input type="number" id="f-tanqueLitros" name="tanqueLitros" step="1" min="0" placeholder="Ex: 2000" value="' + (editingRecord ? (editingRecord.tanqueLitros || '') : (ultimoTanqueUsado() || '')) + '"></div>';
       html += '<div id="tanque-calc" style="grid-column:1/-1;"></div>';
       html += field('text', 'receituario', 'Nº do receituário agronômico', false, '', {}, editingRecord ? editingRecord.receituario : undefined);
       html += field('text', 'responsavelTecnico', 'Responsável técnico (agrônomo)', false, '', {}, editingRecord ? editingRecord.responsavelTecnico : undefined);
       html += '<label style="grid-column:1/-1; display:flex; align-items:center; gap:6px; font-size:12.5px;"><input type="checkbox" name="custear"' + (editingRecord && editingRecord.custear === false ? '' : ' checked') + '> Somar o custo dos produtos na safra <span style="font-size:11px; color:var(--ink-soft);">(desmarque se a compra desses produtos já foi lançada direto na lavoura, pra não contar duas vezes)</span></label>';
-      html += '<div class="field" style="grid-column: 1 / -1;"><label for="f-observacao">Observação</label><textarea id="f-observacao" name="observacao" rows="5" placeholder="Ex: Aplicação pós-chuva, recomendação agronômica, condições observadas...">' + (editingRecord && editingRecord.observacao ? escapeHtml(editingRecord.observacao) : '') + '</textarea></div>';
+      html += '<div class="field" style="grid-column: 1 / -1;"><label for="f-observacao">Observação</label><textarea id="f-observacao" name="observacao" rows="5" placeholder="Ex: Aplicação pós-chuva, recomendação agronômica, condições observadas...">' + (!editingRecord && insPre ? escapeHtml('Ação da inspeção de ' + fmtDate(insPre.data) + ': ' + acimaDoNivel(insPre).map(function(a){ return a.alvo + ' ' + fmtNum(a.valor) + ' (nível ' + fmtNum(a.nivel) + ')'; }).join(', ') + '.') : '') + (editingRecord && editingRecord.observacao ? escapeHtml(editingRecord.observacao) : '') + '</textarea></div>';
       html += '<button type="submit" class="btn">' + (editingRecord ? 'Salvar alterações' : 'Registrar atividade') + '</button>';
       var origemRasc = editingRecord ? editingRecord.id : 'novo';
       if(!diarioRascunho || diarioRascunho.origem !== origemRasc) diarioRascunho = rascunhoDiarioDoRegistro(editingRecord);
@@ -7656,6 +7717,288 @@
     return c[0] || null;
   }
   function insAlvosDoTalhao(talhaoId){ var sf = insSafraAtiva(talhaoId); var cult = sf ? insChaveCultura(sf.culturaId) : ''; return {sf: sf, cult: cult, alvos: INS_ALVOS[cult] || []}; }
+  /* ===== Princípio ativo e modo de ação (IRAC / FRAC / HRAC) ===== */
+  var ATIVOS_PRODUTO = [
+    {re: /DUAL\s*GOLD/i, classe: 'Herbicida', ativo: 'S-metolacloro', modo: 'HRAC 15'},
+    {re: /PRIORI\s*TOP/i, classe: 'Fungicida', ativo: 'azoxistrobina + difenoconazol', modo: 'FRAC 11 + FRAC 3'},
+    {re: /DIFERE/i, classe: 'Fungicida', ativo: 'oxicloreto de cobre', modo: 'FRAC M01'},
+    {re: /ALTO\s*100/i, classe: 'Fungicida', ativo: 'ciproconazol', modo: 'FRAC 3'},
+    {re: /ZAPP/i, classe: 'Herbicida', ativo: 'glifosato (sal de potássio)', modo: 'HRAC 9'},
+    {re: /STINGER|GLIFOSATO/i, classe: 'Herbicida', ativo: 'glifosato (sal de amônio)', modo: 'HRAC 9'},
+    {re: /\bHEAT\b/i, classe: 'Herbicida', ativo: 'saflufenacil', modo: 'HRAC 14'},
+    {re: /VIANCE|CLETODIM/i, classe: 'Herbicida', ativo: 'cletodim', modo: 'HRAC 1'},
+    {re: /REATOR\s*360/i, classe: 'Herbicida', ativo: 'clomazona', modo: 'HRAC 13'},
+    {re: /ELEVORE/i, classe: 'Herbicida', ativo: 'halauxifeno-metílico', modo: 'HRAC 4'},
+    {re: /KASUMIN/i, classe: 'Bactericida', ativo: 'casugamicina', modo: 'FRAC 24'},
+    {re: /ENGEO\s*PLENO/i, classe: 'Inseticida', ativo: 'tiametoxam + lambda-cialotrina', modo: 'IRAC 4A + IRAC 3A'},
+    {re: /AUREO/i, classe: 'Adjuvante', ativo: 'éster metílico de óleo de soja', modo: ''},
+    {re: /INTERLOCK/i, classe: 'Adjuvante', ativo: 'adjuvante (deposição / redutor de deriva)', modo: ''},
+    {re: /ADJUVANTE/i, classe: 'Adjuvante', ativo: 'adjuvante', modo: ''}
+  ];
+  // grupo de modo de ação de ativos comuns (para sugerir quando você digita o princípio ativo)
+  var GRUPO_DO_ATIVO = {
+    'azoxistrobina':'FRAC 11','piraclostrobina':'FRAC 11','trifloxistrobina':'FRAC 11','picoxistrobina':'FRAC 11','ciproconazol':'FRAC 3','tebuconazol':'FRAC 3','difenoconazol':'FRAC 3','epoxiconazol':'FRAC 3','protioconazol':'FRAC 3','flutriafol':'FRAC 3','triadimenol':'FRAC 3','tetraconazol':'FRAC 3',
+    'mancozebe':'FRAC M03','clorotalonil':'FRAC M05','oxicloreto de cobre':'FRAC M01','hidroxido de cobre':'FRAC M01','oxido cuproso':'FRAC M01','enxofre':'FRAC M02','fluxapiroxade':'FRAC 7','bixafem':'FRAC 7','benzovindiflupir':'FRAC 7','boscalida':'FRAC 7','carbendazim':'FRAC 1','tiofanato-metilico':'FRAC 1','casugamicina':'FRAC 24','fluazinam':'FRAC 29','ciprodinil':'FRAC 9',
+    'tiametoxam':'IRAC 4A','imidacloprido':'IRAC 4A','acetamiprido':'IRAC 4A','lambda-cialotrina':'IRAC 3A','bifentrina':'IRAC 3A','cipermetrina':'IRAC 3A','deltametrina':'IRAC 3A','clorantraniliprole':'IRAC 28','ciantraniliprole':'IRAC 28','flubendiamida':'IRAC 28','ciclaniliprole':'IRAC 28','clorpirifos':'IRAC 1B','acefato':'IRAC 1B','metomil':'IRAC 1A','abamectina':'IRAC 6','benzoato de emamectina':'IRAC 6','espinetoram':'IRAC 5','espinosade':'IRAC 5','lufenurom':'IRAC 15','novalurom':'IRAC 15','teflubenzurom':'IRAC 15','metoxifenozida':'IRAC 18','sulfoxaflor':'IRAC 4C','flupiradifurona':'IRAC 4D','piriproxifem':'IRAC 7C','espirodiclofeno':'IRAC 23','espiromesifeno':'IRAC 23','fenpiroximato':'IRAC 21A','diafentiurom':'IRAC 12A','fipronil':'IRAC 2B','etiprole':'IRAC 2B',
+    'glifosato':'HRAC 9','glufosinato':'HRAC 10','paraquate':'HRAC 22','diquate':'HRAC 22','2,4-d':'HRAC 4','dicamba':'HRAC 4','halauxifeno':'HRAC 4','fluroxipir':'HRAC 4','picloram':'HRAC 4','triclopir':'HRAC 4','atrazina':'HRAC 5','metribuzim':'HRAC 5','diurom':'HRAC 5','amicarbazona':'HRAC 5','cletodim':'HRAC 1','haloxifope':'HRAC 1','quizalofope':'HRAC 1','setoxidim':'HRAC 1','fluazifope':'HRAC 1','imazetapir':'HRAC 2','clorimurom':'HRAC 2','nicosulfurom':'HRAC 2','diclosulam':'HRAC 2','flumetsulam':'HRAC 2','saflufenacil':'HRAC 14','flumioxazina':'HRAC 14','sulfentrazona':'HRAC 14','fomesafem':'HRAC 14','carfentrazona':'HRAC 14','lactofem':'HRAC 14','s-metolacloro':'HRAC 15','metolacloro':'HRAC 15','piroxasulfona':'HRAC 15','clomazona':'HRAC 13','mesotriona':'HRAC 27','tembotriona':'HRAC 27','isoxaflutol':'HRAC 27','indaziflam':'HRAC 29','trifluralina':'HRAC 3'
+  };
+  function ativoCatalogoDoNome(nome){ return ATIVOS_PRODUTO.find(function(b){ return b.re.test(nome || ''); }) || null; }
+  function modoDosAtivos(txt){
+    var t = semAcento(txt), gs = [];
+    Object.keys(GRUPO_DO_ATIVO).sort(function(a, b){ return b.length - a.length; }).forEach(function(k){ var kk = semAcento(k); if(t.indexOf(kk) !== -1 && gs.indexOf(GRUPO_DO_ATIVO[k]) === -1){ gs.push(GRUPO_DO_ATIVO[k]); t = t.split(kk).join(' '); } });
+    return gs.join(' + ');
+  }
+  function gruposDoProduto(p){ return String((p && p.modoAcao) || '').split('+').map(function(g){ return g.trim().toUpperCase().replace(/\s+/g, ' '); }).filter(Boolean); }
+  function produtoEhDefensivo(p){ return !!p && (/fungic|insetic|herbic|acaric|bacteric|nematic/i.test(p.classe || '') || /defensiv|insetic|fungic|acaric|herbic|nematic|agrotox/.test(semAcento(p.categoria || ''))); }
+  function camposAtivoHtml(produto){
+    var p = produto || {}, cat = ativoCatalogoDoNome(p.nome);
+    var est = 'padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px; width:100%;';
+    var h = '<div style="grid-column:1/-1; border-top:1px dashed var(--paper-line); padding-top:8px;">';
+    h += '<div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:6px;"><span style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em;">🧬 Princípio ativo e modo de ação</span>';
+    h += '<button type="button" class="btn-edit" data-action="ativo-usar-catalogo" id="btn-ativo-cat"' + (cat ? '' : ' style="display:none;"') + '>📖 Usar dados conhecidos</button></div>';
+    h += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px;">';
+    h += '<div class="field" style="margin:0;"><label>Classe</label><select name="classe" style="' + est + '"><option value="">—</option>' + ['Fungicida','Inseticida','Herbicida','Acaricida','Bactericida','Nematicida','Adjuvante','Fertilizante / outro'].map(function(c){ return '<option' + (p.classe === c ? ' selected' : '') + '>' + c + '</option>'; }).join('') + '</select></div>';
+    h += '<div class="field" style="margin:0;"><label>Princípio(s) ativo(s)</label><input type="text" name="principioAtivo" id="f-principioAtivo" value="' + escapeHtml(p.principioAtivo || '') + '" placeholder="Ex: azoxistrobina + ciproconazol" style="' + est + '"></div>';
+    h += '<div class="field" style="margin:0;"><label>Modo de ação (IRAC / FRAC / HRAC)</label><input type="text" name="modoAcao" id="f-modoAcao" value="' + escapeHtml(p.modoAcao || '') + '" placeholder="Ex: FRAC 11 + FRAC 3" style="' + est + '"></div>';
+    h += '</div><p style="font-size:11px; color:var(--ink-soft); margin:6px 0 0;">O modo de ação está na bula (grupo IRAC, FRAC ou HRAC). Ao digitar ativos comuns, o sistema sugere o grupo. Serve para alternar os modos de ação e evitar resistência.' + (p.ativoFonte ? ' <i>(' + escapeHtml(p.ativoFonte) + ')</i>' : '') + '</p>';
+    return h + '</div>';
+  }
+  document.addEventListener('input', function(e){
+    var t = e.target; if(!t) return;
+    if(t.id === 'f-principioAtivo'){ var m = document.getElementById('f-modoAcao'); if(m && (!m.value || m.dataset.auto === '1')){ m.value = modoDosAtivos(t.value); m.dataset.auto = '1'; } }
+    if(t.id === 'f-modoAcao') t.dataset.auto = '';
+    if(t.name === 'nome' && t.closest && t.closest('#form-produto')){ var b = document.getElementById('btn-ativo-cat'); if(b) b.style.display = ativoCatalogoDoNome(t.value) ? '' : 'none'; }
+  });
+  function aplicarAtivoCatalogoNoForm(){
+    var form = document.getElementById('form-produto'); if(!form) return;
+    var c = ativoCatalogoDoNome((form.querySelector('[name="nome"]') || {}).value); if(!c) return;
+    form.querySelector('[name="classe"]').value = c.classe; form.querySelector('[name="principioAtivo"]').value = c.ativo; form.querySelector('[name="modoAcao"]').value = c.modo;
+  }
+  // histórico de controle: cada aplicação contra um alvo, com leitura antes e depois (inspeções) e eficácia
+  function historicoControle(){
+    var out = [];
+    state.operacoes.forEach(function(o){
+      if(!o.data) return;
+      var prods = produtosDaOperacao(o).map(function(pp){ return state.produtos.find(function(x){ return x.id === pp.produtoId; }); }).filter(function(p){ return p && produtoEhDefensivo(p); });
+      if(!prods.length) return;
+      var tals = o.talhaoId ? [o.talhaoId] : []; (o.aplicacoes || []).forEach(function(a){ if(a.talhaoId && tals.indexOf(a.talhaoId) === -1) tals.push(a.talhaoId); });
+      tals.forEach(function(tid){
+        var ins = inspecoesDoTalhao(tid);
+        var alvos = [];
+        var vinc = o.inspecaoId ? ins.find(function(i){ return i.id === o.inspecaoId; }) : null;
+        if(vinc) acimaDoNivel(vinc).forEach(function(a){ alvos.push({alvo: a.alvo, antes: Number(a.valor), nivel: a.nivel, insAntes: vinc}); });
+        if(!alvos.length && o.alvo){
+          // alvo digitado: casa com os alvos das inspeções do talhão
+          var nomes = {}; ins.forEach(function(i){ (i.alvos || []).forEach(function(a){ if(alvoBate(a.alvo, o.alvo)) nomes[a.alvo] = true; }); });
+          Object.keys(nomes).forEach(function(n){
+            var antes = ins.find(function(i){ return i.data <= o.data && i.data >= addDiasISO(o.data, -30) && (i.alvos || []).some(function(a){ return a.alvo === n && a.valor !== '' && a.valor != null; }); });
+            var la = antes ? antes.alvos.find(function(a){ return a.alvo === n; }) : null;
+            alvos.push({alvo: n, antes: la ? Number(la.valor) : null, nivel: la ? la.nivel : 0, insAntes: antes || null});
+          });
+          if(!Object.keys(nomes).length) alvos.push({alvo: o.alvo, antes: null, nivel: 0, insAntes: null, livre: true});
+        }
+        alvos.forEach(function(al){
+          var dep = ins.slice().reverse().find(function(i){ return i.data > o.data && i.data <= addDiasISO(o.data, 45) && (i.alvos || []).some(function(a){ return a.alvo === al.alvo && a.valor !== '' && a.valor != null; }); });
+          var ld = dep ? dep.alvos.find(function(a){ return a.alvo === al.alvo; }) : null;
+          var depois = ld ? Number(ld.valor) : null;
+          var efic = (al.antes > 0 && depois !== null) ? Math.round((al.antes - depois) / al.antes * 100) : null;
+          out.push({op: o, data: o.data, talhaoId: tid, alvo: al.alvo, livre: !!al.livre, prods: prods, grupos: prods.reduce(function(g, p){ gruposDoProduto(p).forEach(function(x){ if(g.indexOf(x) === -1) g.push(x); }); return g; }, []), antes: al.antes, depois: depois, efic: efic});
+        });
+      });
+    });
+    return out.sort(function(a, b){ return b.data.localeCompare(a.data); });
+  }
+  // classe de defensivo que combate o alvo (doença → fungicida/bactericida; praga → inseticida/acaricida; mato → herbicida)
+  function classesParaAlvos(alvos){
+    var t = semAcento(alvos.join(' ')), cl = [];
+    if(/ferrug|cercosp|mancha|doenc|bacter|phoma|antracn|mofo|oidio|mildio|podrid|fusar|ramular|helmint|requeima/.test(t)) cl.push('Fungicida', 'Bactericida');
+    if(/broca|bicho|lagart|percevej|cigarr|acaro|mosca|tripes|cochonil|vaquinha|elasmo|cartucho|espiga|pulgao|corо|coro|tamandua|bicudo/.test(t)) cl.push('Inseticida', 'Acaricida');
+    if(/buva|capim|amargoso|tiguera|daninh|mato|folhas largas|trapoeraba|picao|corda-de-viola|leiteiro|caruru|braquiaria/.test(t)) cl.push('Herbicida');
+    if(/nemat/.test(t)) cl.push('Nematicida');
+    return cl;
+  }
+  function gruposRisco(gs){ return gs.filter(function(g){ return !/^FRAC M/.test(g); }); }
+  function historicoDoAlvo(alvoNome, talhaoId){ return historicoControle().filter(function(h){ return (h.alvo === alvoNome || alvoBate(alvoNome, h.alvo)) && (!talhaoId || h.talhaoId === talhaoId); }); }
+  // avaliação de um produto para o alvo/talhão: modo de ação repetido, eficácia já vista, carência x colheita, registro
+  function avaliarProdutoParaAlvo(p, alvos, talhaoId, sf){
+    var hist = []; alvos.forEach(function(a){ hist = hist.concat(historicoDoAlvo(a, talhaoId)); });
+    hist.sort(function(a, b){ return b.data.localeCompare(a.data); });
+    var ultGr = hist.length ? gruposRisco(hist[0].grupos) : [];
+    var gp = gruposDoProduto(p), repete = gruposRisco(gp).filter(function(g){ return ultGr.indexOf(g) !== -1; });
+    var cls = classesParaAlvos(alvos), classeOk = !cls.length || !p.classe ? null : cls.indexOf(p.classe) !== -1;
+    var todos = []; alvos.forEach(function(a){ todos = todos.concat(historicoDoAlvo(a, null)); });
+    var efs = todos.filter(function(h){ return h.efic !== null && h.prods.some(function(x){ return x.id === p.id || (p.principioAtivo && semAcento(x.principioAtivo || '') === semAcento(p.principioAtivo)); }); }).map(function(h){ return h.efic; });
+    var efic = efs.length ? Math.round(efs.reduce(function(s, v){ return s + v; }, 0) / efs.length) : null;
+    var cul = sf ? culturaNome(sf.culturaId) : '', car = carenciaDoProduto(p, cul), avisoCar = '';
+    if(car && car.tipo === 'dias' && sf && sf.previsaoColheita){ var dias = Math.round((new Date(sf.previsaoColheita + 'T12:00:00') - new Date(calHoje() + 'T12:00:00')) / 86400000); if(dias >= 0 && car.dias > dias) avisoCar = 'carência de ' + car.dias + ' dias, mas a colheita está prevista para daqui a ' + dias + ' dias'; }
+    var nr = !!(car && car.tipo === 'NR');
+    var def = produtoEhDefensivo(p);
+    var score = (def ? 10 : 0) + (classeOk === true ? 6 : (classeOk === false ? -8 : 0)) + (repete.length ? -3 : (gp.length && ultGr.length ? 1 : 0)) + (efic !== null ? efic / 40 : 0) + (avisoCar ? -2 : 0) + (nr ? -6 : 0) + ((Number(p.estoqueAtual) || 0) > 0 ? 0.5 : 0) + (gp.length ? 0 : -0.5);
+    return {p: p, gp: gp, def: def, classeOk: classeOk, repete: repete, outroModo: !!(def && classeOk !== false && gp.length && ultGr.length && !repete.length), efic: efic, nEfic: efs.length, car: car, avisoCar: avisoCar, nr: nr, score: score, ultGr: ultGr};
+  }
+  function analiseAtivosHtml(){
+    var hist = historicoControle().filter(function(h){ return !h.livre || h.alvo; });
+    var defSem = state.produtos.filter(function(p){ return produtoEhDefensivo(p) && !p.principioAtivo; });
+    var h = '<details class="paper" style="margin-top:14px; padding:10px 14px; font-size:13px;"' + (analiseAtivosAberta ? ' open' : '') + ' id="det-analise-ativos"><summary style="cursor:pointer; font-weight:600;">🧬 Análise de princípios ativos usados (' + hist.length + ' aplicação(ões) contra alvos)</summary>';
+    if(!hist.length) h += '<p style="font-size:12.5px; color:var(--ink-soft);">Ainda não há aplicações com alvo informado. Use o botão 🧪 Registrar ação nas inspeções, ou preencha o campo Alvo no Diário de Campo.</p>';
+    else {
+      var porAlvo = {};
+      hist.forEach(function(x){ var k = x.alvo; (porAlvo[k] = porAlvo[k] || []).push(x); });
+      Object.keys(porAlvo).sort().forEach(function(alvo){
+        var lista = porAlvo[alvo], porAtivo = {};
+        lista.forEach(function(x){ x.prods.forEach(function(p){ var k = p.principioAtivo || ('(sem princípio ativo) ' + p.nome); var r = porAtivo[k] || (porAtivo[k] = {ativo: k, modo: p.modoAcao || '', vezes: 0, tal: {}, ult: '', efs: [], prods: {}}); r.vezes++; r.tal[talhaoNome(x.talhaoId)] = true; if(x.data > r.ult) r.ult = x.data; if(x.efic !== null) r.efs.push(x.efic); r.prods[p.nome] = true; }); });
+        // sequência de modos de ação por talhão (mais recentes primeiro)
+        var seqTal = {}; lista.forEach(function(x){ (seqTal[x.talhaoId] = seqTal[x.talhaoId] || []).push(x); });
+        var alertas = [];
+        Object.keys(seqTal).forEach(function(tid){ var s = seqTal[tid]; if(s.length >= 2){ var rep = s[0].grupos.filter(function(g){ return s[1].grupos.indexOf(g) !== -1; }); if(rep.length) alertas.push(talhaoNome(tid) + ': as duas últimas aplicações repetiram ' + rep.join(', ')); } });
+        h += '<div style="font-weight:600; margin:12px 0 4px;">' + escapeHtml(alvo) + '</div>';
+        if(alertas.length) h += '<div style="font-size:12px; color:var(--cost-dark); margin:0 0 4px;">⚠️ ' + alertas.map(escapeHtml).join(' · ') + ' — alterne o modo de ação para evitar resistência.</div>';
+        h += '<div class="table-wrap"><table class="sem-ordenacao" style="font-size:12.5px;"><thead><tr><th>Princípio ativo</th><th>Modo de ação</th><th>Produto(s)</th><th class="num">Aplicações</th><th>Talhões</th><th>Última</th><th class="num">Eficácia média</th></tr></thead><tbody>';
+        Object.keys(porAtivo).map(function(k){ return porAtivo[k]; }).sort(function(a, b){ return b.ult.localeCompare(a.ult); }).forEach(function(r){
+          var ef = r.efs.length ? Math.round(r.efs.reduce(function(s, v){ return s + v; }, 0) / r.efs.length) : null;
+          h += '<tr><td>' + escapeHtml(r.ativo) + '</td><td>' + (r.modo ? escapeHtml(r.modo) : '<span style="color:var(--ink-soft);">—</span>') + '</td><td style="font-size:11.5px;">' + Object.keys(r.prods).map(escapeHtml).join(', ') + '</td><td class="num">' + r.vezes + '</td><td style="font-size:11.5px;">' + Object.keys(r.tal).map(escapeHtml).join(', ') + '</td><td>' + fmtDate(r.ult) + '</td><td class="num">' + (ef === null ? '<span style="color:var(--ink-soft);" title="Precisa de inspeção antes e depois da aplicação">—</span>' : '<b style="color:' + (ef >= 50 ? 'var(--growth-dark, #4E6B3F)' : (ef > 0 ? '#9A6B12' : 'var(--cost-dark)')) + ';">' + (ef > 0 ? '−' : '+') + Math.abs(ef) + '%</b> <span style="font-size:11px; color:var(--ink-soft);">(' + r.efs.length + ')</span>') + '</td></tr>';
+        });
+        h += '</tbody></table></div>';
+      });
+      h += '<p style="font-size:11px; color:var(--ink-soft); margin:8px 0 0;">Eficácia = quanto a leitura caiu entre a inspeção antes da aplicação (até 30 dias antes) e a primeira inspeção depois (até 45 dias). Sem inspeção antes e depois, fica "—".</p>';
+    }
+    if(defSem.length) h += '<p style="font-size:12px; margin:10px 0 0;">⚠️ Defensivos sem princípio ativo cadastrado: ' + defSem.map(function(p){ return '<b>' + escapeHtml(p.nome) + '</b>'; }).join(', ') + ' — preencha em Produtos e Estoque (Editar).</p>';
+    return h + '</details>';
+  }
+  var analiseAtivosAberta = false;
+  document.addEventListener('toggle', function(e){ if(e.target && e.target.id === 'det-analise-ativos') analiseAtivosAberta = e.target.open; }, true);
+  /* ===== Do alerta à ação: inspeção → aplicação → reinspeção ===== */
+  var ACAO_REINSPECAO_DIAS = 10;
+  var diarioAcaoInspecao = null; // {inspecaoId, talhaoId, alvos:[nomes]}
+  var PALAVRAS_GENERICAS_ALVO = ['lagarta','lagartas','doenca','doencas','folhas','final','ciclo','percevejo','percevejos'];
+  function alvoBate(alvoNome, texto){
+    var tx = semAcento(texto || ''); if(!tx) return false;
+    var ws = semAcento(alvoNome).split(/[^a-z0-9]+/).filter(function(w){ return w.length >= 5 && PALAVRAS_GENERICAS_ALVO.indexOf(w) === -1; });
+    if(!ws.length) ws = semAcento(alvoNome).split(/[^a-z0-9]+/).filter(function(w){ return w.length >= 4; });
+    return ws.some(function(w){ return tx.indexOf(w) !== -1; });
+  }
+  function opNoTalhao(o, talhaoId){ return o.talhaoId === talhaoId || (o.aplicacoes || []).some(function(a){ return a.talhaoId === talhaoId; }); }
+  function opTrataAlvo(o, ins, alvoNome){ return o.inspecaoId === ins.id || alvoBate(alvoNome, [o.alvo, o.observacao].join(' ')); }
+  function addDiasISO(d, n){ return new Date(new Date(d + 'T12:00:00').getTime() + n * 86400000).toISOString().slice(0,10); }
+  function inspecoesDoTalhao(talhaoId){ return (state.inspecoes || []).filter(function(i){ return i.talhaoId === talhaoId; }).sort(function(a, b){ return (b.data || '').localeCompare(a.data || '') || (b.criadoEm || 0) - (a.criadoEm || 0); }); }
+  function acimaDoNivel(i){ return (i.alvos || []).filter(function(a){ return a.nivel > 0 && Number(a.valor) >= a.nivel; }); }
+  // situação dos alvos da última inspeção do talhão: acao (precisa agir) | tratamento (aplicado, aguardando) | reinspecionar (prazo chegou)
+  function situacaoAcaoTalhao(talhaoId, hoje){
+    hoje = hoje || calHoje();
+    var ins = inspecoesDoTalhao(talhaoId), ult = ins[0]; if(!ult) return {itens: [], controlados: []};
+    var ops = state.operacoes.filter(function(o){ return o.data && opNoTalhao(o, talhaoId); }).sort(function(a, b){ return (b.data || '').localeCompare(a.data || ''); });
+    var itens = acimaDoNivel(ult).map(function(a){
+      var trat = ops.find(function(o){ return o.data >= ult.data && opTrataAlvo(o, ult, a.alvo); }) || null;
+      var prev = ins.slice(1).find(function(i){ return acimaDoNivel(i).some(function(b){ return b.alvo === a.alvo; }); });
+      var antes = prev ? ops.find(function(o){ return o.data >= prev.data && o.data <= ult.data && o.inspecaoId !== ult.id && opTrataAlvo(o, prev, a.alvo); }) : null;
+      var st = 'acao', ate = '';
+      if(trat){ ate = addDiasISO(trat.data, ACAO_REINSPECAO_DIAS); st = hoje >= ate ? 'reinspecionar' : 'tratamento'; }
+      return {ins: ult, a: a, st: st, trat: trat, ate: ate, naoResolveu: antes || null};
+    });
+    // alvos que estavam no nível na inspeção anterior, tiveram aplicação e agora ficaram abaixo
+    var controlados = [];
+    var prev2 = ins[1];
+    if(prev2) acimaDoNivel(prev2).forEach(function(a){
+      var agora = (ult.alvos || []).find(function(b){ return b.alvo === a.alvo; });
+      if(!agora || agora.valor === '' || agora.valor == null || Number(agora.valor) >= a.nivel) return;
+      var op = ops.find(function(o){ return o.data >= prev2.data && o.data <= ult.data && opTrataAlvo(o, prev2, a.alvo); });
+      if(op) controlados.push({alvo: a.alvo, de: a.valor, para: agora.valor, op: op});
+    });
+    return {itens: itens, controlados: controlados};
+  }
+  function acaoSituacaoHtml(talhaoId){
+    var s = situacaoAcaoTalhao(talhaoId), h = '';
+    var estB = 'font-family:inherit; font-size:11.5px; padding:3px 9px; border-radius:4px; border:1px solid var(--paper-line); background:var(--paper); color:var(--ink); cursor:pointer; white-space:nowrap; margin:2px 4px 2px 0;';
+    var acao = s.itens.filter(function(x){ return x.st === 'acao'; });
+    s.itens.forEach(function(x){
+      if(x.st === 'acao') h += '<span class="badge" style="background:var(--cost); color:#fff; margin:2px 4px 2px 0;">' + escapeHtml(x.a.alvo) + ' ' + fmtNum(x.a.valor) + '</span>' + (x.naoResolveu ? '<span style="font-size:11px; color:var(--cost-dark);">não resolveu após a aplicação de ' + fmtDate(x.naoResolveu.data) + ' </span>' : '');
+      else if(x.st === 'tratamento') h += '<span class="badge" style="background:#A9B7C6; color:#1B1508; margin:2px 4px 2px 0;" title="Aplicação registrada">🧪 ' + escapeHtml(x.a.alvo) + ' — aplicado ' + fmtDate(x.trat.data) + ', reinspecionar até ' + fmtDate(x.ate) + '</span>';
+      else h += '<span class="badge" style="background:#DFA84E; color:#1F2410; margin:2px 4px 2px 0;">🔁 ' + escapeHtml(x.a.alvo) + ' — reinspecionar (aplicado ' + fmtDate(x.trat.data) + ')</span>';
+    });
+    s.controlados.forEach(function(c){ h += '<span class="badge" style="background:var(--growth, #6B8E4E); color:#fff; margin:2px 4px 2px 0;">✅ ' + escapeHtml(c.alvo) + ' controlado: ' + fmtNum(c.de) + ' → ' + fmtNum(c.para) + '</span>'; });
+    if(acao.length) h += '<br><button type="button" data-action="ins-registrar-acao" data-ins="' + acao[0].ins.id + '" style="' + estB + ' border-color:var(--cost-dark); color:var(--cost-dark); font-weight:600;">🧪 Registrar ação</button>';
+    return h;
+  }
+  // produtos já usados contra o alvo (histórico do Diário), com estoque e carência para a cultura
+  function produtosContraAlvo(alvos, culturaNm){
+    var vistos = {}, out = [];
+    state.operacoes.slice().sort(function(a, b){ return (b.data || '').localeCompare(a.data || ''); }).forEach(function(o){
+      if(!alvos.some(function(al){ return alvoBate(al, [o.alvo, o.observacao].join(' ')); })) return;
+      produtosDaOperacao(o).forEach(function(pp){
+        if(!pp.produtoId || vistos[pp.produtoId]) return; vistos[pp.produtoId] = true;
+        var p = state.produtos.find(function(x){ return x.id === pp.produtoId; }); if(!p) return;
+        out.push({p: p, ultimo: o.data, dose: pp.doseInformada || null, car: carenciaDoProduto(p, culturaNm)});
+      });
+    });
+    return out;
+  }
+  function bannerAcaoDiarioHtml(){
+    var ac = diarioAcaoInspecao; if(!ac) return '';
+    var ins = (state.inspecoes || []).find(function(i){ return i.id === ac.inspecaoId; }); if(!ins){ diarioAcaoInspecao = null; return ''; }
+    var sf = insSafraAtiva(ac.talhaoId), cul = sf ? culturaNome(sf.culturaId) : '';
+    var lidos = acimaDoNivel(ins), nomesAlvo = lidos.map(function(a){ return a.alvo; });
+    var h = '<div class="paper" style="padding:12px 16px; margin:0 0 14px; border-left:4px solid var(--cost-dark, #A23E2E);">';
+    h += '<div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center;"><b>🧪 Ação para a inspeção de ' + fmtDate(ins.data) + ' — ' + escapeHtml(talhaoNome(ac.talhaoId)) + '</b><button type="button" class="btn-cancel" data-action="acao-desvincular" style="padding:4px 10px; font-size:12px;">Não é uma ação da inspeção</button></div>';
+    h += '<p style="font-size:12.5px; margin:6px 0;">No nível de ação: ' + lidos.map(function(a){ return '<b>' + escapeHtml(a.alvo) + '</b> ' + fmtNum(a.valor) + ' (nível ' + fmtNum(a.nivel) + ')'; }).join(', ') + '. Escolha os produtos com o seu agrônomo e informe o receituário. Depois de salvar, o alerta fica "em tratamento" e o sistema pede a reinspeção em ' + ACAO_REINSPECAO_DIAS + ' dias.</p>';
+    // histórico deste alvo no talhão
+    var hist = []; nomesAlvo.forEach(function(a){ hist = hist.concat(historicoDoAlvo(a, ac.talhaoId)); });
+    hist.sort(function(a, b){ return b.data.localeCompare(a.data); });
+    if(hist.length){
+      h += '<div style="font-size:12px; margin:6px 0;"><b>Últimas aplicações contra esse alvo neste talhão:</b> ' + hist.slice(0, 3).map(function(x){ return fmtDate(x.data) + ' — ' + escapeHtml(x.prods.map(function(p){ return p.principioAtivo || p.nome; }).join(' + ')) + (x.grupos.length ? ' (' + escapeHtml(x.grupos.join(' + ')) + ')' : '') + (x.efic !== null ? ', ' + fmtNum(x.antes) + ' → ' + fmtNum(x.depois) + ' (' + (x.efic > 0 ? '−' : '+') + Math.abs(x.efic) + '%)' : ''); }).join(' · ') + '</div>';
+      var ultG = gruposRisco(hist[0].grupos);
+      if(ultG.length) h += '<div style="font-size:12px; margin:0 0 6px; color:#7A5410;">💡 Para evitar resistência, evite repetir o modo de ação da última aplicação (<b>' + escapeHtml(ultG.join(', ')) + '</b>). Multissítios (FRAC M, como os cúpricos) podem entrar na rotação.</div>';
+    }
+    var badge = function(t, cor){ return ' <span style="display:inline-block; font-size:10.5px; padding:1px 6px; border-radius:3px; background:' + cor + '; color:' + (cor === '#DFA84E' || cor === '#E8E2C4' ? '#1F2410' : '#fff') + '; margin:2px 2px 0 0;">' + t + '</span>'; };
+    var avalHtml = function(av){
+      var b = '';
+      if(av.repete.length) b += badge('⚠️ mesmo modo da última aplicação (' + escapeHtml(av.repete.join(', ')) + ')', 'var(--cost, #A23E2E)');
+      else if(av.outroModo) b += badge('✓ modo de ação diferente', 'var(--growth, #6B8E4E)');
+      if(av.efic !== null) b += badge('eficácia ' + (av.efic > 0 ? '−' : '+') + Math.abs(av.efic) + '% (' + av.nEfic + ')', av.efic >= 50 ? 'var(--growth, #6B8E4E)' : '#DFA84E');
+      if(av.avisoCar) b += badge('⚠️ ' + escapeHtml(av.avisoCar), '#DFA84E');
+      if(av.nr) b += badge('não registrado para ' + escapeHtml(cul), 'var(--cost, #A23E2E)');
+      if(av.classeOk === false) b += badge(escapeHtml(av.p.classe) + ' — não é para esse alvo', '#E8E2C4');
+      if(av.def && !av.gp.length) b += badge('sem modo de ação cadastrado', '#E8E2C4');
+      if(!av.def) b += badge('complemento (' + escapeHtml(av.p.classe || av.p.categoria || 'não é defensivo') + ')', '#E8E2C4');
+      return b;
+    };
+    var sug = produtosContraAlvo(nomesAlvo, cul).map(function(x){ x.av = avaliarProdutoParaAlvo(x.p, nomesAlvo, ac.talhaoId, sf); return x; }).sort(function(a, b){ return b.av.score - a.av.score; });
+    if(sug.length){
+      h += '<div style="font-size:12px; font-weight:600; margin:8px 0 4px;">Produtos que você já usou contra esse alvo (os mais indicados primeiro):</div><div style="display:flex; flex-wrap:wrap; gap:6px;">';
+      sug.slice(0, 8).forEach(function(x){
+        var est = Number(x.p.estoqueAtual) || 0;
+        var car = !x.car ? 'carência não informada' : (x.car.tipo === 'dias' ? 'carência ' + x.car.dias + ' dias' + (cul ? ' (' + escapeHtml(cul) + ')' : '') : (x.car.tipo === 'NR' ? 'não registrado p/ ' + escapeHtml(cul) : 'carência não determinada'));
+        h += '<button type="button" data-action="acao-usar-produto" data-id="' + x.p.id + '" style="font-family:inherit; text-align:left; font-size:12px; padding:6px 10px; border:1px solid var(--paper-line); border-radius:4px; background:var(--paper-2); cursor:pointer; max-width:420px;' + (x.av.nr ? ' opacity:.6;' : '') + '"><b>+ ' + escapeHtml(x.p.nome) + '</b>' + (x.p.principioAtivo ? '<br><span style="font-size:11.5px;">' + escapeHtml(x.p.principioAtivo) + (x.p.modoAcao ? ' · ' + escapeHtml(x.p.modoAcao) : '') + '</span>' : '') + '<br><span style="color:var(--ink-soft);">estoque ' + fmtNum(est) + ' ' + escapeHtml(x.p.unidade || '') + ' · ' + car + ' · usado em ' + fmtDate(x.ultimo) + (x.dose ? ' · ' + fmtNum(x.dose.valor) + ' ' + escapeHtml(x.dose.unidade || '') + '/' + escapeHtml(x.dose.por || 'ha') : '') + '</span><br>' + avalHtml(x.av) + '</button>';
+      });
+      h += '</div>';
+    } else h += '<p style="font-size:12px; color:var(--ink-soft); margin:4px 0 0;">Nenhuma aplicação anterior contra esse alvo no Diário.</p>';
+    // outro produto (princípio ativo ou marca diferente)
+    var jaSug = {}; sug.forEach(function(x){ jaSug[x.p.id] = true; });
+    var fora = function(p){ return /semente|combust|manuten/.test(semAcento(p.categoria || '')); };
+    var rot = function(p, av){ var est = Number(p.estoqueAtual) || 0, c = av.car; return (av.repete.length ? '⚠️ ' : (av.outroModo ? '✓ ' : '')) + p.nome + (p.principioAtivo ? ' [' + p.principioAtivo + (p.modoAcao ? ' · ' + p.modoAcao : '') + ']' : '') + ' — ' + (est > 0 ? 'estoque ' + fmtNum(est) + ' ' + (p.unidade || '') : 'sem estoque') + (c ? (c.tipo === 'dias' ? ' · carência ' + c.dias + ' d' : (c.tipo === 'NR' ? ' · não registrado p/ ' + cul : ' · carência ND')) : ''); };
+    var outros = state.produtos.filter(function(p){ return !jaSug[p.id] && !fora(p); }).map(function(p){ return {p: p, av: avaliarProdutoParaAlvo(p, nomesAlvo, ac.talhaoId, sf)}; });
+    var clsA = classesParaAlvos(nomesAlvo);
+    var gDefAll = outros.filter(function(x){ return produtoEhDefensivo(x.p); }).sort(function(a, b){ return b.av.score - a.av.score; });
+    var gDef = gDefAll.filter(function(x){ return x.av.classeOk !== false; }), gDefOutra = gDefAll.filter(function(x){ return x.av.classeOk === false; });
+    var gOut = outros.filter(function(x){ return !produtoEhDefensivo(x.p) && !/adjuv/i.test(x.p.classe || ''); }).sort(function(a, b){ return a.p.nome.localeCompare(b.p.nome, 'pt-BR'); });
+    var gAdj = outros.filter(function(x){ return /adjuv/i.test(x.p.classe || ''); });
+    h += '<div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:10px; font-size:12px;"><b>Outro produto (princípio ativo ou marca diferente):</b>';
+    h += '<select id="acao-outro-produto" style="flex:1; min-width:260px; max-width:620px; padding:6px 8px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:12.5px;"><option value="">— escolha um produto cadastrado —</option>';
+    var grupo = function(lbl, lst){ return lst.length ? '<optgroup label="' + lbl + '">' + lst.map(function(x){ return '<option value="' + x.p.id + '">' + escapeHtml(rot(x.p, x.av)) + '</option>'; }).join('') + '</optgroup>' : ''; };
+    h += grupo((clsA.length ? clsA.join(' / ') + 's' : 'Defensivos') + ' (✓ = modo de ação diferente da última aplicação; ⚠️ = mesmo modo)', gDef) + grupo('Adjuvantes', gAdj) + grupo('Defensivos de outra classe', gDefOutra) + grupo('Outros produtos', gOut);
+    h += '</select><button type="button" class="btn-edit" data-action="acao-usar-outro">+ Adicionar</button>';
+    h += '<button type="button" class="btn-edit" data-action="ir-pendencia" data-tab="produtos" data-filtro="" title="Cadastrar um produto novo (a ação continua guardada)">Cadastrar produto novo →</button></div>';
+    h += '<p style="font-size:11px; color:var(--ink-soft); margin:4px 0 0;">A ordem considera: modo de ação diferente das últimas aplicações, eficácia já vista na sua lavoura, carência x colheita prevista, registro para a cultura e estoque. Confira na bula se o produto é registrado para o alvo. Depois de cadastrar um produto novo, volte em Campo → Diário de Campo: a ação da inspeção continua aberta.</p>';
+    return h + '</div>';
+  }
+  function iniciarAcaoInspecao(insId){
+    var ins = (state.inspecoes || []).find(function(i){ return i.id === insId; }); if(!ins) return;
+    diarioAcaoInspecao = {inspecaoId: ins.id, talhaoId: ins.talhaoId, alvos: acimaDoNivel(ins).map(function(a){ return a.alvo; })};
+    diarioPreTalhaoId = ins.talhaoId; diarioRascunho = null; editState = null;
+    switchTab('operacoes'); renderOperacoes();
+    var sf = insSafraAtiva(ins.talhaoId);
+    if(diarioRascunho && sf){ diarioRascunho.lavouraId = sf.lavouraId || ''; diarioRascunho.marcadas = [sf.id]; renderDiarioDinamico(); }
+    var f = document.getElementById('form-operacao'); if(f) f.scrollIntoView({behavior:'smooth', block:'start'});
+  }
   /* ===== Calendário do cafeicultor (Emater-MG, 2024) — avisos do mês ligados ao Diário, Análises, Colheita e Inspeção ===== */
   // modo 'mes' = lembra todo mês da janela até registrar no mês; 'janela' = uma vez por janela (some quando registrar)
   var CAL_CAFE = [
@@ -7945,7 +8288,7 @@
           var seta = pa && pa.valor !== '' && pa.valor != null ? (Number(a.valor) > Number(pa.valor) ? ' ▲' : (Number(a.valor) < Number(pa.valor) ? ' ▼' : ' =')) : '';
           return escapeHtml(a.alvo) + ': <b>' + fmtNum(a.valor) + '</b>' + seta;
         }).join(' · ') : '—';
-        h += '<tr><td><b>' + escapeHtml(x.t.nome) + '</b></td><td>' + (sf ? escapeHtml(lavouraLabel(sf.lavouraId)) : '—') + '</td><td>' + atraso + '</td><td>' + (x.ac.length ? x.ac.map(function(a){ return '<span class="badge" style="background:var(--cost); color:#fff; margin-right:4px;">' + escapeHtml(a.alvo) + ' ' + fmtNum(a.valor) + '</span>'; }).join('') : (x.ult ? '<span style="color:var(--ink-soft); font-size:12px;">nenhum</span>' : '—')) + '</td><td style="font-size:12px;">' + leit + '</td><td><button type="button" class="btn-edit" data-ins-talhao="' + x.t.id + '">+ Inspecionar</button></td></tr>';
+        h += '<tr><td><b>' + escapeHtml(x.t.nome) + '</b></td><td>' + (sf ? escapeHtml(lavouraLabel(sf.lavouraId)) : '—') + '</td><td>' + atraso + '</td><td>' + (function(){ var hs = acaoSituacaoHtml(x.t.id); return hs || (x.ult ? '<span style="color:var(--ink-soft); font-size:12px;">nenhum</span>' : '—'); })() + '</td><td style="font-size:12px;">' + leit + '</td><td><button type="button" class="btn-edit" data-ins-talhao="' + x.t.id + '">+ Inspecionar</button></td></tr>';
       });
       h += '</tbody></table></div>';
     }
@@ -7974,11 +8317,12 @@
     else {
       h += '<div class="paper table-wrap"><table><thead><tr><th>Data</th><th>Talhão</th><th>Quem</th><th>Leituras</th><th>Campo</th><th></th></tr></thead><tbody>';
       ins.slice(0, 80).forEach(function(i){
-        h += '<tr><td>' + fmtDate(i.data) + '</td><td>' + escapeHtml(talhaoNome(i.talhaoId)) + '</td><td>' + (i.responsavelId ? escapeHtml(membroNome(i.responsavelId)) : '—') + '</td><td style="font-size:12px;">' + (i.alvos || []).map(function(a){ var al = a.nivel > 0 && Number(a.valor) >= a.nivel; return (al ? '<b style="color:var(--cost-dark);">' : '') + escapeHtml(a.alvo) + ' ' + fmtNum(a.valor) + (al ? ' ⚠️</b>' : ''); }).join(' · ') + '</td><td style="font-size:12px;">' + escapeHtml([i.solo, i.plantas, i.observacao].filter(Boolean).join(' · ')) + '</td><td><button type="button" class="btn-del" data-ins-del="' + i.id + '">×</button></td></tr>';
+        h += '<tr><td>' + fmtDate(i.data) + '</td><td>' + escapeHtml(talhaoNome(i.talhaoId)) + '</td><td>' + (i.responsavelId ? escapeHtml(membroNome(i.responsavelId)) : '—') + '</td><td style="font-size:12px;">' + (i.alvos || []).map(function(a){ var al = a.nivel > 0 && Number(a.valor) >= a.nivel; return (al ? '<b style="color:var(--cost-dark);">' : '') + escapeHtml(a.alvo) + ' ' + fmtNum(a.valor) + (al ? ' ⚠️</b>' : ''); }).join(' · ') + (function(){ var ap = state.operacoes.filter(function(o){ return o.inspecaoId === i.id; }); return ap.length ? '<br><span style="color:var(--ink-soft);">🧪 ação: ' + ap.map(function(o){ return escapeHtml(o.tipo) + ' em ' + fmtDate(o.data); }).join(', ') + '</span>' : (acimaDoNivel(i).length ? ' <button type="button" data-action="ins-registrar-acao" data-ins="' + i.id + '" style="font-family:inherit; font-size:11px; padding:1px 7px; border-radius:4px; border:1px solid var(--paper-line); background:var(--paper); cursor:pointer;">🧪 Registrar ação</button>' : ''); })() + '</td><td style="font-size:12px;">' + escapeHtml([i.solo, i.plantas, i.observacao].filter(Boolean).join(' · ')) + '</td><td><button type="button" class="btn-del" data-ins-del="' + i.id + '">×</button></td></tr>';
       });
       h += '</tbody></table></div>';
     }
     // níveis
+    try{ h += analiseAtivosHtml(); }catch(errAt){ console.error(errAt); }
     h += '<details class="paper" style="margin-top:14px; padding:10px 14px; font-size:13px;"><summary style="cursor:pointer;">⚙️ Níveis de ação</summary><p style="font-size:12px; color:var(--ink-soft);">Valores de referência para começar. Ajuste com o seu agrônomo, pela região e pela fase da lavoura. Zero = sem nível (só acompanha).</p><div class="table-wrap"><table><thead><tr><th>Cultura</th><th>Alvo</th><th>Medida</th><th class="num">Nível de ação</th></tr></thead><tbody>';
     Object.keys(INS_ALVOS).forEach(function(cu){ INS_ALVOS[cu].forEach(function(a){ h += '<tr><td>' + ({cafe:'Café', soja:'Soja', milho:'Milho'})[cu] + '</td><td>' + escapeHtml(a.alvo) + '</td><td style="font-size:12px;">' + escapeHtml(a.medida) + '</td><td class="num"><input type="number" step="any" min="0" class="ins-nivel" data-c="' + cu + ':' + a.k + '" id="ins-n-' + cu + '-' + a.k + '" value="' + insNivel(cu, a) + '" style="width:80px; text-align:right; padding:5px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5;"></td></tr>'; }); });
     h += '</tbody></table></div></details>';
@@ -9627,6 +9971,8 @@
     {re: /\bHEAT\b/i, car: {'Soja': 7, 'Café': 1, 'Milho': 'ND', 'Trigo': 95, 'Aveia': 'ND'}, obs: 'Saflufenacil. Milho e aveia: só pré-plantio (não estabelecido). Trigo: 95 dias em pós (pré: não estabelecido).', fonte: 'Bula Heat — ADAPAR, 2026'},
     {re: /VIANCE/i, car: {'Soja': 60, 'Café': 20, 'Milho': 'ND', 'Trigo': 'ND'}, obs: 'Cletodim 240 EC. Soja: 60 dias com 1 aplicação; 97 dias com 3 aplicações. Milho e trigo: só pré-plantio.', fonte: 'Bula Viance — Revista Cultivar'},
     {re: /REATOR\s*360/i, car: {'Soja': 100, 'Milho': 'NR', 'Café': 'NR'}, obs: 'Clomazona. Soja: 100 dias (pré ou pós-emergência). Não registrado para milho e café.', fonte: 'Bula Reator 360 CS — Revista Cultivar'},
+    {re: /ENGEO\s*PLENO/i, car: {'Soja': 30, 'Milho': 40, 'Trigo': 42, 'Café': 'NR'}, obs: 'Tiametoxam + lambda-cialotrina. Café não aparece na tabela de intervalo de segurança da bula (não registrado) — confira antes de usar no café.', fonte: 'Bula Engeo Pleno S — Revista Cultivar'},
+    {re: /KASUMIN/i, car: {'Café': 30, 'Milho': 20, 'Soja': 'NR'}, obs: 'Casugamicina. Café: 30 dias em aplicação foliar (em viveiro de mudas: não determinado). Soja não consta na bula.', fonte: 'Bula Kasumin — ADAPAR, 2026'},
     {re: /ELEVORE/i, car: {'Soja': 'ND', 'Milho': 'ND', 'Café': 'NR', 'Trigo': 'NR'}, obs: 'Halauxifen-metil, dessecação antes do plantio: carência não determinada. Plantar a soja 30 dias após a aplicação (milho: pode plantar logo).', fonte: 'Bula Elevore — Revista Cultivar'}
   ];
   function bulaCarenciaDoNome(nome){ return BULAS_CARENCIA.find(function(b){ return b.re.test(nome || ''); }) || null; }
@@ -11086,6 +11432,7 @@
       prodFields.carencias = lerCarenciasDoForm(form);
       prodFields.carenciaObs = data.get('carenciaObs') || ''; prodFields.carenciaFonte = data.get('carenciaFonte') || '';
       prodFields.carenciaDias = '';
+      prodFields.classe = data.get('classe') || ''; prodFields.principioAtivo = (data.get('principioAtivo') || '').trim(); prodFields.modoAcao = (data.get('modoAcao') || '').trim().toUpperCase().replace(/\s+/g, ' ');
       if(prodEditingId) delete prodFields.estoqueAtual; // estoque só muda por compra, aplicação ou ajuste registrado
       lerEmbalagensDoDom();
       prodFields.embalagens = (produtoEmbRascunho ? produtoEmbRascunho.itens : []).map(function(e){ return {nome: String(e.nome || '').trim(), conteudo: parseFloat(e.conteudo) || 0}; }).filter(function(e){ return e.nome && e.conteudo > 0; });
@@ -11537,11 +11884,12 @@
         if(opIdx !== -1){ Object.keys(opFields).forEach(function(k){ state.operacoes[opIdx][k] = opFields[k]; }); }
       } else {
         opFields.id = uid(); opFields.criadoEm = Date.now();
+        if(diarioAcaoInspecao) opFields.inspecaoId = diarioAcaoInspecao.inspecaoId;
         state.operacoes.push(opFields);
       }
       saveKey('operacoes', state.operacoes);
       if(mudouEstoque) saveKey('produtos', state.produtos);
-      editState = null; diarioRascunho = null; diarioPreTalhaoId = '';
+      editState = null; diarioRascunho = null; diarioPreTalhaoId = ''; diarioAcaoInspecao = null;
       form.reset(); renderAll(); return;
     }
 
@@ -11733,7 +12081,7 @@
     if(plotBtn){
       var talhaoId = plotBtn.dataset.talhaoId;
       diarioPreTalhaoId = talhaoId;
-      diarioRascunho = null;
+      diarioRascunho = null; diarioAcaoInspecao = null;
       var sfPre = state.safras.filter(function(sx){ return sx.talhaoId === talhaoId && sx.ativa !== false; }).sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).find(function(sx){ var lv = lavouraPorId(sx.lavouraId); return lv && !lv.encerrada; });
       switchTab('operacoes');
       if(diarioRascunho && sfPre){ diarioRascunho.lavouraId = sfPre.lavouraId; diarioRascunho.marcadas = [sfPre.id]; renderDiarioDinamico(); }
@@ -11749,6 +12097,7 @@
     if(action.indexOf('mapa-') === 0 && acaoMapa(action, btn)) return;
     if(action.indexOf('dossie-') === 0){ acaoDossie(action, btn); return; }
     if(action === 'carencia-usar-bula'){ aplicarBulaNoForm(); return; }
+    if(action === 'ativo-usar-catalogo'){ aplicarAtivoCatalogoNoForm(); return; }
     if(action.indexOf('arrend-') === 0 && acaoArrend(action, btn)) return;
     if(action === 'abrir-mapa-talhao'){ abrirMapa({modo:'editar', talhaoId: id}); return; }
     if(action === 'abrir-mapa-fazenda'){ abrirMapa({modo:'visao'}); return; }
@@ -12779,6 +13128,22 @@
       saveKey('alertasLidos', state.alertasLidos); dashAlertasAbertos = true; renderPainel(); return;
     }
     if(action === 'toggle-alertas-lidos'){ dashAlertasLidosAbertos = !dashAlertasLidosAbertos; renderPainel(); return; }
+    if(action === 'ins-registrar-acao'){ iniciarAcaoInspecao(btn.dataset.ins); return; }
+    if(action === 'acao-desvincular'){ diarioAcaoInspecao = null; renderOperacoes(); return; }
+    if(action === 'acao-usar-outro'){
+      var selO = document.getElementById('acao-outro-produto'); if(!selO || !selO.value) return;
+      btn.dataset.id = selO.value; id = selO.value; action = 'acao-usar-produto';
+    }
+    if(action === 'acao-usar-produto'){
+      if(!diarioRascunho) return;
+      var prs = diarioRascunho.produtos || (diarioRascunho.produtos = []);
+      if(prs.some(function(x){ return x.produtoId === id; })) return;
+      var sugU = diarioAcaoInspecao ? produtosContraAlvo(diarioAcaoInspecao.alvos, '').find(function(x){ return x.p.id === id; }) : null;
+      var novoP = {produtoId: id, dose: sugU && sugU.dose ? sugU.dose.valor : '', doseUn: sugU && sugU.dose ? sugU.dose.unidade : unidadeProduto(id), dosePor: sugU && sugU.dose ? (sugU.dose.por || 'ha') : 'ha', quantidade: '', qtdManual: false};
+      var vazio = prs.findIndex(function(x){ return !x.produtoId; });
+      if(vazio !== -1) prs[vazio] = novoP; else prs.push(novoP);
+      renderDiarioDinamico(); return;
+    }
     if(action === 'cal-grade'){ calGradeAberta = !calGradeAberta; renderInspecao(); return; }
     if(action === 'cal-marca'){
       var cfgCal = calCfg(), chCal = btn.dataset.k + ':' + btn.dataset.per;
