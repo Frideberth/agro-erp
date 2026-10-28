@@ -2697,9 +2697,9 @@
     add(cpSemana.length, '📅', 'conta(s) a pagar vencendo em 7 dias — ' + fmtBRL(cpSemana.reduce(function(sm, c){ return sm + (Number(c.valor) || 0); }, 0)), 'contasPagar');
     var crVencidas = state.financeiro.filter(function(f){ return f.tipo === 'receita' && f.status === 'Pendente' && f.vencimento && f.vencimento < hoje; });
     add(crVencidas.length, '💵', 'conta(s) a receber atrasada(s) — ' + fmtBRL(crVencidas.reduce(function(sm, c){ return sm + (Number(c.valor) || 0); }, 0)), 'contasReceber');
-    var negativos = state.produtos.filter(function(p){ return (Number(p.estoqueAtual) || 0) < -0.0005; });
+    var negativos = state.produtos.filter(function(p){ return !p.arquivado && (Number(p.estoqueAtual) || 0) < -0.0005; });
     add(negativos.length, '📦', 'produto(s) com estoque negativo: ' + negativos.slice(0, 4).map(function(p){ return p.nome; }).join(', ') + (negativos.length > 4 ? '…' : ''), 'produtos', '', true);
-    var semCusto = state.produtos.filter(function(p){ return (Number(p.estoqueAtual) || 0) > 0 && !(custoMedioProduto(p.id) > 0); });
+    var semCusto = state.produtos.filter(function(p){ return !p.arquivado && (Number(p.estoqueAtual) || 0) > 0 && !(custoMedioProduto(p.id) > 0); });
     add(semCusto.length, '💲', 'produto(s) com estoque mas sem custo (a aplicação no Diário sai com custo zero)', 'produtos');
     var ativas = state.safras.filter(function(sf){ return sf.ativa !== false && sf.status !== 'colhida'; });
     add(ativas.filter(function(sf){ return !sf.dataPlantio; }).length, '🌱', 'safra(s) em andamento sem data de plantio', 'safras');
@@ -2882,7 +2882,7 @@
     html += primeirosPassosHtml();
     html += painelPendenciasHtml();
 
-    var estoqueBaixo = state.produtos.filter(function(p){ return Number(p.estoqueMinimo) > 0 && Number(p.estoqueAtual) < Number(p.estoqueMinimo); });
+    var estoqueBaixo = state.produtos.filter(function(p){ return !p.arquivado && Number(p.estoqueMinimo) > 0 && Number(p.estoqueAtual) < Number(p.estoqueMinimo); });
     var manutencao = state.patrimonio.filter(function(p){ return p.status === 'Em manutenção'; });
     var hojeMs = Date.now();
     var colheitasProximas = state.safras.filter(function(s){
@@ -3567,6 +3567,8 @@
     html += '<button type="button" class="btn-add-inline" data-action="produto-add-embalagem" style="width:auto; height:auto; padding:6px 12px; font-size:12.5px; align-self:flex-start;">+ Adicionar embalagem</button>';
     cont.innerHTML = html;
   }
+  var produtosArquivadosAberto = false;
+  document.addEventListener('toggle', function(e){ if(e.target && e.target.id === 'det-prod-arq') produtosArquivadosAberto = e.target.open; }, true);
   function renderProdutos(){
     var editingRecord = (editState && editState.scope === 'produtos') ? state.produtos.find(function(x){ return x.id === editState.id; }) : null;
     var html = renderPainelUnidades();
@@ -3607,7 +3609,7 @@
         html += '<div style="padding:14px 18px 0;"><input type="text" id="search-produtos" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;"></div>';
       }
       html += '<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Categoria</th><th>Unidade</th><th>Embalagens</th><th>Estoque</th><th>Custo médio</th><th>Mínimo</th><th></th></tr></thead><tbody>';
-      state.produtos.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(p){
+      state.produtos.filter(function(p){ return !p.arquivado; }).sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(p){
         html += '<tr>';
         html += '<td>' + escapeHtml(p.nome) + (p.principioAtivo ? '<br><span style="font-size:11px; color:var(--ink-soft);">🧬 ' + escapeHtml(p.principioAtivo) + (p.modoAcao ? ' · ' + escapeHtml(p.modoAcao) : '') + '</span>' : '') + '</td>';
         html += '<td>' + escapeHtml(p.categoria || '—') + '</td>';
@@ -3619,7 +3621,7 @@
         var cmP = custoMedioProduto(p.id);
         html += '<td class="num">' + (cmP > 0 ? fmtBRL(cmP) + '/' + escapeHtml(unP) + (Number(p.custoManual) > 0 ? '<br><span style="font-size:10.5px; color:var(--ink-soft);">manual</span>' : '') : '—') + '</td>';
         html += '<td class="num">' + fmtNum(p.estoqueMinimo) + '</td>';
-        html += '<td style="white-space:nowrap;"><button class="btn-edit" data-action="abrir-ajuste-estoque" data-id="' + p.id + '">⚖️ Ajustar</button><button class="btn-edit" data-action="abrir-conversao-produto" data-id="' + p.id + '" title="Trocar a unidade de controle convertendo estoque, compras e aplicações">🔁 Unidade</button><button class="btn-edit" data-action="edit-produto" data-id="' + p.id + '">Editar</button><button class="btn-del" data-action="del-produto" data-id="' + p.id + '">Remover</button></td>';
+        html += '<td style="white-space:nowrap;"><button class="btn-edit" data-action="arquivar-produto" data-id="' + p.id + '" title="Arquivar: some da lista, mas o histórico e os custos continuam">📦</button><button class="btn-edit" data-action="abrir-ajuste-estoque" data-id="' + p.id + '">⚖️ Ajustar</button><button class="btn-edit" data-action="abrir-conversao-produto" data-id="' + p.id + '" title="Trocar a unidade de controle convertendo estoque, compras e aplicações">🔁 Unidade</button><button class="btn-edit" data-action="edit-produto" data-id="' + p.id + '">Editar</button><button class="btn-del" data-action="del-produto" data-id="' + p.id + '">Remover</button></td>';
         html += '</tr>';
         if(ajusteEstoqueProdutoId === p.id) html += '<tr style="background:#E8E9D6;"><td colspan="9" style="padding:12px 14px;" id="ajuste-estoque-area"></td></tr>';
         if(conversaoProdutoId === p.id) html += '<tr style="background:#E8E9D6;"><td colspan="9" style="padding:12px 14px;" id="conversao-produto-area"></td></tr>';
@@ -3627,6 +3629,18 @@
       html += '</tbody></table></div>';
     }
     html += '</div>';
+    // arquivados
+    var arqP = state.produtos.filter(function(p){ return p.arquivado; }).sort(function(a, b){ return String(a.nome).localeCompare(String(b.nome), 'pt-BR'); });
+    var catsP = state.categoriasProduto.map(function(c){ return c.nome; }).filter(function(n){ return state.produtos.some(function(p){ return !p.arquivado && p.categoria === n; }); });
+    html += '<details class="paper" style="margin-top:14px; padding:10px 14px; font-size:13px;"' + (produtosArquivadosAberto ? ' open' : '') + ' id="det-prod-arq"><summary style="cursor:pointer; font-weight:600;">📦 Arquivados (' + arqP.length + ')</summary>';
+    html += '<p style="font-size:12px; color:var(--ink-soft); margin:6px 0 8px;">Itens de consumo (parafusos, buchas, correias…) que não precisam aparecer no estoque. O custo deles continua contando (já entrou na compra), e o nome continua no histórico, nas aplicações e no dossiê. Compras novas desses itens também ficam arquivadas.</p>';
+    if(arqP.length){
+      html += '<div class="table-wrap"><table class="sem-ordenacao" style="font-size:12.5px;"><thead><tr><th>Produto</th><th>Categoria</th><th class="num">Estoque</th><th>Arquivado em</th><th></th></tr></thead><tbody>';
+      arqP.forEach(function(p){ html += '<tr><td>' + escapeHtml(p.nome) + '</td><td>' + escapeHtml(p.categoria || '—') + '</td><td class="num">' + fmtNum(p.estoqueAtual) + ' ' + escapeHtml(unidadeControle(p) || '') + '</td><td>' + (p.arquivadoEm ? fmtDate(p.arquivadoEm) : '—') + '</td><td><button type="button" class="btn-edit" data-action="desarquivar-produto" data-id="' + p.id + '">↩ Voltar para a lista</button></td></tr>'; });
+      html += '</tbody></table></div>';
+    }
+    if(catsP.length) html += '<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:8px;"><span>Arquivar todos da categoria</span><select id="arq-cat" style="padding:6px 8px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;">' + catsP.map(function(n){ return '<option>' + escapeHtml(n) + '</option>'; }).join('') + '</select><button type="button" class="btn-edit" data-action="arquivar-categoria">📦 Arquivar</button></div>';
+    html += '</details>';
     var ajustes = (state.ajustesEstoque || []).slice().sort(function(a,b){ return (b.criadoEm||0) - (a.criadoEm||0); });
     if(ajustes.length){
       html += '<div class="section-title">Histórico de ajustes de estoque</div>';
@@ -3727,7 +3741,7 @@
       html += '<div class="empty-state">Cadastre um produto (aba Produtos) antes de registrar uma compra.</div>';
     } else {
       html += '<form class="entry-form" id="form-compra"' + (editingRecord ? ' data-editing-id="' + editingRecord.id + '"' : '') + '>';
-      html += selectField('produtoId', 'Produto', state.produtos.map(function(p){ return {value:p.id, label:p.nome}; }), editingRecord ? editingRecord.produtoId : undefined);
+      html += selectField('produtoId', 'Produto', state.produtos.filter(function(p){ return !p.arquivado || (editingRecord && editingRecord.produtoId === p.id); }).map(function(p){ return {value:p.id, label:p.nome + (p.arquivado ? ' (arquivado)' : '')}; }), editingRecord ? editingRecord.produtoId : undefined);
       html += selectField('fornecedorId', 'Fornecedor (opcional)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })), editingRecord ? editingRecord.fornecedorId : undefined);
       html += '<div id="compra-embalagem-campo" style="display:contents;"></div>';
       var usouEmb = editingRecord && editingRecord.embalagemNome;
@@ -5244,7 +5258,7 @@
       custoProdTotal += qtd * cm;
       html += '<tr data-prod-idx="' + i + '">';
       html += '<td style="min-width:200px;"><select data-campo="produto" style="' + estiloSel + '"><option value="">— escolha —</option>';
-      state.produtos.slice().sort(function(a,b){ return (a.nome||'').localeCompare(b.nome||'', 'pt-BR'); }).forEach(function(pp){ html += '<option value="' + pp.id + '"' + (pp.id === p.produtoId ? ' selected' : '') + '>' + escapeHtml(pp.nome) + '</option>'; });
+      state.produtos.filter(function(pp){ return !pp.arquivado || pp.id === p.produtoId; }).sort(function(a,b){ return (a.nome||'').localeCompare(b.nome||'', 'pt-BR'); }).forEach(function(pp){ html += '<option value="' + pp.id + '"' + (pp.id === p.produtoId ? ' selected' : '') + '>' + escapeHtml(pp.nome) + '</option>'; });
       html += '</select></td>';
       var doseUnAtual = p.doseUn && unidadesCompativeis(un).indexOf(p.doseUn) !== -1 ? p.doseUn : un;
       var estiloMini = 'padding:6px 4px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:12px;';
@@ -7891,7 +7905,7 @@
       var opcProd = state.produtos.slice().sort(function(a, b){ var ma = /manuten|peca|filtro|oleo|rolament|correia|pino|bucha/i.test(semAcento((a.categoria || '') + ' ' + a.nome)) ? 0 : 1, mb = /manuten|peca|filtro|oleo|rolament|correia|pino|bucha/i.test(semAcento((b.categoria || '') + ' ' + b.nome)) ? 0 : 1; return ma - mb || a.nome.localeCompare(b.nome, 'pt-BR'); });
       h += '<div style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin:10px 0 4px;">Peças e materiais do estoque</div>';
       (r.pecas.length ? r.pecas : [{produtoId: '', quantidade: ''}]).forEach(function(pc, i){
-        h += '<div style="display:flex; gap:6px; align-items:center; margin-bottom:4px;"><select class="mt-os-peca" data-i="' + i + '" style="' + MT_EST + ' flex:1; max-width:520px;"><option value="">— escolha —</option>' + opcProd.map(function(p){ return '<option value="' + p.id + '"' + (p.id === pc.produtoId ? ' selected' : '') + '>' + escapeHtml(p.nome) + ' — estoque ' + fmtNum(p.estoqueAtual) + ' ' + escapeHtml(p.unidade || '') + '</option>'; }).join('') + '</select><input type="number" step="any" min="0" class="mt-os-qtd" data-i="' + i + '" value="' + escapeHtml(String(pc.quantidade || '')) + '" placeholder="qtd" style="' + MT_EST + ' width:90px;"></div>';
+        h += '<div style="display:flex; gap:6px; align-items:center; margin-bottom:4px;"><select class="mt-os-peca" data-i="' + i + '" style="' + MT_EST + ' flex:1; max-width:520px;"><option value="">— escolha —</option>' + opcProd.map(function(p){ return '<option value="' + p.id + '"' + (p.id === pc.produtoId ? ' selected' : '') + '>' + escapeHtml(p.nome) + (p.arquivado ? ' (arquivado)' : ' — estoque ' + fmtNum(p.estoqueAtual) + ' ' + escapeHtml(p.unidade || '')) + '</option>'; }).join('') + '</select><input type="number" step="any" min="0" class="mt-os-qtd" data-i="' + i + '" value="' + escapeHtml(String(pc.quantidade || '')) + '" placeholder="qtd" style="' + MT_EST + ' width:90px;"></div>';
       });
       h += '<button type="button" class="btn-edit" data-action="mt-os-add-peca">+ Peça</button>';
       h += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin-top:10px;">';
@@ -8396,7 +8410,7 @@
     var jaSug = {}; sug.forEach(function(x){ jaSug[x.p.id] = true; });
     var fora = function(p){ return /semente|combust|manuten/.test(semAcento(p.categoria || '')); };
     var rot = function(p, av){ var est = Number(p.estoqueAtual) || 0, c = av.car; return (av.repete.length ? '⚠️ ' : (av.outroModo ? '✓ ' : '')) + p.nome + (p.principioAtivo ? ' [' + p.principioAtivo + (p.modoAcao ? ' · ' + p.modoAcao : '') + ']' : '') + ' — ' + (est > 0 ? 'estoque ' + fmtNum(est) + ' ' + (p.unidade || '') : 'sem estoque') + (c ? (c.tipo === 'dias' ? ' · carência ' + c.dias + ' d' : (c.tipo === 'NR' ? ' · não registrado p/ ' + cul : ' · carência ND')) : ''); };
-    var outros = state.produtos.filter(function(p){ return !jaSug[p.id] && !fora(p); }).map(function(p){ return {p: p, av: avaliarProdutoParaAlvo(p, nomesAlvo, ac.talhaoId, sf)}; });
+    var outros = state.produtos.filter(function(p){ return !jaSug[p.id] && !fora(p) && !p.arquivado; }).map(function(p){ return {p: p, av: avaliarProdutoParaAlvo(p, nomesAlvo, ac.talhaoId, sf)}; });
     var clsA = classesParaAlvos(nomesAlvo);
     var gDefAll = outros.filter(function(x){ return produtoEhDefensivo(x.p); }).sort(function(a, b){ return b.av.score - a.av.score; });
     var gDef = gDefAll.filter(function(x){ return x.av.classeOk !== false; }), gDefOutra = gDefAll.filter(function(x){ return x.av.classeOk === false; });
@@ -12646,8 +12660,27 @@
       return;
     }
     if(action === 'edit-produto'){ editState = {scope:'produtos', id: id}; renderProdutos(); var fP = document.getElementById('form-produto'); if(fP) fP.scrollIntoView({behavior:'smooth', block:'start'}); return; }
+    if(action === 'arquivar-produto' || action === 'desarquivar-produto' || action === 'arquivar-categoria'){
+      var hojeArq = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10);
+      if(action === 'arquivar-categoria'){
+        var catA = (document.getElementById('arq-cat') || {}).value; if(!catA) return;
+        var lsA = state.produtos.filter(function(p){ return !p.arquivado && p.categoria === catA; });
+        if(!window.confirm('Arquivar os ' + lsA.length + ' produto(s) da categoria "' + catA + '"?\n\nEles saem da lista e das escolhas do Diário e das compras. Custos e histórico continuam.')) return;
+        lsA.forEach(function(p){ p.arquivado = true; p.arquivadoEm = hojeArq; });
+      } else {
+        var pA = state.produtos.find(function(p){ return p.id === id; }); if(!pA) return;
+        if(action === 'arquivar-produto'){
+          if(Number(pA.estoqueAtual) > 0 && !window.confirm('"' + pA.nome + '" ainda tem ' + fmtNum(pA.estoqueAtual) + ' ' + (unidadeControle(pA) || '') + ' em estoque. O custo já foi contado na compra. Arquivar mesmo assim?')) return;
+          pA.arquivado = true; pA.arquivadoEm = hojeArq; produtosArquivadosAberto = false;
+        } else { delete pA.arquivado; delete pA.arquivadoEm; }
+      }
+      saveKey('produtos', state.produtos); renderAll(); return;
+    }
     if(action === 'del-produto'){
-      if(!window.confirm('Tem certeza que deseja remover este item? Essa ação não pode ser desfeita.')) return;
+      var pDelP = state.produtos.find(function(p){ return p.id === id; });
+      var usoP = state.compras.filter(function(c){ return c.produtoId === id; }).length + state.operacoes.filter(function(o){ return o.produtoId === id || (o.produtos || []).some(function(pp){ return pp.produtoId === id; }); }).length;
+      if(usoP && !window.confirm('"' + (pDelP ? pDelP.nome : '') + '" tem ' + usoP + ' compra(s)/aplicação(ões) no histórico. Se remover, o nome some delas (aparece "—") no Diário, no receituário e no dossiê.\n\nSe a ideia é só tirar da lista, use 📦 Arquivar.\n\nRemover mesmo assim?')) return;
+      if(!usoP && !window.confirm('Tem certeza que deseja remover este item? Essa ação não pode ser desfeita.')) return;
       state.produtos = state.produtos.filter(function(p){ return p.id !== id; });
       saveKey('produtos', state.produtos);
       renderProdutos();
