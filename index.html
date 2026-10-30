@@ -3246,7 +3246,7 @@
     var hh = horasHorimetro(it.id), hr = horasRegistradasMaquina(it.id), ci = custoHoraMaquinaInfo(it.id), custos = custosDaMaquina(it.id).valor;
     h += '<div style="font-size:12.5px; margin-top:10px; line-height:1.7;">';
     h += 'Horas pelo horímetro: <b>' + (hh ? fmtNum(hh) + ' h' : '— (precisa de 2 leituras)') + '</b> · Horas registradas no Diário/Colheita: <b>' + fmtNum(hr) + ' h</b><br>';
-    h += 'Custos lançados na máquina: <b>' + fmtBRL(custos) + '</b> · Custo/hora: <b>' + (ci.valor ? fmtBRL(ci.valor) + (ci.tipo === 'real' ? ' (real)' : ' (referência do cadastro)') : '—') + '</b>';
+    h += 'Custos lançados na máquina: <b>' + fmtBRL(custos) + '</b> · Custo/hora: <b>' + (ci.valor ? fmtBRL(ci.valor) + (ci.tipo === 'real' ? ' (real)' : ' (referência do cadastro)') : '—') + '</b>' + (ci.realParcial ? '<span style="font-size:11.5px; color:var(--ink-soft);">' + custoHoraParcialTxt(ci) + '</span>' : '');
     if(ci.tipo === 'real' && hh > hr) h += '<br>' + fmtNum(hh - hr) + ' h não foram registradas em atividades: ' + fmtBRL(custos * (hh - hr) / hh) + ' do custo vai para o rateio geral (por área). Para levar ao talhão certo, registre as horas no Diário de Campo.';
     h += '</div></div>';
     return h;
@@ -5089,13 +5089,21 @@
   function horasTotaisMaquina(patrimonioId){ return Math.max(horasHorimetro(patrimonioId), horasRegistradasMaquina(patrimonioId)); }
   function custoHoraReferencia(patrimonioId){ var it = state.patrimonio.find(function(x){ return x.id === patrimonioId; }); return it ? Number(it.custoHoraReferencia) || 0 : 0; }
   // Custo/hora: real (custos lançados na máquina ÷ horas) quando existir; senão o valor de referência do cadastro
+  // O custo real só passa a valer com dados suficientes: 100 h registradas ou 3 meses desde o primeiro gasto; antes disso vale a referência do cadastro
+  var CUSTO_HORA_MIN_HORAS = 100, CUSTO_HORA_MIN_DIAS = 90;
   function custoHoraMaquinaInfo(patrimonioId){
     var horas = horasTotaisMaquina(patrimonioId), custos = custosDaMaquina(patrimonioId).valor;
-    if(custos > 0 && horas > 0) return {valor: custos / horas, tipo: 'real'};
+    var real = custos > 0 && horas > 0 ? custos / horas : 0;
+    var prim = ''; state.financeiro.forEach(function(f){ if(f.tipo === 'custo' && (f.maquinasIds || []).indexOf(patrimonioId) !== -1 && f.data && (!prim || f.data < prim)) prim = f.data; });
+    var dias = prim ? Math.round((Date.now() - new Date(prim + 'T12:00:00').getTime()) / 86400000) : 0;
+    var suficiente = horas >= CUSTO_HORA_MIN_HORAS || dias >= CUSTO_HORA_MIN_DIAS;
+    if(real && suficiente) return {valor: real, tipo: 'real'};
     var ref = custoHoraReferencia(patrimonioId);
-    if(ref > 0) return {valor: ref, tipo: 'referencia'};
+    if(ref > 0) return {valor: ref, tipo: 'referencia', realParcial: real, horas: horas, dias: dias};
+    if(real) return {valor: real, tipo: 'real'};
     return {valor: 0, tipo: ''};
   }
+  function custoHoraParcialTxt(ci){ return ci && ci.realParcial ? ' — o custo real (' + fmtBRL(ci.realParcial) + '/h com ' + fmtNum(ci.horas) + ' h) passa a valer com ' + CUSTO_HORA_MIN_HORAS + ' h registradas ou 3 meses de gastos' : ''; }
   function custoHoraMaquina(patrimonioId){ return custoHoraMaquinaInfo(patrimonioId).valor; }
   // Parte dos custos da máquina que não foi levada às safras pelas horas registradas (vai para o rateio geral)
   function fracaoNaoAlocadaMaquina(patrimonioId){
@@ -5322,7 +5330,8 @@
         patrimonioParaDestino().filter(function(it){ return it.categoria !== 'Benfeitoria'; }).forEach(function(it){ html += '<option value="' + it.id + '"' + (it.id === m.patrimonioId ? ' selected' : '') + '>' + escapeHtml(it.nome) + '</option>'; });
         html += '</select></td>';
         html += '<td style="width:110px;"><input type="number" value="' + (m.horas === undefined ? '' : m.horas) + '" step="0.1" min="0" style="' + estiloNum + '"></td>';
-        html += '<td class="num">' + (m.patrimonioId ? (ch > 0 ? fmtBRL(ch) : '<span title="Ainda não há despesas lançadas nessa máquina (destino Máquina / equipamento)" style="color:var(--ink-soft);">sem despesas</span>') : '—') + '</td>';
+        var ciM = m.patrimonioId ? custoHoraMaquinaInfo(m.patrimonioId) : null;
+        html += '<td class="num">' + (m.patrimonioId ? (ch > 0 ? fmtBRL(ch) + (ciM && ciM.tipo === 'referencia' ? '<br><span style="font-size:10.5px; color:var(--ink-soft);" title="' + escapeHtml(custoHoraParcialTxt(ciM).replace(/^ — /, '')) + '">referência</span>' : '') : '<span title="Ainda não há despesas lançadas nessa máquina (destino Máquina / equipamento)" style="color:var(--ink-soft);">sem despesas</span>') : '—') + '</td>';
         html += '<td class="num cost">' + (m.patrimonioId && ch > 0 ? fmtBRL((Number(m.horas) || 0) * ch) : '—') + '</td>';
         html += '<td><button type="button" class="btn-del" data-action="diario-remover-maquina" data-idx="' + i + '" title="Tirar essa máquina">✕</button></td></tr>';
       });
@@ -9825,7 +9834,7 @@
       ['Custos pagos', fmtBRL(custosDaMaquina(id).valor) + ' <span style="color:var(--ink-soft);">(' + lancs.length + ' lançamento(s))</span>'],
       ['Horas registradas', hReg ? fmtNum(hReg) + ' h <span style="color:var(--ink-soft);">(Diário + Colheita)</span>' : ''],
       ['Horímetro', hHor ? fmtNum(hHor) + ' h' : ''],
-      ['Custo por hora', ci.valor ? '<b>' + fmtBRL(ci.valor) + '</b> <span style="color:var(--ink-soft);">(' + (ci.tipo === 'real' ? 'calculado' : 'referência do cadastro') + ')</span>' : '']
+      ['Custo por hora', ci.valor ? '<b>' + fmtBRL(ci.valor) + '</b> <span style="color:var(--ink-soft);">(' + (ci.tipo === 'real' ? 'calculado' : 'referência do cadastro') + custoHoraParcialTxt(ci) + ')</span>' : '']
     ]);
     var top = tipTop(porConta, 4, true);
     if(top) h += tipSec('Gastos por conta') + top;
