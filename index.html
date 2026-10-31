@@ -1905,6 +1905,54 @@
           marcarImportAplicado('fix-produtos-out26-v1');
         })();
         (function(){
+          // Correção do nome (31/out/2026): CURIUM → Curyom 550 EC (inseticida); MEGAFALL → Megafol (bioestimulante)
+          if(importJaAplicado('fix-curyom-megafol-v3')) return;
+          if(typeof podeGravarChave === 'function' && !podeGravarChave('produtos')) return;
+          var mudou = false;
+          state.produtos.forEach(function(p){
+            var n = String(p.nome || '').trim().toUpperCase();
+            if(n === 'CURIUM'){
+              p.nome = 'CURYOM 550 EC'; p.categoria = 'Defensivo'; p.classe = 'Inseticida'; p.principioAtivo = 'lufenurom + profenofós'; p.modoAcao = 'IRAC 15 + IRAC 1B'; p.ativoFonte = 'Bula Curyom 550 EC — Revista Cultivar, out/2026';
+              if(!(p.carencias && Object.keys(p.carencias).length)){ var b = bulaCarenciaDoNome(p.nome); if(b){ p.carencias = Object.assign({}, b.car); p.carenciaObs = b.obs; p.carenciaFonte = b.fonte; } }
+              mudou = true;
+            }
+            if(n === 'APPROACH' || n === 'APROACH'){
+              p.nome = 'APROACH POWER'; p.categoria = 'Defensivo'; p.classe = 'Fungicida'; p.principioAtivo = 'picoxistrobina + ciproconazol'; p.modoAcao = 'FRAC 11 + FRAC 3'; p.ativoFonte = 'Bula Aproach Power — ADAPAR, out/2026';
+              if(!(p.carencias && Object.keys(p.carencias).length)){ var b2 = bulaCarenciaDoNome(p.nome); if(b2){ p.carencias = Object.assign({}, b2.car); p.carenciaObs = b2.obs; p.carenciaFonte = b2.fonte; } }
+              mudou = true;
+            }
+            if(/DECORUM/.test(n) && !(p.carencias && Object.keys(p.carencias).length) && !(Number(p.carenciaDias) > 0)){
+              p.carenciaDias = 8; p.carenciaObs = '2,4-D: 8 dias (informado pelo produtor, conforme o rótulo).'; p.carenciaFonte = 'Rótulo Decorum'; mudou = true;
+            }
+            if(n === 'MEGAFALL'){
+              p.nome = 'MEGAFOL'; p.categoria = state.categoriasProduto.some(function(c){ return c.nome === 'Fertilizante Foliar'; }) ? 'Fertilizante Foliar' : 'Outro'; p.classe = 'Fertilizante / outro'; p.principioAtivo = 'bioestimulante (aminoácidos e extratos vegetais)'; p.modoAcao = ''; mudou = true;
+            }
+          });
+          if(mudou) saveKey('produtos', state.produtos);
+          marcarImportAplicado('fix-curyom-megafol-v3');
+        })();
+        (function(){
+          // Produtos novos (31/out/2026): Miravis Duo, Score Flexi, Verdict Ultra, Talismã, Decorum; e modo de ação de quem digitou só o ativo
+          if(importJaAplicado('ativos-bula-v3')) return;
+          if(typeof podeGravarChave === 'function' && !podeGravarChave('produtos')) return;
+          var mudou = false;
+          state.produtos.forEach(function(p){
+            var c = /MIRAVIS|SCORE\s*FLEX|VERDICT|TALISM|DECORUM/i.test(p.nome) ? ativoCatalogoDoNome(p.nome) : null;
+            if(c){
+              if(!p.principioAtivo || /DECORUM/i.test(p.nome)){ p.principioAtivo = p.principioAtivo || c.ativo; }
+              if(!p.principioAtivo) p.principioAtivo = c.ativo;
+              if(!p.modoAcao) p.modoAcao = c.modo;
+              if(!p.classe) p.classe = c.classe;
+              if(!p.categoria) p.categoria = 'Defensivo';
+              if(!p.ativoFonte) p.ativoFonte = 'Bulas (Agrolink / Revista Cultivar / ADAPAR), out/2026';
+              if(!(p.carencias && Object.keys(p.carencias).length)){ var b = bulaCarenciaDoNome(p.nome); if(b){ p.carencias = Object.assign({}, b.car); p.carenciaObs = b.obs; p.carenciaFonte = b.fonte; } }
+              mudou = true;
+            } else if(p.principioAtivo && !p.modoAcao){ var m = modoDosAtivos(p.principioAtivo); if(m){ p.modoAcao = m; mudou = true; } }
+          });
+          if(mudou) saveKey('produtos', state.produtos);
+          marcarImportAplicado('ativos-bula-v3');
+        })();
+        (function(){
           // Produtos novos (out/2026): princípio ativo, categoria e carência dos defensivos comprados depois da 1ª arrumação
           if(importJaAplicado('ativos-bula-v2')) return;
           if(typeof podeGravarChave === 'function' && !podeGravarChave('produtos')) return;
@@ -8213,7 +8261,8 @@
     {re: /DIFERE/i, classe: 'Fungicida', ativo: 'oxicloreto de cobre', modo: 'FRAC M01'},
     {re: /ALTO\s*100/i, classe: 'Fungicida', ativo: 'ciproconazol', modo: 'FRAC 3'},
     {re: /ZAPP/i, classe: 'Herbicida', ativo: 'glifosato (sal de potássio)', modo: 'HRAC 9'},
-    {re: /STINGER|GLIFOSATO/i, classe: 'Herbicida', ativo: 'glifosato (sal de amônio)', modo: 'HRAC 9'},
+    {re: /STINGER/i, classe: 'Herbicida', ativo: 'glifosato (sal de amônio)', modo: 'HRAC 9'},
+    {re: /GLIFOSATO|GLYPHOSATE/i, classe: 'Herbicida', ativo: 'glifosato', modo: 'HRAC 9'},
     {re: /\bHEAT\b/i, classe: 'Herbicida', ativo: 'saflufenacil', modo: 'HRAC 14'},
     {re: /VIANCE|CLETODIM/i, classe: 'Herbicida', ativo: 'cletodim', modo: 'HRAC 1'},
     {re: /REATOR\s*360/i, classe: 'Herbicida', ativo: 'clomazona', modo: 'HRAC 13'},
@@ -8227,6 +8276,14 @@
     {re: /FOX\s*XPRO/i, classe: 'Fungicida', ativo: 'bixafem + protioconazol + trifloxistrobina', modo: 'FRAC 7 + FRAC 3 + FRAC 11'},
     {re: /ABSOLUTO\s*FIX|CLOROTALONIL/i, classe: 'Fungicida', ativo: 'clorotalonil', modo: 'FRAC M05'},
     {re: /MAXIZATO/i, classe: 'Herbicida', ativo: 'glifosato (sal de amônio)', modo: 'HRAC 9'},
+    {re: /MIRAVIS\s*DUO/i, classe: 'Fungicida', ativo: 'pidiflumetofem + difenoconazol', modo: 'FRAC 7 + FRAC 3'},
+    {re: /SCORE\s*FLEX/i, classe: 'Fungicida', ativo: 'difenoconazol + propiconazol', modo: 'FRAC 3'},
+    {re: /VERDICT/i, classe: 'Herbicida', ativo: 'haloxifope-P-metílico', modo: 'HRAC 1'},
+    {re: /TALISM/i, classe: 'Inseticida', ativo: 'bifentrina + carbossulfano', modo: 'IRAC 3A + IRAC 1A'},
+    {re: /DECORUM|2,4-D/i, classe: 'Herbicida', ativo: '2,4-D', modo: 'HRAC 4'},
+    {re: /AP+ROACH\s*POWER/i, classe: 'Fungicida', ativo: 'picoxistrobina + ciproconazol', modo: 'FRAC 11 + FRAC 3'},
+    {re: /CURYOM/i, classe: 'Inseticida', ativo: 'lufenurom + profenofós', modo: 'IRAC 15 + IRAC 1B'},
+    {re: /MEGAFOL/i, classe: 'Fertilizante / outro', ativo: 'bioestimulante (aminoácidos e extratos vegetais)', modo: ''},
     {re: /MASTERLOCK/i, classe: 'Adjuvante', ativo: 'adjuvante (deposição / redutor de deriva)', modo: ''},
     {re: /YARAVITA/i, classe: 'Fertilizante / outro', ativo: 'fertilizante foliar', modo: ''},
     {re: /AUREO/i, classe: 'Adjuvante', ativo: 'éster metílico de óleo de soja', modo: ''},
@@ -8237,7 +8294,7 @@
   var GRUPO_DO_ATIVO = {
     'azoxistrobina':'FRAC 11','piraclostrobina':'FRAC 11','trifloxistrobina':'FRAC 11','picoxistrobina':'FRAC 11','ciproconazol':'FRAC 3','tebuconazol':'FRAC 3','difenoconazol':'FRAC 3','epoxiconazol':'FRAC 3','protioconazol':'FRAC 3','flutriafol':'FRAC 3','triadimenol':'FRAC 3','tetraconazol':'FRAC 3',
     'mancozebe':'FRAC M03','clorotalonil':'FRAC M05','oxicloreto de cobre':'FRAC M01','hidroxido de cobre':'FRAC M01','oxido cuproso':'FRAC M01','enxofre':'FRAC M02','fluxapiroxade':'FRAC 7','bixafem':'FRAC 7','benzovindiflupir':'FRAC 7','boscalida':'FRAC 7','carbendazim':'FRAC 1','tiofanato-metilico':'FRAC 1','casugamicina':'FRAC 24','fluazinam':'FRAC 29','ciprodinil':'FRAC 9',
-    'tiametoxam':'IRAC 4A','imidacloprido':'IRAC 4A','acetamiprido':'IRAC 4A','lambda-cialotrina':'IRAC 3A','bifentrina':'IRAC 3A','cipermetrina':'IRAC 3A','deltametrina':'IRAC 3A','clorantraniliprole':'IRAC 28','isocicloseram':'IRAC 30','ciantraniliprole':'IRAC 28','flubendiamida':'IRAC 28','ciclaniliprole':'IRAC 28','clorpirifos':'IRAC 1B','acefato':'IRAC 1B','metomil':'IRAC 1A','abamectina':'IRAC 6','benzoato de emamectina':'IRAC 6','espinetoram':'IRAC 5','espinosade':'IRAC 5','lufenurom':'IRAC 15','novalurom':'IRAC 15','teflubenzurom':'IRAC 15','metoxifenozida':'IRAC 18','sulfoxaflor':'IRAC 4C','flupiradifurona':'IRAC 4D','piriproxifem':'IRAC 7C','espirodiclofeno':'IRAC 23','espiromesifeno':'IRAC 23','fenpiroximato':'IRAC 21A','diafentiurom':'IRAC 12A','fipronil':'IRAC 2B','etiprole':'IRAC 2B',
+    'tiametoxam':'IRAC 4A','imidacloprido':'IRAC 4A','acetamiprido':'IRAC 4A','lambda-cialotrina':'IRAC 3A','bifentrina':'IRAC 3A','cipermetrina':'IRAC 3A','deltametrina':'IRAC 3A','clorantraniliprole':'IRAC 28','profenofos':'IRAC 1B','carbossulfano':'IRAC 1A','pidiflumetofem':'FRAC 7','propiconazol':'FRAC 3','haloxifope-p':'HRAC 1','isocicloseram':'IRAC 30','ciantraniliprole':'IRAC 28','flubendiamida':'IRAC 28','ciclaniliprole':'IRAC 28','clorpirifos':'IRAC 1B','acefato':'IRAC 1B','metomil':'IRAC 1A','abamectina':'IRAC 6','benzoato de emamectina':'IRAC 6','espinetoram':'IRAC 5','espinosade':'IRAC 5','lufenurom':'IRAC 15','novalurom':'IRAC 15','teflubenzurom':'IRAC 15','metoxifenozida':'IRAC 18','sulfoxaflor':'IRAC 4C','flupiradifurona':'IRAC 4D','piriproxifem':'IRAC 7C','espirodiclofeno':'IRAC 23','espiromesifeno':'IRAC 23','fenpiroximato':'IRAC 21A','diafentiurom':'IRAC 12A','fipronil':'IRAC 2B','etiprole':'IRAC 2B',
     'glifosato':'HRAC 9','glufosinato':'HRAC 10','paraquate':'HRAC 22','diquate':'HRAC 22','2,4-d':'HRAC 4','dicamba':'HRAC 4','halauxifeno':'HRAC 4','fluroxipir':'HRAC 4','picloram':'HRAC 4','triclopir':'HRAC 4','atrazina':'HRAC 5','metribuzim':'HRAC 5','diurom':'HRAC 5','amicarbazona':'HRAC 5','cletodim':'HRAC 1','haloxifope':'HRAC 1','quizalofope':'HRAC 1','setoxidim':'HRAC 1','fluazifope':'HRAC 1','imazetapir':'HRAC 2','clorimurom':'HRAC 2','nicosulfurom':'HRAC 2','diclosulam':'HRAC 2','flumetsulam':'HRAC 2','saflufenacil':'HRAC 14','flumioxazina':'HRAC 14','sulfentrazona':'HRAC 14','fomesafem':'HRAC 14','carfentrazona':'HRAC 14','lactofem':'HRAC 14','s-metolacloro':'HRAC 15','metolacloro':'HRAC 15','piroxasulfona':'HRAC 15','clomazona':'HRAC 13','mesotriona':'HRAC 27','tembotriona':'HRAC 27','isoxaflutol':'HRAC 27','indaziflam':'HRAC 29','trifluralina':'HRAC 3'
   };
   function ativoCatalogoDoNome(nome){ return ATIVOS_PRODUTO.find(function(b){ return b.re.test(nome || ''); }) || null; }
@@ -10492,6 +10549,12 @@
     {re: /\bHEAT\b/i, car: {'Soja': 7, 'Café': 1, 'Milho': 'ND', 'Trigo': 95, 'Aveia': 'ND'}, obs: 'Saflufenacil. Milho e aveia: só pré-plantio (não estabelecido). Trigo: 95 dias em pós (pré: não estabelecido).', fonte: 'Bula Heat — ADAPAR, 2026'},
     {re: /VIANCE/i, car: {'Soja': 60, 'Café': 20, 'Milho': 'ND', 'Trigo': 'ND'}, obs: 'Cletodim 240 EC. Soja: 60 dias com 1 aplicação; 97 dias com 3 aplicações. Milho e trigo: só pré-plantio.', fonte: 'Bula Viance — Revista Cultivar'},
     {re: /REATOR\s*360/i, car: {'Soja': 100, 'Milho': 'NR', 'Café': 'NR'}, obs: 'Clomazona. Soja: 100 dias (pré ou pós-emergência). Não registrado para milho e café.', fonte: 'Bula Reator 360 CS — Revista Cultivar'},
+    {re: /AP+ROACH\s*POWER/i, car: {'Café': 40, 'Soja': 30, 'Milho': 42, 'Trigo': 30}, obs: 'Picoxistrobina + ciproconazol.', fonte: 'Bula Aproach Power — ADAPAR, 2026'},
+    {re: /CURYOM/i, car: {'Café': 7, 'Soja': 35, 'Milho': 40}, obs: 'Lufenurom + profenofós (Curyom 550 EC).', fonte: 'Bula Curyom 550 EC — Revista Cultivar'},
+    {re: /MIRAVIS\s*DUO/i, car: {'Café': 28, 'Soja': 21, 'Milho': 30, 'Trigo': 'NR'}, obs: 'Pidiflumetofem + difenoconazol. Trigo não consta na bula.', fonte: 'Bula Miravis Duo — Revista Cultivar'},
+    {re: /SCORE\s*FLEX/i, car: {'Soja': 30, 'Milho': 30, 'Trigo': 30, 'Café': 'NR'}, obs: 'Difenoconazol + propiconazol (Score Flexi). Café não consta na bula.', fonte: 'Bula Score Flexi — ADAPAR, 2026'},
+    {re: /VERDICT/i, car: {'Café': 20, 'Soja': 90, 'Milho': 70, 'Trigo': 'ND'}, obs: 'Haloxifope-P-metílico. Milho: só milho tolerante ao haloxifope (OGM), 70 dias em pós; pré-emergência não determinado. Feijão 66 dias.', fonte: 'Bula Verdict Ultra — Revista Cultivar'},
+    {re: /TALISM/i, car: {'Soja': 20, 'Milho': 20, 'Café': 'NR', 'Trigo': 'NR'}, obs: 'Bifentrina + carbossulfano. Café e trigo não constam na bula.', fonte: 'Bula Talisman — Revista Cultivar'},
     {re: /VERTIMEC/i, car: {'Café': 14, 'Soja': 14, 'Milho': 'NR', 'Trigo': 'NR'}, obs: 'Abamectina. Café: bicho-mineiro e ácaro-vermelho (aplicação única). Milho e trigo não constam na bula.', fonte: 'Bula Vertimec 84 SC — Revista Cultivar'},
     {re: /VERDAVIS/i, car: {'Soja': 21, 'Milho': 40, 'Trigo': 15, 'Café': 'NR'}, obs: 'Isocicloseram + lambda-cialotrina. Café não consta na bula.', fonte: 'Bula Verdavis — Revista Cultivar'},
     {re: /SPHERE\s*MAX/i, car: {'Café': 30, 'Soja': 30, 'Milho': 15, 'Trigo': 30}, obs: 'Trifloxistrobina + ciproconazol.', fonte: 'Bula Sphere Max — ADAPAR, 2026'},
