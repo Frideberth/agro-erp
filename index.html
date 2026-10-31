@@ -7135,6 +7135,16 @@
     });
     return {valor: valor, saldo: saldo, proprio: Math.max(0, valor - saldo)};
   }
+  // O que entra no custo (escolha do usuário; vale para todas as lavouras). Padrão SENAR = tudo marcado.
+  var CSN_INC = [
+    {k:'insumos', l:'Insumos (lançamentos + aplicações do Diário)', g:'COE'}, {k:'pessoas', l:'Pessoas (salários, diárias, apanha)', g:'COE'},
+    {k:'mecLanc', l:'Mecanização: despesas lançadas', g:'COE'}, {k:'mecHoras', l:'Mecanização: horas de máquina (R$/h)', g:'COE'},
+    {k:'outros', l:'Outros gastos', g:'COE'}, {k:'juros', l:'Juros de financiamentos', g:'COE'}, {k:'rateioGeral', l:'Gastos gerais da fazenda rateados por área', g:'COE'},
+    {k:'dep', l:'Depreciação', g:'COT'}, {k:'prolab', l:'Pró-labore', g:'COT'},
+    {k:'terraArr', l:'Arrendamento pago', g:'CT'}, {k:'terraPropria', l:'Remuneração da terra própria', g:'CT'}, {k:'remCirc', l:'Remuneração do capital de giro', g:'CT'}, {k:'remBens', l:'Remuneração dos bens', g:'CT'}
+  ];
+  function custoSenarInclui(k){ var c = configCustoSenar(); return !(c.incluir && c.incluir[k] === false); }
+  function custoSenarExcluidos(){ return CSN_INC.filter(function(i){ return !custoSenarInclui(i.k); }); }
   // Cálculo completo de um grupo de safras (normalmente uma lavoura)
   function custoSenarDeSafras(sfs){
     var P = configCustoSenar();
@@ -7144,7 +7154,8 @@
     var cat = {insumos:0, pessoas:0, mecanizacao:0, outros:0, juros:0, terra:0};
     var porConta = {}, foraTotal = 0, freteTotal = 0, itensLanc = [];
     var addConta = function(r, v, c){ var k = r.contaId ? contaNome(r.contaId) : (r.categoria || 'Sem conta'); var x = porConta[k + '|' + c] = porConta[k + '|' + c] || {conta: k, cat: c, valor: 0}; x.valor += v; };
-    var lancs = [];
+    var lancs = [], brutos = [], exc = {};
+    var excAdd = function(k, v){ if(v) exc[k] = (exc[k] || 0) + v; };
     state.financeiro.forEach(function(f){ if(f.tipo === 'custo' && (f.status || 'Pago') !== 'Pendente') lancs.push({r: f, data: f.data || f.vencimento || ''}); });
     state.contasPagar.forEach(function(c){ if(c.status === 'Pago') lancs.push({r: c, data: c.dataPagamento || c.vencimento || ''}); });
     // 1) direto na lavoura
@@ -7155,7 +7166,7 @@
       if(frete[r.id]){ freteTotal += v; return; }
       var c = categoriaSenarLancamento(r);
       if(c === 'fora'){ foraTotal += v; return; }
-      cat[c] += v; addConta(r, v, c); itensLanc.push({r: r, v: v, c: c, src: state.contasPagar.indexOf(r) !== -1 ? 'cp' : 'fin'});
+      brutos.push({r: r, v: v, c: c, src: state.contasPagar.indexOf(r) !== -1 ? 'cp' : 'fin', tipo: 'direto'});
     });
     // 2) gerais da fazenda e parte das máquinas sem horas registradas, rateados por área × mês
     var itensRateio = [];
@@ -7166,26 +7177,37 @@
       else if(d === 'maquina'){ var ms = r.maquinasIds || []; if(!ms.length) return; v = ms.reduce(function(sm, mid){ return sm + fracaoNaoAlocadaMaquina(mid); }, 0) * (Number(r.valor) || 0) / ms.length; c = categoriaSenarLancamento(r); }
       else return;
       if(!v || c === 'fora') return;
-      itensRateio.push({valor: v, data: x.data, r: r, c: c});
+      itensRateio.push({valor: v, data: x.data, r: r, c: c, tipo: d === 'geral' ? 'geral' : 'maq'});
     });
     itensRateio.forEach(function(it){
       var a = alocarPorMesNasSafras([{valor: it.valor, data: it.data}], mapa);
       var v = ids.reduce(function(s, id){ return s + (a.porSafra[id] || 0); }, 0);
       if(!v) return;
-      cat[it.c] += v; addConta(it.r, v, it.c); itensLanc.push({r: it.r, v: v, c: it.c, src: state.contasPagar.indexOf(it.r) !== -1 ? 'cp' : 'fin', rateado: true});
+      brutos.push({r: it.r, v: v, c: it.c, src: state.contasPagar.indexOf(it.r) !== -1 ? 'cp' : 'fin', rateado: true, tipo: it.tipo});
+    });
+    // aplica a escolha do que entra no custo
+    var chaveCat = {insumos: 'insumos', pessoas: 'pessoas', mecanizacao: 'mecLanc', outros: 'outros', juros: 'juros', terra: 'terraArr'};
+    brutos.forEach(function(b){
+      if(b.tipo === 'geral' && !custoSenarInclui('rateioGeral')){ excAdd('rateioGeral', b.v); return; }
+      var kc = chaveCat[b.c]; if(kc && !custoSenarInclui(kc)){ excAdd(kc, b.v); return; }
+      cat[b.c] += b.v; addConta(b.r, b.v, b.c); itensLanc.push({r: b.r, v: b.v, c: b.c, src: b.src, rateado: b.rateado});
     });
     // 3) insumos aplicados (Diário de Campo) e horas de máquina
     var insDiario = 0, maqHoras = 0;
     sfs.forEach(function(sf){ insDiario += custoInsumosSafra(sf.id); maqHoras += custoMaquinasSafra(sf.id); });
-    cat.insumos += insDiario; cat.mecanizacao += maqHoras;
+    if(custoSenarInclui('insumos')) cat.insumos += insDiario; else { excAdd('insumos', insDiario); insDiario = 0; }
+    if(custoSenarInclui('mecHoras')) cat.mecanizacao += maqHoras; else { excAdd('mecHoras', maqHoras); maqHoras = 0; }
     // 4) juros de financiamentos: cada pagamento cobre os 12 meses até ele; cada mês vai às lavouras ativas pela área ÷ área da fazenda
     var jur = jurosPorSafra();
     cat.juros = ids.reduce(function(s, id){ return s + (jur[id] || 0); }, 0);
+    if(!custoSenarInclui('juros')){ excAdd('juros', cat.juros); cat.juros = 0; }
     var COE = cat.insumos + cat.pessoas + cat.mecanizacao + cat.outros + cat.juros;
     // COT: depreciação + pró-labore, pelos meses que a lavoura ocupa a terra × área ÷ área da fazenda
     var somaFix = function(mapaFix){ return ids.reduce(function(s, id){ return s + (mapaFix[id] || 0); }, 0); };
     var dep = somaFix(custosFixosPorSafra(depreciacaoAnualTotalFazenda()));
     var prolab = somaFix(custosFixosPorSafra((Number(P.prolaboreMensal) || 0) * 12));
+    if(!custoSenarInclui('dep')){ excAdd('dep', dep); dep = 0; }
+    if(!custoSenarInclui('prolab')){ excAdd('prolab', prolab); prolab = 0; }
     var COT = COE + dep + prolab;
     // CT: remunerações (custo de oportunidade)
     var areaTot = areaTotalFazenda();
@@ -7194,6 +7216,9 @@
     var remCirc = COE * (1 - Math.min(100, Number(P.pctFinanciado) || 0) / 100) / 2 * (Number(P.taxaCirc) || 0) / 100;
     var cap = capitalProprioBens();
     var remBens = somaFix(custosFixosPorSafra(cap.proprio / 2 * (Number(P.taxaBens) || 0) / 100));
+    if(!custoSenarInclui('terraPropria')){ excAdd('terraPropria', remTerra); remTerra = 0; }
+    if(!custoSenarInclui('remCirc')){ excAdd('remCirc', remCirc); remCirc = 0; }
+    if(!custoSenarInclui('remBens')){ excAdd('remBens', remBens); remBens = 0; }
     var CT = COT + cat.terra + remTerra + remCirc + remBens;
     var area = sfs.reduce(function(s, sf){ return s + areaPlantadaSafra(sf); }, 0);
     var sacas = producaoTotalEmSacas(ids);
@@ -7206,7 +7231,7 @@
     return {cat: cat, COE: COE, dep: dep, prolab: prolab, COT: COT, remTerra: remTerra, remCirc: remCirc, remBens: remBens, CT: CT,
       area: area, sacas: sacas, receitas: receitas, estoque: estoque, RB: RB, preco: preco,
       MB: RB - COE, ML: RB - COT, LU: RB - CT, porConta: porConta, itensLanc: itensLanc, foraTotal: foraTotal, freteTotal: freteTotal,
-      insDiario: insDiario, maqHoras: maqHoras, cap: cap, P: P, temArrendado: sfs.some(function(sf){ return talhaoArrendadoDeTerceiros(sf.talhaoId); })};
+      insDiario: insDiario, maqHoras: maqHoras, cap: cap, P: P, exc: exc, excluidos: custoSenarExcluidos(), temArrendado: sfs.some(function(sf){ return talhaoArrendadoDeTerceiros(sf.talhaoId); })};
   }
   // Base do simulador: o realizado quando já há colheita e venda; senão a produtividade esperada das safras e a cotação da cultura
   function custoSenarBase(x, lavouraId){
@@ -7252,7 +7277,7 @@
     if(x.COE > 0) out.push(['info', nomes[maior] + ' é ' + fmtNum(x.cat[maior] / x.COE * 100) + '% do desembolso', fmtBRL(x.cat[maior]) + ' na lavoura' + (A > 0 ? ', ' + fmtBRL(x.cat[maior] / A) + '/ha' : '') + '. É onde 10% de economia pesa mais: ' + fmtBRL(x.cat[maior] * 0.1) + '.']);
     if(x.CT > 0 && x.dep / x.CT > 0.25) out.push(['aviso', 'Depreciação é ' + fmtNum(x.dep / x.CT * 100) + '% do custo total', 'O parque de máquinas pesa mais que o desembolso desta lavoura em muitos itens. Vale conferir se o Patrimônio tem itens vendidos ou valores e vida útil desatualizados.']);
     if(x.COE > 0 && x.cat.juros / x.COE > 0.15) out.push(['aviso', 'Juros são ' + fmtNum(x.cat.juros / x.COE * 100) + '% do desembolso', fmtBRL(x.cat.juros) + ' de juros de financiamentos caíram nesta lavoura.']);
-    if(!x.prolab) out.push(['info', 'Pró-labore está zerado', 'Sem a sua retirada, o custo operacional total fica menor do que o real. Preencha em Parâmetros.']);
+    if(!x.prolab && custoSenarInclui('prolab')) out.push(['info', 'Pró-labore está zerado', 'Sem a sua retirada, o custo operacional total fica menor do que o real. Preencha em Parâmetros.']);
     return out;
   }
   function custoSenarSimHtml(x, lavouraId){
@@ -7484,6 +7509,7 @@
     h += '<tr><th>Margem bruta</th><td class="num">' + fmtBRL(x.MB) + '</td><th>Ponto de nivelamento (CT)</th><td class="num">' + (A > 0 && x.preco > 0 ? fmtNum(x.CT / A / x.preco) + ' sc/ha' : '—') + '</td></tr>';
     h += '<tr><th>Margem líquida</th><td class="num">' + fmtBRL(x.ML) + '</td><th>Produtividade</th><td class="num">' + (A > 0 && S > 0 ? fmtNum(S / A) + ' sc/ha' : '—') + '</td></tr>';
     h += '<tr><th>Lucro (receita − CT)</th><td class="num">' + fmtBRL(x.LU) + '</td><th>Lucratividade</th><td class="num">' + (x.RB > 0 ? fmtNum(x.ML / x.RB * 100) + '%' : '—') + '</td></tr></tbody></table>';
+    if(x.excluidos && x.excluidos.length) h += '<p class="nota"><b>Custo personalizado (não é o padrão SENAR completo).</b> Itens não incluídos: ' + x.excluidos.map(function(i){ return escapeHtml(i.l) + (x.exc[i.k] ? ' (' + fmtBRL(x.exc[i.k]) + ')' : ''); }).join(', ') + '.</p>';
     var dg = custoSenarDiagnostico(x, custoSenarBase(x, lavouraId));
     if(dg.length) h += '<p class="nota">' + dg.map(function(d){ return '<b>' + escapeHtml(d[1]) + '.</b> ' + escapeHtml(d[2]); }).join('<br>') + '</p>';
     var orc = orcamentoSenarLavoura(lavouraId);
@@ -8833,6 +8859,18 @@
     var comProd = ls.find(function(l){ return producaoTotalEmSacas(safrasDaLavoura(l.id).map(function(s){ return s.id; })) > 0; });
     return (comProd || ls[0] || {}).id || '';
   }
+  var custoSenarIncluirAberto = false;
+  document.addEventListener('toggle', function(e){ if(e.target && e.target.id === 'csn-incluir') custoSenarIncluirAberto = e.target.open; }, true);
+  document.addEventListener('change', function(e){
+    var t = e.target; if(!t || !t.classList || !t.classList.contains('csn-inc')) return;
+    var c = configCustoSenar(); if(!c.incluir) c.incluir = {};
+    if(t.checked) delete c.incluir[t.dataset.k]; else c.incluir[t.dataset.k] = false;
+    custoSenarIncluirAberto = true; custoSenarSim = null; saveKey('configUnidades', state.configUnidades); renderRentabilidade();
+  });
+  document.addEventListener('click', function(e){
+    if(!e.target || e.target.id !== 'csn-inc-padrao') return;
+    var c = configCustoSenar(); c.incluir = {}; custoSenarSim = null; saveKey('configUnidades', state.configUnidades); renderRentabilidade();
+  });
   function custoSenarHtml(){
     if(!(state.lavouras || []).length) return '';
     if(!custoSenarLavouraId || !lavouraPorId(custoSenarLavouraId)) custoSenarLavouraId = lavouraPadraoCustoSenar();
@@ -8857,6 +8895,15 @@
     h += '<div class="paper form-card" style="margin-bottom:20px;">';
     h += '<div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center; justify-content:space-between;"><label style="display:flex; gap:8px; align-items:center; font-size:13px;">Lavoura <select id="csn-lavoura" style="' + est + '">' + opts + '</select></label>';
     h += (custoSenarModo === 'orcado' ? '' : '<span style="font-size:13px; font-weight:700; color:' + cor + ';">● ' + status + '</span>') + '</div>';
+    if(x.excluidos.length) h += '<div style="margin-top:8px; font-size:12px; padding:6px 10px; border-radius:4px; background:#FFF6E0; border:1px solid #E8C877;">⚠️ <b>Custo personalizado</b> — não é o padrão SENAR completo. Fora do cálculo: ' + x.excluidos.map(function(i){ return escapeHtml(i.l); }).join(', ') + '.</div>';
+    h += '<details id="csn-incluir"' + (custoSenarIncluirAberto ? ' open' : '') + ' style="margin-top:10px; font-size:13px;"><summary style="cursor:pointer; font-weight:600;">☑️ O que incluir no custo (vale para todas as lavouras)</summary>';
+    h += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:10px 18px; margin-top:8px;">';
+    ['COE','COT','CT'].forEach(function(g){
+      h += '<div><div style="font-size:11px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px;">' + g + '</div>';
+      CSN_INC.filter(function(i){ return i.g === g; }).forEach(function(i){ var on = custoSenarInclui(i.k); h += '<label style="display:flex; gap:6px; align-items:flex-start; margin:3px 0; font-size:12.5px;"><input type="checkbox" class="csn-inc" data-k="' + i.k + '"' + (on ? ' checked' : '') + ' style="margin-top:2px;"><span>' + escapeHtml(i.l) + (!on && x.exc[i.k] ? ' <span style="color:var(--ink-soft);">(fora: ' + fmtBRL(x.exc[i.k]) + ')</span>' : '') + '</span></label>'; });
+      h += '</div>';
+    });
+    h += '</div>' + (x.excluidos.length ? '<button type="button" class="btn-edit" id="csn-inc-padrao" style="margin-top:8px;">↺ Voltar ao padrão SENAR (tudo incluído)</button>' : '') + '<p style="font-size:11px; color:var(--ink-soft); margin:6px 0 0;">O que você desmarcar sai do COE, COT, CT, custo por saca, margens, pontos de nivelamento e simulador — em todas as lavouras.</p></details>';
     var btnModo = function(id, lab, ativo){ return '<button type="button" id="' + id + '" class="btn-edit" style="' + (ativo ? 'background:var(--ink); color:#FCFCF5; border-color:var(--ink);' : '') + '">' + lab + '</button>'; };
     h += '<div style="display:flex; gap:6px; margin-top:10px;">' + btnModo('csn-modo-realizado', 'Realizado', custoSenarModo !== 'orcado') + btnModo('csn-modo-orcado', 'Orçado (planejamento)', custoSenarModo === 'orcado') + '</div>';
     if(custoSenarModo === 'orcado'){
@@ -8878,6 +8925,8 @@
     h += linha('COT · custo operacional total', x.COT, true);
     h += (x.cat.terra ? linha('Arrendamento pago', x.cat.terra) : '') + linha('Remuneração da terra própria', x.remTerra) + linha('Remuneração do capital de giro', x.remCirc) + linha('Remuneração dos bens de capital', x.remBens);
     h += linha('CT · custo total', x.CT, true);
+    var foraLin = x.excluidos.filter(function(i){ return x.exc[i.k]; });
+    if(foraLin.length) h += '<tr><td colspan="5" style="font-size:11px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; padding-top:10px;">Não incluídos (sua escolha)</td></tr>' + foraLin.map(function(i){ return '<tr style="color:var(--ink-soft);"><td style="text-decoration:line-through;">' + escapeHtml(i.l) + '</td><td class="num" style="text-decoration:line-through;">' + fmtBRL(x.exc[i.k]) + '</td><td class="num">' + pHa(x.exc[i.k]) + '</td><td class="num">' + pSc(x.exc[i.k]) + '</td><td class="num">fora</td></tr>'; }).join('');
     h += '</tbody></table></div>';
     h += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; margin-top:14px;">';
     h += '<div class="table-wrap"><table><tbody>';
