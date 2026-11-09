@@ -8310,12 +8310,15 @@
     var est = 'padding:7px 9px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px; width:100%;';
     var h = '<div style="grid-column:1/-1; border-top:1px dashed var(--paper-line); padding-top:8px;">';
     h += '<div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:6px;"><span style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em;">🧬 Princípio ativo e modo de ação</span>';
-    h += '<button type="button" class="btn-edit" data-action="ativo-usar-catalogo" id="btn-ativo-cat"' + (cat ? '' : ' style="display:none;"') + '>📖 Usar dados conhecidos</button></div>';
+    h += '<button type="button" class="btn-edit" data-action="ativo-usar-catalogo" id="btn-ativo-cat"' + (cat ? '' : ' style="display:none;"') + '>📖 Usar dados conhecidos</button>';
+    if(hasNetlifyBlobs) h += '<button type="button" class="btn-edit" data-action="agrofit-buscar" title="Busca o produto no Agrofit (Ministério da Agricultura) pelo nome comercial">🔎 Buscar no Agrofit</button>';
+    h += '</div><div id="agrofit-res" style="margin:0 0 8px;"></div>';
+    h += '<input type="hidden" name="agrofitRegistro" value="' + escapeHtml(p.agrofitRegistro || '') + '"><input type="hidden" name="bulaUrl" value="' + escapeHtml(p.bulaUrl || '') + '"><input type="hidden" name="ativoFonte" value="' + escapeHtml(p.ativoFonte || '') + '">';
     h += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px;">';
     h += '<div class="field" style="margin:0;"><label>Classe</label><select name="classe" style="' + est + '"><option value="">—</option>' + ['Fungicida','Inseticida','Herbicida','Acaricida','Bactericida','Nematicida','Adjuvante','Fertilizante / outro'].map(function(c){ return '<option' + (p.classe === c ? ' selected' : '') + '>' + c + '</option>'; }).join('') + '</select></div>';
     h += '<div class="field" style="margin:0;"><label>Princípio(s) ativo(s)</label><input type="text" name="principioAtivo" id="f-principioAtivo" value="' + escapeHtml(p.principioAtivo || '') + '" placeholder="Ex: azoxistrobina + ciproconazol" style="' + est + '"></div>';
     h += '<div class="field" style="margin:0;"><label>Modo de ação (IRAC / FRAC / HRAC)</label><input type="text" name="modoAcao" id="f-modoAcao" value="' + escapeHtml(p.modoAcao || '') + '" placeholder="Ex: FRAC 11 + FRAC 3" style="' + est + '"></div>';
-    h += '</div><p style="font-size:11px; color:var(--ink-soft); margin:6px 0 0;">O modo de ação está na bula (grupo IRAC, FRAC ou HRAC). Ao digitar ativos comuns, o sistema sugere o grupo. Serve para alternar os modos de ação e evitar resistência.' + (p.ativoFonte ? ' <i>(' + escapeHtml(p.ativoFonte) + ')</i>' : '') + '</p>';
+    h += '</div>' + (p.bulaUrl ? '<p style="font-size:12px; margin:6px 0 0;"><a href="' + escapeHtml(p.bulaUrl) + '" target="_blank" rel="noopener">📄 Abrir a bula' + (p.agrofitRegistro ? ' (registro MAPA ' + escapeHtml(p.agrofitRegistro) + ')' : '') + '</a> — a carência de cada cultura está no item "Intervalo de segurança".</p>' : '') + '<p style="font-size:11px; color:var(--ink-soft); margin:6px 0 0;">O modo de ação está na bula (grupo IRAC, FRAC ou HRAC). Ao digitar ativos comuns, o sistema sugere o grupo. Serve para alternar os modos de ação e evitar resistência.' + (p.ativoFonte ? ' <i>(' + escapeHtml(p.ativoFonte) + ')</i>' : '') + '</p>';
     return h + '</div>';
   }
   document.addEventListener('input', function(e){
@@ -8324,6 +8327,56 @@
     if(t.id === 'f-modoAcao') t.dataset.auto = '';
     if(t.name === 'nome' && t.closest && t.closest('#form-produto')){ var b = document.getElementById('btn-ativo-cat'); if(b) b.style.display = ativoCatalogoDoNome(t.value) ? '' : 'none'; }
   });
+  // ---- Busca no Agrofit (AgroAPI / Embrapa), via function do Netlify ----
+  var agrofitResultados = [];
+  function nomeParaAgrofit(nome){
+    var n = String(nome || '').toUpperCase();
+    n = n.replace(/\b(HERBICIDA|FUNGICIDA|INSETICIDA|ACARICIDA|BACTERICIDA|NEMATICIDA|ADJUVANTE|OLEO|ÓLEO)\b/g, ' ');
+    n = n.split(/\s+-\s+|\s*\(/)[0];
+    n = n.replace(/\b\d+[.,]?\d*\s*(L|LT|LTS|LITROS?|KG|KGS|G|GR|ML|BD|GL|SC|UN)\b/g, ' ').replace(/\b(SYNGENTA|BAYER|BASF|CORTEVA|FMC|UPL|ADAMA|NORTOX|FERTYBIO|OXIQUIMICA|IHARA|SUMITOMO|ALBAUGH|DE SANGOSSE|C\/\s*\d+\s*\w*)\b/g, ' ');
+    return n.replace(/[^A-Z0-9À-Ú\s.\-]/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  function classeDoAgrofit(cls){
+    var t = semAcento((cls || []).join(' '));
+    if(/fungic/.test(t)) return 'Fungicida'; if(/insetic/.test(t)) return 'Inseticida'; if(/herbic/.test(t)) return 'Herbicida';
+    if(/acaric/.test(t)) return 'Acaricida'; if(/bacteric/.test(t)) return 'Bactericida'; if(/nematic/.test(t)) return 'Nematicida'; if(/adjuv/.test(t)) return 'Adjuvante';
+    return '';
+  }
+  function buscarAgrofit(){
+    var form = document.getElementById('form-produto'); if(!form) return;
+    var box = document.getElementById('agrofit-res'); if(!box) return;
+    var nomeCad = (form.querySelector('[name="nome"]') || {}).value || '';
+    var q = window.prompt('Nome comercial para buscar no Agrofit:', nomeParaAgrofit(nomeCad)); if(q === null) return;
+    q = q.trim(); if(q.length < 3){ alert('Digite pelo menos 3 letras.'); return; }
+    box.innerHTML = '<p style="font-size:12.5px;">🔎 Buscando "' + escapeHtml(q) + '" no Agrofit…</p>';
+    apiFetch('/.netlify/functions/agrofit?marca=' + encodeURIComponent(q) + '&debug=1').then(function(r){ return r.json().then(function(d){ d._status = r.status; return d; }); }).then(function(d){
+      if(!d || d.error){ box.innerHTML = '<div class="paper note-box" style="margin:0; font-size:12.5px;">⚠️ ' + escapeHtml((d && d.error) || 'Erro na busca.') + (d && d.detalhe ? '<details style="margin-top:4px;"><summary style="cursor:pointer;">detalhes técnicos</summary><pre style="white-space:pre-wrap; font-size:11px;">' + escapeHtml(JSON.stringify(d.detalhe, null, 1)) + '</pre></details>' : '') + '</div>'; return; }
+      agrofitResultados = d.itens || [];
+      if(!agrofitResultados.length){ box.innerHTML = '<p style="font-size:12.5px;">Nada encontrado para "' + escapeHtml(q) + '". Tente só a marca (ex.: "Sphere Max", sem "Fungicida" e sem o tamanho da embalagem).' + (d.bruto && d.bruto.length ? '</p><details><summary style="cursor:pointer; font-size:12px;">a API respondeu, mas não reconheci os campos — ver resposta</summary><pre style="white-space:pre-wrap; font-size:11px; max-height:240px; overflow:auto;">' + escapeHtml(JSON.stringify(d.bruto, null, 1)) + '</pre></details>' : '</p>'); return; }
+      var h = '<div style="font-size:12px; color:var(--ink-soft); margin:2px 0 4px;">' + agrofitResultados.length + ' registro(s) no Agrofit. Escolha o seu:</div>';
+      agrofitResultados.slice(0, 10).forEach(function(it, i){
+        var pa = it.ingredientes.map(function(x){ return x.nome; }).join(' + ');
+        h += '<div style="display:flex; gap:10px; align-items:flex-start; padding:7px 10px; margin:0 0 4px; border:1px solid var(--paper-line); border-radius:4px; background:var(--paper-2); font-size:12.5px;"><span style="flex:1;"><b>' + escapeHtml(it.marcas.join(' / ') || '—') + '</b> <span style="color:var(--ink-soft);">· ' + escapeHtml(it.titular || '') + (it.registro ? ' · reg. ' + escapeHtml(it.registro) : '') + '</span><br>' + escapeHtml(it.classes.join(', ')) + ' · <b>' + escapeHtml(pa || '—') + '</b>' + (it.ingredientes.some(function(x){ return x.concentracao; }) ? ' <span style="color:var(--ink-soft);">(' + escapeHtml(it.ingredientes.map(function(x){ return x.concentracao; }).filter(Boolean).join(' + ')) + ')</span>' : '') + (it.culturas.length ? '<br><span style="font-size:11.5px; color:var(--ink-soft);">Culturas: ' + escapeHtml(it.culturas.slice(0, 25).join(', ')) + (it.culturas.length > 25 ? '…' : '') + '</span>' : '') + '</span><button type="button" class="btn-edit" data-action="agrofit-usar" data-i="' + i + '">Usar este</button></div>';
+      });
+      box.innerHTML = h;
+    }).catch(function(err){ box.innerHTML = '<div class="paper note-box" style="margin:0;">⚠️ Não consegui consultar: ' + escapeHtml(String(err && err.message || err)) + '</div>'; });
+  }
+  function usarAgrofitNoForm(i){
+    var it = agrofitResultados[i], form = document.getElementById('form-produto'); if(!it || !form) return;
+    var pa = it.ingredientes.map(function(x){ return String(x.nome || '').toLowerCase(); }).join(' + ');
+    var cls = classeDoAgrofit(it.classes);
+    if(cls) form.querySelector('[name="classe"]').value = cls;
+    if(pa) form.querySelector('[name="principioAtivo"]').value = pa;
+    var modo = modoDosAtivos(pa), m = form.querySelector('[name="modoAcao"]'); m.value = modo; m.dataset.auto = '1';
+    form.querySelector('[name="agrofitRegistro"]').value = it.registro || '';
+    form.querySelector('[name="bulaUrl"]').value = it.bulaUrl || '';
+    form.querySelector('[name="ativoFonte"]').value = 'Agrofit/MAPA' + (it.registro ? ' — registro ' + it.registro : '') + ', consultado em ' + fmtDate(new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10));
+    var cat = form.querySelector('[name="categoria"]');
+    if(cat && !cat.value && /fungic|insetic|herbic|acaric|bacteric|nematic/i.test(cls) && Array.prototype.some.call(cat.options, function(o){ return o.value === 'Defensivo'; })) cat.value = 'Defensivo';
+    var box = document.getElementById('agrofit-res');
+    var faltaGrupo = it.ingredientes.filter(function(x){ return !modoDosAtivos(x.nome); }).map(function(x){ return x.nome; });
+    box.innerHTML = '<div class="paper note-box" style="margin:0; font-size:12.5px;">✓ Preenchido com o registro ' + escapeHtml(it.registro || '') + ' (' + escapeHtml(it.marcas.join(' / ')) + '): <b>' + escapeHtml(pa) + '</b>' + (modo ? ' · ' + escapeHtml(modo) : '') + '.' + (faltaGrupo.length ? '<br>⚠️ Não conheço o grupo IRAC/FRAC/HRAC de: ' + escapeHtml(faltaGrupo.join(', ')) + ' — complete o "Modo de ação" pela bula.' : '') + (it.bulaUrl ? '<br>📄 <a href="' + escapeHtml(it.bulaUrl) + '" target="_blank" rel="noopener">Abrir a bula</a> para conferir e ver a carência de cada cultura.' : '<br>A carência de cada cultura continua sendo pela bula.') + ' Clique em <b>Salvar</b> para gravar.</div>';
+  }
   function aplicarAtivoCatalogoNoForm(){
     var form = document.getElementById('form-produto'); if(!form) return;
     var c = ativoCatalogoDoNome((form.querySelector('[name="nome"]') || {}).value); if(!c) return;
@@ -12022,6 +12075,7 @@
       prodFields.carencias = lerCarenciasDoForm(form);
       prodFields.carenciaObs = data.get('carenciaObs') || ''; prodFields.carenciaFonte = data.get('carenciaFonte') || '';
       prodFields.carenciaDias = '';
+      prodFields.agrofitRegistro = data.get('agrofitRegistro') || ''; prodFields.bulaUrl = data.get('bulaUrl') || ''; if(data.get('ativoFonte')) prodFields.ativoFonte = data.get('ativoFonte');
       prodFields.classe = data.get('classe') || ''; prodFields.principioAtivo = (data.get('principioAtivo') || '').trim(); prodFields.modoAcao = (data.get('modoAcao') || '').trim().toUpperCase().replace(/\s+/g, ' ');
       if(prodEditingId) delete prodFields.estoqueAtual; // estoque só muda por compra, aplicação ou ajuste registrado
       lerEmbalagensDoDom();
@@ -12688,6 +12742,8 @@
     if(action.indexOf('dossie-') === 0){ acaoDossie(action, btn); return; }
     if(action === 'carencia-usar-bula'){ aplicarBulaNoForm(); return; }
     if(action === 'ativo-usar-catalogo'){ aplicarAtivoCatalogoNoForm(); return; }
+    if(action === 'agrofit-buscar'){ buscarAgrofit(); return; }
+    if(action === 'agrofit-usar'){ usarAgrofitNoForm(Number(btn.dataset.i)); return; }
     if(action.indexOf('arrend-') === 0 && acaoArrend(action, btn)) return;
     if(action.indexOf('mt-') === 0 && acaoManutencao(action, btn)) return;
     if(action === 'abrir-mapa-talhao'){ abrirMapa({modo:'editar', talhaoId: id}); return; }

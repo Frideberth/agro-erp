@@ -66,7 +66,7 @@ export async function lerCompartilhamentos() { const v = await storeAuth().get(C
 export async function gravarCompartilhamentos(lista) { await storeAuth().setJSON(CHAVE_COMPARTILHAMENTOS, lista); }
 export const PAPEIS = { editor: "Pode editar tudo", campo: "Só Diário de Campo", leitura: "Só visualizar" };
 // Chaves que o papel "campo" pode gravar (Diário de Campo baixa estoque de produtos; chuva e imagens de campo)
-export const CHAVES_PAPEL_CAMPO = ["operacoes", "produtos", "chuvas", "imagensCampo"];
+export const CHAVES_PAPEL_CAMPO = ["operacoes", "produtos", "chuvas", "imagensCampo", "colheitaApanhas", "cafeLotes", "inspecoes"];
 
 export const normalizarEmail = (e) => String(e || "").trim().toLowerCase();
 export const emailValido = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizarEmail(e));
