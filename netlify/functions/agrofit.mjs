@@ -98,6 +98,10 @@ export default async (req, context) => {
       let d = null; try { d = JSON.parse(txt); } catch {}
       ultimo = { status: r.status, caminho, inicio: txt.slice(0, 600) };
       if (r.status === 401) { tokenCache = { valor: "", expira: 0 }; return json({ error: "A AgroAPI não aceitou o acesso (401). Confira se a aplicação está inscrita na API Agrofit.", detalhe: ultimo }, 502); }
+      if (r.status === 403 && /900908|forbidden/i.test(txt)) {
+        tokenCache = { valor: "", expira: 0 }; // após a inscrição, o próximo pedido pega um token novo
+        return json({ error: "As chaves funcionaram, mas a sua aplicação ainda não tem acesso à API Agrofit (403 – Resource forbidden). No portal AgroAPI, abra a aplicação → Subscriptions/Inscrições e inscreva-a na API \"Agrofit\" (versão v1, plano gratuito). Use as chaves de PRODUÇÃO (não as de Sandbox). Depois é só buscar de novo.", detalhe: ultimo }, 502);
+      }
       if (!r.ok || d == null) continue;
       const itens = comoLista(d).map(simplificar).filter((i) => i.registro || i.marcas.length || i.ingredientes.length);
       return json({ ok: true, consulta: marca, itens: itens.slice(0, 25), total: itens.length, ...(debug ? { bruto: comoLista(d).slice(0, 2), caminho } : {}) });

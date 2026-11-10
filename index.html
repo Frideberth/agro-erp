@@ -5626,9 +5626,10 @@
         if(lancamentoEstaFechado(f)){
           html += '<td><span class="badge" style="background:#8B8368; color:#fff;" title="Período fechado">🔒 Fechado</span></td>';
         } else {
-          html += '<td><button class="btn-edit" data-action="edit-financeiro" data-id="' + f.id + '">Editar</button><button class="btn-del" data-action="del-financeiro" data-id="' + f.id + '">Remover</button></td>';
+          html += '<td style="white-space:nowrap;">' + (status === 'Pendente' ? '<button class="btn" data-action="cp-abrir-pagamento" data-id="' + f.id + '" style="padding:5px 12px; font-size:12px; margin-right:4px;">' + (f.tipo === 'custo' ? '💰 Pagar' : '💵 Receber') + '</button>' : '') + '<button class="btn-edit" data-action="edit-financeiro" data-id="' + f.id + '">Editar</button><button class="btn-del" data-action="del-financeiro" data-id="' + f.id + '">Remover</button></td>';
         }
         html += '</tr>';
+        if(cpPagandoId === f.id) html += linhaPagamentoHtml(f, 13 + (financeiroSoSemSafra ? 1 : 0));
       });
       html += '</tbody></table></div>';
     }
@@ -12983,13 +12984,14 @@
     }
     if(action === 'produto-add-embalagem'){ lerEmbalagensDoDom(); produtoEmbRascunho.itens.push({nome:'', conteudo:''}); renderEmbalagensProduto(); return; }
     if(action === 'produto-remover-embalagem'){ lerEmbalagensDoDom(); produtoEmbRascunho.itens.splice(Number(btn.dataset.idx), 1); renderEmbalagensProduto(); return; }
-    if(action === 'cp-abrir-pagamento'){ cpPagandoId = cpPagandoId === id ? null : id; renderAll(); var dt = document.getElementById('cp-pag-data'); if(dt) dt.focus(); return; }
+    if(action === 'cp-abrir-pagamento'){ cpPagandoId = cpPagandoId === id ? null : id; renderAll(); var secPg = document.querySelector('.tab-content:not(.hidden)'); var dt = secPg ? secPg.querySelector('[id="cp-pag-data"]') : null; if(dt) dt.focus(); return; }
     if(action === 'cp-cancelar-pagamento'){ cpPagandoId = null; renderAll(); return; }
     if(action === 'cp-confirmar-pagamento'){
       var lcPag = state.financeiro.find(function(x){ return x.id === id; });
       if(!lcPag) return;
-      var dataPg = (document.getElementById('cp-pag-data') || {}).value || '';
-      var valorPg = parseFloat((document.getElementById('cp-pag-valor') || {}).value) || 0;
+      var linhaPg = btn.closest('tr') || document;
+      var dataPg = (linhaPg.querySelector('[id="cp-pag-data"]') || {}).value || '';
+      var valorPg = parseFloat((linhaPg.querySelector('[id="cp-pag-valor"]') || {}).value) || 0;
       if(!dataPg){ alert('Informe a data.'); return; }
       if(periodoFechado(dataPg)){ alert('O período ' + dataPg.slice(0,7) + ' está fechado. Reabra-o na aba Financeiro antes.'); return; }
       if(valorPg <= 0){ alert('Informe o valor.'); return; }
