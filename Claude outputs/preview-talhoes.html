@@ -1,0 +1,128 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Preview – Talhões</title>
+<style>
+:root{--bg:#f4f1e8;--card:#fff;--ink:#1f2a1a;--soft:#6b7462;--line:#e6e1d3;--g:#3f6b2a;--g2:#e8f0dc;--warn:#d98a1c;--side:#24361b}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--ink);display:flex;min-height:100vh}
+aside{width:232px;background:var(--side);color:#dfe8d4;padding:18px 12px;flex-shrink:0;position:sticky;top:0;height:100vh}
+.brand{display:flex;gap:10px;align-items:center;padding:4px 8px 18px}.brand .lg{width:38px;height:38px;border-radius:10px;background:#9fbf4a;display:grid;place-items:center;font-size:20px}.brand b{display:block;color:#fff}.brand small{font-size:11px;opacity:.7}
+.nav a{display:flex;gap:10px;align-items:center;padding:9px 10px;border-radius:9px;color:#d6e2c8;text-decoration:none;font-size:14px;margin-bottom:2px}.nav a:hover{background:#ffffff12}.nav a.on{background:#9fbf4a;color:#1d2b12;font-weight:600}.nav .ico{width:22px;text-align:center}.nav h6{margin:16px 10px 6px;font-size:10.5px;letter-spacing:.1em;opacity:.55;font-weight:600}
+main{flex:1;padding:22px 28px 40px;min-width:0}
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}header h1{margin:0;font-size:24px}header p{margin:2px 0 0;color:var(--soft);font-size:13px}.sp{flex:1}
+.btn{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 12px;font-size:13px;cursor:pointer;color:var(--ink);font-weight:500;display:inline-flex;gap:6px;align-items:center}.btn:hover{border-color:var(--g);background:var(--g2)}
+.btn.pri{background:var(--g);color:#fff;border-color:var(--g)}.btn.pri:hover{background:#335a21}.btn.big{padding:10px 16px;font-size:14px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:center}.kpi .i{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:21px;background:var(--g2)}.kpi b{font-size:21px;display:block}.kpi small{color:var(--soft);font-size:12px}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}.search{flex:1;min-width:200px;max-width:320px;border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:14px;background:#fff}
+.chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:6px 12px;font-size:13px;cursor:pointer}.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.view{margin-left:auto;display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}.view button{border:0;background:#fff;padding:7px 11px;cursor:pointer}.view .on{background:var(--g2)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;transition:.15s}.card:hover{box-shadow:0 8px 24px #3f6b2a1f;transform:translateY(-2px)}
+.thumb{height:130px;background:linear-gradient(135deg,#eef3e4,#dfe9cf);position:relative;display:grid;place-items:center;border-bottom:1px solid var(--line)}.thumb::before{content:"";position:absolute;inset:0;background-image:radial-gradient(#3f6b2a14 1px,transparent 1px);background-size:12px 12px}
+.cq{width:118px;height:118px;position:relative;filter:drop-shadow(0 3px 4px #0002)}.ha{position:absolute;right:10px;bottom:10px;background:#fff;border-radius:99px;padding:3px 10px;font-weight:700;font-size:13px;box-shadow:0 1px 3px #0002}
+.body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px;flex:1}.top{display:flex;align-items:center}.top h3{margin:0;font-size:17px;flex:1}.more{border:0;background:none;font-size:20px;cursor:pointer;color:var(--soft);border-radius:8px;width:32px;height:28px}.more:hover{background:#f1eee5}
+.prop{font-size:12.5px;color:var(--soft);margin-top:-6px}
+.crop{display:flex;gap:10px;align-items:center;background:#faf8f2;border-radius:10px;padding:8px 10px}.crop .ic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-size:19px}.crop b{display:block;font-size:14px}.crop small{color:var(--soft);font-size:11.5px}.crop>div{flex:1}
+.pill{font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:99px}.pill.ok{background:#e3f1d6;color:#2f5a1a}.pill.muted{background:#eee;color:#666}.pill.plan{background:#e4ecf7;color:#2c4f80}
+.soil{display:flex;flex-direction:column;gap:5px}.meter{display:grid;grid-template-columns:30px 1fr 42px;align-items:center;gap:8px;font-size:12px;color:var(--soft)}.meter b{color:var(--ink);text-align:right}.bar{height:7px;background:#eee;border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;border-radius:9px}.bar .good{background:#6aa53b}.bar .warn{background:var(--warn)}
+.chip-btn{align-self:flex-start;border:1px dashed #c7b98f;background:#fffaf0;border-radius:8px;font-size:12px;padding:4px 9px;cursor:pointer;margin-top:2px}
+.nosoil{font-size:12.5px;background:#fff6e6;color:#8a5a10;border-radius:9px;padding:9px 10px;display:flex;align-items:center;gap:6px}.link{margin-left:auto;border:0;background:none;color:var(--g);font-weight:600;cursor:pointer;text-decoration:underline}
+.acts{display:flex;gap:6px;margin-top:auto;flex-wrap:wrap}.acts .btn{flex:1;justify-content:center;padding:7px 8px;font-size:12.5px}
+.menu{position:absolute;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px #0002;padding:6px;width:190px;font-size:13.5px;display:none;z-index:9}.menu div{padding:8px 10px;border-radius:8px;cursor:pointer}.menu div:hover{background:#f3f0e7}.menu .danger{color:#b3261e}
+.inat{margin-top:22px;background:#fff;border:1px dashed #cfc7b0;border-radius:14px;padding:12px 16px}.inat summary{cursor:pointer;font-weight:600;color:var(--soft)}.irow{display:flex;align-items:center;gap:14px;margin-top:12px;opacity:.75}.irow .cq{width:46px;height:46px;filter:grayscale(1)}.irow>div{flex:1;font-size:13px}
+.note{margin-top:24px;font-size:12.5px;color:var(--soft);background:#fff;border-left:4px solid var(--g);padding:10px 14px;border-radius:8px}
+@media(max-width:900px){aside{display:none}.kpis{grid-template-columns:repeat(2,1fr)}main{padding:16px}}
+</style></head><body>
+<aside><div class="brand"><div class="lg">🌿</div><div><b>Minha Fazenda</b><small>Caderno de gestão</small></div></div>
+<nav class="nav"><a><span class="ico">🏠</span>Dashboard</a>
+<h6>SAFRA</h6><a><span class="ico">🌾</span>Lavouras</a><a><span class="ico">📒</span>Diário de campo</a><a><span class="ico">🔎</span>Inspeções</a>
+<h6>FINANCEIRO</h6><a><span class="ico">💰</span>Lançamentos</a><a><span class="ico">📊</span>Custos e resultado</a>
+<h6>CADASTROS</h6><a class="on"><span class="ico">🗺️</span>Propriedades e Talhões</a><a><span class="ico">📦</span>Produtos e Estoque</a><a><span class="ico">👥</span>Pessoas</a><a><span class="ico">🚜</span>Máquinas</a><a><span class="ico">🔧</span>Manutenção</a></nav></aside>
+<main>
+<header><div><h1>Talhões</h1><p>Clique num talhão para ver o histórico completo.</p></div><span class="sp"></span><button class="btn big">🗺️ Mapa da fazenda</button><button class="btn pri big">＋ Novo talhão</button></header>
+<section class="kpis">
+<div class="kpi"><div class="i">📐</div><div><b>126,82 ha</b><small>área ativa</small></div></div>
+<div class="kpi"><div class="i">🧩</div><div><b>9</b><small>talhões ativos</small></div></div>
+<div class="kpi"><div class="i" style="background:#e3f1d6">🌱</div><div><b>9</b><small>com lavoura em andamento</small></div></div>
+<div class="kpi"><div class="i" style="background:#fff1d6">🧪</div><div><b>3</b><small>sem análise de solo</small></div></div>
+</section>
+<div class="tools"><input class="search" placeholder="🔍 Buscar talhão..."><button class="chip on" data-f="">Todos</button><button class="chip" data-f="Soja">🌱 Soja</button><button class="chip" data-f="Café">☕ Café</button><div class="view"><button class="on" title="Cartões">▦</button><button title="Lista">☰</button></div></div>
+<section class="grid"><article class="card" data-c="Café">
+  <div class="thumb" style="--c:#8a5a3b"><svg viewBox="0 0 0.002291 0.002291" class="cq"><path d="M0.002099 0.000271 L0.002133 0.002020 L0.001463 0.002010 L0.000158 0.001961 L0.000242 0.001705 L0.000503 0.001335 L0.000710 0.001055 L0.000926 0.000803 L0.001153 0.000596 L0.001306 0.000503 L0.001355 0.000326 L0.001439 0.000291 Z" fill="#8a5a3b" fill-opacity=".85" stroke="#2f4a1f" stroke-width="0.000027" stroke-linejoin="round"/></svg><span class="ha">3,01 ha</span></div>
+  <div class="body">
+    <div class="top"><h3>Café Novo</h3><button class="more" title="Mais ações">⋯</button></div>
+    <div class="prop">📍 Sitio Santa Izabel V · Argiloso</div>
+    <div class="crop"><span class="ic" style="background:#8a5a3b22">☕</span><div><b>Café</b><small>anterior: Café</small></div><span class="pill ok">Em andamento</span></div>
+    <div class="soil"><div class="meter"><span>pH</span><div class="bar"><i class="warn" style="width:28%"></i></div><b>4.8</b></div><div class="meter"><span>V%</span><div class="bar"><i class="good" style="width:62%"></i></div><b>62%</b></div><button class="chip-btn">🧪 Calagem</button></div>
+    <div class="acts"><button class="btn pri">🗺️ Mapa</button><button class="btn">✏️ Editar</button><button class="btn">📋 Recomend.</button></div>
+  </div></article><article class="card" data-c="Café">
+  <div class="thumb" style="--c:#8a5a3b"><svg viewBox="0 0 0.005394 0.005394" class="cq"><path d="M0.000372 0.004101 L0.001446 0.004111 L0.003505 0.004121 L0.004992 0.004091 L0.005022 0.001273 L0.002717 0.001308 L0.002628 0.001736 L0.002534 0.002091 L0.002382 0.002401 L0.002076 0.002805 L0.001308 0.003593 Z" fill="#8a5a3b" fill-opacity=".85" stroke="#2f4a1f" stroke-width="0.000065" stroke-linejoin="round"/></svg><span class="ha">10,64 ha</span></div>
+  <div class="body">
+    <div class="top"><h3>Café Velho</h3><button class="more" title="Mais ações">⋯</button></div>
+    <div class="prop">📍 Sitio Santa Izabel VI · Argiloso</div>
+    <div class="crop"><span class="ic" style="background:#8a5a3b22">☕</span><div><b>Café</b><small>anterior: Café</small></div><span class="pill ok">Em andamento</span></div>
+    <div class="soil"><div class="meter"><span>pH</span><div class="bar"><i class="warn" style="width:91%"></i></div><b>6.7</b></div><button class="chip-btn">🧪 Calagem</button></div>
+    <div class="acts"><button class="btn pri">🗺️ Mapa</button><button class="btn">✏️ Editar</button><button class="btn">📋 Recomend.</button></div>
+  </div></article><article class="card" data-c="Soja">
+  <div class="thumb" style="--c:#7fae4a"><svg viewBox="0 0 0.010702 0.010702" class="cq"><path d="M0.009964 0.002888 L0.009580 0.003533 L0.009334 0.004031 L0.009270 0.004253 L0.009161 0.004529 L0.008900 0.005016 L0.008767 0.005420 L0.008654 0.005868 L0.008506 0.006272 L0.008393 0.006262 L0.008220 0.006213 L0.008073 0.006115 L0.007935 0.005982 L0.007723 0.005873 L0.007585 0.005735 L0.007634 0.005563 L0.007550 0.005415 L0.007324 0.005425 L0.007058 0.005494 L0.006600 0.005514 L0.006127 0.005514 L0.005235 0.005504 L0.004324 0.005410 L0.003881 0.005297 L0.003511 0.005218 L0.003516 0.004775 L0.003373 0.004612 L0.002743 0.004583 L0.001851 0.004563 L0.001644 0.004573 L0.001718 0.004760 L0.001896 0.004962 L0.001910 0.005459 L0.001965 0.005711 L0.001960 0.005991 L0.001901 0.006110 L0.001708 0.006095 L0.001477 0.006060 L0.001393 0.006184 L0.001378 0.006312 L0.001369 0.006745 L0.001344 0.007248 L0.001457 0.007385 L0.001595 0.007469 L0.001773 0.007504 L0.002034 0.007474 L0.002245 0.007400 L0.002442 0.007331 L0.002634 0.007312 L0.002856 0.007257 L0.003024 0.007287 L0.003196 0.007316 L0.003309 0.007326 L0.003497 0.007228 L0.003649 0.007198 L0.003723 0.007041 L0.003792 0.006922 L0.004088 0.006824 L0.004437 0.006750 L0.004708 0.006735 L0.004974 0.006686 L0.005117 0.006775 L0.005314 0.006794 L0.005807 0.006750 L0.006083 0.006730 L0.006501 0.006706 L0.006639 0.006809 L0.006787 0.007149 L0.006851 0.007262 L0.006954 0.007390 L0.007018 0.007543 L0.007127 0.007651 L0.007166 0.007824 L0.007181 0.008149 L0.007161 0.008380 L0.006728 0.008425 L0.006595 0.008430 L0.006289 0.008380 L0.004876 0.008420 L0.003531 0.008435 L0.003107 0.008435 L0.002758 0.008400 L0.002014 0.008395 L0.001728 0.008440 L0.001329 0.008474 L0.000827 0.008479 L0.000738 0.008380 L0.000753 0.007967 L0.000773 0.006243 L0.000846 0.004499 L0.000915 0.004287 L0.000984 0.004105 L0.001014 0.003923 L0.000911 0.003814 L0.000945 0.002292 L0.003457 0.002268 L0.004181 0.002228 L0.004703 0.002258 L0.004915 0.002302 L0.005157 0.002292 L0.005472 0.002253 L0.005871 0.002277 L0.006176 0.002268 L0.006511 0.002223 L0.006728 0.002248 L0.007033 0.002287 L0.007314 0.002317 L0.007644 0.002292 L0.007945 0.002292 L0.008284 0.002405 L0.008580 0.002499 L0.008969 0.002578 L0.009265 0.002612 Z" fill="#7fae4a" fill-opacity=".85" stroke="#2f4a1f" stroke-width="0.000128" stroke-linejoin="round"/></svg><span class="ha">44,4 ha</span></div>
+  <div class="body">
+    <div class="top"><h3>Pista</h3><button class="more" title="Mais ações">⋯</button></div>
+    <div class="prop">📍 Sitio Santa Izabel VII · Argiloso</div>
+    <div class="crop"><span class="ic" style="background:#7fae4a22">🌱</span><div><b>Soja</b><small>anterior: Milho</small></div><span class="pill ok">Em andamento</span></div>
+    <div class="soil"><div class="meter"><span>pH</span><div class="bar"><i class="warn" style="width:40%"></i></div><b>5.2</b></div><div class="meter"><span>V%</span><div class="bar"><i class="good" style="width:67%"></i></div><b>67%</b></div><button class="chip-btn">🧪 Calagem</button></div>
+    <div class="acts"><button class="btn pri">🗺️ Mapa</button><button class="btn">✏️ Editar</button><button class="btn">📋 Recomend.</button></div>
+  </div></article><article class="card" data-c="Soja">
+  <div class="thumb" style="--c:#7fae4a"><svg viewBox="0 0 0.007325 0.007325" class="cq"><path d="M0.002717 0.005827 L0.005692 0.005690 L0.005677 0.005079 L0.005648 0.004187 L0.005623 0.003291 L0.005712 0.002985 L0.005923 0.002626 L0.006224 0.002207 L0.006539 0.001823 L0.006776 0.001670 L0.006820 0.001522 L0.006726 0.001449 L0.003899 0.001434 L0.001958 0.001424 L0.001742 0.001951 L0.001515 0.002508 L0.001416 0.002862 L0.001328 0.003163 L0.001131 0.003507 L0.000934 0.003734 L0.000806 0.004015 L0.000796 0.004310 L0.000756 0.004552 L0.000614 0.004911 L0.000545 0.005054 L0.000505 0.005428 L0.000540 0.005788 L0.000668 0.005892 L0.001160 0.005901 Z" fill="#7fae4a" fill-opacity=".85" stroke="#2f4a1f" stroke-width="0.000088" stroke-linejoin="round"/></svg><span class="ha">25,8 ha</span></div>
+  <div class="body">
+    <div class="top"><h3>Pivo</h3><button class="more" title="Mais ações">⋯</button></div>
+    <div class="prop">📍 Sitio Santa Izabel V · Argiloso</div>
+    <div class="crop"><span class="ic" style="background:#7fae4a22">🌱</span><div><b>Soja</b><small>anterior: Milho</small></div><span class="pill ok">Em andamento</span></div>
+    <div class="soil"><div class="meter"><span>pH</span><div class="bar"><i class="warn" style="width:37%"></i></div><b>5.1</b></div><div class="meter"><span>V%</span><div class="bar"><i class="good" style="width:73%"></i></div><b>73%</b></div><button class="chip-btn">🧪 Calagem</button></div>
+    <div class="acts"><button class="btn pri">🗺️ Mapa</button><button class="btn">✏️ Editar</button><button class="btn">📋 Recomend.</button></div>
+  </div></article><article class="card" data-c="Soja">
+  <div class="thumb" style="--c:#7fae4a"><svg viewBox="0 0 0.005108 0.005108" class="cq"><path d="M0.004756 0.001175 L0.003392 0.001185 L0.002736 0.001667 L0.002574 0.001874 L0.001943 0.002076 L0.001288 0.002298 L0.000860 0.002347 L0.000845 0.002564 L0.000806 0.002722 L0.000584 0.002943 L0.000475 0.003121 L0.000441 0.003337 L0.000352 0.003470 L0.000392 0.003800 L0.000505 0.003909 L0.001155 0.003933 L0.002441 0.003928 L0.003249 0.003510 L0.003465 0.003318 L0.004047 0.002736 L0.004520 0.002121 L0.004579 0.001943 L0.004657 0.001682 Z" fill="#7fae4a" fill-opacity=".85" stroke="#2f4a1f" stroke-width="0.000061" stroke-linejoin="round"/></svg><span class="ha">8,95 ha</span></div>
+  <div class="body">
+    <div class="top"><h3>Sede</h3><button class="more" title="Mais ações">⋯</button></div>
+    <div class="prop">📍 Sitio Santa Izabel VI · Argiloso</div>
+    <div class="crop"><span class="ic" style="background:#7fae4a22">🌱</span><div><b>Soja</b><small>anterior: Milho</small></div><span class="pill ok">Em andamento</span></div>
+    <div class="soil"><div class="meter"><span>pH</span><div class="bar"><i class="warn" style="width:45%"></i></div><b>5.3</b></div><div class="meter"><span>V%</span><div class="bar"><i class="good" style="width:60%"></i></div><b>60%</b></div><button class="chip-btn">🧪 Calagem</button></div>
+    <div class="acts"><button class="btn pri">🗺️ Mapa</button><button class="btn">✏️ Editar</button><button class="btn">📋 Recomend.</button></div>
+  </div></article><article class="card" data-c="Soja">
+  <div class="thumb" style="--c:#7fae4a"><svg viewBox="0 0 0.004377 0.004377" class="cq"><path d="M0.001154 0.000472 L0.001780 0.000758 L0.002982 0.001408 L0.003450 0.001634 L0.003617 0.001856 L0.003794 0.002152 L0.003932 0.002634 L0.004075 0.003373 L0.003814 0.003590 L0.003563 0.003782 L0.003405 0.003905 L0.002854 0.003570 L0.002509 0.003324 L0.002179 0.003216 L0.001760 0.003132 L0.001302 0.002979 L0.000691 0.002861 L0.000400 0.002748 L0.000317 0.002506 L0.000302 0.002171 Z" fill="#7fae4a" fill-opacity=".85" stroke="#2f4a1f" stroke-width="0.000053" stroke-linejoin="round"/></svg><span class="ha">9,2 ha</span></div>
+  <div class="body">
+    <div class="top"><h3>Hirome</h3><button class="more" title="Mais ações">⋯</button></div>
+    <div class="prop">📍 Arrendamentos · Argiloso</div>
+    <div class="crop"><span class="ic" style="background:#7fae4a22">🌱</span><div><b>Soja</b><small>anterior: Milho</small></div><span class="pill ok">Em andamento</span></div>
+    <div class="soil"><div class="nosoil">⚠️ Sem análise de solo <button class="link">Registrar</button></div></div>
+    <div class="acts"><button class="btn pri">🗺️ Mapa</button><button class="btn">✏️ Editar</button><button class="btn">📋 Recomend.</button></div>
+  </div></article><article class="card" data-c="Soja">
+  <div class="thumb" style="--c:#7fae4a"><svg viewBox="0 0 0.006951 0.006951" class="cq"><path d="M0.006472 0.002966 L0.004724 0.002572 L0.003882 0.002434 L0.003227 0.002237 L0.002528 0.002090 L0.001184 0.001947 L0.001193 0.002168 L0.001193 0.002420 L0.001100 0.002700 L0.000957 0.002961 L0.000844 0.003227 L0.000740 0.003468 L0.000583 0.003665 L0.000479 0.003897 L0.000519 0.004202 L0.000593 0.004414 L0.003355 0.005005 Z" fill="#7fae4a" fill-opacity=".85" stroke="#2f4a1f" stroke-width="0.000083" stroke-linejoin="round"/></svg><span class="ha">13,55 ha</span></div>
+  <div class="body">
+    <div class="top"><h3>SI II - Meio</h3><button class="more" title="Mais ações">⋯</button></div>
+    <div class="prop">📍 Sitio Santa Izabel II · Arenoso</div>
+    <div class="crop"><span class="ic" style="background:#7fae4a22">🌱</span><div><b>Soja</b><small>anterior: Milho</small></div><span class="pill ok">Em andamento</span></div>
+    <div class="soil"><div class="meter"><span>pH</span><div class="bar"><i class="warn" style="width:34%"></i></div><b>5.0</b></div><div class="meter"><span>V%</span><div class="bar"><i class="good" style="width:65%"></i></div><b>65%</b></div><button class="chip-btn">🧪 Calagem</button></div>
+    <div class="acts"><button class="btn pri">🗺️ Mapa</button><button class="btn">✏️ Editar</button><button class="btn">📋 Recomend.</button></div>
+  </div></article><article class="card" data-c="Soja">
+  <div class="thumb" style="--c:#7fae4a"><svg viewBox="0 0 0.006177 0.006177" class="cq"><path d="M0.002202 0.005726 L0.002443 0.005751 L0.002606 0.005736 L0.002679 0.005608 L0.002670 0.005445 L0.002675 0.005081 L0.002734 0.004825 L0.002881 0.004455 L0.002941 0.004209 L0.002950 0.003938 L0.003059 0.003578 L0.003276 0.003337 L0.003443 0.003046 L0.003512 0.002869 L0.003576 0.002623 L0.003655 0.002337 L0.003783 0.002047 L0.004157 0.001125 L0.004162 0.000904 L0.004138 0.000707 L0.004226 0.000475 L0.004088 0.000426 L0.003916 0.000470 L0.003837 0.000539 L0.003724 0.000677 L0.003428 0.000919 L0.003271 0.001027 L0.003133 0.001160 L0.003108 0.001313 L0.003103 0.001475 L0.002970 0.001588 L0.002901 0.001697 L0.002822 0.001776 L0.002758 0.001884 L0.002679 0.002012 L0.002591 0.002263 L0.002542 0.002396 L0.002453 0.002519 L0.002453 0.002638 L0.002532 0.002707 L0.002620 0.002756 L0.002635 0.002889 L0.002611 0.002992 L0.002517 0.003081 L0.002473 0.003219 L0.002349 0.003337 L0.002167 0.003480 L0.002015 0.003667 L0.001951 0.003790 L0.001995 0.003958 L0.002074 0.004096 L0.002221 0.004224 L0.002221 0.004406 L0.002251 0.004559 L0.002197 0.004751 L0.002069 0.004928 L0.002064 0.005174 L0.002133 0.005470 Z" fill="#7fae4a" fill-opacity=".85" stroke="#2f4a1f" stroke-width="0.000074" stroke-linejoin="round"/></svg><span class="ha">5,42 ha</span></div>
+  <div class="body">
+    <div class="top"><h3>Pasto</h3><button class="more" title="Mais ações">⋯</button></div>
+    <div class="prop">📍 Sitio Santa Izabel V · Argiloso</div>
+    <div class="crop"><span class="ic" style="background:#7fae4a22">🌱</span><div><b>Soja</b><small>anterior: Milho</small></div><span class="pill ok">Em andamento</span></div>
+    <div class="soil"><div class="nosoil">⚠️ Sem análise de solo <button class="link">Registrar</button></div></div>
+    <div class="acts"><button class="btn pri">🗺️ Mapa</button><button class="btn">✏️ Editar</button><button class="btn">📋 Recomend.</button></div>
+  </div></article><article class="card" data-c="Soja">
+  <div class="thumb" style="--c:#7fae4a"><svg viewBox="0 0 0.003359 0.003359" class="cq"><path d="M0.002442 0.003102 L0.000463 0.002684 L0.000478 0.002497 L0.000335 0.002393 L0.000246 0.002280 L0.000232 0.002078 L0.000409 0.000256 L0.001177 0.000448 L0.001443 0.000547 L0.001596 0.000596 L0.001753 0.000601 L0.001955 0.000611 L0.002039 0.000640 L0.002186 0.000675 L0.002147 0.000813 L0.001891 0.000862 L0.001694 0.000813 L0.001458 0.000808 L0.001335 0.000823 L0.001261 0.000896 L0.001354 0.001029 L0.001610 0.001138 L0.002049 0.001349 L0.002246 0.001605 L0.002334 0.001733 L0.002492 0.001743 L0.002713 0.001719 L0.002969 0.001768 L0.003127 0.001768 L0.003097 0.001906 L0.003009 0.001955 L0.002841 0.002073 L0.002664 0.002201 L0.002561 0.002324 L0.002502 0.002511 L0.002447 0.002846 Z" fill="#7fae4a" fill-opacity=".85" stroke="#2f4a1f" stroke-width="0.000040" stroke-linejoin="round"/></svg><span class="ha">5,85 ha</span></div>
+  <div class="body">
+    <div class="top"><h3>SI II - Fundo</h3><button class="more" title="Mais ações">⋯</button></div>
+    <div class="prop">📍 Sitio Santa Izabel II · Arenoso</div>
+    <div class="crop"><span class="ic" style="background:#7fae4a22">🌱</span><div><b>Soja</b><small>anterior: Aveia</small></div><span class="pill ok">Em andamento</span></div>
+    <div class="soil"><div class="nosoil">⚠️ Sem análise de solo <button class="link">Registrar</button></div></div>
+    <div class="acts"><button class="btn pri">🗺️ Mapa</button><button class="btn">✏️ Editar</button><button class="btn">📋 Recomend.</button></div>
+  </div></article></section>
+<details class="inat"><summary>⏸ Talhões inativos (1 · 11,54 ha)</summary><div class="irow"><svg viewBox="0 0 0.003863 0.003863" class="cq"><path d="M0.003557 0.000419 L0.000739 0.000478 L0.000631 0.001345 L0.000296 0.002222 L0.000266 0.003424 L0.003596 0.003444 Z" fill="#aaa" fill-opacity=".85" stroke="#2f4a1f" stroke-width="0.000046" stroke-linejoin="round"/></svg><div><b>Zé</b> · 11,54 ha · Arrendamentos<br><small>Inativo desde 12/11/2026 — arrendamento encerrado</small></div><button class="btn">↩ Reativar</button></div></details>
+<div class="note"><b>O que muda:</b> cada talhão vira um cartão com o desenho real do croqui, a cultura com ícone, o status em cor e o solo em barras (verde = bom, laranja = corrigir). Só 3 botões à vista — Inativar e Remover ficam no menu <b>⋯</b>, longe de cliques acidentais. Os números do topo resumem a fazenda. O botão ☰ mantém a opção de tabela para quem prefere.</div>
+<div class="menu" id="mn"><div>📜 Histórico</div><div>🧪 Análise de solo</div><div>⏸️ Inativar</div><div class="danger">🗑️ Remover</div></div>
+</main>
+<script>
+var mn=document.getElementById('mn');document.addEventListener('click',function(e){var b=e.target.closest('.more');if(b){var r=b.getBoundingClientRect();mn.style.display='block';mn.style.left=(r.right-190+scrollX)+'px';mn.style.top=(r.bottom+4+scrollY)+'px';mn.style.position='absolute';document.body.appendChild(mn);e.stopPropagation();return;}mn.style.display='none';
+var c=e.target.closest('.chip');if(c){document.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');document.querySelectorAll('.card').forEach(k=>k.style.display=!c.dataset.f||k.dataset.c===c.dataset.f?'':'none');}});
+document.querySelector('.search').oninput=function(){var q=this.value.toLowerCase();document.querySelectorAll('.card').forEach(k=>k.style.display=k.querySelector('h3').textContent.toLowerCase().includes(q)?'':'none');};
+</script></body></html>

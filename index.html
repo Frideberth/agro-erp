@@ -92,6 +92,104 @@
   #sub-abas:empty{display:none;}
   #sub-abas button{font-family:inherit; font-size:13px; font-weight:600; padding:7px 14px; border-radius:6px; cursor:pointer; border:2px solid var(--paper-line); background:var(--paper); color:var(--ink);}
   #sub-abas button.on{border-color:var(--accent); background:var(--accent); color:#fff;}
+  /* ---------- Talhões: cartões ---------- */
+  .tl-head{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:4px 0 14px;}
+  .tl-head-txt{flex:1; min-width:180px; color:var(--paper);} .tl-head-txt b{display:block; font-size:16px;} .tl-head-txt span{font-size:12px; color:#C9D0B4;}
+  .tl-btn{font-family:inherit; display:inline-flex; align-items:center; justify-content:center; gap:6px; border:1px solid var(--paper-line); background:#FFFFFF; color:var(--ink); border-radius:9px; padding:8px 13px; font-size:13px; font-weight:600; cursor:pointer; transition:background .12s, border-color .12s;}
+  .tl-btn:hover{border-color:var(--growth); background:#EEF3E2;}
+  .tl-btn.tl-pri{background:var(--growth); border-color:var(--growth); color:#fff;} .tl-btn.tl-pri:hover{background:var(--growth-dark);}
+  .tl-btn.tl-danger{color:var(--cost); border-color:#E2C2BB;} .tl-btn.tl-danger:hover{background:#FBEDEA;}
+  .tl-kpis{display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; margin-bottom:14px;}
+  .tl-kpi{background:var(--paper); border:1px solid var(--paper-line); border-radius:12px; padding:12px 14px; display:flex; gap:12px; align-items:center; box-shadow:var(--shadow);}
+  .tl-kpi-i{width:40px; height:40px; border-radius:11px; display:grid; place-items:center; font-size:20px; background:#E8F0DC; flex-shrink:0;}
+  .tl-kpi b{display:block; font-size:19px; color:var(--ink);} .tl-kpi small{font-size:11.5px; color:var(--ink-soft);}
+  .tl-tools{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px;}
+  .tl-busca{flex:1; min-width:200px; max-width:340px; padding:9px 12px; border:1px solid var(--paper-line); border-radius:10px; background:var(--paper); font-size:13.5px; font-family:inherit;}
+  .tl-chip{font-family:inherit; border:1px solid var(--paper-line); background:var(--paper); color:var(--ink); border-radius:99px; padding:6px 12px; font-size:12.5px; font-weight:600; cursor:pointer;}
+  .tl-chip span{opacity:.6; font-weight:500;} .tl-chip.on{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .tl-vista{margin-left:auto; display:flex; border:1px solid var(--paper-line); border-radius:9px; overflow:hidden;}
+  .tl-vista button{font-family:inherit; border:0; background:var(--paper); padding:7px 11px; font-size:12.5px; cursor:pointer; color:var(--ink);} .tl-vista button.on{background:#DCE8C8; font-weight:700;}
+  .tl-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(285px, 1fr)); gap:16px;}
+  .tl-card{background:var(--paper); border:1px solid var(--paper-line); border-radius:14px; display:flex; flex-direction:column; box-shadow:var(--shadow); transition:transform .15s, box-shadow .15s;}
+  .tl-card:hover{transform:translateY(-2px); box-shadow:0 10px 26px -10px rgba(0,0,0,.55);}
+  .tl-thumb{height:128px; position:relative; display:grid; place-items:center; border-bottom:1px solid var(--paper-line); border-radius:14px 14px 0 0; background:linear-gradient(135deg,#EEF3E2,#DCE7C9); overflow:hidden;}
+  .tl-thumb::before{content:""; position:absolute; inset:0; background-image:radial-gradient(rgba(63,107,42,.13) 1px, transparent 1px); background-size:12px 12px;}
+  .tl-croqui{position:relative; width:112px; height:112px; filter:drop-shadow(0 3px 4px rgba(0,0,0,.18));}
+  .tl-ha{position:absolute; right:10px; bottom:10px; background:#fff; border-radius:99px; padding:3px 10px; font-weight:700; font-size:12.5px; box-shadow:0 1px 3px rgba(0,0,0,.2);}
+  .tl-desenhar{position:relative; font-family:inherit; border:1.5px dashed #9FB27A; background:rgba(255,255,255,.7); border-radius:10px; padding:10px 14px; font-size:12.5px; cursor:pointer; color:var(--growth-dark); font-weight:600;}
+  .tl-body{padding:12px 14px 14px; display:flex; flex-direction:column; gap:9px; flex:1;}
+  .tl-top{display:flex; align-items:center; gap:6px;} .tl-top h3{margin:0; font-size:16.5px; flex:1; color:var(--ink);}
+  .tl-more{position:relative;} .tl-more summary{list-style:none; cursor:pointer; font-size:20px; line-height:1; color:var(--ink-soft); padding:2px 8px 8px; border-radius:8px;} .tl-more summary::-webkit-details-marker{display:none;}
+  .tl-more summary:hover, .tl-more[open] summary{background:var(--paper-2);}
+  .tl-menu{position:absolute; right:0; top:32px; z-index:20; background:#fff; border:1px solid var(--paper-line); border-radius:11px; box-shadow:0 12px 30px rgba(0,0,0,.25); padding:5px; min-width:190px; display:flex; flex-direction:column;}
+  .tl-menu button{font-family:inherit; text-align:left; border:0; background:none; padding:8px 10px; border-radius:7px; font-size:13px; cursor:pointer; color:var(--ink);} .tl-menu button:hover{background:#F1F0E4;} .tl-menu .tl-danger{color:var(--cost);}
+  .tl-prop{font-size:12px; color:var(--ink-soft); margin-top:-5px;}
+  .tl-crop{display:flex; gap:10px; align-items:center; background:#FCFCF5; border:1px solid #E7E8D3; border-radius:10px; padding:7px 9px;}
+  .tl-crop>div{flex:1; min-width:0;} .tl-crop b{display:block; font-size:13.5px;} .tl-crop small{font-size:11px; color:var(--ink-soft);}
+  .tl-crop-ic{width:34px; height:34px; border-radius:9px; display:grid; place-items:center; font-size:18px; flex-shrink:0;}
+  .tl-pill{font-size:11px; font-weight:700; padding:3px 9px; border-radius:99px; white-space:nowrap;}
+  .tl-st-andamento{background:#E3F1D6; color:#2F5A1A;} .tl-st-planejada{background:#E4ECF7; color:#2C4F80;} .tl-st-colhida{background:#ECEAE0; color:#5E644B;}
+  .tl-soil{display:flex; flex-direction:column; gap:5px;}
+  .tl-meter{display:grid; grid-template-columns:30px 1fr 46px; gap:8px; align-items:center; font-size:12px; color:var(--ink-soft);} .tl-meter b{text-align:right; color:var(--ink);}
+  .tl-bar{height:7px; background:#E5E5D6; border-radius:9px; overflow:hidden;} .tl-bar i{display:block; height:100%; border-radius:9px;} .tl-bar i.bom{background:#6AA53B;} .tl-bar i.atencao{background:#D98A1C;}
+  .tl-soil-dt{font-size:10.5px; color:var(--ink-soft);}
+  .tl-nosoil{font-size:12.5px; background:#FFF4E0; color:#8A5A10; border-radius:9px; padding:8px 10px; display:flex; align-items:center; gap:6px;}
+  .tl-nosoil button{margin-left:auto; font-family:inherit; border:0; background:none; color:var(--growth-dark); font-weight:700; text-decoration:underline; cursor:pointer; font-size:12.5px;}
+  .tl-acts{display:flex; gap:6px; margin-top:auto; padding-top:2px;} .tl-acts .tl-btn{flex:1 1 auto; padding:7px 6px; font-size:12.5px; white-space:nowrap; min-width:0;}
+  .tl-badge{background:#D98A1C; color:#fff; border-radius:99px; padding:0 6px; font-size:10.5px;}
+  .tl-inat{margin-top:18px; background:var(--paper); border:1px dashed var(--paper-line); border-radius:12px; padding:12px 16px;}
+  .tl-inat summary{cursor:pointer; font-weight:700; color:var(--ink-soft); font-size:13.5px;}
+  .tl-inat-txt{font-size:11.5px; color:var(--ink-soft); margin:8px 0 4px;}
+  .tl-irow{display:flex; align-items:center; gap:12px; padding:10px 0; border-top:1px solid #E7E8D3; flex-wrap:wrap;} .tl-irow>div{flex:1; min-width:180px; font-size:13px;} .tl-irow small{color:var(--ink-soft);}
+  .tl-ithumb{width:46px; height:46px; display:grid; place-items:center; filter:grayscale(1); opacity:.75;} .tl-ithumb .tl-croqui{width:46px; height:46px;}
+  .lv-band{position:relative; display:flex; align-items:center; gap:10px; padding:14px 12px 14px 14px; border-radius:14px 14px 0 0; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.25);}
+  .lv-ic{width:40px; height:40px; border-radius:11px; background:rgba(255,255,255,.88); display:grid; place-items:center; font-size:21px; text-shadow:none; flex-shrink:0;}
+  .lv-tit{flex:1; min-width:0;} .lv-tit b{display:block; font-size:16px;} .lv-tit small{font-size:12px; opacity:.95;}
+  .lv-more summary{color:#fff;} .lv-more summary:hover, .lv-more[open] summary{background:rgba(255,255,255,.2);} .lv-more .tl-menu{text-shadow:none;}
+  .lv-st{display:flex; align-items:center; justify-content:space-between; gap:8px;} .lv-st b{font-size:15px;}
+  .lv-tempo{display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--ink-soft);} .lv-tempo-txt{display:flex; justify-content:space-between; color:var(--ink);} .lv-tempo small{font-size:10.5px;}
+  .lv-tals{display:flex; flex-wrap:wrap; gap:6px;}
+  .lv-tal{display:flex; align-items:center; gap:6px; background:#FCFCF5; border:1px solid #E7E8D3; border-radius:9px; padding:4px 8px 4px 4px; font-size:12px;}
+  .lv-tal-cq{width:28px; height:28px; display:grid; place-items:center; background:#EEF3E2; border-radius:7px;} .lv-tal-cq .tl-croqui{width:24px; height:24px; filter:none;}
+  .lv-tal-n{font-weight:600;} .lv-tal small{color:var(--ink-soft);}
+  .lv-nums{display:grid; grid-template-columns:1fr 1fr; gap:8px;} .lv-nums>div{background:#FCFCF5; border:1px solid #E7E8D3; border-radius:10px; padding:7px 10px; display:flex; flex-direction:column;}
+  .lv-nums small{font-size:11px; color:var(--ink-soft);} .lv-nums b{font-size:14.5px;} .lv-nums em{font-style:normal; font-size:11px; color:var(--ink-soft);}
+  .lv-nums b.cost{color:var(--cost-dark);} .lv-nums b.growth{color:var(--growth-dark);}
+  .lv-enc{opacity:.6;}
+  @media (max-width: 820px){ .tl-kpis{grid-template-columns:repeat(2, minmax(0,1fr));} .tl-vista{margin-left:0;} .tl-busca{max-width:none;} }
+
+  /* ---------- Ícones do menu lateral ---------- */
+  .nav-btn[data-tab]::before{width:20px; text-align:center; font-size:14px; flex-shrink:0;}
+  .nav-btn[data-tab="painel"]::before{content:'🏠';}
+  .nav-btn[data-tab="safras"]::before{content:'🌾';}
+  .nav-btn[data-tab="operacoes"]::before{content:'📒';}
+  .nav-btn[data-tab="inspecao"]::before{content:'🔎';}
+  .nav-btn[data-tab="chuvas"]::before{content:'🌧️';}
+  .nav-btn[data-tab="producao"]::before{content:'🚜';}
+  .nav-btn[data-tab="vendasAntecipadas"]::before{content:'🤝';}
+  .nav-btn[data-tab="caderneta"]::before{content:'☕';}
+  .nav-btn[data-tab="financeiro"]::before{content:'💰';}
+  .nav-btn[data-tab="contasPagar"]::before{content:'📤';}
+  .nav-btn[data-tab="contasReceber"]::before{content:'📥';}
+  .nav-btn[data-tab="compras"]::before{content:'🧾';}
+  .nav-btn[data-tab="financiamentos"]::before{content:'📑';}
+  .nav-btn[data-tab="arrendamentos"]::before{content:'📜';}
+  .nav-btn[data-tab="servicosPrestados"]::before{content:'🛠️';}
+  .nav-btn[data-tab="rentabilidade"]::before{content:'📈';}
+  .nav-btn[data-tab="fluxoCaixa"]::before{content:'🏦';}
+  .nav-btn[data-tab="contaCorrente"]::before{content:'💳';}
+  .nav-btn[data-tab="relatorios"]::before{content:'📊';}
+  .nav-btn[data-tab="orcamento"]::before{content:'🎯';}
+  .nav-btn[data-tab="indicadores"]::before{content:'📉';}
+  .nav-btn[data-tab="propriedades"]::before{content:'🗺️';}
+  .nav-btn[data-tab="talhoes"]::before{content:'🧩';}
+  .nav-btn[data-tab="produtos"]::before{content:'📦';}
+  .nav-btn[data-tab="parceiros"]::before{content:'👥';}
+  .nav-btn[data-tab="equipe"]::before{content:'👷';}
+  .nav-btn[data-tab="patrimonio"]::before{content:'🚜';}
+  .nav-btn[data-tab="manutencao"]::before{content:'🔧';}
+  .nav-btn[data-tab="configuracoes"]::before{content:'⚙️';}
+  .nav-btn[data-tab="culturas"]::before{content:'🌱';}
   .sidebar-footer{margin-top:auto; font-size:11px; color:#8A9174; line-height:1.5; padding:0 4px;}
 
   /* ---------- Main ---------- */
@@ -577,8 +675,20 @@
   function depreciacaoAnualTotalFazenda(){
     return state.patrimonio.reduce(function(s, item){ return s + depreciacaoAnualItem(item); }, 0);
   }
+  // talhão inativo: some das listas e escolhas, mas mantém o histórico; a área sai da conta da fazenda a partir de inativoDesde
+  function talhaoAtivo(t){ return !!t && !t.inativo; }
+  function talhoesAtivos(){ return state.talhoes.filter(talhaoAtivo); }
+  function talhaoContaNoMes(t, ym){ return !t.inativo || !t.inativoDesde || ym < String(t.inativoDesde).slice(0,7); }
   function areaTotalFazenda(){
-    return state.talhoes.reduce(function(s, t){ return s + (Number(t.area) || 0); }, 0);
+    return talhoesAtivos().reduce(function(s, t){ return s + (Number(t.area) || 0); }, 0);
+  }
+  var _areaMesCache = null;
+  function areaTotalFazendaNoMes(ym){
+    if(!ym) return areaTotalFazenda();
+    var sig = state.talhoes.length + '|' + state.talhoes.map(function(t){ return t.id + ':' + t.area + ':' + (t.inativo ? t.inativoDesde || '1' : ''); }).join(',');
+    if(!_areaMesCache || _areaMesCache.sig !== sig) _areaMesCache = {sig: sig, v: {}};
+    if(_areaMesCache.v[ym] === undefined) _areaMesCache.v[ym] = state.talhoes.reduce(function(s, t){ return s + (talhaoContaNoMes(t, ym) ? (Number(t.area) || 0) : 0); }, 0);
+    return _areaMesCache.v[ym];
   }
   function depreciacaoPorTalhao(talhaoId){
     var areaTotal = areaTotalFazenda();
@@ -717,7 +827,7 @@
     return Math.max(financiamentoValorBase(item) - financiamentoTotalPago(item), 0);
   }
 
-  function talhaoOptionsFn(){ return [{value:'', label:'—'}].concat(state.talhoes.map(function(t){ return {value:t.id, label:t.nome}; })); }
+  function talhaoOptionsFn(atual){ return [{value:'', label:'—'}].concat(state.talhoes.filter(function(t){ return talhaoAtivo(t) || (atual && t.id === atual); }).map(function(t){ return {value:t.id, label:t.nome + (t.inativo ? ' (inativo)' : '')}; })); }
   function propriedadeOptionsFn(){ return state.propriedades.map(function(p){ return {value:p.id, label:p.nome}; }); }
   function parceiroOptionsFn(){ return [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })); }
   function valorDescontoContaReceber(item){
@@ -2786,7 +2896,7 @@
       var calMon = calMonitorDoMes(hoje).filter(function(x){ return x.faltam.length; });
       add(calMon.length, '🔎', 'alvo(s) da época sem inspeção nos últimos 30 dias no café: ' + calMon.map(function(x){ return x.m.alvo; }).join(', '), 'inspecao');
       var limIns = new Date(new Date(hoje + 'T12:00:00').getTime() - 15 * 86400000).toISOString().slice(0,10), lim30 = new Date(new Date(hoje + 'T12:00:00').getTime() - 30 * 86400000).toISOString().slice(0,10);
-      var talLav = state.talhoes.filter(function(t){ var sfL = insSafraAtiva(t.id); return sfL && sfL.status !== 'planejada'; });
+      var talLav = talhoesAtivos().filter(function(t){ var sfL = insSafraAtiva(t.id); return sfL && sfL.status !== 'planejada'; });
       var ultIns = function(t){ return (state.inspecoes || []).filter(function(i){ return i.talhaoId === t.id; }).sort(function(a, b){ return (b.data || '').localeCompare(a.data || '') || (b.criadoEm || 0) - (a.criadoEm || 0); })[0]; };
       var lavF = lavourasEmFase(hoje), critAtr = lavF.filter(function(x){ return x.atrasada; }), critIds = {};
       critAtr.forEach(function(x){ critIds[x.t.id] = true; });
@@ -3017,7 +3127,7 @@
         return '<svg class="croqui" viewBox="-4 -4 ' + (W + 8).toFixed(2) + ' ' + (H + 8).toFixed(2) + '" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><defs><pattern id="' + pid + '" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(100)"><rect width="5" height="5" fill="' + cor + '"/><rect width="1" height="5" fill="rgba(0,0,0,0.10)"/></pattern></defs><path d="' + d + '" fill="url(#' + pid + ')" stroke="rgba(40,30,10,0.55)" stroke-width="1.2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>';
       };
       html += '<div class="plot-map">';
-      state.talhoes.forEach(function(t){
+      talhoesAtivos().forEach(function(t){
         var safra = safraAtualDoTalhao(t.id);
         var statusClass = safra ? 'status-' + safra.status : 'status-none';
         var statusLabel = safra ? STATUS_LABEL[safra.status] : 'Sem safra';
@@ -4501,7 +4611,7 @@
       html += '<div class="paper empty-state">Nenhuma propriedade cadastrada ainda.</div>';
     } else {
       state.propriedades.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(p){
-        var talhoesDaProp = state.talhoes.filter(function(t){ return t.propriedadeId === p.id; });
+        var talhoesDaProp = talhoesAtivos().filter(function(t){ return t.propriedadeId === p.id; });
         var areaTalhoes = talhoesDaProp.reduce(function(s,t){ return s + (Number(t.area)||0); }, 0);
         html += '<div class="paper property-card">';
         html += '<div class="property-head">';
@@ -4544,10 +4654,81 @@
   }
 
   /* ---------------- Talhões ---------------- */
+  var talhoesFormAberto = false, talhoesFiltroCult = '';
+  var talhoesVista = 'cards'; try{ talhoesVista = localStorage.getItem('agro-talhoes-vista') || 'cards'; }catch(e){}
+  function tlCulturaInfo(nome){
+    var n = semAcento(nome || '');
+    if(/caf/.test(n)) return {ic:'☕', cor:'#8A5A3B'};
+    if(/soja/.test(n)) return {ic:'🌱', cor:'#7FAE4A'};
+    if(/milho/.test(n)) return {ic:'🌽', cor:'#E0B23C'};
+    if(/feij/.test(n)) return {ic:'🫘', cor:'#A0522D'};
+    if(/trigo|aveia|cevada|sorgo|arroz/.test(n)) return {ic:'🌾', cor:'#C9B77A'};
+    if(/pasto|pastagem|braqui|capim/.test(n)) return {ic:'🐄', cor:'#9DBA6A'};
+    if(/sem lavoura/.test(n)) return {ic:'⬜', cor:'#C9C3A4'};
+    return {ic:'🌿', cor:'#9AA86A'};
+  }
+  function tlIconeCultura(nome){ return tlCulturaInfo(nome).ic; }
+  // croqui do talhão (contorno real, na escala do próprio talhão)
+  function croquiTalhaoSvg(cont, cor, id){
+    if(!Array.isArray(cont) || cont.length < 3) return '';
+    var lat0 = cont.reduce(function(s, p){ return s + Number(p[0]); }, 0) / cont.length, k = Math.cos(lat0 * Math.PI / 180);
+    var pts = cont.map(function(p){ return [Number(p[1]) * k, -Number(p[0])]; });
+    var xs = pts.map(function(p){ return p[0]; }), ys = pts.map(function(p){ return p[1]; });
+    var x0 = Math.min.apply(null, xs), y0 = Math.min.apply(null, ys), w = Math.max.apply(null, xs) - x0, h = Math.max.apply(null, ys) - y0;
+    if(!(w > 0) || !(h > 0)) return '';
+    var esc = 100 / Math.max(w, h), W = w * esc, H = h * esc;
+    var d = pts.map(function(p, i){ return (i ? 'L' : 'M') + ((p[0] - x0) * esc).toFixed(2) + ' ' + ((p[1] - y0) * esc).toFixed(2); }).join(' ') + ' Z';
+    var pid = 'tq' + String(id).replace(/[^a-zA-Z0-9]/g, '');
+    return '<svg class="tl-croqui" viewBox="-4 -4 ' + (W + 8).toFixed(2) + ' ' + (H + 8).toFixed(2) + '" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><defs><pattern id="' + pid + '" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(100)"><rect width="5" height="5" fill="' + cor + '"/><rect width="1" height="5" fill="rgba(0,0,0,0.10)"/></pattern></defs><path d="' + d + '" fill="url(#' + pid + ')" stroke="rgba(40,50,20,0.7)" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>';
+  }
+  function tlMedidor(rotulo, valor, pct, bom, txt){
+    return '<div class="tl-meter"><span>' + rotulo + '</span><div class="tl-bar"><i class="' + (bom ? 'bom' : 'atencao') + '" style="width:' + Math.max(3, Math.min(100, pct)).toFixed(0) + '%"></i></div><b>' + txt + '</b></div>';
+  }
+  function tlCardHtml(t){
+    var safra = safraAtualDoTalhao(t.id);
+    var nomeC = safra ? culturaNome(safra.culturaId) : 'Sem lavoura';
+    var ci = tlCulturaInfo(nomeC);
+    var an = ultimaAnaliseSoloDoTalhao(t.id);
+    var desenho = croquiTalhaoSvg(t.contorno, ci.cor, t.id);
+    var h = '<article class="tl-card">';
+    h += '<div class="tl-thumb">' + (desenho || '<button type="button" class="tl-desenhar" data-action="abrir-mapa-talhao" data-id="' + t.id + '">✏️ Desenhar o croqui</button>') + '<span class="tl-ha">' + fmtHa(t.area) + '</span></div>';
+    h += '<div class="tl-body">';
+    h += '<div class="tl-top"><h3>' + escapeHtml(t.nome) + '</h3><details class="tl-more"><summary title="Mais ações">⋯</summary><div class="tl-menu">';
+    h += '<button type="button" data-action="ver-perfil-solo" data-id="' + t.id + '">📜 Histórico do solo</button>';
+    if(an && analiseParaCalagemDoTalhao(t.id)) h += '<button type="button" data-action="abrir-calagem" data-id="' + t.id + '">🧪 Calagem</button>';
+    h += '<button type="button" data-action="inativar-talhao" data-id="' + t.id + '">⏸️ Inativar</button>';
+    h += '<button type="button" class="tl-danger" data-action="del-talhao" data-id="' + t.id + '">🗑️ Remover</button>';
+    h += '</div></details></div>';
+    var sub = [t.propriedadeId ? escapeHtml(propriedadeNome(t.propriedadeId)) : '', t.tipoSolo ? escapeHtml(t.tipoSolo) : ''].filter(Boolean).join(' · ');
+    h += '<div class="tl-prop">' + (sub ? '📍 ' + sub : '&nbsp;') + '</div>';
+    h += '<div class="tl-crop"><span class="tl-crop-ic" style="background:' + ci.cor + '26;">' + ci.ic + '</span><div><b>' + escapeHtml(nomeC) + '</b><small>' + (t.culturaAnteriorId ? 'anterior: ' + escapeHtml(culturaNome(t.culturaAnteriorId)) : '&nbsp;') + '</small></div>';
+    if(safra) h += '<span class="tl-pill tl-st-' + safra.status + '">' + STATUS_LABEL[safra.status] + '</span>';
+    h += '</div>';
+    if(an){
+      h += '<div class="tl-soil">';
+      var ph = Number(an.ph);
+      if(an.ph !== null && an.ph !== undefined && an.ph !== '') h += tlMedidor('pH', ph, (ph - 4) / 3 * 100, ph >= 5.5 && ph <= 6.5, fmtNum(ph));
+      var v = an.saturacaoBases;
+      if(v !== null && v !== undefined && v !== '') h += tlMedidor('V%', Number(v), Number(v), Number(v) >= 60, fmtNum(Number(v)) + '%');
+      h += '<small class="tl-soil-dt">Análise de ' + fmtDate(an.dataColeta) + '</small>';
+      h += '</div>';
+    } else {
+      h += '<div class="tl-nosoil">⚠️ Sem análise de solo <button type="button" data-action="ver-perfil-solo" data-id="' + t.id + '">Registrar</button></div>';
+    }
+    h += '<div class="tl-acts"><button type="button" class="tl-btn tl-pri" data-action="abrir-mapa-talhao" data-id="' + t.id + '">🗺️ Mapa</button><button type="button" class="tl-btn" data-action="edit-talhao" data-id="' + t.id + '">✏️ Editar</button>';
+    if(an){
+      var recsT = recomendacoesDoTalhao(t.id), pendT = recsT.filter(function(x){ return x.rec.status !== 'Aplicada'; }).length;
+      h += '<button type="button" class="tl-btn" data-action="recom-nova-talhao" data-id="' + t.id + '" title="Calagem, fosfatagem, potassagem, gesso…">📋 Recomend.' + (pendT ? ' <span class="tl-badge">' + pendT + '</span>' : '') + '</button>';
+    }
+    h += '</div></div></article>';
+    return h;
+  }
   function renderTalhoes(){
     var el = document.getElementById('tab-talhoes');
     var editingRecord = (editState && editState.scope === 'talhoes') ? state.talhoes.find(function(x){ return x.id === editState.id; }) : null;
     var html = '';
+    var mostrarForm = editingRecord || talhoesFormAberto || !state.talhoes.length;
+    if(mostrarForm){
     html += '<div class="paper form-card"><h3>' + (editingRecord ? 'Editar talhão' : 'Novo talhão') + '</h3>';
     html += '<form class="entry-form" id="form-talhao"' + (editingRecord ? ' data-editing-id="' + editingRecord.id + '"' : '') + '>';
     html += field('text', 'nome', 'Nome do talhão', true, 'Ex: Talhão 3 — Fundo', {}, editingRecord ? editingRecord.nome : undefined);
@@ -4558,17 +4739,49 @@
     if(!editingRecord) html += '<p style="grid-column:1 / -1; font-size:12px; color:var(--ink-soft); margin:0;">Depois de cadastrar o talhão, para plantar nele crie ou edite uma lavoura na aba <b>Lavouras</b> (cultura + ano agrícola).</p>';
     html += '<button type="submit" class="btn">' + (editingRecord ? 'Salvar alterações' : 'Adicionar talhão') + '</button>';
     if(editingRecord) html += '<button type="button" class="btn-cancel" data-action="cancel-edit">Cancelar</button>';
+    else if(talhoesFormAberto) html += '<button type="button" class="btn-cancel" data-action="tl-fechar-form">Cancelar</button>';
     html += '</form></div>';
+    }
 
-    html += '<div class="paper">';
+    var talAtv = talhoesAtivos(), talInat = state.talhoes.filter(function(t){ return !talhaoAtivo(t); });
     if(!state.talhoes.length){
-      html += '<div class="empty-state">Nenhum talhão cadastrado ainda.</div>';
+      html += '<div class="paper empty-state">Nenhum talhão cadastrado ainda. Preencha o formulário acima para cadastrar o primeiro.</div>';
     } else {
-      var qtdDesenhados = state.talhoes.filter(function(t){ return t.contorno && t.contorno.length >= 3; }).length;
-      html += '<div style="padding:14px 18px 0; display:flex; justify-content:flex-end;"><button type="button" class="btn-edit" data-action="abrir-mapa-fazenda">🗺️ Ver mapa da fazenda (' + qtdDesenhados + ' de ' + state.talhoes.length + ' desenhados)</button></div>';
-      html += '<div style="padding:14px 18px 0;"><input type="text" id="search-talhoes" placeholder="Buscar..." style="width:100%; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;"></div>';
+      var qtdDesenhados = talAtv.filter(function(t){ return t.contorno && t.contorno.length >= 3; }).length;
+      var areaAtv = talAtv.reduce(function(s2, t){ return s2 + (Number(t.area) || 0); }, 0);
+      var comLav = talAtv.filter(function(t){ var sfK = safraAtualDoTalhao(t.id); return sfK && sfK.status === 'andamento'; }).length;
+      var semAn = talAtv.filter(function(t){ return !ultimaAnaliseSoloDoTalhao(t.id); }).length;
+      // cabeçalho com ações
+      html += '<div class="tl-head"><div class="tl-head-txt"><b>' + talAtv.length + ' talhões ativos</b><span>' + qtdDesenhados + ' de ' + talAtv.length + ' desenhados no mapa</span></div>';
+      html += '<button type="button" class="tl-btn" data-action="abrir-mapa-fazenda">🗺️ Mapa da fazenda</button>';
+      if(!editingRecord && !talhoesFormAberto) html += '<button type="button" class="tl-btn tl-pri" data-action="tl-novo">＋ Novo talhão</button>';
+      html += '</div>';
+      // resumo
+      html += '<div class="tl-kpis">';
+      html += '<div class="tl-kpi"><span class="tl-kpi-i">📐</span><div><b>' + fmtHa(areaAtv) + '</b><small>área ativa</small></div></div>';
+      html += '<div class="tl-kpi"><span class="tl-kpi-i">🧩</span><div><b>' + talAtv.length + '</b><small>talhões ativos</small></div></div>';
+      html += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#E3F1D6;">🌱</span><div><b>' + comLav + '</b><small>com lavoura em andamento</small></div></div>';
+      html += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#FFF1D6;">🧪</span><div><b>' + semAn + '</b><small>sem análise de solo</small></div></div>';
+      html += '</div>';
+      // filtros por cultura atual
+      var cultsAt = {};
+      talAtv.forEach(function(t){ var sfC = safraAtualDoTalhao(t.id); var nC = sfC ? culturaNome(sfC.culturaId) : 'Sem lavoura'; cultsAt[nC] = (cultsAt[nC] || 0) + 1; });
+      if(talhoesFiltroCult && !cultsAt[talhoesFiltroCult]) talhoesFiltroCult = '';
+      html += '<div class="tl-tools"><input type="text" id="search-talhoes" class="tl-busca" placeholder="🔍 Buscar talhão, propriedade, solo...">';
+      html += '<button type="button" class="tl-chip' + (!talhoesFiltroCult ? ' on' : '') + '" data-action="tl-filtro" data-cult="">Todos</button>';
+      Object.keys(cultsAt).sort().forEach(function(nC){ html += '<button type="button" class="tl-chip' + (talhoesFiltroCult === nC ? ' on' : '') + '" data-action="tl-filtro" data-cult="' + escapeHtml(nC) + '">' + tlIconeCultura(nC) + ' ' + escapeHtml(nC) + ' <span>' + cultsAt[nC] + '</span></button>'; });
+      html += '<div class="tl-vista"><button type="button" data-action="tl-vista" data-vista="cards" class="' + (talhoesVista !== 'lista' ? 'on' : '') + '" title="Cartões">▦ Cartões</button><button type="button" data-action="tl-vista" data-vista="lista" class="' + (talhoesVista === 'lista' ? 'on' : '') + '" title="Tabela">☰ Tabela</button></div>';
+      html += '</div>';
+      var talVis = talAtv.filter(function(t){ if(!talhoesFiltroCult) return true; var sfF = safraAtualDoTalhao(t.id); return (sfF ? culturaNome(sfF.culturaId) : 'Sem lavoura') === talhoesFiltroCult; });
+      if(talhoesVista !== 'lista'){
+        html += '<div class="tl-grid">';
+        talVis.forEach(function(t){ html += tlCardHtml(t); });
+        if(!talVis.length) html += '<div class="paper empty-state" style="grid-column:1/-1;">Nenhum talhão ativo.</div>';
+        html += '</div>';
+      } else {
+        html += '<div class="paper">';
       html += '<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Área</th><th>Propriedade</th><th>Solo</th><th>Cultura anterior</th><th>Safra atual</th><th>Status</th><th>Perfil do Solo</th><th></th></tr></thead><tbody>';
-      state.talhoes.forEach(function(t){
+      talVis.forEach(function(t){
         var safra = safraAtualDoTalhao(t.id);
         var analiseRecente = ultimaAnaliseSoloDoTalhao(t.id);
         html += '<tr>';
@@ -4593,12 +4806,22 @@
           html += '<button type="button" class="btn-edit" data-action="ver-perfil-solo" data-id="' + t.id + '" style="margin-top:4px;">Registrar</button>';
         }
         html += '</td>';
-        html += '<td style="white-space:nowrap;"><button class="btn-edit" data-action="abrir-mapa-talhao" data-id="' + t.id + '" title="Desenhar no mapa, marcar pelo GPS ou importar do CAR/KML">🗺️ ' + (t.contorno && t.contorno.length >= 3 ? 'Mapa' : 'Desenhar') + '</button><button class="btn-edit" data-action="edit-talhao" data-id="' + t.id + '">Editar</button><button class="btn-del" data-action="del-talhao" data-id="' + t.id + '">Remover</button></td>';
+        html += '<td style="white-space:nowrap;"><button class="btn-edit" data-action="abrir-mapa-talhao" data-id="' + t.id + '" title="Desenhar no mapa, marcar pelo GPS ou importar do CAR/KML">🗺️ ' + (t.contorno && t.contorno.length >= 3 ? 'Mapa' : 'Desenhar') + '</button><button class="btn-edit" data-action="edit-talhao" data-id="' + t.id + '">Editar</button><button class="btn-edit" data-action="inativar-talhao" data-id="' + t.id + '" title="Tira o talhão das listas e do mapa sem apagar o histórico">⏸ Inativar</button><button class="btn-del" data-action="del-talhao" data-id="' + t.id + '">Remover</button></td>';
         html += '</tr>';
       });
-      html += '</tbody></table></div>';
+      if(!talVis.length) html += '<tr><td colspan="9" class="empty-state">Nenhum talhão ativo.</td></tr>';
+        html += '</tbody></table></div></div>';
+      }
+      if(talInat.length){
+        html += '<details class="tl-inat"><summary>⏸️ Talhões inativos (' + talInat.length + ' · ' + fmtHa(talInat.reduce(function(s2, t){ return s2 + (Number(t.area) || 0); }, 0)) + ')</summary>';
+        html += '<p class="tl-inat-txt">Não aparecem nas listas, no mapa nem nas escolhas do Diário e das Lavouras. O histórico (lavouras, lançamentos, inspeções, análises) continua guardado. A área deixa de contar na área da fazenda a partir da data de inativação — os custos de safras anteriores não mudam.</p>';
+        talInat.forEach(function(t){
+          html += '<div class="tl-irow"><span class="tl-ithumb">' + (croquiTalhaoSvg(t.contorno, '#B9B9AE', 'i' + t.id) || '🧩') + '</span><div><b>' + escapeHtml(t.nome) + '</b> · ' + fmtHa(t.area) + (t.propriedadeId ? ' · ' + escapeHtml(propriedadeNome(t.propriedadeId)) : '') + '<br><small>Inativo desde ' + (t.inativoDesde ? fmtDate(t.inativoDesde) : '—') + (t.inativoMotivo ? ' — ' + escapeHtml(t.inativoMotivo) : '') + '</small></div>';
+          html += '<button type="button" class="tl-btn" data-action="reativar-talhao" data-id="' + t.id + '">↩ Reativar</button><button type="button" class="tl-btn tl-danger" data-action="del-talhao" data-id="' + t.id + '">🗑️ Remover</button></div>';
+        });
+        html += '</details>';
+      }
     }
-    html += '</div>';
     if(soloRecomId) html += recomendacoesSoloHtml();
     html += recomendacoesPendentesFazendaHtml();
     html += '<div id="secao-analise-solo" style="margin-top:26px;">' + htmlSecaoAgro('solo') + '</div>';
@@ -4667,7 +4890,7 @@
   }
   function gerarRecomendacoesTodos(){
     var n = 0, talh = 0;
-    state.talhoes.forEach(function(t){
+    talhoesAtivos().forEach(function(t){
       if(recomendacoesDoTalhao(t.id).some(function(x){ return x.rec.status !== 'Aplicada'; })) return;
       var a = ultimaAnaliseSoloDoTalhao(t.id); if(!a) return;
       var calc = recomendacoesCalculadas(a); if(!calc.length) return;
@@ -4678,8 +4901,8 @@
   }
   function recomendacoesPendentesFazendaHtml(){
     var linhas = [];
-    state.talhoes.forEach(function(t){ recomendacoesDoTalhao(t.id).forEach(function(x){ if(x.rec.status !== 'Aplicada') linhas.push(x); }); });
-    var semRec = state.talhoes.filter(function(t){ return ultimaAnaliseSoloDoTalhao(t.id) && !recomendacoesDoTalhao(t.id).some(function(x){ return x.rec.status !== 'Aplicada'; }); });
+    talhoesAtivos().forEach(function(t){ recomendacoesDoTalhao(t.id).forEach(function(x){ if(x.rec.status !== 'Aplicada') linhas.push(x); }); });
+    var semRec = talhoesAtivos().filter(function(t){ return ultimaAnaliseSoloDoTalhao(t.id) && !recomendacoesDoTalhao(t.id).some(function(x){ return x.rec.status !== 'Aplicada'; }); });
     var cab = '<div class="section-title" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">Recomendações de solo pendentes' + (semRec.length ? ' <button type="button" class="btn-edit" data-action="gerar-recom-todos" title="Calcula calagem, fosfatagem, potassagem e gesso pela análise mais recente">🧮 Calcular para ' + semRec.length + ' talhão(ões) sem recomendação</button>' : '') + '</div>';
     if(!linhas.length) return cab + '<div class="paper" style="padding:2px 0;">' + '<p style="font-size:12.5px; margin:12px 18px 4px;">Nenhuma recomendação pendente.</p>' + criteriosRecomHtml() + '</div>';
     var totais = {};
@@ -4749,10 +4972,66 @@
   }
   var safraMapaAnoSelecionado = null;
 
+  var lavourasFormAberto = false;
+  var lavourasVista = 'cards'; try{ lavourasVista = localStorage.getItem('agro-lavouras-vista') || 'cards'; }catch(e){}
+  function lvCardHtml(l){
+    var sfs = safrasDaLavoura(l.id);
+    var st = statusLavoura(l);
+    var nomeC = culturaNome(l.culturaId), ci = tlCulturaInfo(nomeC);
+    var area = areaPlantadaLavoura(l.id);
+    var custo = sfs.reduce(function(sm, sf){ return sm + custoDiretoSafra(sf.id); }, 0);
+    var rec = sfs.reduce(function(sm, sf){ return sm + receitaDiretaSafra(sf.id); }, 0);
+    var sacas = 0; try{ sacas = producaoTotalEmSacas(sfs.map(function(sf){ return sf.id; })) || 0; }catch(e){}
+    var h = '<article class="tl-card lv-card' + (st === 'encerrada' ? ' lv-enc' : '') + '">';
+    h += '<div class="lv-band" style="background:linear-gradient(120deg,' + ci.cor + ',' + ci.cor + 'B0);"><span class="lv-ic">' + ci.ic + '</span><div class="lv-tit"><b>' + escapeHtml(l.nome || nomeC) + '</b><small>' + (l.nome ? escapeHtml(nomeC) + ' · ' : 'Ano agrícola ') + escapeHtml(l.anoAgricola || '—') + '</small></div>';
+    h += '<details class="tl-more lv-more"><summary title="Mais ações">⋯</summary><div class="tl-menu">';
+    h += '<button type="button" data-action="dossie-pdf" data-tipo="lavoura" data-id="' + l.id + '">📄 Dossiê (comprador / certificadora)</button>';
+    h += '<button type="button" data-action="renomear-lavoura" data-id="' + l.id + '">🏷️ Apelido</button>';
+    h += '<button type="button" data-action="toggle-encerrar-lavoura" data-id="' + l.id + '">' + (l.encerrada ? '↩ Reabrir lavoura' : '🔒 Encerrar lavoura') + '</button>';
+    h += '</div></details></div>';
+    h += '<div class="tl-body">';
+    h += '<div class="lv-st"><span class="tl-pill tl-st-' + (st === 'encerrada' ? 'colhida' : st) + '">' + STATUS_LAVOURA_LABEL[st] + '</span><b>' + fmtHa(area) + '</b></div>';
+    // datas: plantio -> colheita
+    var plantios = sfs.map(function(sf){ return sf.dataPlantio; }).filter(Boolean).sort();
+    var colheitas = sfs.map(function(sf){ return sf.previsaoColheita; }).filter(Boolean).sort();
+    if(plantios.length){
+      var ini = plantios[0], fim = colheitas.length ? colheitas[colheitas.length - 1] : '';
+      var hoje = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10);
+      var perene = /caf/.test(semAcento(nomeC));
+      var pct = (!perene && fim && fim > ini) ? Math.max(0, Math.min(100, diasEntreISO(ini, hoje) / diasEntreISO(ini, fim) * 100)) : null;
+      if(!perene && (st === 'colhida' || st === 'encerrada')) pct = 100;
+
+      h += '<div class="lv-tempo"><div class="lv-tempo-txt"><span>' + (perene ? '🌳 perene · plantio ' + ini.slice(0,4) : '🌱 ' + fmtDate(ini)) + '</span><span>' + (fim ? '🚜 ' + fmtDate(fim) : 'colheita sem previsão') + '</span></div>';
+      if(pct !== null) h += '<div class="tl-bar"><i class="bom" style="width:' + Math.max(3, pct).toFixed(0) + '%"></i></div><small>' + (pct >= 100 ? 'ciclo concluído' : (pct <= 0 ? 'ainda não plantada' : Math.round(pct) + '% do ciclo')) + '</small>';
+      h += '</div>';
+    }
+    // talhões com mini croqui
+    h += '<div class="lv-tals">';
+    sfs.forEach(function(sf){
+      var t = state.talhoes.find(function(x){ return x.id === sf.talhaoId; });
+      var cq = t ? croquiTalhaoSvg(t.contorno, ci.cor, 'l' + sf.id) : '';
+      h += '<div class="lv-tal" title="' + escapeHtml(talhaoNome(sf.talhaoId)) + ' · ' + (STATUS_LABEL[sf.status] || '') + '"><span class="lv-tal-cq">' + (cq || '🧩') + '</span><span class="lv-tal-n">' + escapeHtml(talhaoNome(sf.talhaoId)) + '</span><small>' + fmtHa(areaPlantadaSafra(sf)) + '</small></div>';
+    });
+    if(!sfs.length) h += '<small style="color:var(--ink-soft);">Nenhum talhão nesta lavoura.</small>';
+    h += '</div>';
+    // números
+    h += '<div class="lv-nums">';
+    h += '<div><small>Custo direto</small><b class="cost">' + fmtBRL(custo) + '</b>' + (area > 0 && custo ? '<em>' + fmtBRL(custo / area) + '/ha</em>' : '') + '</div>';
+    h += '<div><small>Receita direta</small><b class="growth">' + fmtBRL(rec) + '</b>' + (sacas > 0 ? '<em>' + fmtNum(sacas) + ' sc' + (area > 0 ? ' · ' + fmtNum(sacas / area) + ' sc/ha' : '') + '</em>' : '') + '</div>';
+    h += '</div>';
+    h += '<div class="tl-acts">';
+    if(sfs.length) h += '<button type="button" class="tl-btn tl-pri" data-action="abrir-rastreabilidade" data-id="' + sfs[0].id + '" title="Tudo o que foi feito nesta lavoura">🔗 Rastreabilidade</button>';
+    h += '<button type="button" class="tl-btn" data-action="dossie-pdf" data-tipo="lavoura" data-id="' + l.id + '">📄 Dossiê</button>';
+    h += '</div></div></article>';
+    return h;
+  }
   function renderSafras(){
     var el = document.getElementById('tab-safras');
     var editingRecord = (editState && editState.scope === 'safras') ? state.safras.find(function(x){ return x.id === editState.id; }) : null;
     var html = '';
+    var temLavouras = (state.lavouras || []).length > 0;
+    var mostrarFormLav = editingRecord || lavourasFormAberto || !temLavouras;
+    if(mostrarFormLav){
     html += '<div class="paper form-card"><h3>' + (editingRecord ? 'Editar talhão da lavoura (safra)' : 'Nova lavoura') + '</h3>';
     if(!editingRecord && state.talhoes.length && state.culturas.length){
       html += '<p style="font-size:12px; color:var(--ink-soft); margin:0 0 12px;">Uma lavoura é uma cultura num ano agrícola, plantada em um ou vários talhões. Se já existir uma lavoura com a mesma cultura e o mesmo ano, os talhões marcados entram nela.</p>';
@@ -4767,7 +5046,7 @@
       html += '<div style="grid-column:1/-1; display:flex; flex-direction:column; gap:6px; padding-top:4px; border-top:1px dashed var(--paper-line); margin-top:4px;">';
       html += '<label style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em;">Talhões da lavoura e área plantada</label>';
       html += '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:8px;">';
-      state.talhoes.forEach(function(t){
+      talhoesAtivos().forEach(function(t){
         html += '<div style="display:flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid var(--paper-line); border-radius:6px; background:#FCFCF5;">';
         html += '<label style="display:flex; align-items:center; gap:6px; font-size:12.5px; flex:1; cursor:pointer;"><input type="checkbox" name="lavTalhaoIds" value="' + t.id + '"> ' + escapeHtml(t.nome) + '</label>';
         html += '<input type="number" name="lavArea-' + t.id + '" value="' + (Number(t.area) || '') + '" step="0.01" min="0" title="Área plantada (ha)" style="width:80px; padding:5px 7px; border:1px solid var(--paper-line); border-radius:4px; font-size:12px;"> <span style="font-size:11px; color:var(--ink-soft);">ha</span>';
@@ -4777,6 +5056,7 @@
       html += '<span style="font-size:11px; color:var(--ink-soft);">A área já vem com a área do talhão; mude se só uma parte dele foi plantada.</span>';
       html += '</div>';
       html += '<button type="submit" class="btn">Criar lavoura</button>';
+      if(lavourasFormAberto && temLavouras) html += '<button type="button" class="btn-cancel" data-action="lv-fechar-form">Cancelar</button>';
       html += '</form>';
     }
     if(!editingRecord){
@@ -4788,7 +5068,7 @@
       html += '<div class="empty-state">Cadastre uma cultura antes de lançar uma safra.</div>';
     } else {
       html += '<form class="entry-form" id="form-safra"' + (editingRecord ? ' data-editing-id="' + editingRecord.id + '"' : '') + '>';
-      html += selectField('talhaoId', 'Talhão', state.talhoes.map(function(t){ return {value:t.id, label:t.nome}; }), editingRecord ? editingRecord.talhaoId : undefined);
+      html += selectField('talhaoId', 'Talhão', state.talhoes.filter(function(t){ return talhaoAtivo(t) || (editingRecord && editingRecord.talhaoId === t.id); }).map(function(t){ return {value:t.id, label:t.nome + (t.inativo ? ' (inativo)' : '')}; }), editingRecord ? editingRecord.talhaoId : undefined);
       html += selectField('culturaId', 'Cultura', state.culturas.map(function(c){ return {value:c.id, label:c.nome}; }), editingRecord ? editingRecord.culturaId : undefined);
       html += field('date', 'dataPlantio', 'Data de plantio', false, '', {}, editingRecord ? editingRecord.dataPlantio : undefined);
       html += field('text', 'anoAgricola', 'Ano agrícola', false, 'Ex: 2026/2027', {}, editingRecord ? editingRecord.anoAgricola : (safrasAnoFiltro || undefined));
@@ -4801,37 +5081,62 @@
       html += '</form>';
     }
     html += '</div>';
+    }
 
     if((state.lavouras || []).length){
       var anosChips = state.lavouras.map(function(l){ return l.anoAgricola; }).filter(function(v, i, a){ return v && a.indexOf(v) === i; }).sort().reverse();
-      html += '<div class="section-title" style="margin-top:0; display:flex; flex-wrap:wrap; gap:6px; align-items:center;">Lavouras <span style="flex:1;"></span>';
+      var lavsVis = state.lavouras.filter(function(l){ return !safrasAnoFiltro || l.anoAgricola === normalizarAnoAgricola(safrasAnoFiltro); });
+      var lvAtivas = lavsVis.filter(function(l){ var stK = statusLavoura(l); return stK === 'andamento' || stK === 'planejada'; });
+      var lvArea = lvAtivas.reduce(function(sm, l){ return sm + areaPlantadaLavoura(l.id); }, 0);
+      var lvCusto = 0, lvRec = 0;
+      lavsVis.forEach(function(l){ safrasDaLavoura(l.id).forEach(function(sf){ lvCusto += custoDiretoSafra(sf.id); lvRec += receitaDiretaSafra(sf.id); }); });
+      html += '<div class="tl-head"><div class="tl-head-txt"><b>Lavouras' + (safrasAnoFiltro ? ' ' + escapeHtml(normalizarAnoAgricola(safrasAnoFiltro)) : '') + '</b><span>' + lavsVis.length + ' lavoura(s) · uma cultura num ano agrícola, em um ou vários talhões</span></div>';
+      if(!editingRecord && !lavourasFormAberto) html += '<button type="button" class="tl-btn tl-pri" data-action="lv-novo">＋ Nova lavoura</button>';
+      html += '</div>';
+      html += '<div class="tl-kpis">';
+      html += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#E3F1D6;">🌱</span><div><b>' + lvAtivas.length + '</b><small>lavouras em andamento / planejadas</small></div></div>';
+      html += '<div class="tl-kpi"><span class="tl-kpi-i">📐</span><div><b>' + fmtHa(lvArea) + '</b><small>área plantada (ativas)</small></div></div>';
+      html += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#F8E3DE;">💸</span><div><b>' + fmtBRL(lvCusto) + '</b><small>custo direto' + (safrasAnoFiltro ? ' do ano' : ' (todas)') + '</small></div></div>';
+      html += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#E3F1D6;">💰</span><div><b>' + fmtBRL(lvRec) + '</b><small>receita direta' + (safrasAnoFiltro ? ' do ano' : ' (todas)') + '</small></div></div>';
+      html += '</div>';
+      html += '<div class="tl-tools"><input type="text" id="search-safras" class="tl-busca" placeholder="🔍 Buscar lavoura, cultura, talhão...">';
       [''].concat(anosChips).forEach(function(ano){
         var ativoChip = normalizarAnoAgricola(safrasAnoFiltro || '') === ano;
-        html += '<button type="button" data-action="filtrar-ano-safras" data-ano="' + escapeHtml(ano) + '" style="font-family:inherit; font-size:12px; padding:4px 11px; border-radius:14px; cursor:pointer; border:1px solid ' + (ativoChip ? 'var(--accent)' : 'var(--paper-line)') + '; background:' + (ativoChip ? 'var(--accent)' : 'var(--paper)') + '; color:' + (ativoChip ? '#fff' : 'var(--ink)') + ';">' + (ano ? escapeHtml(ano) : 'Todos os anos') + '</button>';
+        html += '<button type="button" class="tl-chip' + (ativoChip ? ' on' : '') + '" data-action="filtrar-ano-safras" data-ano="' + escapeHtml(ano) + '">' + (ano ? '📅 ' + escapeHtml(ano) : 'Todos os anos') + '</button>';
       });
+      html += '<div class="tl-vista"><button type="button" data-action="lv-vista" data-vista="cards" class="' + (lavourasVista !== 'lista' ? 'on' : '') + '">▦ Cartões</button><button type="button" data-action="lv-vista" data-vista="lista" class="' + (lavourasVista === 'lista' ? 'on' : '') + '">☰ Tabela</button></div>';
       html += '</div>';
+      if(lavourasVista !== 'lista'){
+        var ordemSt = {andamento:0, planejada:1, colhida:2, encerrada:3};
+        html += '<div class="tl-grid">';
+        lavsVis.slice().sort(function(x, y){ return (ordemSt[statusLavoura(x)] - ordemSt[statusLavoura(y)]) || (y.anoAgricola || '').localeCompare(x.anoAgricola || '') || lavouraLabel(x.id).localeCompare(lavouraLabel(y.id), 'pt-BR'); }).forEach(function(l){ html += lvCardHtml(l); });
+        if(!lavsVis.length) html += '<div class="paper empty-state" style="grid-column:1/-1;">Nenhuma lavoura neste ano agrícola.</div>';
+        html += '</div>';
+      } else {
       html += '<div class="paper table-wrap"><table><thead><tr><th>Lavoura</th><th>Talhões (área plantada)</th><th>Área total</th><th>Status</th><th>Custo direto</th><th>Receita direta</th><th></th></tr></thead><tbody>';
-      state.lavouras.filter(function(l){ return !safrasAnoFiltro || l.anoAgricola === normalizarAnoAgricola(safrasAnoFiltro); }).slice().sort(function(a,b){
-        return (b.anoAgricola || '').localeCompare(a.anoAgricola || '') || lavouraLabel(a.id).localeCompare(lavouraLabel(b.id), 'pt-BR');
-      }).forEach(function(l){
-        var sfs = safrasDaLavoura(l.id);
-        var st = statusLavoura(l);
-        var custoL = sfs.reduce(function(sm, sf){ return sm + custoDiretoSafra(sf.id); }, 0);
-        var receitaL = sfs.reduce(function(sm, sf){ return sm + receitaDiretaSafra(sf.id); }, 0);
-        html += '<tr' + (l.encerrada ? ' style="opacity:0.6;"' : '') + '>';
-        html += '<td><strong>' + escapeHtml(lavouraLabel(l.id)) + '</strong></td>';
-        html += '<td style="font-size:12px;">' + sfs.map(function(sf){ return escapeHtml(talhaoNome(sf.talhaoId)) + ' (' + fmtHa(areaPlantadaSafra(sf)) + ')'; }).join(', ') + '</td>';
-        html += '<td class="num">' + fmtHa(areaPlantadaLavoura(l.id)) + '</td>';
-        html += '<td>' + STATUS_LAVOURA_LABEL[st] + '</td>';
-        html += '<td class="num cost">' + fmtBRL(custoL) + '</td>';
-        html += '<td class="num growth">' + fmtBRL(receitaL) + '</td>';
-        html += '<td><button class="btn-edit" data-action="dossie-pdf" data-tipo="lavoura" data-id="' + l.id + '" title="Dossiê de rastreabilidade para comprador / certificadora">📄 Dossiê</button><button class="btn-edit" data-action="renomear-lavoura" data-id="' + l.id + '">Apelido</button><button class="btn-edit" data-action="toggle-encerrar-lavoura" data-id="' + l.id + '">' + (l.encerrada ? 'Reabrir' : 'Encerrar') + '</button></td>';
-        html += '</tr>';
-      });
-      html += '</tbody></table></div>';
+        state.lavouras.filter(function(l){ return !safrasAnoFiltro || l.anoAgricola === normalizarAnoAgricola(safrasAnoFiltro); }).slice().sort(function(a,b){
+          return (b.anoAgricola || '').localeCompare(a.anoAgricola || '') || lavouraLabel(a.id).localeCompare(lavouraLabel(b.id), 'pt-BR');
+        }).forEach(function(l){
+          var sfs = safrasDaLavoura(l.id);
+          var st = statusLavoura(l);
+          var custoL = sfs.reduce(function(sm, sf){ return sm + custoDiretoSafra(sf.id); }, 0);
+          var receitaL = sfs.reduce(function(sm, sf){ return sm + receitaDiretaSafra(sf.id); }, 0);
+          html += '<tr' + (l.encerrada ? ' style="opacity:0.6;"' : '') + '>';
+          html += '<td><strong>' + escapeHtml(lavouraLabel(l.id)) + '</strong></td>';
+          html += '<td style="font-size:12px;">' + sfs.map(function(sf){ return escapeHtml(talhaoNome(sf.talhaoId)) + ' (' + fmtHa(areaPlantadaSafra(sf)) + ')'; }).join(', ') + '</td>';
+          html += '<td class="num">' + fmtHa(areaPlantadaLavoura(l.id)) + '</td>';
+          html += '<td>' + STATUS_LAVOURA_LABEL[st] + '</td>';
+          html += '<td class="num cost">' + fmtBRL(custoL) + '</td>';
+          html += '<td class="num growth">' + fmtBRL(receitaL) + '</td>';
+          html += '<td><button class="btn-edit" data-action="dossie-pdf" data-tipo="lavoura" data-id="' + l.id + '" title="Dossiê de rastreabilidade para comprador / certificadora">📄 Dossiê</button><button class="btn-edit" data-action="renomear-lavoura" data-id="' + l.id + '">Apelido</button><button class="btn-edit" data-action="toggle-encerrar-lavoura" data-id="' + l.id + '">' + (l.encerrada ? 'Reabrir' : 'Encerrar') + '</button></td>';
+          html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+      }
       html += '<p style="font-size:11px; color:var(--ink-soft); margin:8px 0 24px;">Lavouras encerradas somem da lista de destino dos lançamentos. Para mudar datas, status ou área de um talhão específico, use "Editar" na tabela de safras abaixo.</p>';
     }
 
+    html += '<div class="section-title" style="margin-top:6px;">🧩 Safras por talhão <span style="font-size:12px; font-weight:400; color:#C9D0B4;">— datas, status e área de cada talhão das lavouras</span></div>';
     html += '<div class="paper">';
     if(!state.safras.length){
       html += '<div class="empty-state">Nenhuma safra lançada ainda.</div>';
@@ -4846,7 +5151,6 @@
         });
         html += '</select></div>';
       }
-      html += '<input type="text" id="search-safras" placeholder="Buscar..." style="flex:1; min-width:180px; max-width:280px; padding:7px 10px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;">';
       var qtdInativas = state.safras.filter(function(s){ return s.ativa === false && (!safrasAnoFiltro || normalizarAnoAgricola(s.anoAgricola) === normalizarAnoAgricola(safrasAnoFiltro)); }).length;
       if(qtdInativas || safrasOcultarInativas) html += '<button type="button" data-action="toggle-safras-inativas" style="font-family:inherit; font-size:12.5px; padding:7px 12px; border-radius:4px; cursor:pointer; border:1px solid ' + (safrasOcultarInativas ? 'var(--accent)' : 'var(--paper-line)') + '; background:' + (safrasOcultarInativas ? 'var(--accent)' : 'var(--paper)') + '; color:' + (safrasOcultarInativas ? '#fff' : 'var(--ink)') + ';">' + (safrasOcultarInativas ? '👁️ Mostrar inativas (' + qtdInativas + ')' : '🙈 Esconder inativas (' + qtdInativas + ')') + '</button>';
       html += '</div>';
@@ -5312,7 +5616,7 @@
       html += '</div>';
     } else {
       html += '<div class="field" style="margin:8px 0 0; max-width:320px;"><label>Talhão</label><select name="talhaoId" id="f-talhaoId" style="' + estiloSel + '"><option value="">—</option>';
-      state.talhoes.forEach(function(t){ html += '<option value="' + t.id + '"' + (t.id === r.talhaoAvulsoId ? ' selected' : '') + '>' + escapeHtml(t.nome) + '</option>'; });
+      state.talhoes.forEach(function(t){ if(!talhaoAtivo(t) && t.id !== r.talhaoAvulsoId) return; html += '<option value="' + t.id + '"' + (t.id === r.talhaoAvulsoId ? ' selected' : '') + '>' + escapeHtml(t.nome) + '</option>'; });
       html += '</select></div>';
     }
     var areaTot = areaAplicadaRascunho(r);
@@ -6828,10 +7132,9 @@
   }
   // Depreciação / custo de oportunidade: valor anual ÷ 12 por mês ativo, proporcional à área plantada ÷ área total da fazenda
   // Se duas safras ocupam o mesmo talhão no mesmo mês (ex.: milho safrinha terminando e soja começando), dividem aquele mês entre si
-  function custosFixosPorSafra(valorAnual){
-    var areaTotal = areaTotalFazenda();
+  function custosFixosPorSafra(valorAnual, porHectare){
     var res = {};
-    if(areaTotal <= 0 || !valorAnual) return res;
+    if(!valorAnual) return res;
     var ocupacao = {};
     var periodos = {};
     state.safras.forEach(function(s){
@@ -6842,7 +7145,11 @@
     state.safras.forEach(function(s){
       if(!periodos[s.id]) return;
       var area = areaPlantadaSafra(s);
-      res[s.id] = periodos[s.id].reduce(function(sm, ym){ return sm + valorAnual / 12 * area / areaTotal / ocupacao[s.talhaoId + '|' + ym]; }, 0);
+      res[s.id] = periodos[s.id].reduce(function(sm, ym){
+        if(porHectare) return sm + valorAnual / 12 * area / ocupacao[s.talhaoId + '|' + ym];
+        var aT = areaTotalFazendaNoMes(ym);
+        return aT > 0 ? sm + valorAnual / 12 * area / aT / ocupacao[s.talhaoId + '|' + ym] : sm;
+      }, 0);
     });
     return res;
   }
@@ -7153,8 +7460,8 @@
     return out;
   }
   function jurosPorSafra(){
-    var areaTot = areaTotalFazenda(), res = {};
-    if(areaTot <= 0) return res;
+    var res = {};
+    if(!state.talhoes.length) return res;
     var mapa = mapaSafrasAtivasPorMes(), safraTalhao = {}, ocup = {};
     state.safras.forEach(function(s){ safraTalhao[s.id] = s.talhaoId; });
     Object.keys(mapa).forEach(function(ym){ mapa[ym].forEach(function(a){ var k = safraTalhao[a.safraId] + '|' + ym; ocup[k] = (ocup[k] || 0) + 1; }); });
@@ -7165,7 +7472,8 @@
         var ym = y + '-' + (m < 10 ? '0' : '') + m;
         (mapa[ym] || []).forEach(function(a){
           if(j.talhaoId && safraTalhao[a.safraId] !== j.talhaoId) return;
-          var base = j.talhaoId ? (Number((state.talhoes.find(function(t){ return t.id === j.talhaoId; }) || {}).area) || a.area) : areaTot;
+          var base = j.talhaoId ? (Number((state.talhoes.find(function(t){ return t.id === j.talhaoId; }) || {}).area) || a.area) : areaTotalFazendaNoMes(ym);
+          if(!(base > 0)) return;
           res[a.safraId] = (res[a.safraId] || 0) + j.valor / 12 * a.area / base / ocup[safraTalhao[a.safraId] + '|' + ym];
         });
         m--; if(m < 1){ m = 12; y--; }
@@ -7259,8 +7567,7 @@
     if(!custoSenarInclui('prolab')){ excAdd('prolab', prolab); prolab = 0; }
     var COT = COE + dep + prolab;
     // CT: remunerações (custo de oportunidade)
-    var areaTot = areaTotalFazenda();
-    var terraRef = custosFixosPorSafra((Number(P.arrendHa) || 0) * areaTot);
+    var terraRef = custosFixosPorSafra(Number(P.arrendHa) || 0, true);
     var remTerra = sfs.reduce(function(s, sf){ return s + (talhaoArrendadoDeTerceiros(sf.talhaoId) ? 0 : (terraRef[sf.id] || 0)); }, 0);
     var remCirc = COE * (1 - Math.min(100, Number(P.pctFinanciado) || 0) / 100) / 2 * (Number(P.taxaCirc) || 0) / 100;
     var cap = capitalProprioBens();
@@ -8639,7 +8946,7 @@
   function calAtivo(at){ var cfg = calCfg(); return at.extra ? !!cfg.ligados[at.k] : !cfg.desligados[at.k]; }
   function calHoje(){ return new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10); }
   function calCfg(){ var c = configUnidades(); if(!c.calendarioCafe) c.calendarioCafe = {marcas:{}, desligados:{}}; if(!c.calendarioCafe.marcas) c.calendarioCafe.marcas = {}; if(!c.calendarioCafe.desligados) c.calendarioCafe.desligados = {}; if(!c.calendarioCafe.ligados) c.calendarioCafe.ligados = {}; return c.calendarioCafe; }
-  function calTalhoesCafe(){ return state.talhoes.filter(function(t){ var sf = insSafraAtiva(t.id); return sf && insChaveCultura(sf.culturaId) === 'cafe'; }); }
+  function calTalhoesCafe(){ return talhoesAtivos().filter(function(t){ var sf = insSafraAtiva(t.id); return sf && insChaveCultura(sf.culturaId) === 'cafe'; }); }
   // janela contínua (pode virar o ano) que contém o mês; devolve {ini:'AAAA-MM-01', fim:'AAAA-MM-31', id:'AAAA-MM'}
   function calJanela(meses, ano, mes){
     if(meses.length >= 12) return {ini: ano + '-01-01', fim: ano + '-12-31', id: String(ano)};
@@ -8752,7 +9059,7 @@
   function lavourasEmFase(hoje){
     hoje = hoje || calHoje();
     var cfg = calCfg(), out = [];
-    state.talhoes.forEach(function(t){
+    talhoesAtivos().forEach(function(t){
       var sf = insSafraAtiva(t.id); if(!sf) return;
       var fs = insFaseSafra(sf, hoje); if(!fs) return;
       var ult = (state.inspecoes || []).filter(function(i){ return i.talhaoId === t.id; }).sort(function(a, b){ return (b.data || '').localeCompare(a.data || '') || (b.criadoEm || 0) - (a.criadoEm || 0); })[0] || null;
@@ -8873,7 +9180,7 @@
     var dias = function(d){ return Math.round((new Date(hoje + 'T12:00:00') - new Date(d + 'T12:00:00')) / 86400000); };
     var acima = function(i){ return (i.alvos || []).filter(function(a){ return a.nivel > 0 && Number(a.valor) >= a.nivel; }); };
     // situação por talhão (talhões com safra em andamento ou planejada)
-    var talAtivos = state.talhoes.filter(function(t){ return !!insSafraAtiva(t.id); });
+    var talAtivos = talhoesAtivos().filter(function(t){ return !!insSafraAtiva(t.id); });
     var rec = 0, alert = 0;
     var linhas = talAtivos.map(function(t){
       var dele = ins.filter(function(i){ return i.talhaoId === t.id; }), ult = dele[0], ant = dele[1];
@@ -8906,7 +9213,7 @@
     h += '<div class="section-title" id="ins-form-titulo">Nova inspeção</div><div class="paper form-card">';
     h += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; align-items:end;">';
     h += '<div class="field"><label for="ins-data">Data</label><input type="date" id="ins-data" value="' + hoje + '"></div>';
-    h += '<div class="field"><label for="ins-talhao">Talhão</label><select id="ins-talhao">' + state.talhoes.map(function(t){ return '<option value="' + t.id + '"' + (t.id === insTalhaoId ? ' selected' : '') + '>' + escapeHtml(t.nome) + '</option>'; }).join('') + '</select></div>';
+    h += '<div class="field"><label for="ins-talhao">Talhão</label><select id="ins-talhao">' + state.talhoes.filter(function(t){ return talhaoAtivo(t) || t.id === insTalhaoId; }).map(function(t){ return '<option value="' + t.id + '"' + (t.id === insTalhaoId ? ' selected' : '') + '>' + escapeHtml(t.nome) + '</option>'; }).join('') + '</select></div>';
     h += '<div class="field"><label for="ins-resp">Quem inspecionou</label><select id="ins-resp"><option value="">—</option>' + state.equipe.map(function(m){ return '<option value="' + m.id + '">' + escapeHtml(m.nome) + '</option>'; }).join('') + '</select></div>';
     h += '<div class="field"><label for="ins-pontos">Pontos amostrados</label><input type="number" min="0" id="ins-pontos" placeholder="ex.: 10"></div>';
     h += '</div>';
@@ -10336,7 +10643,7 @@
     if(mapaEd.modo === 'editar' && mapaEd.pts.length >= 3) limites0 = mapaEd.pts.slice();
     else {
       state.propriedades.forEach(function(pr){ if(pr.contorno && pr.contorno.length >= 3) limites0 = limites0.concat(pr.contorno); });
-      state.talhoes.forEach(function(t){ if(t.contorno && t.contorno.length >= 3) limites0 = limites0.concat(t.contorno); });
+      talhoesAtivos().forEach(function(t){ if(t.contorno && t.contorno.length >= 3) limites0 = limites0.concat(t.contorno); });
     }
     if(limites0.length) m.fitBounds(L.latLngBounds(limites0).pad(0.15), {maxZoom: 17, animate: false});
     else m.setView(MAPA_CENTRO_PADRAO, MAPA_ZOOM_PADRAO, {animate: false});
@@ -10351,7 +10658,7 @@
       limites = limites.concat(pr.contorno);
     });
     // talhões
-    state.talhoes.forEach(function(t){
+    talhoesAtivos().forEach(function(t){
       if(!t.contorno || t.contorno.length < 3) return;
       if(mapaEd.modo === 'editar' && t.id === mapaEd.talhaoId) return;
       var cor = corStatusTalhao(t);
@@ -10451,7 +10758,7 @@
   function renderMapaRodape(){
     var el = document.getElementById('mapa-rodape'); if(!el || !mapaEd) return;
     if(mapaEd.modo === 'visao'){
-      var com = state.talhoes.filter(function(t){ return t.contorno && t.contorno.length >= 3; });
+      var com = talhoesAtivos().filter(function(t){ return t.contorno && t.contorno.length >= 3; });
       var soma = com.reduce(function(s, t){ return s + (Number(t.areaMapa) || 0); }, 0);
       el.innerHTML = '<div style="font-size:12.5px; padding-top:8px; color:var(--ink-soft);">' + com.length + ' de ' + state.talhoes.length + ' talhão(ões) desenhado(s)' + (com.length ? ' · área medida no mapa: <b style="color:var(--ink);">' + fmtHa(soma) + '</b>' : '') + '. Para desenhar, use o botão 🗺️ de cada talhão na aba Talhões.</div>';
       return;
@@ -11971,7 +12278,7 @@
     if(e.target && e.target.id && e.target.id.indexOf('search-') === 0){
       var entityKey = e.target.id.slice(7);
       var query = e.target.value.toLowerCase();
-      var rows = document.querySelectorAll('#tab-' + entityKey + ' table tbody tr');
+      var rows = document.querySelectorAll('#tab-' + entityKey + ' table tbody tr, #tab-' + entityKey + ' .tl-card');
       rows.forEach(function(tr){
         tr.style.display = tr.textContent.toLowerCase().indexOf(query) !== -1 ? '' : 'none';
       });
@@ -12332,11 +12639,12 @@
         }
       }
       saveKey('talhoes', state.talhoes);
-      editState = null;
+      editState = null; talhoesFormAberto = false;
       form.reset(); renderAll(); return;
     }
 
     if(form.id === 'form-lavoura'){
+      lavourasFormAberto = false;
       var lavTalhoes = [];
       form.querySelectorAll('input[name="lavTalhaoIds"]:checked').forEach(function(cb){ lavTalhoes.push(cb.value); });
       if(!lavTalhoes.length){ alert('Marque pelo menos um talhão para a lavoura.'); return; }
@@ -13258,7 +13566,7 @@
       if(!window.confirm('Desfazer a entrega desta venda antecipada?\n\n• A saída de ' + fmtNum(vaDes.quantidadeEntregue) + ' ' + (vaDes.unidade || '') + ' volta para o estoque.\n• A receita de ' + fmtBRL(vaDes.valorLiquido) + ' é apagada do Financeiro.\n• A venda volta a ficar "Aberto" para efetivar de novo.')) return;
       desfazerEfetivacaoVenda(vaDes); renderAll(); return;
     }
-    if(action.indexOf('del-') === 0){
+    if(action.indexOf('del-') === 0 && action !== 'del-talhao'){
       if(!window.confirm('Tem certeza que deseja remover este item? Essa ação não pode ser desfeita.')) return;
     }
 
@@ -13391,7 +13699,46 @@
       saveKey(entityKey, state[entityKey]);
       renderAll(); return;
     }
-    if(action === 'del-talhao'){ state.talhoes = state.talhoes.filter(function(t){ return t.id !== id; }); saveKey('talhoes', state.talhoes); renderAll(); return; }
+    if(action === 'tl-novo'){ talhoesFormAberto = true; editState = null; renderTalhoes(); var fN = document.getElementById('form-talhao'); if(fN){ fN.scrollIntoView({behavior:'smooth', block:'start'}); var iN = fN.querySelector('input'); if(iN) iN.focus(); } return; }
+    if(action === 'tl-fechar-form'){ talhoesFormAberto = false; renderTalhoes(); return; }
+    if(action === 'tl-filtro'){ talhoesFiltroCult = btn.getAttribute('data-cult') || ''; renderTalhoes(); return; }
+    if(action === 'tl-vista'){ talhoesVista = btn.getAttribute('data-vista') === 'lista' ? 'lista' : 'cards'; try{ localStorage.setItem('agro-talhoes-vista', talhoesVista); }catch(e){} renderTalhoes(); return; }
+    if(action === 'inativar-talhao' || action === 'reativar-talhao'){
+      var tIn = state.talhoes.find(function(t){ return t.id === id; }); if(!tIn) return;
+      if(action === 'reativar-talhao'){
+        if(!confirm('Reativar o talhão "' + tIn.nome + '"? Ele volta às listas, ao mapa e à área da fazenda.')) return;
+        delete tIn.inativo; delete tIn.inativoDesde; delete tIn.inativoMotivo;
+      } else {
+        var sfAtiva = state.safras.find(function(s){ return s.talhaoId === id && s.status !== 'colhida'; });
+        var hojeIn = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10);
+        var dIn = prompt('Inativar o talhão "' + tIn.nome + '" (' + fmtHa(tIn.area) + ').' + (sfAtiva ? '\n\nAtenção: ele tem uma lavoura que não está como colhida (' + culturaNome(sfAtiva.culturaId) + ').' : '') + '\n\nA partir de que data ele deixa de contar na área da fazenda? (AAAA-MM-DD)', hojeIn);
+        if(dIn === null) return;
+        dIn = String(dIn).trim();
+        var mBr = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(dIn); if(mBr) dIn = mBr[3] + '-' + pad2(+mBr[2]) + '-' + pad2(+mBr[1]);
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(dIn)){ alert('Data inválida. Use AAAA-MM-DD (ex.: ' + hojeIn + ').'); return; }
+        var motIn = prompt('Motivo (opcional) — ex.: arrendamento encerrado, área vendida:', '');
+        tIn.inativo = true; tIn.inativoDesde = dIn; if(motIn) tIn.inativoMotivo = String(motIn).trim(); else delete tIn.inativoMotivo;
+      }
+      saveKey('talhoes', state.talhoes); renderAll(); return;
+    }
+    if(action === 'del-talhao'){
+      var tDel = state.talhoes.find(function(t){ return t.id === id; }); if(!tDel) return;
+      var refs = [];
+      var cnt = function(arr, fn, rot){ var n = (arr || []).filter(fn).length; if(n) refs.push(n + ' ' + rot); };
+      cnt(state.safras, function(x){ return x.talhaoId === id; }, 'lavoura(s)/safra(s)');
+      cnt(state.operacoes, function(x){ return x.talhaoId === id || x.talhaoAvulsoId === id || (x.talhaoIds || []).indexOf(id) !== -1; }, 'operação(ões) do Diário');
+      cnt(state.financeiro, function(x){ return x.talhaoId === id || (x.talhaoIds || []).indexOf(id) !== -1; }, 'lançamento(s) financeiro(s)');
+      cnt(state.contasPagar, function(x){ return x.talhaoId === id; }, 'conta(s) a pagar');
+      cnt(state.contasReceber, function(x){ return x.talhaoId === id; }, 'conta(s) a receber');
+      cnt(state.inspecoes, function(x){ return x.talhaoId === id; }, 'inspeção(ões)');
+      cnt(state.analisesSolo, function(x){ return x.talhaoId === id; }, 'análise(s) de solo');
+      cnt(state.arrendamentos, function(x){ return x.talhaoId === id; }, 'arrendamento(s)');
+      cnt(state.financiamentos, function(x){ return x.talhaoId === id; }, 'financiamento(s)');
+      var msgDel = 'Remover o talhão "' + tDel.nome + '" de vez?';
+      if(refs.length) msgDel += '\n\nEle aparece em: ' + refs.join(', ') + '.\nEsses registros ficam sem talhão e a área sai também do rateio das safras passadas (os custos antigos mudam).\n\nSe ele só deixou de ser usado, cancele e use ⏸ Inativar — mantém o histórico.';
+      if(!confirm(msgDel)) return;
+      state.talhoes = state.talhoes.filter(function(t){ return t.id !== id; }); saveKey('talhoes', state.talhoes); renderAll(); return;
+    }
     if(action === 'edit-talhao'){ editState = {scope:'talhoes', id: id}; renderAll(); var f2 = document.getElementById('form-talhao'); if(f2) f2.scrollIntoView({behavior:'smooth', block:'start'}); return; }
     if(action === 'ver-perfil-solo'){
       soloTalhaoFiltro = id;
@@ -13748,6 +14095,9 @@
       if(filtroPend === 'sefaz'){ nfeTelaFocoAtiva = true; nfeSecaoAtiva = 'sefaz'; }
       switchTab(btn.dataset.tab); renderAll(); window.scrollTo(0, 0); return;
     }
+    if(action === 'lv-novo'){ lavourasFormAberto = true; editState = null; renderSafras(); var fL = document.getElementById('form-lavoura'); if(fL) fL.scrollIntoView({behavior:'smooth', block:'start'}); return; }
+    if(action === 'lv-fechar-form'){ lavourasFormAberto = false; renderSafras(); return; }
+    if(action === 'lv-vista'){ lavourasVista = btn.getAttribute('data-vista') === 'lista' ? 'lista' : 'cards'; try{ localStorage.setItem('agro-lavouras-vista', lavourasVista); }catch(e){} renderSafras(); return; }
     if(action === 'filtrar-ano-safras'){ safrasAnoFiltro = btn.dataset.ano || ''; renderSafras(); return; }
     if(action === 'aplicar-classificacao'){
       var destSel = (document.getElementById('classif-destino') || {}).value || '';
