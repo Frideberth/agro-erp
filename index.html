@@ -234,6 +234,7 @@
   .nav-btn[data-tab]::before{width:20px; text-align:center; font-size:14px; flex-shrink:0;}
   .nav-btn[data-tab="painel"]::before{content:'🏠';}
   .nav-btn[data-tab="safras"]::before{content:'🌾';}
+  .nav-btn[data-tab="fertilidade"]::before{content:'🧪';}
   .nav-btn[data-tab="operacoes"]::before{content:'📒';}
   .nav-btn[data-tab="inspecao"]::before{content:'🔎';}
   .nav-btn[data-tab="chuvas"]::before{content:'🌧️';}
@@ -488,6 +489,52 @@
   #sub-abas button{border-radius:99px; padding:7px 16px;}
   .property-card{border-radius:14px;}
   .section-title{font-family:inherit; font-weight:800; font-size:17px;}
+
+  /* ---------- Fertilidade do solo ---------- */
+  .fe-bloco{padding:16px; margin-bottom:14px;}
+  .fe-tit{font-size:15px; font-weight:800; display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-bottom:10px; color:var(--ink);} .fe-tit small{font-weight:500; font-size:11.5px; color:var(--ink-soft);}
+  .fe-tiles{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px;}
+  .fe-tile{font-family:inherit; text-align:left; border:2px solid #E1E2CB; background:#FCFCF5; border-radius:12px; padding:8px; cursor:pointer; display:flex; flex-direction:column; gap:3px; color:var(--ink);}
+  .fe-tile.sel{border-color:var(--growth); box-shadow:0 0 0 3px rgba(79,121,66,.2);} .fe-tile:hover{border-color:#B9C99A;}
+  .fe-tile-cq{height:76px; border-radius:9px; background:linear-gradient(135deg,#EEF3E2,#DCE7C9); display:grid; place-items:center;} .fe-tile-cq .tl-croqui{width:66px; height:66px;}
+  .fe-tile b{font-size:13px;} .fe-tile small{font-size:11.5px; color:var(--ink-soft);}
+  .fe-tag{font-size:10.5px; font-weight:800; border-radius:99px; padding:1px 8px; align-self:flex-start;}
+  .fe-leg{display:flex; gap:10px; flex-wrap:wrap; font-size:11.5px; color:var(--ink-soft); margin-top:10px;} .fe-leg i{display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:4px; vertical-align:-1px;}
+  .fe-det{display:grid; grid-template-columns:minmax(250px, .9fr) minmax(320px, 1.4fr); gap:18px;}
+  .fe-thumb{height:200px; border-radius:12px; background:linear-gradient(135deg,#EEF3E2,#DCE7C9); display:grid; place-items:center; position:relative;} .fe-thumb .tl-croqui{width:160px; height:160px;}
+  .fe-info{font-size:12.5px; color:var(--ink-soft); margin-top:10px; line-height:1.6;}
+  .fe-argila{font-size:12.5px; margin:6px 0;} .fe-argila select{font-family:inherit; padding:4px 6px; border-radius:7px; border:1px solid var(--paper-line);} .fe-argila small{color:var(--ink-soft);}
+  .fe-interp{width:100%; font-size:12.5px; margin-top:6px;} .fe-interp td{padding:5px 8px;}
+  .fe-cls{color:#fff; font-size:11px; font-weight:800; padding:2px 9px; border-radius:99px;}
+  .fe-barril{width:100%; max-width:470px; height:auto; display:block; margin:0 auto;}
+  .fe-limite{background:#FBE3DE; border:1px solid #E8B4A9; border-radius:10px; padding:10px 12px; font-size:13px; margin-top:6px; line-height:1.5;} .fe-limite b{color:var(--cost-dark);}
+  .fe-vazio{font-size:13px; color:var(--ink-soft); padding:30px 10px; text-align:center;}
+  .fe-form{display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:10px; margin:6px 0 12px;}
+  .fe-form label{display:flex; flex-direction:column; gap:3px; font-size:11px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.02em;}
+  .fe-form select, .fe-form input{font-family:inherit; text-transform:none; font-weight:500; padding:8px 9px; border:1px solid var(--paper-line); border-radius:8px; background:#fff; font-size:13px; color:var(--ink);}
+  .fe-form small{text-transform:none; font-weight:500; letter-spacing:0;}
+  .fe-nut{display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:10px;}
+  .fe-n{background:#FCFCF5; border:1px solid #E7E8D3; border-radius:11px; padding:10px 12px; display:flex; flex-direction:column; gap:2px;}
+  .fe-n span{font-size:12px; font-weight:800; color:var(--ink-soft);} .fe-n b{font-size:24px; color:var(--growth-dark);} .fe-n small{font-size:11.5px; color:var(--ink-soft);} .fe-n em{font-style:normal; font-size:10.5px; color:#8B8368;}
+  .fe-aviso{background:#FFF6E6; border:1px solid #EAD3A5; border-radius:10px; padding:9px 12px; font-size:12.5px; margin:10px 0; line-height:1.55; color:#6B4A10;}
+  .fe-sub{font-weight:800; font-size:13.5px; margin:14px 0 4px;}
+  .fe-plano{display:flex; flex-direction:column; gap:6px;}
+  .fe-pl{display:grid; grid-template-columns:200px 1fr auto; gap:4px 12px; align-items:center; background:#FCFCF5; border:1px solid #E7E8D3; border-radius:10px; padding:8px 12px;}
+  .fe-pl-ep{font-size:11.5px; font-weight:800; color:#8A5A10; grid-row:span 2;} .fe-pl b{font-size:13px;} .fe-pl-d{font-weight:800; color:var(--growth-dark); font-size:15px; text-align:right;} .fe-pl small{grid-column:2 / 4; font-size:11.5px; color:var(--ink-soft);}
+  .fe-custo{font-size:13px; margin:10px 0 0;}
+  .fe-partes{font-size:12.5px; line-height:1.6; margin:10px 0 0; padding-left:18px;}
+  .fe-acoes{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px; font-size:12px; color:var(--ink-soft);}
+  .fe-fonte{font-size:11px; color:#8B8368; margin-top:12px;}
+  .fe-rec{display:flex; align-items:center; gap:10px; background:#FCFCF5; border:1px solid #E7E8D3; border-radius:11px; padding:9px 12px; margin-bottom:6px; flex-wrap:wrap;}
+  .fe-rec.fe-ap{opacity:.7;} .fe-rec-ic{width:36px; height:36px; border-radius:10px; background:#F1F0E4; display:grid; place-items:center; font-size:18px; flex-shrink:0;}
+  .fe-rec-m{flex:1; min-width:220px; font-size:12.5px;} .fe-rec-m b{font-size:13px;} .fe-rec-m small{display:block; color:var(--ink-soft); font-size:11.5px;}
+  .fe-npk{display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:7px 0; border-top:1px solid #E7E8D3; font-size:12.5px;} .fe-npk b{flex:1; min-width:200px;} .fe-npk label{display:flex; align-items:center; gap:4px; font-weight:700; color:var(--ink-soft);} .fe-npk input{width:64px; padding:6px; border:1px solid var(--paper-line); border-radius:7px; font-family:inherit;}
+  .fe-bal td{padding:5px 10px;} .fe-bal tr.fe-bal-top td{border-top:2px solid #DCDCC6;}
+  .fe-gesso{font-size:12.5px; background:#F4F4EC; border:1px solid #E1E2CB; border-radius:10px; padding:8px 11px; margin-top:8px; line-height:1.5;}
+  .fe-orig{font-size:10px; font-weight:800; border:1px solid #C9CCAA; color:#6B6B60; border-radius:99px; padding:0 7px; background:#fff; vertical-align:1px;} .fe-orig-pr{border-color:#4F7942; color:#2F5A1A; background:#EEF6E4;}
+  .fe-antiga{opacity:.75; border-style:dashed;}
+  .tl-btn.fe-diario{background:#B5822B; border-color:#B5822B; color:#fff;} .tl-btn.fe-diario:hover{background:#946A22;}
+  @media (max-width: 820px){ .fe-det{grid-template-columns:1fr;} .fe-pl{grid-template-columns:1fr auto;} .fe-pl-ep{grid-row:auto; grid-column:1 / 3;} .fe-pl small{grid-column:1 / 3;} }
 </style>
 </head>
 <body>
@@ -602,6 +649,7 @@
       <button class="nav-btn active" data-tab="painel">Dashboard</button>
       <div class="nav-group-label" data-group="safra">Safra</div>
       <button class="nav-btn" data-tab="safras">Lavouras e Safras</button>
+      <button class="nav-btn" data-tab="fertilidade">Fertilidade do Solo</button>
       <button class="nav-btn" data-tab="operacoes" data-hub="campo">Campo</button>
       <button class="nav-btn nav-sub" data-tab="inspecao">Inspeção de Campo</button>
       <button class="nav-btn nav-sub" data-tab="chuvas">Chuvas</button>
@@ -661,6 +709,7 @@
     <section id="tab-painel" class="tab-content"></section>
     <section id="tab-propriedades" class="tab-content hidden"></section>
     <section id="tab-talhoes" class="tab-content hidden"></section>
+    <section id="tab-fertilidade" class="tab-content hidden"></section>
     <section id="tab-safras" class="tab-content hidden"></section>
     <section id="tab-culturas" class="tab-content hidden"></section>
     <section id="tab-produtos" class="tab-content hidden"></section>
@@ -708,6 +757,7 @@
     painel: {title:'Dashboard', subtitle:'Visão geral da propriedade'},
     propriedades: {title:'Propriedades', subtitle:'Áreas e imóveis rurais cadastrados'},
     talhoes: {title:'Talhões', subtitle:'Áreas cadastradas na propriedade'},
+    fertilidade: {title:'Fertilidade do Solo', subtitle:'Análises interpretadas pelo Manual de Adubação e Calagem do Paraná, barril de Liebig e adubação de produção'},
     safras: {title:'Lavouras e Safras', subtitle:'O que está plantado em cada talhão, por ano agrícola'},
     culturas: {title:'Culturas', subtitle:'Tipos de cultura cultivados'},
     produtos: {title:'Produtos e Estoque', subtitle:'Insumos, defensivos e controle de estoque'},
@@ -2791,6 +2841,7 @@
   ];
   var AJUDA_TELAS = {
     painel: {t:'Dashboard', txt:'Resumo da fazenda e o painel <b>📋 Pendências</b>: tudo que precisa de atenção (lançamentos sem destino, contas vencidas, estoque negativo, produtos sem custo, safras com dados faltando, notas da SEFAZ esperando ciência, parcelas de financiamento). Clique em "abrir →" para ir direto à tela certa.'},
+    fertilidade: {t:'Fertilidade do Solo', txt:'1) Escolha o talhão nos quadrinhos (as cores mostram o fator limitante, pH, V%, P, K ou MO pelas classes do Manual de Adubação e Calagem do Paraná). 2) Veja o <b>barril de Liebig</b>: a tábua mais baixa é o que mais segura a produção. 3) Em <b>Adubação de produção</b>, escolha a cultura (soja, milho safra, milho 2ª safra ou café — produção, formação ou implantação), a meta de sacas e os adubos; o sistema calcula N, P₂O₅, K₂O, calcário e as épocas. 4) <b>💾 Salvar</b> deixa pendente; <b>📒 Lançar no Diário</b> abre o Diário preenchido e só registra quando você confirmar lá. Use 🖨️ para imprimir para o agrônomo, 🛒 para a lista de compra e ⚖️ para ver se o solo está sendo reposto. Coletar a camada 20–40 cm libera o diagnóstico de gesso.'},
     safras: {t:'Lavouras e Safras', txt:'A <b>lavoura</b> é uma cultura num ano agrícola (ex.: Soja 2026/2027) plantada em um ou vários talhões. Cada talhão dentro dela é uma <b>safra</b>. Use os botões de ano acima da tabela de lavouras para filtrar. "Apelido" dá um nome curto (ex.: Milho Safrinha); "Encerrar" tira a lavoura da lista de destinos dos lançamentos. Inativar uma safra esconde ela dos formulários sem apagar o histórico.'},
     operacoes: {t:'Diário de Campo', txt:'Registre cada atividade como um receituário: lavoura e talhões, produtos com dose (por ha ou por alqueire), máquinas com horas, alvo, volume de calda, nº do receituário e responsável técnico. Os produtos saem do estoque na hora; editar ou remover devolve. O custo (insumos + máquinas) entra na safra. 🧾 imprime a ficha de aplicação.'},
     caderneta: {t:'Caderneta do Café', txt:'No terreiro ou na lavoura: registre a apanha do dia (várias pessoas de uma vez), veja a tabela pessoa × semana e use 💰 Lançar pagamento para criar a despesa paga na lavoura. Em Processamento, crie lotes e acompanhe terreiro → secador → tulha → beneficiado; com as sacas beneficiadas, ➜ Colheita leva o lote para o estoque. O rendimento mostra quantas medidas deram uma saca.'},
@@ -2897,11 +2948,754 @@
     }
   }
 
+  /* ---------------- Fertilidade do solo: interpretação (Manual de Adubação e Calagem para o Estado do Paraná, 2ª ed.),
+     barril de Liebig e adubação de produção (soja e milho 2ª safra) ---------------- */
+  // Tabela 3.2 / 3.3 / 3.4 do Manual PR. Cada parâmetro: início das classes Baixo, Médio, Alto; teto do Alto (acima = Muito alto); acima de "ev" = condição a evitar
+  var MPR_INTERP = {
+    ph:  {nome:'pH (CaCl₂)', un:'', bB:4.0, bM:4.45, bA:4.95, aMax:5.5, ev:6.0, fonte:'Tab. 3.2'},
+    v:   {nome:'V%', un:'%', bB:20.5, bM:35.5, bA:50.5, aMax:70, ev:90, fonte:'Tab. 3.2'},
+    ca:  {nome:'Ca', un:'cmolc/dm³', bB:0.5, bM:1.05, bA:2.05, aMax:6.0, fonte:'Tab. 3.2'},
+    mg:  {nome:'Mg', un:'cmolc/dm³', bB:0.2, bM:0.45, bA:1.05, aMax:2.0, fonte:'Tab. 3.2'},
+    mo:  {nome:'MO', un:'%', bB:0.7, bM:1.45, bA:2.45, aMax:3.4, fonte:'Tab. 3.2'},
+    ctc: {nome:'CTC pH 7', un:'cmolc/dm³', bB:5, bM:7.5, bA:14.5, aMax:24, fonte:'Tab. 3.2'},
+    k:   {nome:'K', un:'cmolc/dm³', bB:0.06, bM:0.125, bA:0.215, aMax:0.45, fonte:'Tab. 3.4'},
+    kCafe: {nome:'K (café)', un:'cmolc/dm³', bB:0.15, bM:0.305, bA:0.455, aMax:1.20, fonte:'Tab. 3.4'}
+  };
+  var MPR_P = { // Tab. 3.3 — P Mehlich-1 (mg/dm³) pela argila (g/kg)
+    'lt250': {rot:'< 250 g/kg (< 25%)', bB:6, bM:12.5, bA:18.5, aMax:24, ev:120},
+    '250a400': {rot:'250–400 g/kg (25–40%)', bB:4, bM:8.5, bA:12.5, aMax:18, ev:90},
+    'gt400': {rot:'> 400 g/kg (> 40%)', bB:3, bM:6.5, bA:9.5, aMax:12, ev:60}
+  };
+  // Micronutrientes no solo — Paraná (Embrapa Soja, Tecnologias de Produção de Soja, SP 17/2020, Tab. 27; Galrão 2004, Borkert et al. 2006, Sfredo et al. 2006)
+  // B em água quente; Cu, Mn e Zn em Mehlich-1 (mg/dm³). Classes: baixo / médio / alto
+  // Manual PR, Tab. 3.5 — enxofre e micronutrientes no solo (mg/dm³). B em água quente (cloreto de bário); Cu, Mn, Zn em Mehlich-1
+  var EMB_MICRO = {
+    B:{nome:'Boro', bB:0.105, bM:0.205, bA:0.305, aMax:0.60, ev:2.0},
+    Cu:{nome:'Cobre', bB:0.2, bM:0.55, bA:0.85, aMax:3.0, ev:20},
+    Mn:{nome:'Manganês', bB:5, bM:15.5, bA:30.5, aMax:100, ev:200},
+    Zn:{nome:'Zinco', bB:0.4, bM:0.85, bA:1.25, aMax:10, ev:30}
+  };
+  var MPR_S = {sup:{nome:'S (0–20 cm)', bB:1.0, bM:2.05, bA:3.05, aMax:6.0}, sub:{nome:'S (20–40 cm)', bB:3.0, bM:6.05, bA:9.05, aMax:12.0}};
+  var FE_MICRO_CAMPO = {B:'boro', Cu:'cobre', Mn:'manganes', Zn:'zinco'};
+  function feClasseMicro(a, m){ var v = feNum(a && a[FE_MICRO_CAMPO[m]]); if(v === null || v <= 0) return null; var c6 = mprClasse(v, EMB_MICRO[m]); return {v: v, c6: c6, c: (c6 === 'MB' || c6 === 'B') ? 'baixo' : (c6 === 'M' ? 'medio' : 'alto')}; }
+  var FE_MICRO_COR = {baixo:'#E07B39', medio:'#E3B23C', alto:'#6AA53B'}, FE_MICRO_NOME = {baixo:'Baixo', medio:'Médio', alto:'Alto'};
+  var MPR_CLASSES = ['MB','B','M','A','MA','EV'];
+  var MPR_NOME = {MB:'Muito baixo', B:'Baixo', M:'Médio', A:'Alto', MA:'Muito alto', EV:'Condição a evitar'};
+  var MPR_COR = {MB:'#C0453A', B:'#E07B39', M:'#E3B23C', A:'#6AA53B', MA:'#3F7F2A', EV:'#8E5BB0'};
+  var MPR_ALT = {MB:16, B:40, M:64, A:88, MA:100, EV:100};
+  function mprClasse(v, r){
+    if(v === null || v === undefined || v === '' || isNaN(Number(v))) return null;
+    v = Number(v);
+    if(r.ev !== undefined && v > r.ev) return 'EV';
+    if(v > r.aMax) return 'MA';
+    if(v >= r.bA) return 'A';
+    if(v >= r.bM) return 'M';
+    if(v >= r.bB) return 'B';
+    return 'MB';
+  }
+  // Análise da camada de superfície (0–20 cm) mais recente e mais completa; a de 20–40 cm fica para o diagnóstico de gesso
+  function feEhSub(a){ return /(?:^|\D)(20|21)\s*(?:-|–|a|à)\s*40|40\s*cm|subsuperf/i.test(String(a.profundidade || '')); }
+  function feCompletude(a){ return ['ph','saturacaoBases','fosforo','potassio','calcio','magnesio','ctc','materiaOrganica','argila'].filter(function(k){ var v = a[k]; return v !== null && v !== undefined && v !== '' && !isNaN(Number(v)); }).length; }
+  function feAnaliseSup(talhaoId){
+    var l = state.analisesSolo.filter(function(a){ return a.talhaoId === talhaoId && !feEhSub(a); });
+    if(!l.length) return null;
+    l.sort(function(a, b){ return (b.dataColeta || '').localeCompare(a.dataColeta || '') || feCompletude(b) - feCompletude(a) || (b.criadoEm || 0) - (a.criadoEm || 0); });
+    return l[0];
+  }
+  function feAnaliseSub(talhaoId){
+    var l = state.analisesSolo.filter(function(a){ return a.talhaoId === talhaoId && feEhSub(a); });
+    l.sort(function(a, b){ return (b.dataColeta || '').localeCompare(a.dataColeta || ''); });
+    return l[0] || null;
+  }
+  // Gessagem (Manual PR): na camada 21–40 cm, Ca < 0,3 cmolc/dm³, Al > 0,5 cmolc/dm³ ou saturação por Al > 20% da CTC efetiva
+  function feDiagGesso(talhaoId){
+    var sub = feAnaliseSub(talhaoId); if(!sub) return {sub:null};
+    var ca = feNum(sub.calcio), al = feNum(sub.aluminio), m = feNum(sub.saturacaoAluminio), mot = [];
+    if(ca !== null && ca < 0.3) mot.push('Ca ' + fmtNum(ca) + ' (< 0,3)');
+    if(al !== null && al > 0.5) mot.push('Al ' + fmtNum(al) + ' (> 0,5)');
+    if(m !== null && m > 20) mot.push('m% ' + fmtNum(m) + ' (> 20%)');
+    var sS = feNum(sub.enxofre), cS = sS !== null && sS > 0 ? mprClasse(sS, MPR_S.sub) : null;
+    if(cS === 'MB' || cS === 'B') mot.push('S ' + fmtNum(sS) + ' mg/dm³ ' + MPR_NOME[cS].toLowerCase() + ' em 20–40 cm (Tab. 3.5) — o gesso também é fonte de enxofre');
+    return {sub: sub, precisa: mot.length > 0, motivos: mot};
+  }
+  function feNum(v){ return (v === null || v === undefined || v === '' || isNaN(Number(v))) ? null : Number(v); }
+  // K da análise em cmolc/dm³ (laudos em mg/dm³ são convertidos: ÷ 391)
+  function feK(a){ var k = feNum(a && a.potassio); if(k === null) return null; return k > 2 ? k / 391 : k; }
+  // MO em % (laudos em g/dm³ são divididos por 10)
+  function feMO(a){ var m = feNum(a && a.materiaOrganica); if(m === null || m === 0) return null; return m > 10 ? m / 10 : m; }
+  function feArgilaFaixa(t, a){
+    var arg = feNum(a && a.argila), deOutra = false;
+    if((arg === null || arg <= 0) && t){ var outras = state.analisesSolo.filter(function(x){ return x.talhaoId === t.id && feNum(x.argila) > 0; }).sort(function(x, y){ return (y.dataColeta || '').localeCompare(x.dataColeta || ''); }); if(outras.length){ arg = feNum(outras[0].argila); deOutra = outras[0].dataColeta; } }
+    if(arg !== null && arg > 0){ var gkg = arg <= 100 ? arg * 10 : arg; return {k: gkg < 250 ? 'lt250' : (gkg <= 400 ? '250a400' : 'gt400'), medida:true, gkg: gkg, deOutra: deOutra}; }
+    if(t && t.argilaFaixa && MPR_P[t.argilaFaixa]) return {k: t.argilaFaixa, medida:false, informada:true};
+    var ts = semAcento((t && t.tipoSolo) || '');
+    return {k: /arenos/.test(ts) ? 'lt250' : (/argil/.test(ts) ? 'gt400' : '250a400'), medida:false, estimada:true};
+  }
+  function feCulturaChave(t){
+    var sf = safraAtualDoTalhao(t.id), n = semAcento(sf ? culturaNome(sf.culturaId) : '');
+    return /caf/.test(n) ? 'cafe' : (/milho/.test(n) ? 'milho2' : (/soja/.test(n) ? 'soja' : ''));
+  }
+  // Interpretação completa da análise: classe de cada parâmetro
+  function feInterpretar(t, a, cultOverride){
+    if(!a) return null;
+    var cult = cultOverride || feCulturaChave(t), arg = feArgilaFaixa(t, a);
+    var vals = {ph: feNum(a.ph), v: feNum(a.saturacaoBases), ca: feNum(a.calcio), mg: feNum(a.magnesio), mo: feMO(a), p: feNum(a.fosforo), k: feK(a), ctc: feNum(a.ctc)};
+    var out = {vals: vals, arg: arg, itens: {}};
+    ['ph','v','ca','mg','mo','ctc'].forEach(function(k){ out.itens[k] = mprClasse(vals[k], MPR_INTERP[k]); });
+    vals.s = feNum(a.enxofre); if(vals.s !== null && vals.s <= 0) vals.s = null;
+    out.itens.s = mprClasse(vals.s, MPR_S.sup);
+    out.itens.p = mprClasse(vals.p, MPR_P[arg.k]);
+    out.itens.k = mprClasse(vals.k, cult === 'cafe' ? MPR_INTERP.kCafe : MPR_INTERP.k);
+    return out;
+  }
+  var FE_BARRIL = ['ph','v','ca','mg','p','k','s','mo'];
+  var FE_LONGO = {ph:'acidez (pH)', v:'saturação por bases (V%)', ca:'cálcio', mg:'magnésio', p:'fósforo', k:'potássio', s:'enxofre', mo:'matéria orgânica'};
+  var FE_ROT = {ph:'pH', v:'V%', ca:'Ca', mg:'Mg', p:'P', k:'K', s:'S', mo:'MO'};
+  function feLimitante(I){
+    if(!I) return null;
+    var rank = {MB:0, B:1, M:2, A:3, MA:4, EV:5}, best = null;
+    ['p','k','s','v','ph','ca','mg','mo'].forEach(function(k){ var c = I.itens[k]; if(!c || c === 'EV') return; if(!best || rank[c] < rank[I.itens[best]]) best = k; });
+    return best;
+  }
+
+  // ===== Adubação de produção — Manual PR (cap. 9 soja, cap. 8 milho 2ª safra) =====
+  var MPR_SOJA_PK = { // Tab. 9.11 (P₂O₅) e 9.12 (K₂O) — mesmos valores; colunas: < 3 | 3–4 | 4,1–5 | > 5 t/ha
+    MB:[[81,100],[101,120],null,null], B:[[61,80],[81,100],[101,120],null], M:[[41,60],[61,80],[81,100],[101,120]],
+    A:[[20,40],[41,60],[61,80],[81,100]], MA:[[0,0],[20,40],[41,60],[61,80]], EV:[[0,0],[0,0],[0,0],[0,0]]
+  };
+  var MPR_MILHO2 = { // Tab. 8.25 (N), 8.26 (P₂O₅), 8.27 (K₂O); colunas: < 8 | 8–10 | 11–12 | > 12 t/ha
+    N: {graminea:{sem:[[20,30],[20,30],[30,40],[30,40]], cob:[[50,80],[81,110],[111,140],[141,170]]},
+        leguminosa:{sem:[[10,20],[10,20],[20,30],[20,30]], cob:[[40,60],[61,80],[81,100],[101,120]]}},
+    P: {MB:[[80,100],[101,120],null,null], B:[[60,80],[81,100],[101,120],null], M:[[40,60],[61,80],[81,100],[101,120]],
+        A:[[20,40],[41,60],[61,80],[81,100]], MA:[[0,20],[21,40],[41,60],[61,80]], EV:[[0,0],[0,0],[0,0],[0,0]]},
+    K: {MB:[[70,90],[91,110],null,null], B:[[50,70],[71,90],[91,110],null], M:[[30,50],[51,70],[71,90],[91,110]],
+        A:[[10,30],[31,50],[51,70],[71,90]], MA:[[0,10],[11,30],[31,50],[51,70]], EV:[[0,0],[0,0],[0,0],[0,0]]}
+  };
+  var MPR_MILHO1 = { // Milho safra (verão) — cap. 8; colunas: < 8 | 8–12 | 13–16 | > 16 t/ha
+    N: {graminea:[[80,120],[121,180],[181,260],[261,340]], leguminosa:[[20,60],[61,120],[121,200],[201,280]]}, // Tab. 8.21 — N total; 30–50 kg/ha na semeadura e o resto em cobertura
+    P: {MB:[[110,130],null,null,null], B:[[90,110],[111,130],[131,150],null], M:[[70,90],[91,110],[111,130],[131,150]], A:[[50,70],[71,90],[91,110],[111,130]], MA:[[30,50],[51,70],[71,90],[91,110]], EV:[[0,0],[0,0],[0,0],[0,0]]}, // Tab. 8.22
+    K: {MB:[[100,130],null,null,null], B:[[70,100],[101,130],[131,160],[161,190]], M:[[40,70],[71,100],[101,130],[131,160]], A:[[20,40],[41,70],[71,100],[101,130]], MA:[[20,20],[20,41],[41,70],[71,100]], EV:[[0,0],[0,0],[0,0],[0,0]]}, // Tab. 8.23
+    exportacao: {N:14.4, P:3.4, K:5.4, Ca:0.3, Mg:1.1, S:1.1} // Tab. 8.24 — kg por tonelada de grãos
+  };
+  var MPR_CAFE = { // cap. 15 — adubação de PRODUÇÃO do cafeeiro; colunas por café beneficiado: < 660 | 661–1.200 | > 1.200 kg/ha
+    N: {baixo:[[181,230],[231,280],[281,330]], medio:[[131,180],[181,230],[231,280]], alto:[[80,130],[131,180],[181,230]]},   // Tab. 15.7 (teor foliar de N < 26 | 26–32 | > 32 g/kg)
+    S: {baixo:[[51,60],[61,70],[71,80]], ok:[[40,50],[51,60],[61,70]]},                                                    // Tab. 15.8 (teor foliar de S < 1,5 | ≥ 1,5 g/kg)
+    P: {MB:[[21,30],[31,50],[51,70]], B:[[11,20],[21,30],[31,50]], M:[[5,10],[11,20],[21,30]], A:[[0,0],[5,10],[11,20]], MA:[[0,0],[0,0],[5,10]], EV:[[0,0],[0,0],[0,0]]}, // Tab. 15.9
+    K: {argiloso:{MB:[[201,250],[251,300],[301,350]], B:[[151,200],[201,250],[251,300]], M:[[101,150],[151,200],[201,250]], A:[[50,100],[101,150],[151,200]], MA:[[0,0],[50,100],[101,150]], EV:[[0,0],[0,0],[0,0]]},
+        arenoso:{MB:[[151,200],[201,250],[251,300]], B:[[101,150],[151,200],[201,250]], M:[[50,100],[101,150],[151,200]], A:[[0,0],[50,100],[101,150]], MA:[[0,0],[0,0],[0,0]], EV:[[0,0],[0,0],[0,0]]}}, // Tab. 15.10
+    exportacao: {N:37.1, P:2.1, K:40.5, Ca:7.1, Mg:3.3, S:2.0} // Tab. 15.12 — kg por tonelada de café em coco
+  };
+  // Café — implantação (por metro de sulco) e formação (por planta, 1º e 2º ano). Manual PR, cap. 15
+  var MPR_CAFE_IMPL = {
+    P: {arenoso:{MB:[51,65], B:[36,50], M:[21,35], A:[11,20], MA:[10,10], EV:[0,0]}, argiloso:{MB:[61,75], B:[46,60], M:[31,45], A:[16,30], MA:[15,15], EV:[0,0]}}, // Tab. 15.1 — P₂O₅ g/m de sulco
+    K: {arenoso:{MB:[21,25], B:[16,20], M:[11,15], A:[6,10], MA:[5,5], EV:[0,0]}, argiloso:{MB:[26,30], B:[21,25], M:[16,20], A:[11,15], MA:[5,10], EV:[0,0]}},  // Tab. 15.2 — K₂O g/m de sulco
+    micro: {baixo:{B:1.0, Cu:1.0, Mn:2.0, Zn:2.0}, medio:{B:0.5, Cu:0, Mn:0, Zn:1.0}, alto:{B:0, Cu:0, Mn:0, Zn:0}} // Tab. 15.3 — g/m de sulco
+  };
+  var MPR_CAFE_FORM = { // colunas de densidade: 2.000–4.000 | 4.001–6.000 | 6.001–8.000 | 8.001–10.000 plantas/ha; cada uma [1º ano, 2º ano]
+    N: [[[10,12],[25,30]], [[8,10],[20,23]], [[7,9],[18,20]], [[7,8],[16,20]]], // Tab. 15.4 — N g/planta
+    P: {argiloso:{MB:[[[6,7],[10,12]],[[4.1,5],[9,10]],[[4.1,5],[7,9]],[[3.1,3.5],[6,7.5]]], B:[[[4,5],[8,9]],[[3.1,4],[6,8]],[[3.1,4],[5,6]],[[2.6,3],[4.6,6]]], M:[[[2,3],[5,7]],[[2,3],[4,5]],[[2,3],[3,4]],[[2,2.5],[3,4.5]]]},
+        arenoso:{MB:[[[4.1,5],[8,10]],[[3.6,4.5],[7,8]],[[3.1,4],[6,7]],[[3.1,4],[5,6]]], B:[[[3.1,4],[6,7]],[[2.6,3.5],[5,6]],[[2.1,3],[4,5]],[[2.1,3],[3,4]]], M:[[[2,3],[4,5]],[[2,2.5],[3,4]],[[1,2],[2,3]],[[1,2],[1,2]]]}}, // Tab. 15.5 — P₂O₅ g/planta (Alto e Muito alto = 0)
+    K: {argiloso:{MB:[[[8,9],[17,20]],[[7,8],[14,17]],[[6,7],[13,16]],[[5.1,6],[13,16]]], B:[[[6,7],[13,16]],[[5,6],[10,13]],[[4.1,5],[8,12]],[[4.1,5],[9,12]]], M:[[[4,5],[8,12]],[[3,4],[7,9]],[[3,4],[4,8]],[[3,4],[4,8]]]},
+        arenoso:{MB:[[[5.1,6],[12,13]],[[4.1,5],[11,12]],[[4.1,5],[9,10]],[[3.1,4],[7,8]]], B:[[[4.1,5],[10,11]],[[3.6,4],[9,10]],[[3.1,4],[7,8]],[[2.6,3],[5.1,6]]], M:[[[3.6,4],[8,9]],[[3.1,3.5],[7,8]],[[2.6,3],[5.1,6]],[[2.1,2.5],[4.1,5]]], A:[[[3,3.5],[6,7]],[[2.5,3],[5,6]],[[2,2.5],[4,5]],[[1.5,2],[3,4]]]}} // Tab. 15.6 — K₂O g/planta
+  };
+  var MPR_SOJA_MICRO = {baixo:{B:1.5, Cu:1.0, Mn:6.0, Zn:2.0}, medio:{B:1.0, Cu:0.5, Mn:3.0, Zn:1.5}, alto:{B:0, Cu:0, Mn:0, Zn:0}}; // Manual PR Tab. 9.13 — kg/ha na semeadura, quando houver deficiência
+  var MPR_CAFE_MICRO_PROD = {baixo:{B:2, Mn:2, Zn:2}, medio:{B:1, Mn:1, Zn:1}, alto:{B:0, Mn:0, Zn:0}}; // Tab. 15.11 — kg/ha
+  function feDensIdx(pl){ return pl <= 4000 ? 0 : (pl <= 6000 ? 1 : (pl <= 8000 ? 2 : 3)); }
+  function feColuna(cult, tha){
+    if(cult === 'milho1') return tha < 8 ? 0 : (tha <= 12.5 ? 1 : (tha <= 16.5 ? 2 : 3));
+    if(cult === 'cafe'){ var kg = tha * 1000; return kg < 660 ? 0 : (kg <= 1200 ? 1 : 2); }
+    if(cult === 'soja') return tha < 3 ? 0 : (tha <= 4.05 ? 1 : (tha <= 5.05 ? 2 : 3));
+    return tha < 8 ? 0 : (tha <= 10.5 ? 1 : (tha <= 12.05 ? 2 : 3));
+  }
+  var FE_COL_ROT = {milho1:['< 8 t/ha','8–12 t/ha','13–16 t/ha','> 16 t/ha'], cafe:['< 660 kg/ha (< 11 sc)','661–1.200 kg/ha (11–20 sc)','> 1.200 kg/ha (> 20 sc)'], soja:['< 3 t/ha','3–4 t/ha','4,1–5 t/ha','> 5 t/ha'], milho2:['< 8 t/ha','8–10 t/ha','11–12 t/ha','> 12 t/ha']};
+  function feEscolher(faixa, nivel){ if(!faixa) return null; var a = faixa[0], b = faixa[1]; return nivel === 'min' ? a : (nivel === 'max' ? b : Math.round((a + b) / 2)); }
+  // Calcula N, P₂O₅, K₂O e a calagem pelo Manual
+  function feRecomendacao(t, a, op){
+    var I = feInterpretar(t, a, op.cultura); if(!I) return null;
+    var cult = op.cultura, tha = (Number(op.sc) || 0) * 0.06, col = feColuna(cult, tha), r = {cult: cult, tha: tha, col: col, I: I, avisos: [], partes: []};
+    var cP = I.itens.p, cK = I.itens.k;
+    if(cult === 'cafe' && op.fase && op.fase !== 'producao'){
+      var argC = I.arg.k === 'lt250' ? 'arenoso' : 'argiloso', plC = Number(op.plantas) || 0, di = feDensIdx(plC), esp = Number(op.espacamento) || 0;
+      r.fase = op.fase; r.vAlvo = 60; r.vGatilho = 50; r.fNsem = [0,0]; r.S = 0;
+      if(op.fase === 'implantacao'){
+        var mSulco = esp > 0 ? 10000 / esp : 0; r.mSulco = mSulco;
+        var fPm = cP ? MPR_CAFE_IMPL.P[argC][cP] : undefined, fKm = cK ? MPR_CAFE_IMPL.K[argC][cK] : undefined;
+        r.fPun = fPm; r.fKun = fKm; r.un = 'g/m de sulco';
+        r.fP = fPm ? [Math.round(fPm[0] * mSulco / 1000), Math.round(fPm[1] * mSulco / 1000)] : fPm;
+        r.fK = fKm ? [Math.round(fKm[0] * mSulco / 1000), Math.round(fKm[1] * mSulco / 1000)] : fKm;
+        r.fNcob = [0,0];
+        if(!mSulco) r.avisos.push('Informe o <b>espaçamento entre linhas</b> para transformar g por metro de sulco em kg/ha.');
+        r.partes.push('No sulco de plantio: misturar bem o calcário e os adubos com a terra. Em covas, calcular a dose por área e dividir pelo número de covas.');
+        r.partes.push('Aplicar no fundo do sulco <b>700 kg/ha de calcário de baixa reatividade</b> (PRNT abaixo de 70%), para cálcio e magnésio a longo prazo.');
+        r.partes.push('<b>Orgânico</b> por metro de sulco (escolher o de menor custo, sempre curtido): 20 dm³ de esterco bovino, ou 5 dm³ de cama de aviário, ou 2 dm³ de esterco de poedeiras, ou 10 dm³ de palha de café, ou 2 dm³ de torta de mamona.');
+        r.partes.push('<b>Nitrogênio</b>: após o pegamento das mudas, 4 g de N por planta (ou cova), repetindo a cada 30 dias até o fim das chuvas (outubro a março), em cobertura ao redor das plantas.');
+        r.partes.push('Calcário em área total, incorporado o mais fundo possível. Acima de 5 t/ha: metade antes da aração e metade depois da aração e antes da gradagem.');
+        r.nPorPlanta = 4;
+      } else {
+        var ano = op.fase === 'form2' ? 1 : 0;
+        var fNp = MPR_CAFE_FORM.N[di][ano];
+        var fPp = cP ? ((cP === 'A' || cP === 'MA' || cP === 'EV') ? [0,0] : MPR_CAFE_FORM.P[argC][cP][di][ano]) : undefined;
+        var tabK = MPR_CAFE_FORM.K[argC], fKp = cK ? ((cK === 'MA' || cK === 'EV' || (cK === 'A' && !tabK.A)) ? [0,0] : tabK[cK][di][ano]) : undefined;
+        r.fNun = fNp; r.fPun = fPp; r.fKun = fKp; r.un = 'g/planta';
+        var conv = function(f){ return f ? [Math.round(f[0] * plC / 1000), Math.round(f[1] * plC / 1000)] : f; };
+        r.fNcob = conv(fNp); r.fP = conv(fPp); r.fK = conv(fKp);
+        if(plC < 2000 || plC > 10000) r.avisos.push('As tabelas de formação vão de 2.000 a 10.000 plantas/ha — confira as plantas por hectare.');
+        r.partes.push('<b>Nitrogênio</b>: dividir em 2 ou 3 partes iguais, a cada 45 dias, no período chuvoso (setembro a março).');
+        r.partes.push('<b>Fósforo</b>: 60% da dose como fosfato natural reativo e 40% como fosfato solúvel, numa só aplicação, até o fim de outubro.');
+        r.partes.push('Na formação, aplicar os adubos na superfície do solo, entre o caule e a projeção da ponta dos ramos.');
+      }
+    } else if(cult === 'cafe'){
+      var nF = feNum(op.nFoliar), sF = feNum(op.sFoliar), argK = I.arg.k === 'lt250' ? 'arenoso' : 'argiloso';
+      var linN = nF === null ? null : (nF < 26 ? 'baixo' : (nF <= 32 ? 'medio' : 'alto'));
+      r.fNcob = linN ? MPR_CAFE.N[linN][col] : [MPR_CAFE.N.baixo[col][1], MPR_CAFE.N.baixo[col][1]];
+      r.fS = sF === null ? [MPR_CAFE.S.baixo[col][1], MPR_CAFE.S.baixo[col][1]] : MPR_CAFE.S[sF < 1.5 ? 'baixo' : 'ok'][col];
+      r.fNsem = [0,0];
+      r.fP = cP ? MPR_CAFE.P[cP][col] : undefined; r.fK = cK ? MPR_CAFE.K[argK][cK][col] : undefined;
+      r.vAlvo = 60; r.vGatilho = 50; r.semFoliarN = linN === null; r.semFoliarS = sF === null;
+      var pl = Number(op.plantas) || 0;
+      if(pl > 2000 && (cP === 'MB' || cP === 'B') && r.fP){ var addP = Math.round((pl - 2000) / 1000 * 12); r.fP = [r.fP[0] + addP, r.fP[1] + addP]; r.partes.push('População de ' + fmtNum(pl) + ' plantas/ha com P ' + MPR_NOME[cP].toLowerCase() + ': <b>+' + addP + ' kg/ha de P₂O₅</b> (12 kg para cada 1.000 plantas acima de 2.000 — nota da Tab. 15.9).'); }
+      if(pl > 2000 && (cK === 'MB' || cK === 'B' || cK === 'M') && r.fK){ var addK = Math.round((Math.min(pl, 8000) - 2000) / 1000 * 35); r.fK = [r.fK[0] + addK, r.fK[1] + addK]; r.partes.push('População de ' + fmtNum(pl) + ' plantas/ha com K ' + MPR_NOME[cK].toLowerCase() + ': <b>+' + addK + ' kg/ha de K₂O</b> (35 kg para cada 1.000 plantas acima de 2.000, até 8.000 — nota da Tab. 15.10).'); }
+    } else if(cult === 'milho1'){
+      r.fP = cP ? MPR_MILHO1.P[cP][col] : undefined; r.fK = cK ? MPR_MILHO1.K[cK][col] : undefined;
+      r.fNtot = MPR_MILHO1.N[op.anterior === 'leguminosa' ? 'leguminosa' : 'graminea'][col];
+      r.vAlvo = 70; r.vGatilho = 60;
+    } else if(cult === 'soja'){
+      r.fP = cP ? MPR_SOJA_PK[cP][col] : undefined; r.fK = cK ? MPR_SOJA_PK[cK][col] : undefined; r.fNsem = [0,0]; r.fNcob = [0,0];
+      r.vAlvo = 60; r.vGatilho = 50;
+    } else {
+      r.fP = cP ? MPR_MILHO2.P[cP][col] : undefined; r.fK = cK ? MPR_MILHO2.K[cK][col] : undefined;
+      var tabN = MPR_MILHO2.N[op.anterior === 'leguminosa' ? 'leguminosa' : 'graminea'];
+      r.fNsem = tabN.sem[col]; r.fNcob = tabN.cob[col];
+      r.vAlvo = 70; r.vGatilho = 70;
+    }
+    if(cult === 'milho1'){
+      r.N = feEscolher(r.fNtot, op.nivel);
+      r.Nsem = Math.min(r.N, feEscolher([30,50], op.nivel)); r.Ncob = r.N - r.Nsem;
+      r.fNsem = [Math.min(30, r.N), Math.min(50, r.N)]; r.fNcob = [Math.max(0, r.fNtot[0] - 50), Math.max(0, r.fNtot[1] - 30)];
+    } else {
+    r.N = cult === 'soja' ? 0 : feEscolher(r.fNsem, op.nivel) + feEscolher(r.fNcob, op.nivel);
+    r.Nsem = cult === 'soja' ? 0 : feEscolher(r.fNsem, op.nivel); r.Ncob = cult === 'soja' ? 0 : feEscolher(r.fNcob, op.nivel);
+    }
+    r.S = cult === 'cafe' && !r.fase ? feEscolher(r.fS, op.nivel) : 0;
+    if(cult === 'soja'){
+      r.micro = [];
+      ['B','Cu','Zn','Mn'].forEach(function(m){
+        var cls = op['cls' + m];
+        if(!cls || cls === 'auto'){ var cm = feClasseMicro(a, m); cls = cm ? cm.c : null; }
+        if(!cls || cls === 'nao') return;
+        var kh = MPR_SOJA_MICRO[cls][m]; if(kh > 0) r.micro.push({m:m, dose: kh, txt: 'Tab. 9.13' + (m === 'Mn' ? ' — só com sintoma na planta' : '')});
+      });
+      r.partes.push('<b>Cobalto e molibdênio via semente</b>: 2–3 g/ha de Co e 12–25 g/ha de Mo' + (I.vals.ph !== null && I.vals.ph < 4.8 ? ' — <b>maior resposta neste talhão</b> (pH CaCl₂ ' + fmtNum(I.vals.ph) + ', abaixo de 4,8).' : '.'));
+      r.partes.push('Micronutrientes (Tab. 9.13): aplicar na semeadura quando a análise indicar deficiência. Zn e Cu têm efeito residual de mais de 2 anos.');
+      r.partes.push('<b>Manganês</b>: a análise de solo não é calibrada para Mn — aplicar só com sintoma na planta, de preferência via folha em V4 e V8 (0,5 a 1 kg/ha somando as duas). Deficiência costuma vir de calagem excessiva ou pH acima de 6,0.');
+      if(I.itens.p && ['A','MA'].indexOf(I.itens.p) !== -1 && I.vals.k !== null && I.vals.k > 0.30) r.partes.push('Com P alto ou muito alto e K acima de 0,30 cmolc/dm³, se o cultivo de inverno (trigo, aveia, milho safrinha) foi bem adubado, o Manual permite <b>dispensar o P e o K na soja</b>, a critério da assistência técnica — e refazer a análise ao fim da soja.');
+    }
+    if(cult === 'cafe'){
+      r.micro = [];
+      ['B','Mn','Zn','Cu'].forEach(function(m){
+        var cls = op['cls' + m];
+        if(!cls || cls === 'auto'){ var cm = feClasseMicro(a, m); cls = cm ? cm.c : null; }
+        if(!cls || cls === 'nao') return;
+        if(r.fase === 'implantacao'){ var gm = MPR_CAFE_IMPL.micro[cls][m]; if(gm > 0) r.micro.push({m:m, dose: Math.round(gm * (r.mSulco || 0) / 1000 * 10) / 10, txt: gm + ' g/m de sulco'}); }
+        else if(!r.fase && m !== 'Cu'){ var kh = MPR_CAFE_MICRO_PROD[cls][m]; if(kh > 0) r.micro.push({m:m, dose: kh, txt: 'Tab. 15.11'}); }
+      });
+      if(!r.fase) r.partes.push('Boro, manganês e zinco (se o solo estiver baixo ou médio): uma só vez no início das chuvas, setembro–outubro, em faixas largas sob a copa.');
+    }
+    r.P2O5 = r.fP ? feEscolher(r.fP, op.nivel) : (r.fP === null ? null : 0);
+    r.K2O = r.fK ? feEscolher(r.fK, op.nivel) : (r.fK === null ? null : 0);
+    if(r.fP === null || r.fK === null) r.avisos.push('⛔ Pelo Manual, a meta de ' + fmtNum(op.sc) + ' sc/ha é <b>inviável</b> com o ' + (r.fP === null ? 'fósforo' : 'potássio') + ' no nível ' + MPR_NOME[r.fP === null ? cP : cK].toLowerCase() + '. Corrija o solo primeiro (fosfatagem/potassagem) ou reduza a meta.');
+    if(cP === undefined || !cP) r.avisos.push('A análise não tem fósforo — sem a classe de P não dá para calcular o P₂O₅.');
+    if(!cK) r.avisos.push('A análise não tem potássio — sem a classe de K não dá para calcular o K₂O.');
+    // calagem
+    var V = I.vals.v, ctc = I.vals.ctc;
+    if(V !== null && ctc !== null && V < r.vGatilho){ r.calagem = {nc: Math.max(0, ctc * (r.vAlvo - V) / (Number(op.prnt) || 85)), v1: V, v2: r.vAlvo, prnt: Number(op.prnt) || 85}; if(cult === 'cafe' && (!op.fase || op.fase === 'producao') && r.calagem.nc > 2.5){ r.calagem.nc = 2.5; r.avisos.push('Café em produção: o Manual limita a calagem a <b>2,5 t/ha</b> por vez, em superfície sob a projeção da copa (sem incorporar).'); } }
+    if(cult === 'milho2' && I.vals.mg !== null && I.vals.mg < 1.0) r.avisos.push('Mg abaixo de 1,0 cmolc/dm³: usar calcário com <b>mais de 12% de MgO</b> (Manual, milho 2ª safra).');
+    // parcelamento
+    if(cult === 'cafe' && !r.fase){
+      if(r.semFoliarN || r.semFoliarS) r.avisos.push('Sem análise foliar: pelo Manual, use a <b>maior dose</b> da faixa de produtividade para ' + (r.semFoliarN && r.semFoliarS ? 'N e S' : (r.semFoliarN ? 'N' : 'S')) + '. Com a análise foliar (coleta em janeiro, 3º par de folhas no chumbinho), a dose pode cair.');
+      r.partes.push('<b>Nitrogênio</b>: parcelar em 3 ou 4 vezes, em intervalos regulares, de setembro a março.');
+      r.partes.push('<b>Potássio</b>: pode ir em 2 ou mais vezes, junto com o nitrogênio.');
+      r.partes.push('<b>Fósforo</b> e <b>enxofre</b>: uma só vez, no início da estação chuvosa.');
+      r.partes.push('Aplicar os adubos na superfície, em faixas largas ao redor da planta, abaixo da copa.');
+    }
+    if(cult === 'soja' && r.K2O > 80) r.partes.push('Potássio acima de 80 kg/ha: até 80 kg/ha no sulco e o <b>restante a lanço</b>, da pré-semeadura até o estádio V4 (quanto mais perto do V4, maior o risco de perda por lixiviação).');
+    if(cult === 'soja') r.partes.push('Soja não leva adubação nitrogenada: o nitrogênio vem da <b>inoculação</b> com Bradyrhizobium (na semente ou no sulco).');
+    if(cult === 'milho1'){
+      if(r.K2O > 60) r.partes.push('Potássio acima de 60 kg/ha: <b>60 kg/ha no sulco</b> e o restante em cobertura, junto com a 1ª adubação nitrogenada de cobertura.');
+      var arenoso1 = I.arg.k === 'lt250';
+      if(arenoso1 && r.Ncob > 80) r.partes.push('Solo arenoso e N de cobertura acima de 80 kg/ha: <b>parcelar</b> — 1ª aplicação em V2–V4 e a 2ª em V6–V7.');
+      else if(!arenoso1 && r.Ncob > 120) r.partes.push('Solo argiloso e N de cobertura acima de 120 kg/ha: <b>parcelar</b> — 1ª aplicação em V2–V4 e a 2ª em V6–V7.');
+      else r.partes.push('Nitrogênio: <b>30 a 50 kg/ha na semeadura</b> e o restante em cobertura, de V2 a V6 (duas a seis folhas totalmente expandidas).');
+      r.partes.push('Na Tab. 8.21, a cultura anterior conta quando produziu mais de 2 t/ha de matéria seca.');
+    }
+    if(cult === 'milho2'){
+      if(r.K2O > 60) r.partes.push('Potássio acima de 60 kg/ha: o <b>restante vai em cobertura</b>, junto com a 1ª aplicação de nitrogênio.');
+      var arenoso = I.arg.k === 'lt250';
+      r.partes.push(arenoso && r.Ncob > 80 ? 'Solo arenoso e N de cobertura acima de 80 kg/ha: <b>parcelar</b> — 1ª aplicação em V4–V6 e a 2ª em V7–V8.' : 'Nitrogênio de cobertura em <b>uma aplicação nos estádios V4–V6</b> (em solo argiloso e período de pouca chuva).');
+    }
+    if(I.arg.estimada) r.avisos.push('A análise não tem o teor de argila — a classe do fósforo usou a faixa <b>estimada pelo tipo de solo</b>. Confira a faixa de argila abaixo.');
+    return r;
+  }
+  // Fórmula N-P-K pelo nome do produto (ex.: "FERTIPAR 20-00-20", "TOP PHOS 02-20-18", "MAP 11-52-00")
+  var FE_FORMULAS_COMUNS = [
+    {nome:'Ureia (45-00-00)', n:45, p:0, k:0}, {nome:'Cloreto de potássio (00-00-60)', n:0, p:0, k:60},
+    {nome:'Superfosfato simples (00-18-00)', n:0, p:18, k:0}, {nome:'Superfosfato triplo (00-46-00)', n:0, p:46, k:0},
+    {nome:'MAP (11-52-00)', n:11, p:52, k:0}, {nome:'02-20-18', n:2, p:20, k:18}, {nome:'04-14-08', n:4, p:14, k:8},
+    {nome:'08-20-20', n:8, p:20, k:20}, {nome:'00-20-20', n:0, p:20, k:20}, {nome:'20-00-20', n:20, p:0, k:20}, {nome:'Sulfato de amônio (21-00-00)', n:21, p:0, k:0}
+  ];
+  function feFormulaDoNome(nome){
+    var n = semAcento(nome || '');
+    var m = /(\d{1,2})\s*[-.]\s*(\d{1,2})\s*[-.]\s*(\d{1,2})(?!\d)/.exec(n);
+    if(m) return {n: +m[1], p: +m[2], k: +m[3]};
+    if(/\bureia\b/.test(n)) return {n:45, p:0, k:0};
+    if(/cloreto de potassio|\bkcl\b/.test(n)) return {n:0, p:0, k:60};
+    if(/superfosfato simples|\bsfs\b|super fosfato simples/.test(n)) return {n:0, p:18, k:0};
+    if(/superfosfato triplo|\bsft\b/.test(n)) return {n:0, p:46, k:0};
+    if(/\bmap\b/.test(n)) return {n:11, p:52, k:0};
+    if(/sulfato de amonio/.test(n)) return {n:21, p:0, k:0};
+    return null;
+  }
+  function feFormulaProduto(p){ if(p && p.npk && (Number(p.npk.n) || Number(p.npk.p) || Number(p.npk.k))) return {n: Number(p.npk.n) || 0, p: Number(p.npk.p) || 0, k: Number(p.npk.k) || 0}; return p ? feFormulaDoNome(p.nome) : null; }
+  function feEhAduboSolo(p){ var t = semAcento((p.categoria || '') + ' ' + (p.classe || '') + ' ' + p.nome); return /fertiliz|adubo|corretiv|calcar|gesso|ureia|cloreto|fosfat|sulfato de amonio|\bmap\b|\bnpk\b/.test(t) && !/foliar|adjuv|inseti|fungic|herbic/.test(t); }
+  // opções de adubo: produtos do estoque com fórmula reconhecida + fórmulas comuns
+  function feOpcoesAdubo(filtro){
+    var ops = [];
+    state.produtos.filter(function(p){ return !p.arquivado; }).forEach(function(p){ var f = feFormulaProduto(p); if(f && filtro(f)) ops.push({v:'p:' + p.id, nome: p.nome, f: f, produtoId: p.id, estoque: Number(p.estoqueAtual) || 0}); });
+    FE_FORMULAS_COMUNS.forEach(function(c, i){ if(filtro(c)) ops.push({v:'c:' + i, nome: c.nome + ' (fórmula comum)', f: c}); });
+    return ops;
+  }
+  function feCustoKg(produtoId){
+    var p = state.produtos.find(function(x){ return x.id === produtoId; }); if(!p) return 0;
+    var cm = custoMedioProduto(p.id) || 0, un = semAcento(unidadeControle(p) || '');
+    if(un === 'kg') return cm; if(un === 't' || un === 'ton') return cm / 1000; return 0;
+  }
+  // Transforma N, P₂O₅, K₂O em produtos
+  function feProdutos(r, op, area){
+    var opsBase = feOpcoesAdubo(function(f){ return f.p > 0 || f.k > 0; });
+    var lista = [], selBase = opsBase.find(function(o){ return o.v === op.base; }) || opsBase.find(function(o){ return o.produtoId && o.f.p > 0; }) || opsBase.find(function(o){ return !o.produtoId && o.f.p > 0 && o.f.k > 0 && o.f.n > 0; }) || opsBase.find(function(o){ return o.f.p > 0; });
+    var selK = feOpcoesAdubo(function(f){ return f.k > 0 && f.p === 0; }).find(function(o){ return o.v === op.kprod; }) || feOpcoesAdubo(function(f){ return f.k > 0 && f.p === 0 && f.n === 0; })[0];
+    var selN = feOpcoesAdubo(function(f){ return f.n > 0 && f.p === 0; }).find(function(o){ return o.v === op.nprod; }) || feOpcoesAdubo(function(f){ return f.n >= 40 && f.p === 0; })[0];
+    var P = r.P2O5 || 0, K = r.K2O || 0, Nsem = r.Nsem || 0, Ncob = r.Ncob || 0;
+    var kgBase = 0, kBase = 0, nBase = 0;
+    if(r.cult === 'cafe' && r.fase === 'implantacao'){
+      var selPi = feOpcoesAdubo(function(f){ return f.p > 0; }).find(function(o){ return o.v === op.base; }) || feOpcoesAdubo(function(f){ return f.p > 0 && f.n === 0 && f.k === 0; })[0];
+      var selNi = feOpcoesAdubo(function(f){ return f.n > 0 && f.p === 0; }).find(function(o){ return o.v === op.nprod; }) || feOpcoesAdubo(function(f){ return f.n >= 40 && f.p === 0; })[0];
+      var kPi = 0, nPi = 0;
+      if(P > 0 && selPi){ var kgPi = Math.round(P / (selPi.f.p / 100) / 5) * 5; kPi = kgPi * selPi.f.k / 100; lista.push({epoca:'No sulco de plantio', op: selPi, kg: kgPi, fornece: 'P₂O₅ ' + fmtNum(Math.round(kgPi * selPi.f.p / 100)) + ' kg/ha · ' + fmtNum(Math.round(kgPi * 1000 / (r.mSulco || 1))) + ' g/m'}); }
+      var kFi = Math.max(0, K - kPi);
+      if(kFi > 1 && selK){ var kgKi = Math.round(kFi / (selK.f.k / 100) / 5) * 5; lista.push({epoca:'No sulco de plantio', op: selK, kg: kgKi, fornece: 'K₂O ' + fmtNum(Math.round(kgKi * selK.f.k / 100)) + ' kg/ha · ' + fmtNum(Math.round(kgKi * 1000 / (r.mSulco || 1))) + ' g/m'}); }
+      lista.push({epoca:'Fundo do sulco', op:{nome:'Calcário de baixa reatividade (PRNT < 70%)', f:{n:0,p:0,k:0}}, kg: 700, fornece: 'Ca e Mg a longo prazo'});
+      var plI = Number(op.plantas) || 0;
+      if(selNi && plI > 0){ var gProd = 4 / (selNi.f.n / 100), kgN1 = Math.round(gProd * plI / 1000 / 5) * 5; lista.push({epoca:'Cobertura a cada 30 dias (out → mar)', op: selNi, kg: kgN1, fornece: '4 g de N por planta = ' + fmtNum(Math.round(gProd)) + ' g do adubo por planta, por aplicação'}); }
+      lista.forEach(function(x){ x.total = x.kg * area; x.custo = x.op.produtoId ? x.total * feCustoKg(x.op.produtoId) : 0; });
+      (r.micro || []).forEach(function(mi){ lista.push({epoca:'No sulco de plantio', op:{nome: mi.m + ' (fonte à escolha)', f:{n:0,p:0,k:0}}, kg: mi.dose, fornece: mi.txt + ' (Tab. 15.3)', total: mi.dose * area, custo: 0}); });
+      return {itens: lista, selBase: selPi, selK: selK, selN: selNi};
+    }
+    if(r.cult === 'cafe'){
+      var selNK = feOpcoesAdubo(function(f){ return f.n > 0 && f.p === 0; }).find(function(o){ return o.v === op.nprod; }) || feOpcoesAdubo(function(f){ return f.n > 0 && f.k > 0 && f.p === 0; })[0] || feOpcoesAdubo(function(f){ return f.n > 0 && f.p === 0; })[0];
+      var selP = feOpcoesAdubo(function(f){ return f.p > 0; }).find(function(o){ return o.v === op.base; }) || feOpcoesAdubo(function(f){ return f.p > 0 && f.n === 0 && f.k === 0; })[0];
+      var nParc = Number(op.parcelas) || 3;
+      if(P > 0 && selP){ var kgP = Math.round(P / (selP.f.p / 100) / 5) * 5; lista.push({epoca: 'Início das chuvas (uma vez)', op: selP, kg: kgP, fornece: 'P₂O₅ ' + fmtNum(Math.round(kgP * selP.f.p / 100)) + ' kg/ha'}); nBase += kgP * selP.f.n / 100; kBase += kgP * selP.f.k / 100; }
+      var kgNK = 0;
+      if(selNK && (r.N || 0) > nBase){ kgNK = Math.round(((r.N || 0) - nBase) / (selNK.f.n / 100) / 5) * 5; kBase += kgNK * selNK.f.k / 100; }
+      if(kgNK > 0){ var porVez = Math.round(kgNK / nParc / 5) * 5; for(var iP = 1; iP <= nParc; iP++) lista.push({epoca: 'Parcela ' + iP + ' de ' + nParc + ' (set → mar)', op: selNK, kg: porVez, fornece: 'N ' + fmtNum(Math.round(porVez * selNK.f.n / 100)) + (selNK.f.k ? ' · K₂O ' + fmtNum(Math.round(porVez * selNK.f.k / 100)) : '') + ' kg/ha'}); }
+      var kFaltaC = Math.max(0, K - kBase);
+      if(kFaltaC > 2 && selK){ var kgKc = Math.round(kFaltaC / (selK.f.k / 100) / 5) * 5, nK = Math.min(nParc, 2); for(var iK = 1; iK <= nK; iK++) lista.push({epoca: 'Potássio ' + iK + ' de ' + nK + ' (junto com o N)', op: selK, kg: Math.round(kgKc / nK / 5) * 5, fornece: 'K₂O ' + fmtNum(Math.round(kgKc / nK * selK.f.k / 100)) + ' kg/ha'}); }
+      if(K < kBase - 10) r.avisos.push('O formulado de N escolhido já leva ' + fmtNum(Math.round(kBase)) + ' kg/ha de K₂O, acima dos ' + fmtNum(K) + ' recomendados — considere um adubo só de nitrogênio (ureia, sulfato de amônio).');
+      (r.micro || []).forEach(function(mi){ lista.push({epoca:'Início das chuvas (set–out)', op:{nome: mi.m + ' — kg/ha do elemento (fonte à escolha)', f:{n:0,p:0,k:0}}, kg: mi.dose, fornece: mi.txt}); });
+      if((r.S || 0) > 0){ var gessoKg = Math.round(r.S / 0.15 / 5) * 5; lista.push({epoca: 'Início das chuvas (uma vez)', op: {nome: 'Gesso agrícola (~15% S) — ou outra fonte de enxofre', f:{n:0,p:0,k:0}}, kg: gessoKg, fornece: 'S ' + fmtNum(r.S) + ' kg/ha (Tab. 15.8)'}); }
+      lista.forEach(function(x){ x.total = x.kg * area; x.custo = x.op.produtoId ? x.total * feCustoKg(x.op.produtoId) : 0; });
+      return {itens: lista, selBase: selP, selK: selK, selN: selNK};
+    }
+    if(selBase && (P > 0 || K > 0)){
+      kgBase = selBase.f.p > 0 ? P / (selBase.f.p / 100) : (K > 0 && selBase.f.k > 0 ? Math.min(K, r.cult === 'soja' ? 80 : 60) / (selBase.f.k / 100) : 0);
+      kgBase = Math.round(kgBase / 5) * 5;
+      kBase = kgBase * selBase.f.k / 100; nBase = kgBase * selBase.f.n / 100;
+      if(kgBase > 0) lista.push({epoca: 'Semeadura (no sulco)', op: selBase, kg: kgBase, fornece: 'N ' + fmtNum(Math.round(nBase)) + ' · P₂O₅ ' + fmtNum(Math.round(kgBase * selBase.f.p / 100)) + ' · K₂O ' + fmtNum(Math.round(kBase)) + ' kg/ha'});
+    }
+    if(r.cult === 'soja' && kBase > 85) r.avisos.push('O adubo de base põe ' + fmtNum(Math.round(kBase)) + ' kg/ha de K₂O no sulco — o Manual pede no máximo 80 kg/ha perto da semente (risco para a germinação). Use uma fórmula com menos K na base e o restante a lanço.');
+    if(kBase > K + 15) r.avisos.push('O adubo de base escolhido já fornece ' + fmtNum(Math.round(kBase)) + ' kg/ha de K₂O, acima dos ' + fmtNum(K) + ' recomendados. Se quiser economizar, escolha uma fórmula com menos potássio (ex.: MAP, superfosfato, 04-30-10).');
+    var kFalta = Math.max(0, K - kBase);
+    if(kFalta > 2 && selK){
+      var kgK = Math.round(kFalta / (selK.f.k / 100) / 5) * 5;
+      lista.push({epoca: r.cult === 'soja' ? 'A lanço — da pré-semeadura até V4' : 'Cobertura — junto com a 1ª aplicação de N', op: selK, kg: kgK, fornece: 'K₂O ' + fmtNum(Math.round(kgK * selK.f.k / 100)) + ' kg/ha'});
+    }
+    if(r.cult === 'milho2' || r.cult === 'milho1'){
+      var nFaltaSem = Math.max(0, Nsem - nBase);
+      if(nFaltaSem > 3) r.avisos.push('O adubo de base fornece ' + fmtNum(Math.round(nBase)) + ' kg/ha de N, abaixo dos ' + fmtNum(Nsem) + ' kg/ha da semeadura — os ' + fmtNum(Math.round(nFaltaSem)) + ' kg/ha que faltam foram somados à cobertura.');
+      var nCobTot = Ncob + nFaltaSem;
+      if(nCobTot > 0 && selN){
+        var arenoso = r.I.arg.k === 'lt250', m1 = r.cult === 'milho1', parc = m1 ? (arenoso ? nCobTot > 80 : nCobTot > 120) : (arenoso && nCobTot > 80);
+        var kgN = Math.round(nCobTot / (selN.f.n / 100) / 5) * 5;
+        var ep = m1 ? ['Cobertura 1 — V2 a V4', 'Cobertura 2 — V6 a V7', 'Cobertura — V2 a V6'] : ['Cobertura 1 — V4 a V6', 'Cobertura 2 — V7 a V8', 'Cobertura — V4 a V6'];
+        if(parc){ lista.push({epoca: ep[0], op: selN, kg: Math.round(kgN / 2 / 5) * 5, fornece: 'N ' + fmtNum(Math.round(nCobTot / 2)) + ' kg/ha'}); lista.push({epoca: ep[1], op: selN, kg: Math.round(kgN / 2 / 5) * 5, fornece: 'N ' + fmtNum(Math.round(nCobTot / 2)) + ' kg/ha'}); }
+        else lista.push({epoca: ep[2], op: selN, kg: kgN, fornece: 'N ' + fmtNum(Math.round(nCobTot)) + ' kg/ha' + (selN.f.k ? ' · K₂O ' + fmtNum(Math.round(kgN * selN.f.k / 100)) : '')});
+      }
+    }
+    (r.micro || []).forEach(function(mi){ lista.push({epoca: mi.m === 'Mn' ? 'Via folha em V4 e V8 (se houver sintoma)' : 'Semeadura', op:{nome: mi.m + ' — kg/ha do elemento (fonte à escolha)', f:{n:0,p:0,k:0}}, kg: mi.m === 'Mn' ? 1 : mi.dose, fornece: mi.m === 'Mn' ? 'até 1 kg/ha de Mn somando as 2 aplicações foliares (o solo pediria ' + fmtNum(mi.dose) + ' kg/ha)' : mi.txt}); });
+    lista.forEach(function(x){ x.total = x.kg * area; x.custo = x.op.produtoId ? x.total * feCustoKg(x.op.produtoId) : 0; });
+    return {itens: lista, selBase: selBase, selK: selK, selN: selN};
+  }
+
+  // ===== Tela =====
+  var feSel = '', feModo = 'lim', feOp = {};
+  function feOpcoesTalhao(t){
+    if(!feOp[t.id]){
+      var sf = safraAtualDoTalhao(t.id), ck = feCulturaChave(t);
+      var ant = 'graminea';
+      var antC = semAcento(t.culturaAnteriorId ? culturaNome(t.culturaAnteriorId) : '');
+      var colhidas = state.safras.filter(function(s){ return s.talhaoId === t.id && s.status === 'colhida'; }).sort(function(a, b){ return (b.dataPlantio || '').localeCompare(a.dataPlantio || ''); });
+      if(colhidas.length) antC = semAcento(culturaNome(colhidas[0].culturaId));
+      if(/soja|feij|ervilha|amendoim|leguminos/.test(antC)) ant = 'leguminosa';
+      if(ck === 'soja') ant = 'leguminosa'; // o milho 2ª safra vem depois da soja que está no talhão agora
+      var scSafra = sf ? Number(sf.produtividadeEsperada) || 0 : 0;
+      var scPadrao = scSafra >= 3 ? scSafra : (ck === 'milho2' ? 150 : (ck === 'cafe' ? 30 : 65));
+      var mesPl = sf && sf.dataPlantio ? Number(String(sf.dataPlantio).slice(5,7)) : 0;
+      var milhoCh = mesPl >= 7 && mesPl <= 12 ? 'milho1' : 'milho2';
+      feOp[t.id] = {cultura: ck === 'milho2' ? milhoCh : (ck === 'cafe' ? 'cafe' : 'soja'), sc: scPadrao, anterior: ant, nivel: 'med', prnt: 85, base: '', kprod: '', nprod: '', plantas: 5000, nFoliar: '', sFoliar: '', parcelas: 3, fase: 'producao', espacamento: 3.5, clsB: 'auto', clsMn: 'auto', clsZn: 'auto', clsCu: 'auto'};
+    }
+    return feOp[t.id];
+  }
+  function feCroqui(t, cor, pref){ return croquiTalhaoSvg(t.contorno, cor, pref + t.id) || '<span style="font-size:28px;">🧩</span>'; }
+  function feIdadeAnos(d){ return d ? diasEntreISO(d, hojeISO()) / 365.25 : 99; }
+  function renderFertilidade(){
+    var el = document.getElementById('tab-fertilidade'); if(!el) return;
+    var tals = talhoesAtivos();
+    if(!tals.length){ el.innerHTML = '<div class="paper empty-state">Cadastre os talhões primeiro.</div>'; return; }
+    if(!feSel || !tals.some(function(t){ return t.id === feSel; })){ var comA = tals.find(function(t){ return feAnaliseSup(t.id); }); feSel = (comA || tals[0]).id; }
+    var comAn = tals.filter(function(t){ return feAnaliseSup(t.id); });
+    var velhas = comAn.filter(function(t){ return feIdadeAnos(feAnaliseSup(t.id).dataColeta) > 2; });
+    var pend = 0; tals.forEach(function(t){ pend += feRecsAtuais(t).filter(function(x){ return x.rec.status !== 'Aplicada'; }).length; });
+    var h = '<div class="tl-head"><div class="tl-head-txt"><b>Fertilidade do solo</b><span>Interpretação pelo Manual de Adubação e Calagem do Paraná · barril de Liebig · adubação de produção</span></div>';
+    h += '<button type="button" class="tl-btn" data-action="fe-nova-analise" data-id="' + feSel + '">＋ Nova análise</button></div>';
+    h += '<div class="tl-kpis">';
+    h += '<div class="tl-kpi"><span class="tl-kpi-i">🧪</span><div><b>' + comAn.length + ' de ' + tals.length + '</b><small>talhões com análise</small></div></div>';
+    h += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#FFF1D6;">⏰</span><div><b>' + velhas.length + '</b><small>análises com mais de 2 anos</small></div></div>';
+    h += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#FBE3DE;">❓</span><div><b>' + (tals.length - comAn.length) + '</b><small>talhões sem análise</small></div></div>';
+    h += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#E3F1D6;">📋</span><div><b>' + pend + '</b><small>recomendações pendentes</small></div></div>';
+    h += '</div>';
+    // talhões coloridos
+    var MODOS = {lim:'Fator limitante', ph:'pH', v:'V%', p:'Fósforo', k:'Potássio', mo:'MO'};
+    h += '<div class="paper fe-bloco"><div class="fe-tit">🗺️ Talhões — colorir por ' + Object.keys(MODOS).map(function(m){ return '<button type="button" class="tl-chip' + (feModo === m ? ' on' : '') + '" data-action="fe-modo" data-m="' + m + '">' + MODOS[m] + '</button>'; }).join('') + '</div>';
+    h += '<div class="fe-tiles">';
+    tals.forEach(function(t){
+      var a = feAnaliseSup(t.id), I = feInterpretar(t, a), cls = null, txt;
+      if(!a) txt = 'sem análise';
+      else if(feModo === 'lim'){ var L = feLimitante(I); cls = L ? I.itens[L] : null; txt = L ? 'limita: ' + FE_ROT[L] + ' (' + MPR_NOME[cls].toLowerCase() + ')' : 'análise incompleta'; }
+      else { cls = I.itens[feModo]; txt = cls ? FE_ROT[feModo] + ' ' + MPR_NOME[cls].toLowerCase() : 'sem dado'; }
+      var cor = cls ? MPR_COR[cls] : '#CFCFC0', ci = tlCulturaInfo(safraAtualDoTalhao(t.id) ? culturaNome(safraAtualDoTalhao(t.id).culturaId) : '');
+      h += '<button type="button" class="fe-tile' + (t.id === feSel ? ' sel' : '') + '" data-action="fe-sel" data-id="' + t.id + '"><span class="fe-tile-cq">' + feCroqui(t, cor, 'fe') + '</span><b>' + ci.ic + ' ' + escapeHtml(t.nome) + '</b><small>' + fmtHa(t.area) + (a ? ' · ' + (a.dataColeta || '').slice(0,4) + (feIdadeAnos(a.dataColeta) > 2 ? ' ⏰' : '') : '') + '</small><span class="fe-tag" style="background:' + cor + '22; color:' + (cls ? MPR_COR[cls] : '#6B6B60') + ';">' + txt + '</span></button>';
+    });
+    h += '</div><div class="fe-leg">' + ['MB','B','M','A','MA'].map(function(c){ return '<span><i style="background:' + MPR_COR[c] + '"></i>' + MPR_NOME[c] + '</span>'; }).join('') + '<span><i style="background:#CFCFC0"></i>sem dado</span><span style="margin-left:auto;">Classes da Tab. 3.2–3.4 do Manual PR</span></div></div>';
+    h += feDetalheHtml(state.talhoes.find(function(t){ return t.id === feSel; }));
+    h += feListaCompraHtml(tals);
+    h += feAdubosSemFormulaHtml();
+    el.innerHTML = h;
+  }
+  function feDetalheHtml(t){
+    var a = feAnaliseSup(t.id), I = feInterpretar(t, a), sf = safraAtualDoTalhao(t.id), nC = sf ? culturaNome(sf.culturaId) : 'Sem lavoura', ci = tlCulturaInfo(nC);
+    var h = '<div class="paper fe-bloco"><div class="fe-det"><div>';
+    h += '<div class="fe-tit">🧩 ' + escapeHtml(t.nome) + ' <span class="tl-pill tl-st-andamento">' + ci.ic + ' ' + escapeHtml(nC) + '</span></div>';
+    h += '<div class="fe-thumb">' + feCroqui(t, ci.cor, 'fd') + '<span class="tl-ha">' + fmtHa(t.area) + '</span></div>';
+    if(a){
+      h += '<div class="fe-info">Análise de <b>' + fmtDate(a.dataColeta) + '</b>' + (a.profundidade ? ' · ' + escapeHtml(a.profundidade) : '') + (a.laboratorio ? ' · ' + escapeHtml(a.laboratorio) : '') + (feIdadeAnos(a.dataColeta) > 2 ? '<br><b style="color:#8A5A10;">⏰ Tem mais de 2 anos — hora de coletar de novo.</b>' : '') + '</div>';
+      h += '<div class="fe-argila">Argila: ' + (I.arg.medida ? '<b>' + fmtNum(Math.round(I.arg.gkg)) + ' g/kg</b> (' + (I.arg.deOutra ? 'da análise de ' + fmtDate(I.arg.deOutra) : 'da análise') + ') → ' + MPR_P[I.arg.k].rot : '<select data-action-change="fe-argila" data-id="' + t.id + '">' + Object.keys(MPR_P).map(function(k){ return '<option value="' + k + '"' + (I.arg.k === k ? ' selected' : '') + '>' + MPR_P[k].rot + '</option>'; }).join('') + '</select> <small>' + (I.arg.estimada ? 'estimada pelo tipo de solo' : 'informada por você') + '</small>') + '</div>';
+      h += '<table class="fe-interp sem-ordenacao"><tbody>';
+      ['ph','v','ca','mg','p','k','s','mo','ctc'].forEach(function(k){ var c = I.itens[k], v = k === 'p' ? I.vals.p : I.vals[k]; if(v === null && !c) return; h += '<tr><td>' + (k === 'p' ? 'P (Mehlich-1)' : (k === 'ctc' ? 'CTC pH 7' : (k === 's' ? 'S (0–20 cm)' : (MPR_INTERP[k] ? MPR_INTERP[k].nome : k)))) + '</td><td class="num">' + (v === null ? '—' : fmtNum(Math.round(v * 100) / 100)) + '</td><td>' + (c ? '<span class="fe-cls" style="background:' + MPR_COR[c] + ';">' + MPR_NOME[c] + '</span>' : '—') + '</td></tr>'; });
+      ['B','Cu','Mn','Zn'].forEach(function(m){ var cm = feClasseMicro(a, m); if(!cm) return; h += '<tr><td>' + EMB_MICRO[m].nome + ' (' + m + ')</td><td class="num">' + fmtNum(cm.v) + '</td><td><span class="fe-cls" style="background:' + MPR_COR[cm.c6] + ';">' + MPR_NOME[cm.c6] + '</span></td></tr>'; });
+      var semMic = ['B','Cu','Mn','Zn'].filter(function(m){ return !feClasseMicro(a, m); });
+      h += '</tbody></table>' + (semMic.length ? '<div class="fe-info" style="margin-top:4px;">Sem dado no laudo: ' + semMic.join(', ') + ' — peça micronutrientes na próxima análise.</div>' : '') + '<div class="fe-fonte" style="margin-top:4px;">Classes do Manual PR: Tab. 3.2–3.4 (macros) e 3.5 (enxofre e micronutrientes; B em água quente, Cu/Mn/Zn em Mehlich-1).</div>';
+      var evMic = ['B','Cu','Mn','Zn'].filter(function(m){ var cm = feClasseMicro(a, m); return cm && cm.c6 === 'EV'; });
+      if(evMic.length) h += '<div class="fe-aviso">🟣 <b>Condição a evitar</b> em ' + evMic.map(function(m){ return EMB_MICRO[m].nome.toLowerCase(); }).join(', ') + ' — teor muito acima do necessário; não aplique' + (evMic.indexOf('Mn') !== -1 ? ' (Mn alto costuma vir de pH baixo — corrija a acidez)' : '') + '.</div>';
+    } else h += '<div class="fe-info"><b>Sem análise cadastrada.</b><br><button type="button" class="tl-btn tl-pri" data-action="fe-nova-analise" data-id="' + t.id + '" style="margin-top:8px;">＋ Cadastrar análise</button></div>';
+    h += '</div><div>';
+    h += '<div class="fe-tit">🛢️ Barril de Liebig — o que limita a produção</div>';
+    var L = feLimitante(I);
+    if(!I || !L){ h += '<div class="fe-vazio">' + (a ? 'Análise incompleta — faltam P, K, V% ou pH para montar o barril.' : 'Sem análise neste talhão.') + '</div>'; }
+    else {
+      h += feBarrilSvg(I, L);
+      var ruins = FE_BARRIL.filter(function(k){ return k !== L && I.itens[k] && ['MB','B'].indexOf(I.itens[k]) !== -1; });
+      var semD = FE_BARRIL.filter(function(k){ return !I.itens[k]; });
+      var evs = Object.keys(I.itens).filter(function(k){ return I.itens[k] === 'EV'; });
+      if(evs.length) h += '<div class="fe-aviso">🟣 <b>Condição a evitar:</b> ' + evs.map(function(k){ return (k === 'p' ? 'fósforo' : (FE_LONGO[k] || k)); }).join(', ') + ' acima do limite do Manual — não aplique mais desse nutriente/corretivo.</div>';
+      h += '<div class="fe-limite">🔻 <b>Fator mais limitante: ' + FE_LONGO[L] + '</b> — classe <b>' + MPR_NOME[I.itens[L]].toLowerCase() + '</b> pelo Manual PR. Enquanto ele não for corrigido, melhorar os outros rende pouco.' + (ruins.length ? '<br>Também baixos: ' + ruins.map(function(k){ return FE_LONGO[k] + ' (' + MPR_NOME[I.itens[k]].toLowerCase() + ')'; }).join(', ') + '.' : '') + (semD.length ? '<br>Sem dado no laudo: ' + semD.map(function(k){ return FE_ROT[k]; }).join(', ') + '.' : '') + '</div>';
+    }
+    var dg = feDiagGesso(t.id);
+    h += '<div class="fe-gesso">' + (!dg.sub ? '⚪ <b>Gessagem:</b> sem análise de 20–40 cm — para saber se precisa de gesso, colete também essa camada.' : (dg.precisa ? '⚪ <b>Gessagem recomendada</b> pela análise de 20–40 cm de ' + fmtDate(dg.sub.dataColeta) + ': ' + dg.motivos.join(', ') + '. Dose pelo cap. 5 (item 5.6) do Manual.' : '⚪ <b>Gessagem:</b> a camada de 20–40 cm (' + fmtDate(dg.sub.dataColeta) + ') não indica necessidade de gesso.')) + '</div>';
+    if(a) h += '<div class="fe-acoes" style="margin-top:8px;"><button type="button" class="tl-btn" data-action="fe-imprimir" data-id="' + t.id + '">🖨️ Imprimir / PDF para o agrônomo ou a revenda</button></div>';
+    h += '</div></div></div>';
+    if(a) h += feAdubacaoHtml(t, a);
+    h += feRecomSalvasHtml(t);
+    h += feBalancoHtml(t);
+    return h;
+  }
+  function feBarrilSvg(I, L){
+    var x0 = 60, W = 330, base = 270, H = 200, sw = W / FE_BARRIL.length, nivelPct = MPR_ALT[I.itens[L]], nivel = base - H * nivelPct / 100;
+    var s = '<svg class="fe-barril" viewBox="0 0 450 310">';
+    s += '<path d="M' + (x0 + 4) + ' ' + nivel + ' L' + (x0 + W - 4) + ' ' + nivel + ' L' + (x0 + W - 10) + ' ' + (base - 4) + ' Q' + (x0 + W / 2) + ' ' + (base + 10) + ' ' + (x0 + 10) + ' ' + (base - 4) + 'Z" fill="#7EC3E6" opacity=".7"/>';
+    FE_BARRIL.forEach(function(k, i){
+      var c = I.itens[k], hh = c ? H * MPR_ALT[c] / 100 : H * 0.5, x = x0 + i * sw + 2, y = base - hh;
+      s += '<rect x="' + x + '" y="' + y + '" width="' + (sw - 4) + '" height="' + hh + '" rx="5" fill="' + (c ? MPR_COR[c] : '#CFCFC0') + '" stroke="rgba(0,0,0,.35)"' + (c ? '' : ' stroke-dasharray="4 3"') + '/>';
+      s += '<rect x="' + (x + 4) + '" y="' + (y + 5) + '" width="3" height="' + Math.max(0, hh - 10) + '" rx="1.5" fill="rgba(255,255,255,.25)"/>';
+      s += '<text x="' + (x + (sw - 4) / 2) + '" y="' + (base + 18) + '" text-anchor="middle" font-size="13" font-weight="700" fill="#262A1C">' + FE_ROT[k] + '</text>';
+      s += '<text x="' + (x + (sw - 4) / 2) + '" y="' + (y - 6) + '" text-anchor="middle" font-size="10" fill="#5E644B">' + (c ? MPR_NOME[c].replace('Muito ', 'M. ') : 'sem dado') + '</text>';
+    });
+    [base - 28, base - H * 0.55, base - H + 18].forEach(function(y){ s += '<line x1="' + (x0 - 2) + '" x2="' + (x0 + W + 2) + '" y1="' + y + '" y2="' + y + '" stroke="#5a4a32" stroke-width="3" opacity=".5"/>'; });
+    s += '<path d="M' + (x0 - 2) + ' ' + (base - H - 6) + ' Q' + (x0 - 22) + ' ' + (base - H / 2) + ' ' + (x0 - 2) + ' ' + (base + 2) + '" fill="none" stroke="#5a4a32" stroke-width="3" opacity=".5"/>';
+    s += '<path d="M' + (x0 + W + 2) + ' ' + (base - H - 6) + ' Q' + (x0 + W + 22) + ' ' + (base - H / 2) + ' ' + (x0 + W + 2) + ' ' + (base + 2) + '" fill="none" stroke="#5a4a32" stroke-width="3" opacity=".5"/>';
+    var xl = x0 + FE_BARRIL.indexOf(L) * sw + sw / 2;
+    s += '<line x1="' + xl + '" y1="' + (nivel - 16) + '" x2="' + xl + '" y2="36" stroke="#3B8EA5" stroke-width="2" stroke-dasharray="3 3"/><text x="' + xl + '" y="28" text-anchor="middle" font-size="12.5" font-weight="800" fill="#3B6EA5">💧 vaza aqui: ' + FE_ROT[L] + '</text>';
+    return s + '</svg>';
+  }
+  function feFaixaTxt(f){ return f === null ? 'inviável' : (f === undefined ? '—' : (f[0] === f[1] ? fmtNum(f[0]) : fmtNum(f[0]) + '–' + fmtNum(f[1]))); }
+  function feAdubacaoHtml(t, a){
+    var op = feOpcoesTalhao(t), ck = feCulturaChave(t);
+    var h = '<div class="paper fe-bloco"><div class="fe-tit">🌱 Adubação de produção — Manual PR <small>(soja: cap. 9 · milho safra e 2ª safra: cap. 8 · café: cap. 15)</small></div>';
+    h += '<div class="fe-form">';
+    h += '<label>Cultura<select data-fe-op="cultura" data-id="' + t.id + '"><option value="soja"' + (op.cultura === 'soja' ? ' selected' : '') + '>🌱 Soja</option><option value="milho1"' + (op.cultura === 'milho1' ? ' selected' : '') + '>🌽 Milho safra (verão)</option><option value="milho2"' + (op.cultura === 'milho2' ? ' selected' : '') + '>🌽 Milho 2ª safra</option><option value="cafe"' + (op.cultura === 'cafe' ? ' selected' : '') + '>☕ Café (produção)</option></select></label>';
+    h += '<label>' + (op.cultura === 'cafe' ? 'Produtividade esperada (sc beneficiado/ha)' : 'Produtividade esperada (sc/ha)') + '<input type="number" min="1" step="1" data-fe-op="sc" data-id="' + t.id + '" value="' + op.sc + '"><small>= ' + (op.cultura === 'cafe' ? fmtNum(Math.round(op.sc * 60)) + ' kg/ha de café beneficiado' : fmtNum(Math.round(op.sc * 0.06 * 100) / 100) + ' t/ha') + '</small></label>';
+    if(op.cultura === 'cafe'){
+      h += '<label>Fase da lavoura<select data-fe-op="fase" data-id="' + t.id + '">' + [['producao','Produção'],['form1','Formação — 1º ano'],['form2','Formação — 2º ano'],['implantacao','Implantação (plantio)']].map(function(o){ return '<option value="' + o[0] + '"' + ((op.fase || 'producao') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>';
+      if(op.fase === 'implantacao') h += '<label>Espaçamento entre linhas (m)<input type="number" min="0.5" step="0.1" data-fe-op="espacamento" data-id="' + t.id + '" value="' + (op.espacamento || '') + '"><small>' + (Number(op.espacamento) > 0 ? fmtNum(Math.round(10000 / Number(op.espacamento))) + ' m de sulco por ha' : 'necessário para o cálculo') + '</small></label>';
+      h += '<label>Plantas por hectare<input type="number" min="500" step="100" data-fe-op="plantas" data-id="' + t.id + '" value="' + op.plantas + '"></label>';
+      if(!op.fase || op.fase === 'producao') h += '<label>Teor foliar de N (g/kg)<input type="number" min="0" step="0.1" data-fe-op="nFoliar" data-id="' + t.id + '" value="' + escapeHtml(String(op.nFoliar)) + '" placeholder="sem análise foliar"></label>';
+      if(!op.fase || op.fase === 'producao') h += '<label>Teor foliar de S (g/kg)<input type="number" min="0" step="0.1" data-fe-op="sFoliar" data-id="' + t.id + '" value="' + escapeHtml(String(op.sFoliar)) + '" placeholder="sem análise foliar"></label>';
+      if(op.fase !== 'implantacao') h += '<label>Parcelas de N (set → mar)<select data-fe-op="parcelas" data-id="' + t.id + '"><option value="3"' + (String(op.parcelas) === '3' ? ' selected' : '') + '>3 parcelas</option><option value="4"' + (String(op.parcelas) === '4' ? ' selected' : '') + '>4 parcelas</option></select></label>';
+    }
+    if(op.cultura === 'milho2' || op.cultura === 'milho1') h += '<label>Cultura anterior<select data-fe-op="anterior" data-id="' + t.id + '"><option value="leguminosa"' + (op.anterior === 'leguminosa' ? ' selected' : '') + '>Leguminosa (soja, feijão…)</option><option value="graminea"' + (op.anterior === 'graminea' ? ' selected' : '') + '>Gramínea (milho, trigo, aveia…)</option></select></label>';
+    h += '<label>Dose dentro da faixa do Manual<select data-fe-op="nivel" data-id="' + t.id + '"><option value="min"' + (op.nivel === 'min' ? ' selected' : '') + '>Menor valor</option><option value="med"' + (op.nivel === 'med' ? ' selected' : '') + '>Meio da faixa</option><option value="max"' + (op.nivel === 'max' ? ' selected' : '') + '>Maior valor</option></select></label>';
+    if(op.cultura === 'soja' || (op.cultura === 'cafe' && op.fase !== 'form1' && op.fase !== 'form2')){
+      (op.cultura === 'soja' ? ['B','Cu','Zn','Mn'] : ['B','Mn','Zn'].concat(op.fase === 'implantacao' ? ['Cu'] : [])).forEach(function(m){ var v = op['cls' + m] || 'auto', cmA = feClasseMicro(a, m); h += '<label>' + m + ' no solo<select data-fe-op="cls' + m + '" data-id="' + t.id + '">' + [['auto', cmA ? 'Pela análise: ' + MPR_NOME[cmA.c6] + ' (' + fmtNum(cmA.v) + ')' : 'Pela análise: sem dado'],['nao','Não aplicar'],['baixo','Baixo (ou menos)'],['medio','Médio'],['alto','Alto (ou mais)']].map(function(o){ return '<option value="' + o[0] + '"' + (v === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>'; });
+    }
+    h += '<label>PRNT do calcário (%)<input type="number" min="40" max="130" step="1" data-fe-op="prnt" data-id="' + t.id + '" value="' + op.prnt + '"></label>';
+    h += '</div>';
+    var r = feRecomendacao(t, a, op);
+    if(!r){ return h + '</div>'; }
+    var cols = FE_COL_ROT[op.cultura];
+    h += '<div class="fe-nut">';
+    var unTxt = function(f){ return f ? ' · ' + (f[0] === f[1] ? fmtNum(f[0]) : fmtNum(f[0]) + '–' + fmtNum(f[1])) + ' ' + r.un : ''; };
+    if(op.cultura === 'cafe' && r.fase){
+      var tabF = r.fase === 'implantacao' ? {N:'após o pegamento', P:'Tab. 15.1', K:'Tab. 15.2'} : {N:'Tab. 15.4', P:'Tab. 15.5', K:'Tab. 15.6'};
+      h += '<div class="fe-n"><span>N</span><b>' + (r.fase === 'implantacao' ? '4 g' : fmtNum(r.N)) + '</b><small>' + (r.fase === 'implantacao' ? 'de N por planta, a cada 30 dias (out → mar)' : 'kg/ha no ano' + unTxt(r.fNun)) + '</small><em>' + tabF.N + '</em></div>';
+      h += '<div class="fe-n"><span>P₂O₅</span><b>' + (r.P2O5 === null ? '⛔' : fmtNum(r.P2O5)) + '</b><small>kg/ha' + unTxt(r.fPun) + ' · P ' + (r.I.itens.p ? MPR_NOME[r.I.itens.p].toLowerCase() : 'sem dado') + '</small><em>' + tabF.P + '</em></div>';
+      h += '<div class="fe-n"><span>K₂O</span><b>' + (r.K2O === null ? '⛔' : fmtNum(r.K2O)) + '</b><small>kg/ha' + unTxt(r.fKun) + ' · K ' + (r.I.itens.k ? MPR_NOME[r.I.itens.k].toLowerCase() : 'sem dado') + '</small><em>' + tabF.K + '</em></div>';
+    }
+    else if(op.cultura === 'cafe') h += '<div class="fe-n"><span>N</span><b>' + fmtNum(r.N) + '</b><small>kg/ha/ano · faixa ' + feFaixaTxt(r.fNcob) + (r.semFoliarN ? ' · sem análise foliar (maior dose)' : ' · N foliar ' + fmtNum(op.nFoliar) + ' g/kg') + '</small><em>Tab. 15.7 · coluna ' + cols[r.col] + '</em></div><div class="fe-n"><span>S</span><b>' + fmtNum(r.S) + '</b><small>kg/ha/ano · faixa ' + feFaixaTxt(r.fS) + (r.semFoliarS ? ' · sem análise foliar (maior dose)' : '') + '</small><em>Tab. 15.8</em></div>';
+    else if(op.cultura === 'milho1') h += '<div class="fe-n"><span>N</span><b>' + fmtNum(r.N) + '</b><small>kg/ha · faixa ' + feFaixaTxt(r.fNtot) + ' → semeadura ' + fmtNum(r.Nsem) + ' (30–50) + cobertura ' + fmtNum(r.Ncob) + '</small><em>Tab. 8.21 · ' + (op.anterior === 'leguminosa' ? 'após leguminosa' : 'após gramínea') + ' · coluna ' + cols[r.col] + '</em></div>';
+    else if(op.cultura === 'milho2') h += '<div class="fe-n"><span>N</span><b>' + fmtNum(r.N) + '</b><small>kg/ha · semeadura ' + fmtNum(r.Nsem) + ' (' + feFaixaTxt(r.fNsem) + ') + cobertura ' + fmtNum(r.Ncob) + ' (' + feFaixaTxt(r.fNcob) + ')</small><em>Tab. 8.25 · ' + (op.anterior === 'leguminosa' ? 'após leguminosa' : 'após gramínea') + '</em></div>';
+    else h += '<div class="fe-n"><span>N</span><b>0</b><small>kg/ha — inoculação com Bradyrhizobium</small><em>cap. 9</em></div>';
+    var tabP = {soja:'Tab. 9.11', milho1:'Tab. 8.22', milho2:'Tab. 8.26', cafe:'Tab. 15.9'}[op.cultura], tabK = {soja:'Tab. 9.12', milho1:'Tab. 8.23', milho2:'Tab. 8.27', cafe:'Tab. 15.10'}[op.cultura];
+    if(!r.fase) h += '<div class="fe-n"><span>P₂O₅</span><b>' + (r.P2O5 === null ? '⛔' : fmtNum(r.P2O5)) + '</b><small>kg/ha · faixa ' + feFaixaTxt(r.fP) + ' · P ' + (r.I.itens.p ? MPR_NOME[r.I.itens.p].toLowerCase() : 'sem dado') + '</small><em>' + tabP + ' · coluna ' + cols[r.col] + '</em></div>';
+    if(!r.fase) h += '<div class="fe-n"><span>K₂O</span><b>' + (r.K2O === null ? '⛔' : fmtNum(r.K2O)) + '</b><small>kg/ha · faixa ' + feFaixaTxt(r.fK) + ' · K ' + (r.I.itens.k ? MPR_NOME[r.I.itens.k].toLowerCase() : 'sem dado') + (op.cultura === 'cafe' ? ' (faixa do café)' : '') + '</small><em>' + tabK + ' · coluna ' + cols[r.col] + '</em></div>';
+    h += '<div class="fe-n"><span>Calcário</span><b>' + (r.calagem ? fmtNum(Math.round(r.calagem.nc * 100) / 100) : '0') + '</b><small>t/ha · ' + (r.calagem ? 'V% ' + fmtNum(r.calagem.v1) + ' → ' + r.calagem.v2 + '% (PRNT ' + r.calagem.prnt + '%)' : (op.cultura === 'milho2' ? 'V% já em 70% ou mais' : op.cultura === 'milho1' ? 'V% em 60% ou mais — não precisa (Manual: só abaixo de 60%, elevar a 70%)' : 'V% acima de 50% — não precisa (Manual: só abaixo de 50%, elevar a 60%)')) + '</small><em>' + (op.cultura === 'milho1' ? 'milho safra: elevar V a 70% se < 60%' : op.cultura === 'milho2' ? 'milho 2ª safra: elevar V a 70%' : (op.cultura === 'cafe' ? 'café: elevar V a 60% se < 50% (máx. 2,5 t/ha)' : 'soja: elevar V a 60% se < 50%')) + '</em></div>';
+    h += '</div>';
+    if(r.avisos.length) h += '<div class="fe-aviso">' + r.avisos.join('<br>') + '</div>';
+    if(r.micro && r.micro.length) h += '<div class="fe-aviso" style="background:#EEF3E2; border-color:#C9D8B0; color:var(--ink);">💧 Micronutrientes: ' + r.micro.map(function(mi){ return '<b>' + mi.m + '</b> ' + fmtNum(mi.dose) + ' kg/ha (' + mi.txt + ')'; }).join(' · ') + '. Classe de B, Cu, Mn e Zn no solo pela Tab. 3.5 do Manual PR — dá para trocar acima.</div>';
+    var podeConverter = r.P2O5 !== null && r.K2O !== null && ((r.P2O5 || 0) + (r.K2O || 0) + (r.N || 0) + (r.S || 0) > 0);
+    if(podeConverter){
+      var conv = feProdutos(r, op, Number(t.area) || 0);
+      var sel = function(nome, filtro, atual){ var ops = feOpcoesAdubo(filtro); return '<select data-fe-op="' + nome + '" data-id="' + t.id + '">' + ops.map(function(o){ return '<option value="' + o.v + '"' + (o.v === atual ? ' selected' : '') + '>' + escapeHtml(o.nome) + (o.produtoId ? ' · estoque ' + fmtNum(o.estoque) : '') + '</option>'; }).join('') + '</select>'; };
+      h += '<div class="fe-sub">🧾 Em produtos (adubos do seu estoque com a fórmula no nome, ou fórmulas comuns)</div>';
+      h += '<div class="fe-form">';
+      if(op.cultura === 'cafe'){
+        h += '<label>Adubo de N (parcelado)' + sel('nprod', function(f){ return f.n > 0 && f.p === 0; }, conv.selN ? conv.selN.v : '') + '</label>';
+        h += '<label>Fonte de fósforo' + sel('base', function(f){ return f.p > 0; }, conv.selBase ? conv.selBase.v : '') + '</label>';
+        h += '<label>Complemento de potássio' + sel('kprod', function(f){ return f.k > 0 && f.p === 0; }, conv.selK ? conv.selK.v : '') + '</label>';
+      } else {
+      h += '<label>Adubo de base (semeadura)' + sel('base', function(f){ return f.p > 0 || f.k > 0; }, conv.selBase ? conv.selBase.v : '') + '</label>';
+      h += '<label>Complemento de potássio' + sel('kprod', function(f){ return f.k > 0 && f.p === 0; }, conv.selK ? conv.selK.v : '') + '</label>';
+      }
+      if(op.cultura === 'milho2') h += '<label>Nitrogênio de cobertura' + sel('nprod', function(f){ return f.n > 0 && f.p === 0; }, conv.selN ? conv.selN.v : '') + '</label>';
+      h += '</div>';
+      var totCusto = 0;
+      h += '<div class="fe-plano">';
+      conv.itens.forEach(function(x){ totCusto += x.custo; h += '<div class="fe-pl"><span class="fe-pl-ep">' + x.epoca + '</span><b>' + escapeHtml(x.op.nome.replace(' (fórmula comum)', '')) + '</b><span class="fe-pl-d">' + fmtNum(x.kg) + ' kg/ha</span><small>' + x.fornece + ' · ' + fmtNum(Math.round(x.total)) + ' kg no talhão (' + fmtNum(Math.round(x.total / 1000 * 100) / 100) + ' t)' + (x.custo ? ' · ≈ ' + fmtBRL(x.custo) : '') + (x.op.produtoId ? '' : ' · <i>fora do estoque</i>') + '</small></div>'; });
+      if(r.calagem && r.calagem.nc > 0) h += '<div class="fe-pl"><span class="fe-pl-ep">Antes do plantio (60–90 dias)</span><b>Calcário' + (op.cultura === 'milho2' && r.I.vals.mg !== null && r.I.vals.mg < 1 ? ' com MgO > 12%' : '') + ' (PRNT ' + r.calagem.prnt + '%)</b><span class="fe-pl-d">' + fmtNum(Math.round(r.calagem.nc * 1000)) + ' kg/ha</span><small>' + fmtNum(Math.round(r.calagem.nc * (Number(t.area) || 0) * 100) / 100) + ' t no talhão</small></div>';
+      h += '</div>';
+      if(totCusto > 0) h += '<div class="fe-custo">💸 Custo estimado dos adubos do estoque: <b>' + fmtBRL(totCusto) + '</b> no talhão · ' + fmtBRL(totCusto / (Number(t.area) || 1)) + '/ha · ' + fmtBRL(totCusto / (Number(t.area) || 1) / (Number(op.sc) || 1)) + ' por saca esperada</div>';
+      if(r.partes.length) h += '<ul class="fe-partes">' + r.partes.map(function(p){ return '<li>' + p + '</li>'; }).join('') + '</ul>';
+      h += '<div class="fe-acoes"><button type="button" class="tl-btn tl-pri" data-action="fe-salvar" data-id="' + t.id + '">💾 Salvar como recomendação</button><span>Fica pendente no talhão. Só vai para o Diário quando você clicar em <b>📒 Lançar no Diário</b>.</span></div>';
+    } else if(r.partes.length) h += '<ul class="fe-partes">' + r.partes.map(function(p){ return '<li>' + p + '</li>'; }).join('') + '</ul>';
+    h += '<div class="fe-fonte">Referência: Manual de Adubação e Calagem para o Estado do Paraná (SBCS/NEPAR, 2ª ed.). O sistema é apoio à decisão — confirme com seu agrônomo.</div>';
+    return h + '</div>';
+  }
+  function feRecsAtuais(t){ var a = feAnaliseSup(t.id), sub = feAnaliseSub(t.id); return recomendacoesDoTalhao(t.id).filter(function(x){ return (a && x.analise.id === a.id) || (sub && x.analise.id === sub.id) || x.rec.origem === 'manualPR' && feIdadeAnos(x.analise.dataColeta) <= 2; }); }
+  var feVerAntigas = {};
+  // Balanço de nutrientes por safra: o que entrou pelos adubos do Diário × o que saiu nos grãos (exportação do Manual PR)
+  // kg do elemento por t (milho: grãos — Manual PR Tab. 8.24; café: em coco — Tab. 15.12; soja: grãos — Embrapa Soja, Tecnologias de Produção de Soja, SP 17/2020, Tab. 6)
+  var FE_EXPORT = {milho: MPR_MILHO1.exportacao, cafe: MPR_CAFE.exportacao, soja: {N:47.1, P:4.5, K:14.2, Ca:2.3, Mg:1.8, S:4.7}}; // soja: Manual PR Tab. 9.14
+  function feKgDoProduto(produtoId, qtd){
+    var p = state.produtos.find(function(x){ return x.id === produtoId; }); if(!p) return null;
+    var un = semAcento(unidadeControle(p) || '');
+    if(un === 'kg') return qtd; if(un === 't' || un === 'ton') return qtd * 1000; if(un === 'g') return qtd / 1000;
+    if(un === 'sc' || un === 'saco'){ var mk = /(\d+)\s*kg/.exec(semAcento(p.nome)); return mk ? qtd * Number(mk[1]) : null; }
+    return null;
+  }
+  function feBalancoSafra(sf){
+    var ck = semAcento(culturaNome(sf.culturaId)), tipo = /caf/.test(ck) ? 'cafe' : (/milho/.test(ck) ? 'milho' : (/soja/.test(ck) ? 'soja' : ''));
+    var ent = {N:0, P2O5:0, K2O:0}, semForm = {}, area = areaPlantadaSafra(sf) || 0;
+    state.operacoes.forEach(function(o){
+      var fr = fracaoOperacaoNaSafra(o, sf.id); if(!(fr > 0)) return;
+      produtosDaOperacao(o).forEach(function(pp){
+        var p = state.produtos.find(function(x){ return x.id === pp.produtoId; }); if(!p || !feEhAduboSolo(p)) return;
+        var f = feFormulaProduto(p), kg = feKgDoProduto(p.id, (Number(pp.quantidade) || 0) * fr);
+        if(!f || kg === null){ semForm[p.nome] = true; return; }
+        ent.N += kg * f.n / 100; ent.P2O5 += kg * f.p / 100; ent.K2O += kg * f.k / 100;
+      });
+    });
+    var sc = 0; state.producao.forEach(function(p){ if(p.safraId !== sf.id || p.tipo !== 'entrada') return; var x = sacasDeProducao(p); if(x !== null) sc += x; });
+    var sai = null, ex = FE_EXPORT[tipo];
+    if(ex){ var t = tipo === 'cafe' ? sc * 60 * 3 / 1000 : sc * 0.06; sai = {N: t * ex.N, P2O5: t * ex.P * 2.291, K2O: t * ex.K * 1.205, t: t}; }
+    return {sf: sf, tipo: tipo, area: area, sc: sc, ent: ent, sai: sai, semForm: Object.keys(semForm)};
+  }
+  function feBalancoHtml(t){
+    var sfs = state.safras.filter(function(s){ return s.talhaoId === t.id; }).sort(function(a, b){ return (b.dataPlantio || b.anoAgricola || '').localeCompare(a.dataPlantio || a.anoAgricola || ''); }).slice(0, 5);
+    var h = '<div class="paper fe-bloco"><div class="fe-tit">⚖️ Balanço de nutrientes por safra <small>entrou nos adubos do Diário × saiu nos grãos colhidos (Manual PR Tab. 8.24, 9.14 e 15.12)</small></div>';
+    if(!sfs.length) return h + '<div class="fe-vazio">Sem safras neste talhão.</div></div>';
+    h += '<div class="table-wrap"><table class="sem-ordenacao fe-bal"><thead><tr><th>Safra</th><th class="num">Colhido</th><th>Nutriente</th><th class="num">Entrou (kg/ha)</th><th class="num">Saiu (kg/ha)</th><th class="num">Saldo (kg/ha)</th></tr></thead><tbody>';
+    var semTab = false, semF = {};
+    sfs.forEach(function(sf){
+      var b = feBalancoSafra(sf), a = b.area || 1, ci = tlCulturaInfo(culturaNome(sf.culturaId));
+      b.semForm.forEach(function(n){ semF[n] = true; });
+      ['N','P2O5','K2O'].forEach(function(n, i){
+        var e = b.ent[n] / a, sOut = b.sai && b.sc > 0 ? b.sai[n] / a : null, sal = sOut === null ? null : e - sOut;
+        var fbn = b.tipo === 'soja' && n === 'N';
+        h += '<tr' + (i === 0 ? ' class="fe-bal-top"' : '') + '>' + (i === 0 ? '<td rowspan="3"><b>' + ci.ic + ' ' + escapeHtml(culturaNome(sf.culturaId)) + '</b><br><small>' + escapeHtml(sf.anoAgricola || '') + ' · ' + fmtHa(b.area) + '</small></td><td class="num" rowspan="3">' + (b.sc ? fmtNum(Math.round(b.sc / a * 10) / 10) + ' sc/ha' : '<small>sem colheita ainda</small>') + '</td>' : '') + '<td>' + n.replace('2O5', '₂O₅').replace('2O', '₂O') + '</td><td class="num">' + fmtNum(Math.round(e)) + '</td><td class="num">' + (sOut === null ? (b.tipo === 'soja' && b.sc > 0 ? '<span title="Falta a tabela de exportação da soja">?</span>' : '—') : fmtNum(Math.round(sOut))) + '</td><td class="num">' + (fbn && sal !== null ? '<span title="Na soja o nitrogênio vem da fixação biológica (inoculação) — não precisa repor com adubo">FBN 🌱</span>' : sal === null ? '—' : '<b style="color:' + (sal < -5 ? 'var(--cost-dark)' : (sal > 5 ? 'var(--growth-dark)' : 'var(--ink)')) + '">' + (sal > 0 ? '+' : '') + fmtNum(Math.round(sal)) + '</b>') + '</td></tr>';
+        if(b.tipo === 'soja') semTab = true;
+      });
+    });
+    h += '</tbody></table></div><div class="fe-fonte">Saldo negativo (vermelho) = a colheita levou mais do que foi reposto: o solo está sendo "minerado" e a análise tende a cair. Positivo = acumulando.' + ' Soja: exportação do Manual PR (Tab. 9.14); o N da soja vem da fixação biológica (FBN), por isso não entra no saldo. Café: produção em sacas beneficiadas convertida para café em coco (×3, pelas faixas do Manual).' + (Object.keys(semF).length ? '<br>⚠️ Adubos aplicados sem fórmula N-P-K reconhecida (não entraram na conta): ' + Object.keys(semF).map(escapeHtml).join(', ') + ' — informe a fórmula no quadro "Adubos sem fórmula" abaixo.' : '') + '</div></div>';
+    return h;
+  }
+  function feAdubosSemFormulaHtml(){
+    var lst = state.produtos.filter(function(p){ return !p.arquivado && feEhAduboSolo(p) && !feFormulaProduto(p) && !/calcar|gesso/.test(semAcento(p.nome)); });
+    var comNpk = state.produtos.filter(function(p){ return !p.arquivado && p.npk; });
+    var h = '<details class="paper fe-bloco"' + (lst.length ? ' open' : '') + '><summary class="fe-tit" style="cursor:pointer;">🧾 Adubos do estoque sem fórmula N-P-K (' + lst.length + ')' + (comNpk.length ? ' · ' + comNpk.length + ' com fórmula informada' : '') + '</summary>';
+    h += '<p style="font-size:12.5px; color:var(--ink-soft); margin:0 0 8px;">O sistema lê a fórmula no nome do produto (ex.: "20-00-20"). Para os que não têm, informe aqui — assim eles entram nas recomendações, na lista de compra e no balanço.</p>';
+    if(!lst.length && !comNpk.length) return h + '<div class="fe-vazio">Todos os adubos do estoque já têm fórmula reconhecida. 👍</div></details>';
+    lst.concat(comNpk).forEach(function(p){
+      var f = p.npk || {n:'', p:'', k:''};
+      h += '<div class="fe-npk"><b>' + escapeHtml(p.nome) + '</b><label>N <input type="number" min="0" max="82" step="0.1" id="fe-npk-n-' + p.id + '" value="' + escapeHtml(String(f.n)) + '"></label><label>P₂O₅ <input type="number" min="0" max="60" step="0.1" id="fe-npk-p-' + p.id + '" value="' + escapeHtml(String(f.p)) + '"></label><label>K₂O <input type="number" min="0" max="62" step="0.1" id="fe-npk-k-' + p.id + '" value="' + escapeHtml(String(f.k)) + '"></label><button type="button" class="tl-btn" data-action="fe-npk-salvar" data-id="' + p.id + '">💾 Salvar</button></div>';
+    });
+    return h + '</details>';
+  }
+  // Lista de compra: recomendações pendentes (análises atuais) somadas por produto, com o que já tem em estoque
+  function feListaCompraHtml(tals){
+    var tot = {}, ordem = [];
+    tals.forEach(function(t){ feRecsAtuais(t).forEach(function(x){
+      var r = x.rec; if(r.status === 'Aplicada' || !(Number(r.doseMedia) > 0)) return;
+      var k = r.produtoId || semAcento(r.fonte || r.tipo), area = areaDaRecomendacao(r, t.id);
+      if(!tot[k]){ tot[k] = {nome: r.fonte || r.tipo, produtoId: r.produtoId || '', kg: 0, tal: []}; ordem.push(k); }
+      tot[k].kg += Number(r.doseMedia) * area; if(tot[k].tal.indexOf(t.nome) === -1) tot[k].tal.push(t.nome);
+    }); });
+    var h = '<div class="paper fe-bloco"><div class="fe-tit">🛒 Lista de compra — recomendações pendentes da fazenda</div>';
+    if(!ordem.length) return h + '<div class="fe-vazio">Nada pendente. Quando você salvar recomendações, os totais aparecem aqui.</div></div>';
+    h += '<div class="table-wrap"><table class="sem-ordenacao"><thead><tr><th>Produto</th><th>Talhões</th><th class="num">Total</th><th class="num">Em estoque</th><th class="num">Falta comprar</th></tr></thead><tbody>';
+    ordem.sort(function(a, b){ return tot[b].kg - tot[a].kg; }).forEach(function(k){
+      var it = tot[k], p = it.produtoId ? state.produtos.find(function(x){ return x.id === it.produtoId; }) : null, estKg = null;
+      if(p){ var un = semAcento(unidadeControle(p) || ''); estKg = un === 'kg' ? Number(p.estoqueAtual) || 0 : (un === 't' || un === 'ton' ? (Number(p.estoqueAtual) || 0) * 1000 : null); }
+      var falta = estKg === null ? it.kg : Math.max(0, it.kg - estKg);
+      h += '<tr><td><b>' + escapeHtml(it.nome) + '</b></td><td style="font-size:12px;">' + escapeHtml(it.tal.join(', ')) + '</td><td class="num">' + fmtNum(Math.round(it.kg)) + ' kg</td><td class="num">' + (estKg === null ? (p ? fmtNum(p.estoqueAtual) + ' ' + escapeHtml(unidadeControle(p)) : '—') : fmtNum(Math.round(estKg)) + ' kg') + '</td><td class="num"><b>' + (falta > 0 ? fmtNum(Math.round(falta)) + ' kg (' + fmtNum(Math.round(falta / 100) / 10) + ' t)' : '✅ tem') + '</b></td></tr>';
+    });
+    return h + '</tbody></table></div></div>';
+  }
+  function feImprimir(talhaoId){
+    var t = state.talhoes.find(function(x){ return x.id === talhaoId; }), a = t ? feAnaliseSup(t.id) : null; if(!a) return;
+    var op = feOpcoesTalhao(t), r = feRecomendacao(t, a, op), I = r ? r.I : feInterpretar(t, a), conv = r ? feProdutos(r, op, Number(t.area) || 0) : {itens:[]};
+    var rotC = {soja:'Soja', milho1:'Milho safra (verão)', milho2:'Milho 2ª safra', cafe:'Café' + (op.fase && op.fase !== 'producao' ? ' — ' + {form1:'formação 1º ano', form2:'formação 2º ano', implantacao:'implantação'}[op.fase] : ' — produção')}[op.cultura];
+    var c0 = '';
+    var c = '<h2>Talhão ' + escapeHtml(t.nome) + ' — ' + fmtHa(t.area) + '</h2><p>Análise de solo de ' + fmtDate(a.dataColeta) + (a.laboratorio ? ' · ' + escapeHtml(a.laboratorio) : '') + (a.profundidade ? ' · ' + escapeHtml(a.profundidade) : '') + ' · argila: ' + MPR_P[I.arg.k].rot + (I.arg.medida ? '' : ' (estimada)') + '</p>';
+    c += '<table><thead><tr><th>Parâmetro</th><th class="num">Valor</th><th>Classe (Manual PR)</th></tr></thead><tbody>';
+    ['ph','v','ca','mg','p','k','s','mo','ctc'].forEach(function(k){ var v = I.vals[k], cl = I.itens[k]; if(v === null && !cl) return; c += '<tr><td>' + (k === 'p' ? 'P (Mehlich-1)' : (k === 'ctc' ? 'CTC pH 7' : (k === 's' ? 'S (0–20 cm)' : MPR_INTERP[k].nome))) + '</td><td class="num">' + (v === null ? '—' : fmtNum(Math.round(v * 100) / 100)) + '</td><td>' + (cl ? MPR_NOME[cl] : '—') + '</td></tr>'; });
+    ['B','Cu','Mn','Zn'].forEach(function(m){ var cm = feClasseMicro(a, m); if(cm) c += '<tr><td>' + EMB_MICRO[m].nome + '</td><td class="num">' + fmtNum(cm.v) + '</td><td>' + MPR_NOME[cm.c6] + '</td></tr>'; });
+    c += '</tbody></table>';
+    if(r){
+      c += '<h2>Recomendação — ' + rotC + ' · meta ' + fmtNum(op.sc) + ' sc/ha</h2><p><b>N</b> ' + (op.cultura === 'soja' ? '0 (inoculação)' : (op.fase === 'implantacao' ? '4 g por planta a cada 30 dias' : fmtNum(r.N) + ' kg/ha')) + ' · <b>P₂O₅</b> ' + (r.P2O5 === null ? 'inviável' : fmtNum(r.P2O5) + ' kg/ha') + ' · <b>K₂O</b> ' + (r.K2O === null ? 'inviável' : fmtNum(r.K2O) + ' kg/ha') + (r.S ? ' · <b>S</b> ' + fmtNum(r.S) + ' kg/ha' : '') + (r.calagem && r.calagem.nc > 0 ? ' · <b>Calcário</b> ' + fmtNum(Math.round(r.calagem.nc * 100) / 100) + ' t/ha (PRNT ' + r.calagem.prnt + '%)' : '') + '</p>';
+      if(conv.itens.length){ c += '<table><thead><tr><th>Quando</th><th>Produto</th><th class="num">kg/ha</th><th class="num">Total no talhão</th></tr></thead><tbody>'; conv.itens.forEach(function(x){ c += '<tr><td>' + x.epoca + '</td><td>' + escapeHtml(x.op.nome.replace(' (fórmula comum)', '')) + '</td><td class="num">' + fmtNum(x.kg) + '</td><td class="num">' + fmtNum(Math.round(x.kg * (Number(t.area) || 0))) + ' kg</td></tr>'; }); if(r.calagem && r.calagem.nc > 0) c += '<tr><td>Antes do plantio</td><td>Calcário (PRNT ' + r.calagem.prnt + '%)</td><td class="num">' + fmtNum(Math.round(r.calagem.nc * 1000)) + '</td><td class="num">' + fmtNum(Math.round(r.calagem.nc * 1000 * (Number(t.area) || 0))) + ' kg</td></tr>'; c += '</tbody></table>'; }
+      var notas = r.avisos.concat(r.partes); if(notas.length) c += '<h3>Observações</h3><ul>' + notas.map(function(n){ return '<li>' + n + '</li>'; }).join('') + '</ul>';
+    }
+    var dg = feDiagGesso(t.id); c += '<p><b>Gessagem:</b> ' + (!dg.sub ? 'sem análise de 20–40 cm.' : (dg.precisa ? 'recomendada (' + dg.motivos.join(', ') + ').' : 'não indicada pela camada de 20–40 cm.')) + '</p>';
+    c += '<p class="nota">Referência: Manual de Adubação e Calagem para o Estado do Paraná (SBCS/NEPAR, 2ª ed.). Documento de apoio à decisão — confirmar com o engenheiro agrônomo responsável.</p>';
+    c += '<div class="assin"><div>Produtor</div><div>Engenheiro agrônomo (CREA)</div></div>';
+    abrirImpressao('Recomendação de adubação — ' + t.nome, c);
+  }
+  function feRecomSalvasHtml(t){
+    var todas = recomendacoesDoTalhao(t.id), atuais = feRecsAtuais(t), antigas = todas.filter(function(x){ return atuais.indexOf(x) === -1; });
+    var lista = feVerAntigas[t.id] ? todas : atuais;
+    var h = '<div class="paper fe-bloco"><div class="fe-tit">📋 Recomendações deste talhão <small>pendentes só vão para o Diário quando você clicar em 📒 Lançar no Diário</small></div>';
+    if(antigas.length) h += '<div style="margin:-4px 0 8px;"><button type="button" class="tl-chip' + (feVerAntigas[t.id] ? ' on' : '') + '" data-action="fe-ver-antigas" data-id="' + t.id + '">' + (feVerAntigas[t.id] ? '✕ Esconder' : '🕓 Ver também') + ' as de análises antigas (' + antigas.length + ')</button></div>';
+    if(!lista.length) return h + '<div class="fe-vazio">Nenhuma recomendação salva para a análise atual. Monte o plano acima e clique em 💾 Salvar.</div></div>';
+    lista.sort(function(x, y){ return (x.rec.status === 'Aplicada') - (y.rec.status === 'Aplicada'); });
+    lista.forEach(function(x){
+      var r = x.rec, ap = r.status === 'Aplicada', area = areaDaRecomendacao(r, t.id);
+      var ic = {Calagem:'🪨', Gessagem:'⚪', Fosfatagem:'🧂', Potassagem:'🧂', 'Adubação':'🌱', Micronutrientes:'💧'}[r.tipo] || '📋';
+      var origemTag = r.origem === 'manualPR' ? '<span class="fe-orig fe-orig-pr">Manual PR</span>' : (r.calculada ? '<span class="fe-orig">cálculo geral</span>' : '<span class="fe-orig">do laudo / manual</span>');
+      var antiga = antigas.indexOf(x) !== -1;
+      h += '<div class="fe-rec' + (ap ? ' fe-ap' : '') + (antiga ? ' fe-antiga' : '') + '"><span class="fe-rec-ic">' + ic + '</span><div class="fe-rec-m"><b>' + escapeHtml(r.tipo) + (r.epoca ? ' · ' + escapeHtml(r.epoca) : '') + '</b> ' + origemTag + (antiga ? ' <span class="fe-orig">análise antiga</span>' : '') + '<div>' + escapeHtml(r.fonte || '—') + (r.doseMedia ? ' · <b>' + fmtNum(r.doseMedia) + ' kg/ha</b> · ' + fmtNum(Math.round((Number(r.doseMedia) || 0) * area / 1000 * 100) / 100) + ' t em ' + fmtHa(area) : '') + '</div><small>Análise de ' + fmtDate(x.analise.dataColeta) + (r.observacao ? ' · ' + escapeHtml(r.observacao) : '') + (ap && r.aplicadaEm ? ' · ✅ lançada no Diário em ' + fmtDate(r.aplicadaEm) : '') + '</small></div>';
+      if(ap) h += '<span class="pd-nv pd-nv-ok">Aplicada</span>';
+      else h += '<span class="pd-nv pd-nv-perto">Pendente</span><button type="button" class="tl-btn fe-diario" data-action="fe-lancar-diario" data-id="' + x.analise.id + '" data-idx="' + x.idx + '">📒 Lançar no Diário</button><details class="tl-more"><summary title="Mais ações">⋯</summary><div class="tl-menu"><button type="button" data-action="recom-marcar-aplicada" data-id="' + x.analise.id + '" data-idx="' + x.idx + '">✔ Marcar como feita (sem Diário)</button><button type="button" class="tl-danger" data-action="fe-rec-remover" data-id="' + x.analise.id + '" data-idx="' + x.idx + '">🗑️ Remover</button></div></details>';
+      h += '</div>';
+    });
+    return h + '</div>';
+  }
+  // Salva o plano como recomendações na análise mais recente do talhão
+  function feSalvar(talhaoId){
+    var t = state.talhoes.find(function(x){ return x.id === talhaoId; }), a = t ? feAnaliseSup(t.id) : null; if(!a) return;
+    var op = feOpcoesTalhao(t), r = feRecomendacao(t, a, op); if(!r) return;
+    var conv = feProdutos(r, op, Number(t.area) || 0);
+    var rotC = {soja:'Soja', milho1:'Milho safra', milho2:'Milho 2ª safra', cafe:'Café' + (op.fase && op.fase !== 'producao' ? ' (' + {form1:'formação 1º ano', form2:'formação 2º ano', implantacao:'implantação'}[op.fase] + ')' : '')}[op.cultura], obs = 'Manual PR — ' + rotC + ' ' + fmtNum(op.sc) + ' sc/ha: N ' + fmtNum(r.N || 0) + ' · P₂O₅ ' + fmtNum(r.P2O5 || 0) + ' · K₂O ' + fmtNum(r.K2O || 0) + (r.S ? ' · S ' + fmtNum(r.S) : '') + ' kg/ha';
+    var novos = conv.itens.map(function(x){ return {tipo:'Adubação', epoca: x.epoca, fonte: x.op.nome.replace(' (fórmula comum)', ''), produtoId: x.op.produtoId || '', doseMedia: x.kg, doseMin:'', doseMax:'', area:'', status:'Recomendada', observacao: obs, origem:'manualPR', criadoEm: Date.now()}; });
+    if(r.calagem && r.calagem.nc > 0) novos.unshift({tipo:'Calagem', epoca:'Antes do plantio', fonte:'Calcário' + (op.cultura === 'milho2' && r.I.vals.mg !== null && r.I.vals.mg < 1 ? ' (MgO > 12%)' : '') + ' PRNT ' + r.calagem.prnt + '%', produtoId:'', doseMedia: Math.round(r.calagem.nc * 1000), doseMin:'', doseMax:'', area:'', status:'Recomendada', observacao: 'Manual PR — V% ' + fmtNum(r.calagem.v1) + ' → ' + r.calagem.v2 + '%', origem:'manualPR', criadoEm: Date.now()});
+    if(!novos.length){ alert('Nada a salvar: as doses calculadas são zero.'); return; }
+    var pendPR = (a.recomendacoes || []).filter(function(x){ return x.origem === 'manualPR' && x.status !== 'Aplicada'; });
+    if(!window.confirm('Salvar ' + novos.length + ' recomendação(ões) no talhão ' + t.nome + '?\n\n' + novos.map(function(n){ return '• ' + n.tipo + ' — ' + n.fonte + ': ' + fmtNum(n.doseMedia) + ' kg/ha (' + n.epoca + ')'; }).join('\n') + (pendPR.length ? '\n\n⚠️ Já existem ' + pendPR.length + ' recomendação(ões) do Manual pendentes neste talhão — elas serão SUBSTITUÍDAS por estas.' : '') + '\n\nElas ficam pendentes. Nada vai para o Diário agora.')) return;
+    a.recomendacoes = (a.recomendacoes || []).filter(function(x){ return !(x.origem === 'manualPR' && x.status !== 'Aplicada'); }).concat(novos);
+    saveKey('analisesSolo', state.analisesSolo); renderAll();
+  }
+  // Abre o Diário já preenchido com a recomendação — só registra quando você clicar em "Registrar atividade" lá
+  var diarioRecomVinculo = null; // {analiseId, idx}
+  // Acha no estoque o produto de uma recomendação: pela fórmula N-P-K ou pela palavra-chave (calcário, gesso, ureia, cloreto…)
+  function feAcharProduto(r){
+    var ativos = state.produtos.filter(function(p){ return !p.arquivado; }), fr = feFormulaDoNome(r.fonte || '');
+    if(fr){ var porF = ativos.filter(function(p){ var f = feFormulaProduto(p); return f && f.n === fr.n && f.p === fr.p && f.k === fr.k; }); if(porF.length) return porF.sort(function(a, b){ return (Number(b.estoqueAtual) || 0) - (Number(a.estoqueAtual) || 0); })[0]; }
+    var nf = semAcento(r.fonte || r.tipo || ''), chaves = ['calcario','gesso','ureia','cloreto','superfosfato','sulfato de amonio','map','fosfato','esterco','cama de aviario','boro','zinco'];
+    var ch = chaves.find(function(c){ return nf.indexOf(c) !== -1; }) || (/calag/.test(semAcento(r.tipo || '')) ? 'calcario' : (/gess/.test(semAcento(r.tipo || '')) ? 'gesso' : ''));
+    if(!ch) return null;
+    return ativos.find(function(p){ return semAcento(p.nome).indexOf(ch) !== -1; }) || null;
+  }
+  function feLancarDiario(analiseId, idx){
+    var a = state.analisesSolo.find(function(x){ return x.id === analiseId; }); if(!a || !a.recomendacoes || !a.recomendacoes[idx]) return;
+    var r = a.recomendacoes[idx];
+    var prod = r.produtoId ? state.produtos.find(function(p){ return p.id === r.produtoId; }) : null;
+    if(!prod) prod = feAcharProduto(r);
+    diarioRecomVinculo = {analiseId: analiseId, idx: idx};
+    diarioAcaoInspecao = null; editState = null; diarioRascunho = null; diarioPreTalhaoId = a.talhaoId; diarioFormAberto = true;
+    switchTab('operacoes'); renderOperacoes();
+    var sf = insSafraAtiva ? insSafraAtiva(a.talhaoId) : null;
+    if(diarioRascunho){
+      if(sf){ diarioRascunho.lavouraId = sf.lavouraId || ''; diarioRascunho.marcadas = [sf.id]; }
+      diarioRascunho.produtos = [{produtoId: prod ? prod.id : '', dose: r.doseMedia || '', doseUn: 'kg', dosePor: 'ha', quantidade: '', qtdManual: false}];
+      renderDiarioDinamico();
+    }
+    var selTipo = document.querySelector('#form-operacao [name="tipo"]');
+    if(selTipo){ var opt = Array.prototype.find.call(selTipo.options, function(o){ return /aduba/i.test(semAcento(o.value)) && !/calag/.test(semAcento(r.tipo)); }) || Array.prototype.find.call(selTipo.options, function(o){ return /aduba|calag|corre/i.test(semAcento(o.value)); }); if(opt) selTipo.value = opt.value; }
+    var obs = document.querySelector('#form-operacao [name="observacao"]'); if(obs && !obs.value) obs.value = (r.tipo + (r.epoca ? ' — ' + r.epoca : '') + ': ' + (r.fonte || '') + ' ' + fmtNum(r.doseMedia || 0) + ' kg/ha. ' + (r.observacao || '')).trim();
+    var f = document.getElementById('form-operacao'); if(f) f.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+  function bannerRecomDiarioHtml(){
+    var v = diarioRecomVinculo; if(!v) return '';
+    var a = state.analisesSolo.find(function(x){ return x.id === v.analiseId; }), r = a && a.recomendacoes ? a.recomendacoes[v.idx] : null;
+    if(!r){ diarioRecomVinculo = null; return ''; }
+    var temProd = r.produtoId ? state.produtos.some(function(p){ return p.id === r.produtoId; }) : !!feAcharProduto(r);
+    return '<div class="paper" style="padding:12px 16px; margin:0 0 14px; border-left:4px solid #B5822B;">' + (temProd ? '' : '<p style="font-size:12.5px; margin:0 0 6px; color:var(--cost-dark);">⚠️ <b>' + escapeHtml(r.fonte || r.tipo) + '</b> não está no seu estoque — escolha o produto que você vai usar na lista abaixo (ou cadastre em Produtos) para dar baixa e lançar o custo.</p>') + '<div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center;"><b>📒 Lançando a recomendação de ' + escapeHtml(talhaoNome(a.talhaoId)) + ': ' + escapeHtml(r.tipo) + (r.epoca ? ' · ' + escapeHtml(r.epoca) : '') + ' — ' + escapeHtml(r.fonte || '') + ' ' + fmtNum(r.doseMedia || 0) + ' kg/ha</b><button type="button" class="btn-cancel" data-action="fe-desvincular" style="margin:0;">✕ Cancelar</button></div><p style="font-size:12.5px; margin:6px 0 0;">Confira data, área, produto e dose abaixo. A atividade só é registrada quando você clicar em <b>Registrar atividade</b> — aí a recomendação passa para “Aplicada”, o estoque baixa e o custo vai para a lavoura.</p></div>';
+  }
+
   function renderAll(){
     safeRender('painel', renderPainel);
     safeRender('propriedades', renderPropriedades);
     safeRender('talhoes', renderTalhoes);
     safeRender('safras', renderSafras);
+    safeRender('fertilidade', renderFertilidade);
     safeRender('culturas', function(){ renderGenericTab('culturas'); });
     safeRender('produtos', renderProdutos);
     safeRender('compras', renderCompras);
@@ -2965,6 +3759,7 @@
     var em7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0,10);
     var itens = [];
     var add = function(qtd, icone, texto, tab, filtro, grave){ if(qtd > 0) itens.push({qtd: qtd, icone: icone, texto: texto, tab: tab, filtro: filtro || '', grave: !!grave}); };
+    try{ var talSolo = talhoesAtivos().filter(function(t){ var a = feAnaliseSup(t.id); return !a || feIdadeAnos(a.dataColeta) > 2; }); add(talSolo.length, '🧪', 'talhão(ões) com análise de solo vencida (mais de 2 anos) ou sem análise: ' + talSolo.map(function(t){ return t.nome; }).join(', '), 'fertilidade'); }catch(eSolo){}
     var semDestino = state.financeiro.filter(function(f){ return f.tipo === 'custo' && destinoEfetivo(f) === 'classificar'; }).length;
     add(semDestino, '🏷️', 'lançamento(s) de custo sem destino (não entram em nenhuma lavoura)', 'financeiro', 'sem-destino', true);
     var pendCusto = state.financeiro.filter(function(f){ return f.tipo === 'custo' && f.status === 'Pendente'; });
@@ -6248,9 +7043,9 @@
     var editingRecord = (editState && editState.scope === 'operacoes') ? state.operacoes.find(function(x){ return x.id === editState.id; }) : null;
 
     var html = '';
-    if(!editingRecord) html += bannerAcaoDiarioHtml();
+    if(!editingRecord) html += bannerAcaoDiarioHtml() + bannerRecomDiarioHtml();
     var acPre = !editingRecord && diarioAcaoInspecao ? diarioAcaoInspecao : null;
-    var mostrarFormOp = editingRecord || acPre || diarioFormAberto || !state.operacoes.length;
+    var mostrarFormOp = editingRecord || acPre || diarioRecomVinculo || diarioFormAberto || !state.operacoes.length;
     html += diTopoHtml(editingRecord || acPre || diarioFormAberto);
     if(!mostrarFormOp){
       html += diarioVista === 'lista' ? '' : diFeedHtml();
@@ -12657,6 +13452,16 @@
       renderAgro50();
       return;
     }
+    if(e.target && e.target.dataset && e.target.dataset.feOp){
+      var tFe = state.talhoes.find(function(x){ return x.id === e.target.dataset.id; });
+      if(tFe){ var oFe = feOpcoesTalhao(tFe), kFe = e.target.dataset.feOp; oFe[kFe] = ['sc','prnt','plantas','espacamento'].indexOf(kFe) !== -1 ? (parseFloat(e.target.value) || 0) : e.target.value; if(kFe === 'cultura'){ oFe.base = ''; oFe.kprod = ''; oFe.nprod = ''; var sfFe = safraAtualDoTalhao(tFe.id), ckFe = feCulturaChave(tFe), scSf = sfFe ? Number(sfFe.produtividadeEsperada) || 0 : 0; var mesmo = (oFe.cultura === 'cafe' && ckFe === 'cafe') || (oFe.cultura === 'soja' && ckFe === 'soja') || (/milho/.test(oFe.cultura) && ckFe === 'milho2'); oFe.sc = mesmo && scSf >= 3 ? scSf : ({soja:65, milho1:150, milho2:120, cafe:30}[oFe.cultura] || 65); } renderFertilidade(); }
+      return;
+    }
+    if(e.target && e.target.dataset && e.target.dataset.actionChange === 'fe-argila'){
+      var tAr = state.talhoes.find(function(x){ return x.id === e.target.dataset.id; });
+      if(tAr){ tAr.argilaFaixa = e.target.value; saveKey('talhoes', state.talhoes); renderFertilidade(); }
+      return;
+    }
     if(e.target && e.target.id === 'f-financeiro-mes-filtro'){
       financeiroMesFiltro = e.target.value;
       renderFinanceiro();
@@ -13620,6 +14425,11 @@
       } else {
         opFields.id = uid(); opFields.criadoEm = Date.now();
         if(diarioAcaoInspecao) opFields.inspecaoId = diarioAcaoInspecao.inspecaoId;
+        if(diarioRecomVinculo){
+          var aVin = state.analisesSolo.find(function(x){ return x.id === diarioRecomVinculo.analiseId; }), rVin = aVin && aVin.recomendacoes ? aVin.recomendacoes[diarioRecomVinculo.idx] : null;
+          if(rVin){ rVin.status = 'Aplicada'; rVin.operacaoId = opFields.id; rVin.aplicadaEm = opFields.data || hojeISO(); opFields.recomendacaoSolo = {analiseId: aVin.id, idx: diarioRecomVinculo.idx}; saveKey('analisesSolo', state.analisesSolo); }
+          diarioRecomVinculo = null;
+        }
         state.operacoes.push(opFields);
       }
       saveKey('operacoes', state.operacoes);
@@ -15033,7 +15843,28 @@
     if(action === 'co-fechar'){ colheitaFormAberto = null; renderProducao(); return; }
     if(action === 'co-mais'){ colheitaFeedLimite += 80; renderProducao(); return; }
     if(action === 'di-novo'){ diarioFormAberto = true; editState = null; renderOperacoes(); var fDi = document.getElementById('form-operacao'); if(fDi) fDi.scrollIntoView({behavior:'smooth', block:'start'}); return; }
-    if(action === 'di-fechar-form'){ diarioFormAberto = false; renderOperacoes(); return; }
+    if(action === 'di-fechar-form'){ diarioFormAberto = false; diarioRecomVinculo = null; renderOperacoes(); return; }
+    if(action === 'fe-modo'){ feModo = btn.getAttribute('data-m'); renderFertilidade(); return; }
+    if(action === 'fe-sel'){ feSel = id; renderFertilidade(); var dFe = document.querySelector('#tab-fertilidade .fe-det'); if(dFe) dFe.scrollIntoView({behavior:'smooth', block:'start'}); return; }
+    if(action === 'fe-nova-analise'){ soloTalhaoFiltro = id; switchTab('talhoes'); renderAll(); var secSoloF = document.getElementById('secao-analise-solo'); if(secSoloF) secSoloF.scrollIntoView({behavior:'smooth', block:'start'}); return; }
+    if(action === 'fe-salvar'){ feSalvar(id); return; }
+    if(action === 'fe-imprimir'){ feImprimir(id); return; }
+    if(action === 'fe-npk-salvar'){
+      var pN = state.produtos.find(function(x){ return x.id === id; }); if(!pN) return;
+      var gv = function(k){ var el = document.getElementById('fe-npk-' + k + '-' + id); return el ? parseFloat(el.value) || 0 : 0; };
+      var nn = gv('n'), pp = gv('p'), kk = gv('k');
+      if(nn + pp + kk <= 0){ delete pN.npk; } else pN.npk = {n: nn, p: pp, k: kk};
+      saveKey('produtos', state.produtos); renderFertilidade(); return;
+    }
+    if(action === 'fe-ver-antigas'){ feVerAntigas[id] = !feVerAntigas[id]; renderFertilidade(); return; }
+    if(action === 'fe-lancar-diario'){ feLancarDiario(id, Number(btn.dataset.idx)); return; }
+    if(action === 'fe-desvincular'){ diarioRecomVinculo = null; diarioFormAberto = false; diarioRascunho = null; renderOperacoes(); return; }
+    if(action === 'fe-rec-remover'){
+      var aRm = state.analisesSolo.find(function(x){ return x.id === id; }); if(!aRm || !aRm.recomendacoes) return;
+      var rRm = aRm.recomendacoes[Number(btn.dataset.idx)]; if(!rRm) return;
+      if(!window.confirm('Remover a recomendação "' + rRm.tipo + ' — ' + (rRm.fonte || '') + '"?')) return;
+      aRm.recomendacoes.splice(Number(btn.dataset.idx), 1); saveKey('analisesSolo', state.analisesSolo); renderAll(); return;
+    }
     if(action === 'di-filtro'){ diarioFiltroTipo = btn.getAttribute('data-f') || ''; renderOperacoes(); return; }
     if(action === 'di-mais'){ diarioFeedLimite += 100; renderOperacoes(); return; }
     if(action === 'di-vista'){ diarioVista = btn.getAttribute('data-vista') === 'lista' ? 'lista' : 'cards'; try{ localStorage.setItem('agro-diario-vista', diarioVista); }catch(e){} renderOperacoes(); return; }
