@@ -88,6 +88,36 @@
   .nav-btn:hover{background:rgba(255,255,255,0.05); color:var(--paper);}
   .nav-btn.active{background:var(--accent); color:#FFFFFF; font-weight:600;}
   .nav-btn.nav-sub, .nav-btn.nav-oculta, .nav-btn.nav-sem-permissao{display:none !important;}
+  #nav .nav-btn.nav-sub.nav-campo-vis:not(.nav-oculta):not(.nav-sem-permissao){display:flex !important;}
+  /* ---------- Menu lateral: visual novo ---------- */
+  #app{grid-template-columns:250px 1fr;}
+  .sidebar{padding:18px 12px 14px; gap:14px; background:linear-gradient(180deg, #3B4931 0%, #313D28 100%); scrollbar-width:thin; scrollbar-color:#56664A transparent;}
+  .brand{padding:4px 8px 12px; border-bottom:1px solid rgba(255,255,255,0.08);}
+  nav{gap:1px;}
+  .nav-btn{position:relative; width:100%; padding:8px 10px 8px 12px; border-radius:9px; font-size:13.2px; color:#D9DFC9; cursor:pointer; font-family:inherit;}
+  .nav-btn .nav-txt{flex:1; min-width:0; line-height:1.25;}
+  .nav-btn:hover{background:rgba(255,255,255,0.07);}
+  .nav-btn.active{background:rgba(196,214,120,0.16); color:#FFFFFF; font-weight:700; border-color:rgba(196,214,120,0.25);}
+  .nav-btn.active::after{content:''; position:absolute; left:-12px; top:7px; bottom:7px; width:4px; border-radius:0 4px 4px 0; background:#C4D678;}
+  .nav-group-label ~ .nav-btn:not(.nav-inicio){margin-left:12px; width:calc(100% - 12px); border-left:1px solid rgba(255,255,255,0.10); border-radius:0 9px 9px 0; padding-left:12px;}
+  .nav-group-label ~ .nav-btn.active::after{left:-13px;}
+  .nav-inicio{margin-bottom:4px; font-weight:700;}
+  .nav-group-label{text-transform:none; letter-spacing:0; font-size:13.2px; font-weight:700; color:#EEF1E2; padding:9px 10px; margin-top:2px; justify-content:flex-start; gap:10px; border-radius:9px;}
+  .nav-group-label:hover{background:rgba(255,255,255,0.06);}
+  .nav-group-label:not(.collapsed){color:#FFFFFF;}
+  .nav-group-label .nav-g-ic{width:20px; text-align:center; font-size:14px;}
+  .nav-group-label .nav-g-txt{flex:1;}
+  .nav-group-label::after{order:9; font-size:10px; color:#A9B394;}
+  .nav-g-badge{display:none;} .nav-group-label.collapsed .nav-g-badge.on{display:inline-block;}
+  .nav-badge, .nav-g-badge{min-width:19px; height:19px; line-height:19px; padding:0 6px; border-radius:99px; background:#E0B23C; color:#2B2B1F; font-size:10.5px; font-weight:800; text-align:center; flex-shrink:0;}
+  .nav-badge.grave, .nav-g-badge.grave{background:#D9634F; color:#fff;}
+  .nav-rodape{margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.08); display:flex; gap:4px;}
+  .nav-rodape .nav-btn{flex:1; justify-content:center; padding:8px 6px; font-size:12.5px; background:rgba(255,255,255,0.04);}
+  .nav-rodape .nav-btn.active::after{display:none;}
+  .sidebar-footer{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:9px 10px; border-radius:10px; background:rgba(0,0,0,0.16); color:#C2C9AE; font-size:11.5px;}
+  .sf-user{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .sf-sair{color:#E6EBD5 !important; font-weight:700; white-space:nowrap; text-decoration:none !important;}
+  .menu-mobile, .menu-fundo{display:none;}
   #sub-abas{display:flex; flex-wrap:wrap; gap:6px; margin:-8px 0 18px;}
   #sub-abas:empty{display:none;}
   #sub-abas button{font-family:inherit; font-size:13px; font-weight:600; padding:7px 14px; border-radius:6px; cursor:pointer; border:2px solid var(--paper-line); background:var(--paper); color:var(--ink);}
@@ -233,12 +263,17 @@
   /* ---------- Ícones do menu lateral ---------- */
   .nav-btn[data-tab]::before{width:20px; text-align:center; font-size:14px; flex-shrink:0;}
   .nav-btn[data-tab="painel"]::before{content:'🏠';}
+  .nav-btn[data-tab="mapaGeral"]::before{content:'🗺️';}
+  .nav-btn[data-tab="planoSafra"]::before{content:'🗓️';}
+  .nav-btn[data-tab="planoAdubacao"]::before{content:'🌿';}
+  .nav-btn[data-hub="inventario"]::before{content:'📦';}
+  .nav-btn[data-tab="ajuda"]::before{content:'❓';}
   .nav-btn[data-tab="safras"]::before{content:'🌾';}
   .nav-btn[data-tab="fertilidade"]::before{content:'🧪';}
   .nav-btn[data-tab="operacoes"]::before{content:'📒';}
   .nav-btn[data-tab="inspecao"]::before{content:'🔎';}
   .nav-btn[data-tab="chuvas"]::before{content:'🌧️';}
-  .nav-btn[data-tab="producao"]::before{content:'🚜';}
+  .nav-btn[data-tab="producao"]::before{content:'🧺';}
   .nav-btn[data-tab="vendasAntecipadas"]::before{content:'🤝';}
   .nav-btn[data-tab="caderneta"]::before{content:'☕';}
   .nav-btn[data-tab="financeiro"]::before{content:'💰';}
@@ -254,7 +289,7 @@
   .nav-btn[data-tab="relatorios"]::before{content:'📊';}
   .nav-btn[data-tab="orcamento"]::before{content:'🎯';}
   .nav-btn[data-tab="indicadores"]::before{content:'📉';}
-  .nav-btn[data-tab="propriedades"]::before{content:'🗺️';}
+  .nav-btn[data-tab="propriedades"]::before{content:'📋';}
   .nav-btn[data-tab="talhoes"]::before{content:'🧩';}
   .nav-btn[data-tab="produtos"]::before{content:'📦';}
   .nav-btn[data-tab="parceiros"]::before{content:'👥';}
@@ -373,12 +408,11 @@
 
   @media (max-width: 820px){
     #app{grid-template-columns:1fr;}
-    .sidebar{position:sticky; top:0; z-index:10; height:auto; flex-direction:row; align-items:center; padding:12px 14px; gap:14px; overflow-x:auto; overflow-y:visible;}
-    .brand-text span{display:none;}
-    nav{flex-direction:row;}
-    .nav-group-label{display:none;}
-    .nav-btn{display:flex !important;}
-    .sidebar-footer{display:none;}
+    .sidebar{position:fixed; left:0; top:0; bottom:0; z-index:200; width:284px; max-width:86vw; height:100vh; transform:translateX(-102%); transition:transform .22s ease; box-shadow:6px 0 24px rgba(0,0,0,0.25);}
+    body.menu-aberto .sidebar{transform:none;}
+    .menu-fundo{position:fixed; inset:0; z-index:150; background:rgba(20,26,14,0.45);}
+    body.menu-aberto .menu-fundo{display:block;}
+    .menu-mobile{display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; margin-right:10px; border-radius:10px; border:1px solid var(--paper-line); background:var(--paper); color:var(--ink); font-size:20px; cursor:pointer; flex-shrink:0;}
     main{padding:20px 16px 50px;}
   }
 
@@ -490,6 +524,29 @@
   .property-card{border-radius:14px;}
   .section-title{font-family:inherit; font-weight:800; font-size:17px;}
 
+  /* ---------- Mapa geral / Plano de safra / Plano de adubação ---------- */
+  .mg-wrap{display:grid; grid-template-columns:minmax(0,1fr) 260px; gap:16px; align-items:start;}
+  .mg-mapa{min-width:0;} .mg-svg{width:100%; max-height:62vh; display:block; background:#F3F1E2; border-radius:12px; border:1px solid var(--paper-line);}
+  .mg-tal{cursor:pointer;} .mg-tal path{stroke:#FFFFFF; stroke-width:2.5; stroke-linejoin:round; vector-effect:non-scaling-stroke; transition:fill-opacity .12s;}
+  .mg-tal:hover path{fill-opacity:0.95;} .mg-tal.sel path{stroke:#1F2A16; stroke-width:3.5;}
+  .mg-rot text{text-anchor:middle; font-weight:800; fill:#1F2A16; paint-order:stroke; stroke:#FFFFFF; stroke-width:4px; stroke-linejoin:round; font-family:inherit;} .mg-rot .mg-ha{font-weight:600; fill:#3E4632;}
+  .mg-info{border:1px solid var(--paper-line); border-radius:12px; padding:14px; background:#FFFFFF;} .mg-info h3{margin:6px 0 8px; font-size:16px;}
+  .mg-info-cq{height:110px; display:flex; align-items:center; justify-content:center; background:#F3F1E2; border-radius:10px;} .mg-info-cq svg{max-height:100px; max-width:100%;}
+  .mg-linha{display:flex; justify-content:space-between; gap:8px; font-size:12.5px; padding:6px 0; border-top:1px dashed var(--paper-line);} .mg-linha span{color:var(--ink-soft);} .mg-linha b{text-align:right;}
+  .mg-dot{display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px; vertical-align:-1px;}
+  .mg-acoes{display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;} .mg-acoes .tl-btn{flex:1;}
+  .ps-grade{width:100%; border-collapse:separate; border-spacing:0;} .ps-grade th{text-align:left; white-space:nowrap;} .ps-grade th small{display:block; font-weight:600; color:var(--accent); text-transform:none; letter-spacing:0;}
+  .ps-grade td{vertical-align:top; border-top:1px solid var(--paper-line);} .ps-grade .ps-atual{background:#F6F8EC;}
+  .ps-tal b{display:block;} .ps-tal small{color:var(--ink-soft); font-size:11px;}
+  .ps-cel{display:flex; flex-direction:column; gap:4px; min-width:118px; align-items:flex-start;}
+  .ps-sf{font-size:12px; font-weight:700; padding:3px 8px; border-radius:7px; border:1.5px solid var(--c); background:color-mix(in srgb, var(--c) 22%, white); white-space:nowrap;}
+  .ps-sf.ps-planejada{border-style:dashed; background:#FFFFFF;} .ps-sf.ps-colhida{opacity:0.62;}
+  .ps-add{border:1.5px dashed #B9BFA2; background:none; color:var(--ink-soft); border-radius:7px; width:30px; height:24px; cursor:pointer; font-weight:700;} .ps-add:hover{border-color:var(--growth); color:var(--growth);}
+  .ps-vazio{color:#B9BFA2;} .ps-aviso td{background:#FFF7E3; font-size:12px; border-top:0;}
+  .ps-lg{display:inline-block; width:16px; height:10px; border-radius:3px; border:1.5px solid #7FAE4A;} .ps-lg-and{background:#DCEBC9;} .ps-lg-pla{border-style:dashed;} .ps-lg-col{background:#DCEBC9; opacity:.6;}
+  .pa-epoca{margin-bottom:12px;} .pa-ep-tit{font-weight:800; font-size:13.5px; margin:8px 0 6px;} .pa-ep-tit small{font-weight:500; color:var(--ink-soft);}
+  .pa-ic{font-size:20px; width:36px; text-align:center; flex-shrink:0;}
+  @media (max-width: 820px){ .mg-wrap{grid-template-columns:1fr;} }
   /* ---------- Fertilidade do solo ---------- */
   .fe-bloco{padding:16px; margin-bottom:14px;}
   .fe-tit{font-size:15px; font-weight:800; display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-bottom:10px; color:var(--ink);} .fe-tit small{font-weight:500; font-size:11.5px; color:var(--ink-soft);}
@@ -506,7 +563,7 @@
   .fe-argila{font-size:12.5px; margin:6px 0;} .fe-argila select{font-family:inherit; padding:4px 6px; border-radius:7px; border:1px solid var(--paper-line);} .fe-argila small{color:var(--ink-soft);}
   .fe-interp{width:100%; font-size:12.5px; margin-top:6px;} .fe-interp td{padding:5px 8px;}
   .fe-cls{color:#fff; font-size:11px; font-weight:800; padding:2px 9px; border-radius:99px;}
-  .fe-barril{width:100%; max-width:470px; height:auto; display:block; margin:0 auto;}
+  .fe-barril{width:100%; max-width:600px; height:auto; display:block; margin:0 auto;}
   .fe-limite{background:#FBE3DE; border:1px solid #E8B4A9; border-radius:10px; padding:10px 12px; font-size:13px; margin-top:6px; line-height:1.5;} .fe-limite b{color:var(--cost-dark);}
   .fe-vazio{font-size:13px; color:var(--ink-soft); padding:30px 10px; text-align:center;}
   .fe-form{display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:10px; margin:6px 0 12px;}
@@ -530,6 +587,14 @@
   .fe-rec-m{flex:1; min-width:220px; font-size:12.5px;} .fe-rec-m b{font-size:13px;} .fe-rec-m small{display:block; color:var(--ink-soft); font-size:11.5px;}
   .fe-npk{display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:7px 0; border-top:1px solid #E7E8D3; font-size:12.5px;} .fe-npk b{flex:1; min-width:200px;} .fe-npk label{display:flex; align-items:center; gap:4px; font-weight:700; color:var(--ink-soft);} .fe-npk input{width:64px; padding:6px; border:1px solid var(--paper-line); border-radius:7px; font-family:inherit;}
   .fe-bal td{padding:5px 10px;} .fe-bal tr.fe-bal-top td{border-top:2px solid #DCDCC6;}
+  .fe-focos{display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:10px;}
+  .fe-fc{background:#FCFCF5; border:1px solid #E7E8D3; border-radius:11px; padding:11px 12px; display:flex; flex-direction:column; gap:4px; font-size:12.5px;}
+  .fe-fc b{font-size:13.5px;} .fe-fc-d{font-size:18px; font-weight:800; color:var(--growth-dark);} .fe-fc-p{color:var(--ink);} .fe-fc-t{color:var(--ink-soft); line-height:1.5; flex:1;}
+  .fe-fc .tl-btn{align-self:flex-start; margin-top:4px; font-size:12px; padding:6px 10px;}
+  .fe-pri{align-self:flex-start; font-size:10.5px; font-weight:800; border-radius:99px; padding:1px 8px;} .fe-pri0{background:#FBE3DE; color:#9A2E1F;} .fe-pri1{background:#FFF1D6; color:#8A5A10;} .fe-pri2{background:#E3F1D6; color:#2F5A1A;}
+  .gar-box{border:1px dashed var(--paper-line); border-radius:10px; padding:8px 12px; background:#FCFCF5;} .gar-box summary{cursor:pointer; font-size:12.5px; font-weight:700; color:var(--ink);} .gar-box summary small{font-weight:500; color:var(--ink-soft);}
+  .gar-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:8px; margin-top:8px;} .gar-grid label{display:flex; flex-direction:column; gap:3px; font-size:11px; font-weight:700; color:var(--ink-soft); text-transform:uppercase;} .gar-grid input{padding:7px 8px; border:1px solid var(--paper-line); border-radius:7px; font-family:inherit; font-size:13px;}
+  .gar-nota{font-size:11px; color:var(--ink-soft); margin:6px 0 0;}
   .fe-gesso{font-size:12.5px; background:#F4F4EC; border:1px solid #E1E2CB; border-radius:10px; padding:8px 11px; margin-top:8px; line-height:1.5;}
   .fe-orig{font-size:10px; font-weight:800; border:1px solid #C9CCAA; color:#6B6B60; border-radius:99px; padding:0 7px; background:#fff; vertical-align:1px;} .fe-orig-pr{border-color:#4F7942; color:#2F5A1A; background:#EEF6E4;}
   .fe-antiga{opacity:.75; border-style:dashed;}
@@ -640,62 +705,68 @@
   </div>
 </div>
 <div id="app" style="display:none;">
-  <aside class="sidebar">
+  <div id="menu-fundo" class="menu-fundo"></div>
+  <aside class="sidebar" id="sidebar">
     <div class="brand">
       <div class="brand-mark">⌂</div>
       <div class="brand-text"><strong>Minha Fazenda</strong><span>Caderno de gestão</span></div>
     </div>
     <nav id="nav">
-      <button class="nav-btn active" data-tab="painel">Dashboard</button>
-      <div class="nav-group-label" data-group="safra">Safra</div>
-      <button class="nav-btn" data-tab="safras">Lavouras e Safras</button>
-      <button class="nav-btn" data-tab="fertilidade">Fertilidade do Solo</button>
-      <button class="nav-btn" data-tab="operacoes" data-hub="campo">Campo</button>
-      <button class="nav-btn nav-sub" data-tab="inspecao">Inspeção de Campo</button>
-      <button class="nav-btn nav-sub" data-tab="chuvas">Chuvas</button>
-      <button class="nav-btn" data-tab="producao" data-hub="colheita">Colheita e Vendas</button>
-      <button class="nav-btn nav-sub" data-tab="vendasAntecipadas">Venda Antecipada</button>
-      <button class="nav-btn" data-tab="caderneta">Caderneta do Café</button>
-      <div class="nav-group-label" data-group="financeiro">Financeiro</div>
-      <button class="nav-btn" data-tab="financeiro" data-hub="lancamentos">Lançamentos</button>
-      <button class="nav-btn nav-sub" data-tab="contasPagar">Contas a Pagar</button>
-      <button class="nav-btn nav-sub" data-tab="contasReceber">Contas a Receber</button>
-      <button class="nav-btn" data-tab="compras">Compras e NF-e</button>
-      <button class="nav-btn" data-tab="financiamentos" data-hub="contratos">Contratos</button>
-      <button class="nav-btn nav-sub" data-tab="arrendamentos">Arrendamentos</button>
-      <button class="nav-btn" data-tab="servicosPrestados">Serviços</button>
-      <div class="nav-group-label" data-group="analise">Análises</div>
-      <button class="nav-btn" data-tab="rentabilidade">Rentabilidade</button>
-      <button class="nav-btn" data-tab="fluxoCaixa" data-hub="caixa">Caixa</button>
-      <button class="nav-btn nav-sub" data-tab="contaCorrente">Conta-Corrente</button>
-      <button class="nav-btn" data-tab="relatorios" data-hub="relatorios">Relatórios</button>
-      <button class="nav-btn nav-sub" data-tab="orcamento">Orçado x Realizado</button>
-      <button class="nav-btn nav-sub" data-tab="indicadores">Indicadores</button>
-      <div class="nav-group-label" data-group="cadastros">Cadastros</div>
-      <button class="nav-btn" data-tab="propriedades" data-hub="propriedades">Propriedades e Talhões</button>
-      <button class="nav-btn nav-sub" data-tab="talhoes">Talhões</button>
-      <button class="nav-btn" data-tab="produtos">Produtos e Estoque</button>
-      <button class="nav-btn" data-tab="parceiros" data-hub="pessoas">Pessoas</button>
-      <button class="nav-btn nav-sub" data-tab="equipe">Funcionários</button>
-      <button class="nav-btn" data-tab="patrimonio">Máquinas e Patrimônio</button>
-      <button class="nav-btn" data-tab="manutencao">Manutenção</button>
-      <div class="nav-group-label" data-group="ferramentas">Ferramentas</div>
-      <button class="nav-btn" data-tab="configuracoes" data-hub="config">Configurações</button>
-      <button class="nav-btn nav-sub" data-tab="culturas">Culturas</button>
-      <button class="nav-btn" data-tab="ajuda">❓ Ajuda</button>
+      <button class="nav-btn nav-inicio active" data-tab="painel"><span class="nav-txt">Início</span></button>
+      <div class="nav-group-label" data-group="propriedade"><span class="nav-g-ic">🏡</span><span class="nav-g-txt">Propriedade</span><span class="nav-g-badge"></span></div>
+      <button class="nav-btn" data-tab="propriedades" data-hub="perfil"><span class="nav-txt">Perfil da Propriedade</span></button>
+      <button class="nav-btn nav-sub" data-tab="arrendamentos"><span class="nav-txt">Arrendamentos</span></button>
+      <button class="nav-btn" data-tab="mapaGeral" data-hub="mapa"><span class="nav-txt">Mapa da Propriedade</span></button>
+      <button class="nav-btn nav-sub" data-tab="talhoes"><span class="nav-txt">Talhões</span></button>
+      <button class="nav-btn" data-tab="patrimonio" data-hub="inventario"><span class="nav-txt">Inventário de Recursos</span></button>
+      <button class="nav-btn nav-sub" data-tab="produtos"><span class="nav-txt">Produtos e Estoque</span></button>
+      <button class="nav-btn nav-sub" data-tab="parceiros"><span class="nav-txt">Pessoas</span></button>
+      <button class="nav-btn nav-sub" data-tab="equipe"><span class="nav-txt">Funcionários</span></button>
+      <div class="nav-group-label" data-group="planejamento"><span class="nav-g-ic">📅</span><span class="nav-g-txt">Planejamento</span><span class="nav-g-badge"></span></div>
+      <button class="nav-btn" data-tab="planoSafra"><span class="nav-txt">Plano de Safra</span></button>
+      <button class="nav-btn" data-tab="orcamento"><span class="nav-txt">Orçamento da Safra</span></button>
+      <button class="nav-btn" data-tab="planoAdubacao"><span class="nav-txt">Plano de Adubação</span></button>
+      <div class="nav-group-label" data-group="dados"><span class="nav-g-ic">🌱</span><span class="nav-g-txt">Dados Produtivos</span><span class="nav-g-badge"></span></div>
+      <button class="nav-btn" data-tab="chuvas"><span class="nav-txt">Controle Pluviométrico</span></button>
+      <button class="nav-btn" data-tab="fertilidade"><span class="nav-txt">Fertilidade do Solo</span></button>
+      <button class="nav-btn" data-tab="safras" data-hub="lavouras"><span class="nav-txt">Lavouras e Safras</span></button>
+      <button class="nav-btn nav-sub" data-tab="culturas"><span class="nav-txt">Culturas</span></button>
+      <button class="nav-btn nav-sub" data-tab="caderneta"><span class="nav-txt">Caderneta do Café</span></button>
+      <div class="nav-group-label" data-group="campo"><span class="nav-g-ic">🚜</span><span class="nav-g-txt">Campo</span><span class="nav-g-badge"></span></div>
+      <button class="nav-btn" data-tab="operacoes"><span class="nav-txt">Diário de Campo</span></button>
+      <button class="nav-btn" data-tab="inspecao"><span class="nav-txt">Inspeção de Campo</span></button>
+      <button class="nav-btn" data-tab="manutencao"><span class="nav-txt">Manutenção</span></button>
+      <div class="nav-group-label" data-group="colheita"><span class="nav-g-ic">🧺</span><span class="nav-g-txt">Colheita e Vendas</span><span class="nav-g-badge"></span></div>
+      <button class="nav-btn" data-tab="producao"><span class="nav-txt">Colheita</span></button>
+      <button class="nav-btn" data-tab="vendasAntecipadas"><span class="nav-txt">Venda Antecipada</span></button>
+      <button class="nav-btn" data-tab="servicosPrestados"><span class="nav-txt">Serviços Prestados</span></button>
+      <div class="nav-group-label" data-group="financeiro"><span class="nav-g-ic">💰</span><span class="nav-g-txt">Receitas e Despesas</span><span class="nav-g-badge"></span></div>
+      <button class="nav-btn" data-tab="financeiro"><span class="nav-txt">Lançamentos</span></button>
+      <button class="nav-btn" data-tab="contasPagar"><span class="nav-txt">Contas a Pagar</span></button>
+      <button class="nav-btn" data-tab="contasReceber"><span class="nav-txt">Contas a Receber</span></button>
+      <button class="nav-btn" data-tab="fluxoCaixa" data-hub="caixa"><span class="nav-txt">Caixa e Conta-Corrente</span></button>
+      <button class="nav-btn nav-sub" data-tab="contaCorrente"><span class="nav-txt">Conta-Corrente</span></button>
+      <button class="nav-btn" data-tab="compras"><span class="nav-txt">Compras e NF-e</span></button>
+      <button class="nav-btn" data-tab="financiamentos"><span class="nav-txt">Contratos e Financiamentos</span></button>
+      <div class="nav-group-label" data-group="resultados"><span class="nav-g-ic">📊</span><span class="nav-g-txt">Resultados</span><span class="nav-g-badge"></span></div>
+      <button class="nav-btn" data-tab="indicadores"><span class="nav-txt">Indicadores</span></button>
+      <button class="nav-btn" data-tab="rentabilidade"><span class="nav-txt">Rentabilidade</span></button>
+      <button class="nav-btn" data-tab="relatorios"><span class="nav-txt">Relatórios</span></button>
+      <div class="nav-rodape">
+      <button class="nav-btn" data-tab="configuracoes" data-hub="config"><span class="nav-txt">Configurações</span></button>
+      <button class="nav-btn" data-tab="ajuda"><span class="nav-txt">Ajuda</span></button>
+      </div>
     </nav>
-    <div class="sidebar-footer">
-      <span id="usuario-logado"></span><br>
-      <button type="button" class="auth-link" data-action="lock-app" style="color:#A0A88A;">Sair</button>
-    </div>
+    <div class="sidebar-footer"><span class="sf-user">👤 <span id="usuario-logado"></span></span><button type="button" class="auth-link sf-sair" data-action="lock-app">Sair ↪</button></div>
   </aside>
 
   <main>
     <div id="faixa-ambiente-teste" style="display:none; background:#A23E2E; color:#fff; padding:6px 14px; border-radius:6px; margin-bottom:10px; font-size:13px; font-weight:600;">🧪 SITE DE TESTE — os dados aqui são separados dos reais. Pode testar à vontade.</div>
     <div id="faixa-compartilhada" style="display:none; background:#E8E9D6; border:1px solid var(--paper-line); padding:7px 14px; border-radius:6px; margin-bottom:10px; font-size:13px;"></div>
     <div class="topbar">
+      <button type="button" id="menu-mobile" class="menu-mobile" aria-label="Abrir menu">☰</button>
       <div>
-        <h1 id="page-title" style="display:inline;">Dashboard</h1> <button type="button" id="btn-ajuda-tela" data-action="ajuda-tela" title="Como usar esta tela" style="vertical-align:middle; margin-left:6px; width:26px; height:26px; border-radius:50%; border:1px solid var(--paper-line); background:var(--paper); color:var(--ink); cursor:pointer; font-weight:700; font-family:inherit;">?</button>
+        <h1 id="page-title" style="display:inline;">Início</h1> <button type="button" id="btn-ajuda-tela" data-action="ajuda-tela" title="Como usar esta tela" style="vertical-align:middle; margin-left:6px; width:26px; height:26px; border-radius:50%; border:1px solid var(--paper-line); background:var(--paper); color:var(--ink); cursor:pointer; font-weight:700; font-family:inherit;">?</button>
         <div class="subtitle" id="page-subtitle">Visão geral da propriedade</div>
       </div>
       <div style="position:relative; flex:1; max-width:320px; margin:0 20px; align-self:center;">
@@ -710,6 +781,9 @@
     <section id="tab-propriedades" class="tab-content hidden"></section>
     <section id="tab-talhoes" class="tab-content hidden"></section>
     <section id="tab-fertilidade" class="tab-content hidden"></section>
+    <section id="tab-mapaGeral" class="tab-content hidden"></section>
+    <section id="tab-planoSafra" class="tab-content hidden"></section>
+    <section id="tab-planoAdubacao" class="tab-content hidden"></section>
     <section id="tab-safras" class="tab-content hidden"></section>
     <section id="tab-culturas" class="tab-content hidden"></section>
     <section id="tab-produtos" class="tab-content hidden"></section>
@@ -754,7 +828,10 @@
   ALL_KEYS.forEach(function(k){ state[k] = []; });
 
   var pageMeta = {
-    painel: {title:'Dashboard', subtitle:'Visão geral da propriedade'},
+    painel: {title:'Início', subtitle:'Visão geral da propriedade'},
+    mapaGeral: {title:'Mapa da Propriedade', subtitle:'Todos os talhões no lugar real, coloridos por cultura, fertilidade ou situação'},
+    planoSafra: {title:'Plano de Safra', subtitle:'O que plantar em cada talhão, ano a ano — rotação e área planejada'},
+    planoAdubacao: {title:'Plano de Adubação', subtitle:'Todas as recomendações da Fertilidade do Solo, por época e por talhão, com a lista de compra'},
     propriedades: {title:'Propriedades', subtitle:'Áreas e imóveis rurais cadastrados'},
     talhoes: {title:'Talhões', subtitle:'Áreas cadastradas na propriedade'},
     fertilidade: {title:'Fertilidade do Solo', subtitle:'Análises interpretadas pelo Manual de Adubação e Calagem do Paraná, barril de Liebig e adubação de produção'},
@@ -1792,7 +1869,10 @@
     // papel "campo": só Diário de Campo, Produtos (estoque) e Ajuda
     var permitidasCampo = PERMITIDAS_CAMPO;
     document.querySelectorAll('#nav .nav-btn').forEach(function(b){ b.classList.toggle('nav-sem-permissao', pa === 'campo' && permitidasCampo.indexOf(b.dataset.tab) === -1); });
-    document.querySelectorAll('#nav .nav-group-label').forEach(function(l){ l.style.visibility = pa === 'campo' ? 'hidden' : ''; });
+    document.querySelectorAll('#nav .nav-btn.nav-sub').forEach(function(b){ b.classList.toggle('nav-campo-vis', pa === 'campo' && permitidasCampo.indexOf(b.dataset.tab) !== -1); });
+    document.querySelectorAll('#nav .nav-group-label').forEach(function(l){ l.style.display = pa === 'campo' ? 'none' : ''; if(pa === 'campo') setGroupCollapsed(l, false); });
+    if(pa !== 'campo' && document.body.dataset.papelAnt === 'campo') initNavGroups();
+    document.body.dataset.papelAnt = pa;
     if(pa === 'campo') switchTab('operacoes'); else desenharSubAbas(abaAtual);
     atualizarMenuEnxuto();
   }
@@ -2840,6 +2920,9 @@
     ]}
   ];
   var AJUDA_TELAS = {
+    mapaGeral: {t:'Mapa da Propriedade', txt:'Mostra todos os talhões que têm croqui desenhado, na posição real. Escolha em cima como colorir: <b>cultura</b> atual, <b>fator limitante</b> da análise de solo, <b>situação da análise</b> (em dia, vencida ou sem) ou <b>recomendações pendentes</b>. Toque num talhão para ver o resumo e abrir a fertilidade ou o croqui. Talhões sem desenho aparecem embaixo com o botão ✏️ Desenhar.'},
+    planoSafra: {t:'Plano de Safra', txt:'Cada linha é um talhão e cada coluna um ano agrícola. Os quadrinhos tracejados são safras <b>planejadas</b>. Clique em <b>＋</b> num ano para planejar: abre o cadastro de lavoura com o ano e o status "Planejada" já preenchidos. O aviso 🔁 aparece quando a mesma cultura anual se repete 3 anos seguidos no talhão.'},
+    planoAdubacao: {t:'Plano de Adubação', txt:'Junta as recomendações salvas na <b>Fertilidade do Solo</b> de todos os talhões: primeiro por época (o que fazer e quando), depois por talhão, e a lista de compra com os totais. Nada vai para o Diário sozinho: use <b>📒 Lançar no Diário</b> quando for aplicar.'},
     painel: {t:'Dashboard', txt:'Resumo da fazenda e o painel <b>📋 Pendências</b>: tudo que precisa de atenção (lançamentos sem destino, contas vencidas, estoque negativo, produtos sem custo, safras com dados faltando, notas da SEFAZ esperando ciência, parcelas de financiamento). Clique em "abrir →" para ir direto à tela certa.'},
     fertilidade: {t:'Fertilidade do Solo', txt:'1) Escolha o talhão nos quadrinhos (as cores mostram o fator limitante, pH, V%, P, K ou MO pelas classes do Manual de Adubação e Calagem do Paraná). 2) Veja o <b>barril de Liebig</b>: a tábua mais baixa é o que mais segura a produção. 3) Em <b>Adubação de produção</b>, escolha a cultura (soja, milho safra, milho 2ª safra ou café — produção, formação ou implantação), a meta de sacas e os adubos; o sistema calcula N, P₂O₅, K₂O, calcário e as épocas. 4) <b>💾 Salvar</b> deixa pendente; <b>📒 Lançar no Diário</b> abre o Diário preenchido e só registra quando você confirmar lá. Use 🖨️ para imprimir para o agrônomo, 🛒 para a lista de compra e ⚖️ para ver se o solo está sendo reposto. Coletar a camada 20–40 cm libera o diagnóstico de gesso.'},
     safras: {t:'Lavouras e Safras', txt:'A <b>lavoura</b> é uma cultura num ano agrícola (ex.: Soja 2026/2027) plantada em um ou vários talhões. Cada talhão dentro dela é uma <b>safra</b>. Use os botões de ano acima da tabela de lavouras para filtrar. "Apelido" dá um nome curto (ex.: Milho Safrinha); "Encerrar" tira a lavoura da lista de destinos dos lançamentos. Inativar uma safra esconde ela dos formulários sem apagar o histórico.'},
@@ -2890,15 +2973,11 @@
   var abaAtual = 'painel';
   // Menu enxuto: telas parentes ficam juntas num item só, com abas em cima da página
   var NAV_HUBS = [
-    {id:'campo', tabs:[['operacoes','Diário de Campo'],['inspecao','Inspeção de Campo'],['chuvas','Chuvas']]},
-    {id:'colheita', tabs:[['producao','Colheita e Vendas'],['vendasAntecipadas','Venda Antecipada']]},
-    {id:'lancamentos', tabs:[['financeiro','Todos os lançamentos'],['contasPagar','A pagar'],['contasReceber','A receber']]},
-    {id:'contratos', tabs:[['financiamentos','Financiamentos'],['arrendamentos','Arrendamentos']]},
-    {id:'caixa', tabs:[['fluxoCaixa','Fluxo de Caixa'],['contaCorrente','Conta-Corrente']]},
-    {id:'relatorios', tabs:[['relatorios','Relatórios'],['orcamento','Orçado x Realizado'],['indicadores','Indicadores']]},
-    {id:'propriedades', tabs:[['propriedades','Propriedades'],['talhoes','Talhões']]},
-    {id:'pessoas', tabs:[['parceiros','Parceiros'],['equipe','Funcionários']]},
-    {id:'config', tabs:[['configuracoes','Configurações'],['culturas','Culturas']]}
+    {id:'perfil', tabs:[['propriedades','Propriedades'],['arrendamentos','Arrendamentos']]},
+    {id:'mapa', tabs:[['mapaGeral','Mapa geral'],['talhoes','Talhões']]},
+    {id:'inventario', tabs:[['patrimonio','Máquinas e Patrimônio'],['produtos','Produtos e Estoque'],['parceiros','Pessoas'],['equipe','Funcionários']]},
+    {id:'lavouras', tabs:[['safras','Safras'],['culturas','Culturas'],['caderneta','Caderneta do Café']]},
+    {id:'caixa', tabs:[['fluxoCaixa','Fluxo de Caixa'],['contaCorrente','Conta-Corrente']]}
   ];
   var PERMITIDAS_CAMPO = ['operacoes', 'inspecao', 'chuvas', 'caderneta', 'produtos', 'ajuda', 'configuracoes'];
   function abaPermitida(tab){ return !(typeof papelAtual === 'function' && papelAtual() === 'campo' && PERMITIDAS_CAMPO.indexOf(tab) === -1); }
@@ -2917,6 +2996,29 @@
   var MENU_OCULTAS_KEY = 'fazenda-menu-ocultas';
   function menuOcultas(){ try{ var r = window.localStorage.getItem(MENU_OCULTAS_KEY); return r ? JSON.parse(r) : []; }catch(e){ return []; } }
   function temCafe(){ return state.culturas.some(function(c){ return /caf/.test(semAcento(c.nome)) && state.safras.some(function(s){ return s.culturaId === c.id; }); }); }
+  function atualizarBadgesMenu(){
+    var cont = {}, grave = {};
+    try{ listaPendencias().forEach(function(it){ if(!it.tab) return; cont[it.tab] = (cont[it.tab] || 0) + it.qtd; if(it.grave) grave[it.tab] = true; }); }catch(e){}
+    try{ var pa = 0; talhoesAtivos().forEach(function(t){ pa += feRecsAtuais(t).filter(function(x){ return x.rec.status !== 'Aplicada'; }).length; }); if(pa) cont.planoAdubacao = pa; }catch(e){}
+    document.querySelectorAll('#nav .nav-badge').forEach(function(x){ x.remove(); });
+    var porBtn = new Map();
+    Object.keys(cont).forEach(function(tab){
+      var bt = document.querySelector('#nav .nav-btn[data-tab="' + tab + '"]:not(.nav-sub)');
+      if(!bt){ var hb = hubDaAba(tab); if(hb) bt = document.querySelector('#nav .nav-btn[data-hub="' + hb.id + '"]'); }
+      if(!bt) return; var o = porBtn.get(bt) || {n:0, g:false}; o.n += cont[tab]; o.g = o.g || !!grave[tab]; porBtn.set(bt, o);
+    });
+    porBtn.forEach(function(o, bt){ var sp = document.createElement('span'); sp.className = 'nav-badge' + (o.g ? ' grave' : ''); sp.textContent = o.n > 99 ? '99+' : o.n; bt.appendChild(sp); });
+    document.querySelectorAll('#nav .nav-group-label').forEach(function(l){
+      var n = 0, gr = false, el = l.nextElementSibling;
+      while(el && !el.classList.contains('nav-group-label') && !el.classList.contains('nav-rodape')){ var o = porBtn.get(el); if(o && !el.classList.contains('nav-oculta')){ n += o.n; gr = gr || o.g; } el = el.nextElementSibling; }
+      var gb = l.querySelector('.nav-g-badge'); if(gb){ gb.textContent = n ? (n > 99 ? '99+' : n) : ''; gb.className = 'nav-g-badge' + (n ? ' on' : '') + (gr ? ' grave' : ''); }
+    });
+  }
+  function fecharMenuMobile(){ document.body.classList.remove('menu-aberto'); }
+  document.addEventListener('click', function(e){
+    if(e.target.closest && e.target.closest('#menu-mobile')){ document.body.classList.toggle('menu-aberto'); return; }
+    if(e.target.id === 'menu-fundo' || (e.target.closest && e.target.closest('#nav .nav-btn'))) fecharMenuMobile();
+  });
   function atualizarMenuEnxuto(){
     var oc = menuOcultas(), cafe = true; try{ cafe = temCafe(); }catch(e){}
     document.querySelectorAll('#nav .nav-btn').forEach(function(b){
@@ -2924,6 +3026,7 @@
       if(t === 'caderneta' && !cafe) esconder = true;
       b.classList.toggle('nav-oculta', esconder);
     });
+    try{ atualizarBadgesMenu(); }catch(e){}
   }
   function switchTab(tab){
     abaAtual = tab;
@@ -2954,11 +3057,11 @@
   var MPR_INTERP = {
     ph:  {nome:'pH (CaCl₂)', un:'', bB:4.0, bM:4.45, bA:4.95, aMax:5.5, ev:6.0, fonte:'Tab. 3.2'},
     v:   {nome:'V%', un:'%', bB:20.5, bM:35.5, bA:50.5, aMax:70, ev:90, fonte:'Tab. 3.2'},
-    ca:  {nome:'Ca', un:'cmolc/dm³', bB:0.5, bM:1.05, bA:2.05, aMax:6.0, fonte:'Tab. 3.2'},
-    mg:  {nome:'Mg', un:'cmolc/dm³', bB:0.2, bM:0.45, bA:1.05, aMax:2.0, fonte:'Tab. 3.2'},
-    mo:  {nome:'MO', un:'%', bB:0.7, bM:1.45, bA:2.45, aMax:3.4, fonte:'Tab. 3.2'},
+    ca:  {nome:'Cálcio (Ca)', un:'cmolc/dm³', bB:0.5, bM:1.05, bA:2.05, aMax:6.0, fonte:'Tab. 3.2'},
+    mg:  {nome:'Magnésio (Mg)', un:'cmolc/dm³', bB:0.2, bM:0.45, bA:1.05, aMax:2.0, fonte:'Tab. 3.2'},
+    mo:  {nome:'Matéria orgânica', un:'%', bB:0.7, bM:1.45, bA:2.45, aMax:3.4, fonte:'Tab. 3.2'},
     ctc: {nome:'CTC pH 7', un:'cmolc/dm³', bB:5, bM:7.5, bA:14.5, aMax:24, fonte:'Tab. 3.2'},
-    k:   {nome:'K', un:'cmolc/dm³', bB:0.06, bM:0.125, bA:0.215, aMax:0.45, fonte:'Tab. 3.4'},
+    k:   {nome:'Potássio (K)', un:'cmolc/dm³', bB:0.06, bM:0.125, bA:0.215, aMax:0.45, fonte:'Tab. 3.4'},
     kCafe: {nome:'K (café)', un:'cmolc/dm³', bB:0.15, bM:0.305, bA:0.455, aMax:1.20, fonte:'Tab. 3.4'}
   };
   var MPR_P = { // Tab. 3.3 — P Mehlich-1 (mg/dm³) pela argila (g/kg)
@@ -3050,7 +3153,7 @@
   }
   var FE_BARRIL = ['ph','v','ca','mg','p','k','s','mo'];
   var FE_LONGO = {ph:'acidez (pH)', v:'saturação por bases (V%)', ca:'cálcio', mg:'magnésio', p:'fósforo', k:'potássio', s:'enxofre', mo:'matéria orgânica'};
-  var FE_ROT = {ph:'pH', v:'V%', ca:'Ca', mg:'Mg', p:'P', k:'K', s:'S', mo:'MO'};
+  var FE_ROT = {ph:'pH', v:'V%', ca:'Cálcio', mg:'Magnésio', p:'Fósforo', k:'Potássio', s:'Enxofre', mo:'Mat. orgânica'};
   function feLimitante(I){
     if(!I) return null;
     var rank = {MB:0, B:1, M:2, A:3, MA:4, EV:5}, best = null;
@@ -3185,9 +3288,9 @@
         if(!cls || cls === 'nao') return;
         var kh = MPR_SOJA_MICRO[cls][m]; if(kh > 0) r.micro.push({m:m, dose: kh, txt: 'Tab. 9.13' + (m === 'Mn' ? ' — só com sintoma na planta' : '')});
       });
-      r.partes.push('<b>Cobalto e molibdênio via semente</b>: 2–3 g/ha de Co e 12–25 g/ha de Mo' + (I.vals.ph !== null && I.vals.ph < 4.8 ? ' — <b>maior resposta neste talhão</b> (pH CaCl₂ ' + fmtNum(I.vals.ph) + ', abaixo de 4,8).' : '.'));
-      r.partes.push('Micronutrientes (Tab. 9.13): aplicar na semeadura quando a análise indicar deficiência. Zn e Cu têm efeito residual de mais de 2 anos.');
-      r.partes.push('<b>Manganês</b>: a análise de solo não é calibrada para Mn — aplicar só com sintoma na planta, de preferência via folha em V4 e V8 (0,5 a 1 kg/ha somando as duas). Deficiência costuma vir de calagem excessiva ou pH acima de 6,0.');
+      r.partes.push('<b>Cobalto e molibdênio via semente</b>: 2–3 g/ha de cobalto e 12–25 g/ha de molibdênio' + (I.vals.ph !== null && I.vals.ph < 4.8 ? ' — <b>maior resposta neste talhão</b> (pH CaCl₂ ' + fmtNum(I.vals.ph) + ', abaixo de 4,8).' : '.'));
+      r.partes.push('Micronutrientes (Tab. 9.13): aplicar na semeadura quando a análise indicar deficiência. Zinco e cobre têm efeito residual de mais de 2 anos.');
+      r.partes.push('<b>Manganês</b>: a análise de solo não é calibrada para manganês — aplicar só com sintoma na planta, de preferência via folha em V4 e V8 (0,5 a 1 kg/ha somando as duas). Deficiência costuma vir de calagem excessiva ou pH acima de 6,0.');
       if(I.itens.p && ['A','MA'].indexOf(I.itens.p) !== -1 && I.vals.k !== null && I.vals.k > 0.30) r.partes.push('Com P alto ou muito alto e K acima de 0,30 cmolc/dm³, se o cultivo de inverno (trigo, aveia, milho safrinha) foi bem adubado, o Manual permite <b>dispensar o P e o K na soja</b>, a critério da assistência técnica — e refazer a análise ao fim da soja.');
     }
     if(cult === 'cafe'){
@@ -3212,7 +3315,7 @@
     if(cult === 'milho2' && I.vals.mg !== null && I.vals.mg < 1.0) r.avisos.push('Mg abaixo de 1,0 cmolc/dm³: usar calcário com <b>mais de 12% de MgO</b> (Manual, milho 2ª safra).');
     // parcelamento
     if(cult === 'cafe' && !r.fase){
-      if(r.semFoliarN || r.semFoliarS) r.avisos.push('Sem análise foliar: pelo Manual, use a <b>maior dose</b> da faixa de produtividade para ' + (r.semFoliarN && r.semFoliarS ? 'N e S' : (r.semFoliarN ? 'N' : 'S')) + '. Com a análise foliar (coleta em janeiro, 3º par de folhas no chumbinho), a dose pode cair.');
+      if(r.semFoliarN || r.semFoliarS) r.avisos.push('Sem análise foliar: pelo Manual, use a <b>maior dose</b> da faixa de produtividade para ' + (r.semFoliarN && r.semFoliarS ? 'nitrogênio e enxofre' : (r.semFoliarN ? 'nitrogênio' : 'enxofre')) + '. Com a análise foliar (coleta em janeiro, 3º par de folhas no chumbinho), a dose pode cair.');
       r.partes.push('<b>Nitrogênio</b>: parcelar em 3 ou 4 vezes, em intervalos regulares, de setembro a março.');
       r.partes.push('<b>Potássio</b>: pode ir em 2 ou mais vezes, junto com o nitrogênio.');
       r.partes.push('<b>Fósforo</b> e <b>enxofre</b>: uma só vez, no início da estação chuvosa.');
@@ -3288,7 +3391,7 @@
       var plI = Number(op.plantas) || 0;
       if(selNi && plI > 0){ var gProd = 4 / (selNi.f.n / 100), kgN1 = Math.round(gProd * plI / 1000 / 5) * 5; lista.push({epoca:'Cobertura a cada 30 dias (out → mar)', op: selNi, kg: kgN1, fornece: '4 g de N por planta = ' + fmtNum(Math.round(gProd)) + ' g do adubo por planta, por aplicação'}); }
       lista.forEach(function(x){ x.total = x.kg * area; x.custo = x.op.produtoId ? x.total * feCustoKg(x.op.produtoId) : 0; });
-      (r.micro || []).forEach(function(mi){ lista.push({epoca:'No sulco de plantio', op:{nome: mi.m + ' (fonte à escolha)', f:{n:0,p:0,k:0}}, kg: mi.dose, fornece: mi.txt + ' (Tab. 15.3)', total: mi.dose * area, custo: 0}); });
+      (r.micro || []).forEach(function(mi){ lista.push({epoca:'No sulco de plantio', op:{nome: EMB_MICRO[mi.m].nome + ' (' + mi.m + ') — fonte à escolha', f:{n:0,p:0,k:0}}, kg: mi.dose, fornece: mi.txt + ' (Tab. 15.3)', total: mi.dose * area, custo: 0}); });
       return {itens: lista, selBase: selPi, selK: selK, selN: selNi};
     }
     if(r.cult === 'cafe'){
@@ -3302,7 +3405,7 @@
       var kFaltaC = Math.max(0, K - kBase);
       if(kFaltaC > 2 && selK){ var kgKc = Math.round(kFaltaC / (selK.f.k / 100) / 5) * 5, nK = Math.min(nParc, 2); for(var iK = 1; iK <= nK; iK++) lista.push({epoca: 'Potássio ' + iK + ' de ' + nK + ' (junto com o N)', op: selK, kg: Math.round(kgKc / nK / 5) * 5, fornece: 'K₂O ' + fmtNum(Math.round(kgKc / nK * selK.f.k / 100)) + ' kg/ha'}); }
       if(K < kBase - 10) r.avisos.push('O formulado de N escolhido já leva ' + fmtNum(Math.round(kBase)) + ' kg/ha de K₂O, acima dos ' + fmtNum(K) + ' recomendados — considere um adubo só de nitrogênio (ureia, sulfato de amônio).');
-      (r.micro || []).forEach(function(mi){ lista.push({epoca:'Início das chuvas (set–out)', op:{nome: mi.m + ' — kg/ha do elemento (fonte à escolha)', f:{n:0,p:0,k:0}}, kg: mi.dose, fornece: mi.txt}); });
+      (r.micro || []).forEach(function(mi){ if(feMicroLevado(lista, mi.m) >= mi.dose * 0.95) return; lista.push({epoca:'Início das chuvas (set–out)', op:{nome: EMB_MICRO[mi.m].nome + ' (' + mi.m + ') — kg/ha do elemento (fonte à escolha)', f:{n:0,p:0,k:0}}, kg: mi.dose, fornece: mi.txt}); });
       if((r.S || 0) > 0){ var gessoKg = Math.round(r.S / 0.15 / 5) * 5; lista.push({epoca: 'Início das chuvas (uma vez)', op: {nome: 'Gesso agrícola (~15% S) — ou outra fonte de enxofre', f:{n:0,p:0,k:0}}, kg: gessoKg, fornece: 'S ' + fmtNum(r.S) + ' kg/ha (Tab. 15.8)'}); }
       lista.forEach(function(x){ x.total = x.kg * area; x.custo = x.op.produtoId ? x.total * feCustoKg(x.op.produtoId) : 0; });
       return {itens: lista, selBase: selP, selK: selK, selN: selNK};
@@ -3332,7 +3435,7 @@
         else lista.push({epoca: ep[2], op: selN, kg: kgN, fornece: 'N ' + fmtNum(Math.round(nCobTot)) + ' kg/ha' + (selN.f.k ? ' · K₂O ' + fmtNum(Math.round(kgN * selN.f.k / 100)) : '')});
       }
     }
-    (r.micro || []).forEach(function(mi){ lista.push({epoca: mi.m === 'Mn' ? 'Via folha em V4 e V8 (se houver sintoma)' : 'Semeadura', op:{nome: mi.m + ' — kg/ha do elemento (fonte à escolha)', f:{n:0,p:0,k:0}}, kg: mi.m === 'Mn' ? 1 : mi.dose, fornece: mi.m === 'Mn' ? 'até 1 kg/ha de Mn somando as 2 aplicações foliares (o solo pediria ' + fmtNum(mi.dose) + ' kg/ha)' : mi.txt}); });
+    (r.micro || []).forEach(function(mi){ if(mi.m !== 'Mn' && feMicroLevado(lista, mi.m) >= mi.dose * 0.95) return; lista.push({epoca: mi.m === 'Mn' ? 'Via folha em V4 e V8 (se houver sintoma)' : 'Semeadura', op:{nome: EMB_MICRO[mi.m].nome + ' (' + mi.m + ') — kg/ha do elemento (fonte à escolha)', f:{n:0,p:0,k:0}}, kg: mi.m === 'Mn' ? 1 : mi.dose, fornece: mi.m === 'Mn' ? 'até 1 kg/ha de manganês somando as 2 aplicações foliares (o solo pediria ' + fmtNum(mi.dose) + ' kg/ha)' : mi.txt}); });
     lista.forEach(function(x){ x.total = x.kg * area; x.custo = x.op.produtoId ? x.total * feCustoKg(x.op.produtoId) : 0; });
     return {itens: lista, selBase: selBase, selK: selK, selN: selN};
   }
@@ -3358,6 +3461,206 @@
   }
   function feCroqui(t, cor, pref){ return croquiTalhaoSvg(t.contorno, cor, pref + t.id) || '<span style="font-size:28px;">🧩</span>'; }
   function feIdadeAnos(d){ return d ? diasEntreISO(d, hojeISO()) / 365.25 : 99; }
+  /* ---------------- Mapa da Propriedade ---------------- */
+  var mgModo = 'cultura', mgSel = null, mgProp = null;
+  function mgCorTalhao(t){
+    var sf = safraAtualDoTalhao(t.id), nC = sf ? culturaNome(sf.culturaId) : 'Sem lavoura';
+    if(mgModo === 'cultura'){ var ci = tlCulturaInfo(nC); return {cor: ci.cor, txt: ci.ic + ' ' + nC}; }
+    var a = feAnaliseSup(t.id);
+    if(mgModo === 'lim'){
+      if(!a) return {cor:'#CFCFC0', txt:'sem análise'};
+      var I = feInterpretar(t, a), L = feLimitante(I);
+      return L ? {cor: MPR_COR[I.itens[L]], txt:'limita: ' + FE_ROT[L]} : {cor:'#CFCFC0', txt:'análise incompleta'};
+    }
+    if(mgModo === 'analise'){
+      if(!a) return {cor:'#D9634F', txt:'sem análise'};
+      var id = feIdadeAnos(a.dataColeta);
+      return id > 2 ? {cor:'#E0B23C', txt:'vencida (' + fmtDate(a.dataColeta) + ')'} : {cor:'#6E9F3A', txt:'em dia (' + fmtDate(a.dataColeta) + ')'};
+    }
+    var rs = feRecsAtuais(t), pend = rs.filter(function(x){ return x.rec.status !== 'Aplicada'; }).length;
+    if(!rs.length) return {cor:'#CFCFC0', txt:'sem recomendação'};
+    return pend ? {cor:'#E0B23C', txt: pend + ' pendente(s)'} : {cor:'#6E9F3A', txt:'tudo aplicado'};
+  }
+  function mgLegendaHtml(tals){
+    var it = [];
+    if(mgModo === 'cultura'){ var vis = {}; tals.forEach(function(t){ var c = mgCorTalhao(t); if(!vis[c.txt]){ vis[c.txt] = 1; it.push([c.cor, c.txt]); } }); }
+    else if(mgModo === 'lim') it = ['MB','B','M','A','MA'].map(function(c){ return [MPR_COR[c], MPR_NOME[c]]; }).concat([['#CFCFC0','sem dado']]);
+    else if(mgModo === 'analise') it = [['#6E9F3A','em dia (até 2 anos)'],['#E0B23C','vencida'],['#D9634F','sem análise']];
+    else it = [['#E0B23C','com pendência'],['#6E9F3A','tudo aplicado'],['#CFCFC0','sem recomendação']];
+    return '<div class="fe-leg">' + it.map(function(x){ return '<span><i style="background:' + x[0] + '"></i>' + escapeHtml(x[1]) + '</span>'; }).join('') + '</div>';
+  }
+  function renderMapaGeral(){
+    var el = document.getElementById('tab-mapaGeral'); if(!el) return;
+    var todos = talhoesAtivos();
+    if(!todos.length){ el.innerHTML = '<div class="paper empty-state">Cadastre os talhões primeiro (Mapa da Propriedade → Talhões).</div>'; return; }
+    var props = state.propriedades.filter(function(p){ return todos.some(function(t){ return t.propriedadeId === p.id; }); });
+    var perto = (function(){ var la = [], lo = []; todos.forEach(function(t){ (t.contorno || []).forEach(function(q){ la.push(Number(q[0])); lo.push(Number(q[1])); }); }); return la.length && Math.max.apply(null, la) - Math.min.apply(null, la) < 0.03 && Math.max.apply(null, lo) - Math.min.apply(null, lo) < 0.03; })();
+    if(props.length > 1 && !mgProp && perto) mgProp = 'todas';
+    if(props.length && mgProp !== 'todas' && (!mgProp || !props.some(function(p){ return p.id === mgProp; }))){ var nD = function(p){ return todos.filter(function(t){ return t.propriedadeId === p.id && Array.isArray(t.contorno) && t.contorno.length > 2; }).length; }; mgProp = props.slice().sort(function(x, y){ return nD(y) - nD(x); })[0].id; }
+    var tals = props.length > 1 && mgProp !== 'todas' ? todos.filter(function(t){ return t.propriedadeId === mgProp; }) : todos;
+    var comD = tals.filter(function(t){ return Array.isArray(t.contorno) && t.contorno.length > 2; }), semD = tals.filter(function(t){ return comD.indexOf(t) === -1; });
+    if(!mgSel || !tals.some(function(t){ return t.id === mgSel; })) mgSel = (comD[0] || tals[0]).id;
+    var area = tals.reduce(function(s, t){ return s + (Number(t.area) || 0); }, 0), porC = {};
+    tals.forEach(function(t){ var sf = safraAtualDoTalhao(t.id), n = sf ? culturaNome(sf.culturaId) : 'Sem lavoura'; porC[n] = (porC[n] || 0) + (Number(t.area) || 0); });
+    var h = '<div class="tl-head"><div class="tl-head-txt"><b>Mapa da propriedade</b><span>' + tals.length + ' talhões · ' + fmtHa(area) + (semD.length ? ' · ' + semD.length + ' sem croqui' : '') + '</span></div>';
+    h += '<button type="button" class="tl-btn" data-action="mg-ir" data-tab="talhoes">🧩 Talhões</button></div>';
+    if(props.length > 1) h += '<div class="tl-tools" style="margin-bottom:10px;"><button type="button" class="tl-chip' + (mgProp === 'todas' ? ' on' : '') + '" data-action="mg-prop" data-id="todas">🗺️ Todas</button>' + props.map(function(p){ return '<button type="button" class="tl-chip' + (p.id === mgProp ? ' on' : '') + '" data-action="mg-prop" data-id="' + p.id + '">🏡 ' + escapeHtml(p.nome) + '</button>'; }).join('') + '</div>';
+    h += '<div class="tl-kpis">' + Object.keys(porC).sort(function(a, b){ return porC[b] - porC[a]; }).slice(0, 4).map(function(n){ var ci = tlCulturaInfo(n); return '<div class="tl-kpi"><span class="tl-kpi-i">' + ci.ic + '</span><div><b>' + fmtHa(porC[n]) + '</b><small>' + escapeHtml(n) + ' · ' + Math.round(porC[n] / (area || 1) * 100) + '%</small></div></div>'; }).join('') + '</div>';
+    var MODOS = {cultura:'🌾 Cultura', lim:'🛢️ Fator limitante', analise:'🧪 Análise de solo', recs:'📋 Recomendações'};
+    h += '<div class="paper fe-bloco"><div class="fe-tit">Colorir por ' + Object.keys(MODOS).map(function(m){ return '<button type="button" class="tl-chip' + (mgModo === m ? ' on' : '') + '" data-action="mg-modo" data-m="' + m + '">' + MODOS[m] + '</button>'; }).join(' ') + '</div>';
+    h += '<div class="mg-wrap"><div class="mg-mapa">';
+    if(!comD.length) h += '<div class="fe-vazio" style="padding:40px 10px;">Nenhum talhão desta propriedade tem croqui. Desenhe pelo botão ✏️ abaixo — o mapa monta sozinho.</div>';
+    else {
+      var lat0 = 0, n0 = 0; comD.forEach(function(t){ t.contorno.forEach(function(p){ lat0 += Number(p[0]); n0++; }); }); lat0 /= n0;
+      var k = Math.cos(lat0 * Math.PI / 180), polys = comD.map(function(t){ return {t: t, pts: t.contorno.map(function(p){ return [Number(p[1]) * k, -Number(p[0])]; })}; });
+      var xs = [], ys = []; polys.forEach(function(o){ o.pts.forEach(function(p){ xs.push(p[0]); ys.push(p[1]); }); });
+      var x0 = Math.min.apply(null, xs), y0 = Math.min.apply(null, ys), w = Math.max.apply(null, xs) - x0 || 1e-6, hh = Math.max.apply(null, ys) - y0 || 1e-6;
+      var esc = 1000 / Math.max(w, hh), W = w * esc, H = hh * esc, pad = 30, fs = 24;
+      h += '<svg class="mg-svg" viewBox="' + (-pad) + ' ' + (-pad) + ' ' + (W + 2 * pad).toFixed(1) + ' ' + (H + 2 * pad).toFixed(1) + '" preserveAspectRatio="xMidYMid meet">';
+      var rot = '';
+      polys.forEach(function(o){
+        var c = mgCorTalhao(o.t), pp = o.pts.map(function(p){ return [(p[0] - x0) * esc, (p[1] - y0) * esc]; });
+        var d = pp.map(function(p, i){ return (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' ') + ' Z';
+        var cx = pp.reduce(function(s, p){ return s + p[0]; }, 0) / pp.length, cy = pp.reduce(function(s, p){ return s + p[1]; }, 0) / pp.length;
+        var sel = o.t.id === mgSel;
+        h += '<g class="mg-tal' + (sel ? ' sel' : '') + '" data-action="mg-sel" data-id="' + o.t.id + '"><title>' + escapeHtml(o.t.nome + ' — ' + c.txt) + '</title><path d="' + d + '" fill="' + c.cor + '" fill-opacity="' + (sel ? '0.92' : '0.72') + '"/></g>';
+        var fsT = Math.max(13, Math.min(fs, Math.sqrt(Math.abs(pp.reduce(function(s, p, i){ var q = pp[(i + 1) % pp.length]; return s + p[0] * q[1] - q[0] * p[1]; }, 0)) / 2) / 4)), fs0 = fs; fs = fsT;
+        rot += '<g class="mg-rot" pointer-events="none"><text x="' + cx.toFixed(1) + '" y="' + cy.toFixed(1) + '" font-size="' + fs + '">' + escapeHtml(o.t.nome) + '</text><text x="' + cx.toFixed(1) + '" y="' + (cy + fs * 1.15).toFixed(1) + '" font-size="' + (fs * 0.8) + '" class="mg-ha">' + fmtHa(o.t.area) + '</text></g>'; fs = fs0;
+      });
+      h += rot + '</svg>';
+    }
+    h += mgLegendaHtml(tals) + '</div>';
+    // painel do talhão selecionado
+    var t = state.talhoes.find(function(x){ return x.id === mgSel; });
+    if(t){
+      var sf = safraAtualDoTalhao(t.id), nC = sf ? culturaNome(sf.culturaId) : 'Sem lavoura', ci = tlCulturaInfo(nC), a = feAnaliseSup(t.id);
+      var I = a ? feInterpretar(t, a) : null, L = I ? feLimitante(I) : null, pend = feRecsAtuais(t).filter(function(x){ return x.rec.status !== 'Aplicada'; }).length;
+      h += '<div class="mg-info"><div class="mg-info-cq">' + feCroqui(t, ci.cor, 'mg') + '</div><h3>' + escapeHtml(t.nome) + '</h3>';
+      h += '<div class="mg-linha"><span>Área</span><b>' + fmtHa(t.area) + '</b></div>';
+      h += '<div class="mg-linha"><span>Cultura</span><b>' + ci.ic + ' ' + escapeHtml(nC) + (sf && sf.anoAgricola ? ' · ' + escapeHtml(sf.anoAgricola) : '') + '</b></div>';
+      h += '<div class="mg-linha"><span>Análise de solo</span><b>' + (a ? fmtDate(a.dataColeta) + (feIdadeAnos(a.dataColeta) > 2 ? ' ⏰' : '') : 'sem análise') + '</b></div>';
+      if(L) h += '<div class="mg-linha"><span>Fator limitante</span><b><i class="mg-dot" style="background:' + MPR_COR[I.itens[L]] + '"></i>' + FE_LONGO[L] + '</b></div>';
+      h += '<div class="mg-linha"><span>Recomendações</span><b>' + (pend ? pend + ' pendente(s)' : 'nenhuma pendente') + '</b></div>';
+      h += '<div class="mg-acoes"><button type="button" class="tl-btn tl-pri" data-action="mg-fert" data-id="' + t.id + '">🧪 Fertilidade</button><button type="button" class="tl-btn" data-action="abrir-mapa-talhao" data-id="' + t.id + '">✏️ Croqui</button></div></div>';
+    }
+    h += '</div></div>';
+    if(semD.length) h += '<div class="paper fe-bloco"><div class="fe-tit">✏️ Talhões sem croqui <small>desenhe para aparecerem no mapa</small></div><div class="tl-tools">' + semD.map(function(t){ return '<button type="button" class="tl-chip" data-action="abrir-mapa-talhao" data-id="' + t.id + '">✏️ ' + escapeHtml(t.nome) + ' · ' + fmtHa(t.area) + '</button>'; }).join('') + '</div></div>';
+    el.innerHTML = h;
+  }
+
+  /* ---------------- Plano de Safra ---------------- */
+  function psAnoAtual(){ var d = new Date(), y = d.getFullYear(); return d.getMonth() >= 6 ? y + '/' + (y + 1) : (y - 1) + '/' + y; }
+  function psAnoMais(ano, n){ var y = parseInt(ano, 10) + n; return y + '/' + (y + 1); }
+  var PS_PERENE = /caf|pasto|pastagem|braqui|capim|eucal|laranja|citr|cana/;
+  function renderPlanoSafra(){
+    var el = document.getElementById('tab-planoSafra'); if(!el) return;
+    var tals = talhoesAtivos();
+    if(!tals.length){ el.innerHTML = '<div class="paper empty-state">Cadastre os talhões primeiro.</div>'; return; }
+    var atual = psAnoAtual(), prox = psAnoMais(atual, 1), anos = [psAnoMais(atual, -3), psAnoMais(atual, -2), psAnoMais(atual, -1), atual, prox];
+    var safrasDe = function(tid, ano){ return state.safras.filter(function(s){ return s.talhaoId === tid && normalizarAnoAgricola(s.anoAgricola) === ano && s.ativa !== false; }); };
+    var areaTot = tals.reduce(function(s, t){ return s + (Number(t.area) || 0); }, 0);
+    var planProx = {}, semPlano = [];
+    tals.forEach(function(t){
+      var l = safrasDe(t.id, prox);
+      if(!l.length){ var pe = safrasDe(t.id, atual).some(function(s){ return PS_PERENE.test(semAcento(culturaNome(s.culturaId))); }); if(!pe) semPlano.push(t); }
+      l.forEach(function(s){ var n = culturaNome(s.culturaId); planProx[n] = (planProx[n] || 0) + (Number(s.areaPlantada) || Number(t.area) || 0); });
+    });
+    var h = '<div class="tl-head"><div class="tl-head-txt"><b>Plano de safra</b><span>Rotação por talhão · ' + anos[0] + ' a ' + prox + ' · os tracejados são planejados</span></div>';
+    h += '<button type="button" class="tl-btn tl-pri" data-action="ps-planejar" data-ano="' + prox + '">＋ Planejar ' + prox + '</button></div>';
+    h += '<div class="tl-kpis">';
+    h += '<div class="tl-kpi"><span class="tl-kpi-i">🧩</span><div><b>' + tals.length + '</b><small>talhões · ' + fmtHa(areaTot) + '</small></div></div>';
+    var plKeys = Object.keys(planProx);
+    h += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#E3F1D6;">🗓️</span><div><b>' + fmtHa(plKeys.reduce(function(s, n){ return s + planProx[n]; }, 0)) + '</b><small>planejados para ' + prox + '</small></div></div>';
+    h += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#FFF1D6;">❔</span><div><b>' + semPlano.length + '</b><small>talhões anuais sem plano para ' + prox + '</small></div></div>';
+    h += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#EEF3E2;">🌾</span><div><b>' + (plKeys.length ? plKeys.map(function(n){ return tlCulturaInfo(n).ic; }).join(' ') : '—') + '</b><small>' + (plKeys.length ? plKeys.map(function(n){ return escapeHtml(n) + ' ' + fmtHa(planProx[n]); }).join(' · ') : 'nada planejado ainda') + '</small></div></div>';
+    h += '</div>';
+    h += '<div class="paper fe-bloco"><div class="table-wrap"><table class="ps-grade sem-ordenacao"><thead><tr><th>Talhão</th>' + anos.map(function(a){ return '<th class="' + (a === atual ? 'ps-atual' : '') + '">' + a + (a === atual ? '<small>atual</small>' : (a === prox ? '<small>próximo</small>' : '')) + '</th>'; }).join('') + '</tr></thead><tbody>';
+    tals.forEach(function(t){
+      var seq = [];
+      h += '<tr><td class="ps-tal"><b>' + escapeHtml(t.nome) + '</b><small>' + fmtHa(t.area) + '</small></td>';
+      anos.forEach(function(a, i){
+        var l = safrasDe(t.id, a);
+        seq.push(l.map(function(s){ return culturaNome(s.culturaId); }));
+        h += '<td class="' + (a === atual ? 'ps-atual' : '') + '"><div class="ps-cel">';
+        l.forEach(function(s){ var n = culturaNome(s.culturaId), ci = tlCulturaInfo(n); h += '<span class="ps-sf ps-' + (s.status || 'andamento') + '" style="--c:' + ci.cor + ';" title="' + escapeHtml(n + ' — ' + (STATUS_LABEL[s.status] || s.status || '')) + '">' + ci.ic + ' ' + escapeHtml(n) + '</span>'; });
+        if(i >= 3) h += '<button type="button" class="ps-add" data-action="ps-planejar" data-ano="' + a + '" data-id="' + t.id + '" title="Planejar ' + a + ' neste talhão">＋</button>';
+        else if(!l.length) h += '<span class="ps-vazio">—</span>';
+        h += '</div></td>';
+      });
+      h += '</tr>';
+      var rep = null; for(var j = 0; j + 2 < seq.length && !rep; j++){ seq[j].forEach(function(n){ if(!rep && !PS_PERENE.test(semAcento(n)) && seq[j + 1].indexOf(n) !== -1 && seq[j + 2].indexOf(n) !== -1) rep = n; }); }
+      if(rep) h += '<tr class="ps-aviso"><td colspan="' + (anos.length + 1) + '">🔁 ' + escapeHtml(t.nome) + ': <b>' + escapeHtml(rep) + '</b> 3 anos seguidos — pense em rotação para quebrar o ciclo de pragas, doenças e plantas daninhas.</td></tr>';
+    });
+    h += '</tbody></table></div><div class="fe-leg"><span><i class="ps-lg ps-lg-and"></i>em andamento</span><span><i class="ps-lg ps-lg-pla"></i>planejada</span><span><i class="ps-lg ps-lg-col"></i>colhida</span></div></div>';
+    el.innerHTML = h;
+  }
+
+  /* ---------------- Plano de Adubação ---------------- */
+  function renderPlanoAdubacao(){
+    var el = document.getElementById('tab-planoAdubacao'); if(!el) return;
+    var tals = talhoesAtivos();
+    if(!tals.length){ el.innerHTML = '<div class="paper empty-state">Cadastre os talhões primeiro.</div>'; return; }
+    var pend = [], aplic = 0, comRec = [], semRec = [], semAn = [];
+    tals.forEach(function(t){
+      var rs = feRecsAtuais(t), a = feAnaliseSup(t.id);
+      if(rs.length) comRec.push(t); else if(a) semRec.push(t); else semAn.push(t);
+      rs.forEach(function(x){ if(x.rec.status === 'Aplicada') aplic++; else pend.push({t: t, x: x}); });
+    });
+    var h = '<div class="tl-head"><div class="tl-head-txt"><b>Plano de adubação</b><span>Recomendações salvas na Fertilidade do Solo · só vão para o Diário quando você clicar em 📒</span></div>';
+    h += '<button type="button" class="tl-btn" data-action="mg-ir" data-tab="fertilidade">🧪 Montar na Fertilidade</button></div>';
+    h += '<div class="tl-kpis">';
+    h += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#FFF1D6;">⏳</span><div><b>' + pend.length + '</b><small>aplicações pendentes</small></div></div>';
+    h += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#E3F1D6;">✅</span><div><b>' + aplic + '</b><small>já aplicadas</small></div></div>';
+    h += '<div class="tl-kpi"><span class="tl-kpi-i">📝</span><div><b>' + semRec.length + '</b><small>talhões com análise e sem plano</small></div></div>';
+    h += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#FBE3DE;">❓</span><div><b>' + semAn.length + '</b><small>talhões sem análise</small></div></div>';
+    h += '</div>';
+    // por época
+    h += '<div class="paper fe-bloco"><div class="fe-tit">📅 O que fazer e quando <small>pendentes, agrupadas pela época</small></div>';
+    if(!pend.length) h += '<div class="fe-vazio">Nada pendente. Monte o plano na Fertilidade do Solo e clique em 💾 Salvar.</div>';
+    else {
+      var grupos = {}, ordem = [];
+      pend.forEach(function(o){ var e = o.x.rec.epoca || (/Calagem|Gessagem|Fosfatagem|Potassagem/.test(o.x.rec.tipo) ? '1º Correção do solo — antes do plantio (calcário 60 a 90 dias antes)' : 'Sem época definida'); if(!grupos[e]){ grupos[e] = []; ordem.push(e); } grupos[e].push(o); });
+      ordem.sort(function(a, b){ return (b.indexOf('1º ') === 0) - (a.indexOf('1º ') === 0); });
+      ordem.forEach(function(e){
+        h += '<div class="pa-epoca"><div class="pa-ep-tit">🗓️ ' + escapeHtml(e.replace(/^1º /, '')) + ' <small>' + grupos[e].length + ' item(ns)</small></div>';
+        grupos[e].forEach(function(o){
+          var r = o.x.rec, ar = areaDaRecomendacao(r, o.t.id), ic = {Calagem:'🪨', Gessagem:'⚪', Fosfatagem:'🧂', Potassagem:'🧂', 'Adubação':'🌱', Micronutrientes:'💧'}[r.tipo] || '📋';
+          h += '<div class="fn-row pa-row"><span class="pa-ic">' + ic + '</span><div class="fn-main"><b>' + escapeHtml(r.tipo) + ' · ' + escapeHtml(o.t.nome) + '</b><div class="fn-data">' + escapeHtml(r.fonte || '—') + (r.doseMedia ? ' · ' + fmtNum(r.doseMedia) + ' kg/ha × ' + fmtHa(ar) + ' = <b>' + fmtNum(Math.round(Number(r.doseMedia) * ar / 1000 * 100) / 100) + ' t</b>' : '') + '</div></div>';
+          h += '<div class="fn-acts">' + (r.semDiario ? '<button type="button" class="tl-btn" data-action="fe-feito" data-id="' + o.x.analise.id + '" data-idx="' + o.x.idx + '">✔ Feita</button>' : '<button type="button" class="tl-btn fe-diario" data-action="fe-lancar-diario" data-id="' + o.x.analise.id + '" data-idx="' + o.x.idx + '">📒 Lançar no Diário</button>') + '<button type="button" class="tl-btn" data-action="mg-fert" data-id="' + o.t.id + '" title="Abrir na Fertilidade">🧪</button></div></div>';
+        });
+        h += '</div>';
+      });
+    }
+    h += '</div>';
+    h += feListaCompraHtml(tals);
+    if(semRec.length || semAn.length){
+      h += '<div class="paper fe-bloco"><div class="fe-tit">📝 Falta planejar</div><div class="tl-tools">';
+      semRec.forEach(function(t){ h += '<button type="button" class="tl-chip" data-action="mg-fert" data-id="' + t.id + '">🧪 ' + escapeHtml(t.nome) + ' — montar plano</button>'; });
+      semAn.forEach(function(t){ h += '<button type="button" class="tl-chip" data-action="fe-nova-analise" data-id="' + t.id + '">＋ ' + escapeHtml(t.nome) + ' — cadastrar análise</button>'; });
+      h += '</div></div>';
+    }
+    el.innerHTML = h;
+  }
+  function acaoTelasNovas(action, btn){
+    var id = btn.dataset.id;
+    if(action === 'mg-modo'){ mgModo = btn.dataset.m; renderMapaGeral(); return true; }
+    if(action === 'mg-sel'){ mgSel = id; renderMapaGeral(); return true; }
+    if(action === 'mg-prop'){ mgProp = id; mgSel = null; renderMapaGeral(); return true; }
+    if(action === 'mg-ir'){ switchTab(btn.dataset.tab); window.scrollTo(0, 0); return true; }
+    if(action === 'mg-fert'){ feSel = id; switchTab('fertilidade'); renderFertilidade(); var dF = document.querySelector('#tab-fertilidade .fe-det'); if(dF) dF.scrollIntoView({block:'start'}); return true; }
+    if(action === 'ps-planejar'){
+      lavourasFormAberto = true; editState = null; switchTab('safras'); renderSafras();
+      var f = document.getElementById('form-lavoura');
+      if(f){
+        if(f.elements.anoAgricola) f.elements.anoAgricola.value = btn.dataset.ano || '';
+        if(f.elements.status) f.elements.status.value = 'planejada';
+        if(id){ var cb = f.querySelector('input[type="checkbox"][value="' + id + '"]'); if(cb && !cb.checked){ cb.checked = true; cb.dispatchEvent(new Event('change', {bubbles:true})); } }
+        f.scrollIntoView({behavior:'smooth', block:'start'});
+      }
+      return true;
+    }
+    return false;
+  }
   function renderFertilidade(){
     var el = document.getElementById('tab-fertilidade'); if(!el) return;
     var tals = talhoesAtivos();
@@ -3375,7 +3678,7 @@
     h += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#E3F1D6;">📋</span><div><b>' + pend + '</b><small>recomendações pendentes</small></div></div>';
     h += '</div>';
     // talhões coloridos
-    var MODOS = {lim:'Fator limitante', ph:'pH', v:'V%', p:'Fósforo', k:'Potássio', mo:'MO'};
+    var MODOS = {lim:'Fator limitante', ph:'pH', v:'V%', p:'Fósforo', k:'Potássio', mo:'Mat. orgânica'};
     h += '<div class="paper fe-bloco"><div class="fe-tit">🗺️ Talhões — colorir por ' + Object.keys(MODOS).map(function(m){ return '<button type="button" class="tl-chip' + (feModo === m ? ' on' : '') + '" data-action="fe-modo" data-m="' + m + '">' + MODOS[m] + '</button>'; }).join('') + '</div>';
     h += '<div class="fe-tiles">';
     tals.forEach(function(t){
@@ -3391,6 +3694,7 @@
     h += feListaCompraHtml(tals);
     h += feAdubosSemFormulaHtml();
     el.innerHTML = h;
+    try{ if(abaAtual === 'planoAdubacao' || abaAtual === 'mapaGeral'){ renderPlanoAdubacao(); renderMapaGeral(); atualizarBadgesMenu(); } }catch(eP){}
   }
   function feDetalheHtml(t){
     var a = feAnaliseSup(t.id), I = feInterpretar(t, a), sf = safraAtualDoTalhao(t.id), nC = sf ? culturaNome(sf.culturaId) : 'Sem lavoura', ci = tlCulturaInfo(nC);
@@ -3401,10 +3705,10 @@
       h += '<div class="fe-info">Análise de <b>' + fmtDate(a.dataColeta) + '</b>' + (a.profundidade ? ' · ' + escapeHtml(a.profundidade) : '') + (a.laboratorio ? ' · ' + escapeHtml(a.laboratorio) : '') + (feIdadeAnos(a.dataColeta) > 2 ? '<br><b style="color:#8A5A10;">⏰ Tem mais de 2 anos — hora de coletar de novo.</b>' : '') + '</div>';
       h += '<div class="fe-argila">Argila: ' + (I.arg.medida ? '<b>' + fmtNum(Math.round(I.arg.gkg)) + ' g/kg</b> (' + (I.arg.deOutra ? 'da análise de ' + fmtDate(I.arg.deOutra) : 'da análise') + ') → ' + MPR_P[I.arg.k].rot : '<select data-action-change="fe-argila" data-id="' + t.id + '">' + Object.keys(MPR_P).map(function(k){ return '<option value="' + k + '"' + (I.arg.k === k ? ' selected' : '') + '>' + MPR_P[k].rot + '</option>'; }).join('') + '</select> <small>' + (I.arg.estimada ? 'estimada pelo tipo de solo' : 'informada por você') + '</small>') + '</div>';
       h += '<table class="fe-interp sem-ordenacao"><tbody>';
-      ['ph','v','ca','mg','p','k','s','mo','ctc'].forEach(function(k){ var c = I.itens[k], v = k === 'p' ? I.vals.p : I.vals[k]; if(v === null && !c) return; h += '<tr><td>' + (k === 'p' ? 'P (Mehlich-1)' : (k === 'ctc' ? 'CTC pH 7' : (k === 's' ? 'S (0–20 cm)' : (MPR_INTERP[k] ? MPR_INTERP[k].nome : k)))) + '</td><td class="num">' + (v === null ? '—' : fmtNum(Math.round(v * 100) / 100)) + '</td><td>' + (c ? '<span class="fe-cls" style="background:' + MPR_COR[c] + ';">' + MPR_NOME[c] + '</span>' : '—') + '</td></tr>'; });
+      ['ph','v','ca','mg','p','k','s','mo','ctc'].forEach(function(k){ var c = I.itens[k], v = k === 'p' ? I.vals.p : I.vals[k]; if(v === null && !c) return; h += '<tr><td>' + (k === 'p' ? 'Fósforo (P, Mehlich-1)' : (k === 'ctc' ? 'CTC pH 7' : (k === 's' ? 'Enxofre (S, 0–20 cm)' : (MPR_INTERP[k] ? MPR_INTERP[k].nome : k)))) + '</td><td class="num">' + (v === null ? '—' : fmtNum(Math.round(v * 100) / 100)) + '</td><td>' + (c ? '<span class="fe-cls" style="background:' + MPR_COR[c] + ';">' + MPR_NOME[c] + '</span>' : '—') + '</td></tr>'; });
       ['B','Cu','Mn','Zn'].forEach(function(m){ var cm = feClasseMicro(a, m); if(!cm) return; h += '<tr><td>' + EMB_MICRO[m].nome + ' (' + m + ')</td><td class="num">' + fmtNum(cm.v) + '</td><td><span class="fe-cls" style="background:' + MPR_COR[cm.c6] + ';">' + MPR_NOME[cm.c6] + '</span></td></tr>'; });
       var semMic = ['B','Cu','Mn','Zn'].filter(function(m){ return !feClasseMicro(a, m); });
-      h += '</tbody></table>' + (semMic.length ? '<div class="fe-info" style="margin-top:4px;">Sem dado no laudo: ' + semMic.join(', ') + ' — peça micronutrientes na próxima análise.</div>' : '') + '<div class="fe-fonte" style="margin-top:4px;">Classes do Manual PR: Tab. 3.2–3.4 (macros) e 3.5 (enxofre e micronutrientes; B em água quente, Cu/Mn/Zn em Mehlich-1).</div>';
+      h += '</tbody></table>' + (semMic.length ? '<div class="fe-info" style="margin-top:4px;">Sem dado no laudo: ' + semMic.map(function(m){ return EMB_MICRO[m].nome.toLowerCase(); }).join(', ') + ' — peça micronutrientes na próxima análise.</div>' : '') + '<div class="fe-fonte" style="margin-top:4px;">Classes do Manual PR: Tab. 3.2–3.4 (macros) e 3.5 (enxofre e micronutrientes; B em água quente, Cu/Mn/Zn em Mehlich-1).</div>';
       var evMic = ['B','Cu','Mn','Zn'].filter(function(m){ var cm = feClasseMicro(a, m); return cm && cm.c6 === 'EV'; });
       if(evMic.length) h += '<div class="fe-aviso">🟣 <b>Condição a evitar</b> em ' + evMic.map(function(m){ return EMB_MICRO[m].nome.toLowerCase(); }).join(', ') + ' — teor muito acima do necessário; não aplique' + (evMic.indexOf('Mn') !== -1 ? ' (Mn alto costuma vir de pH baixo — corrija a acidez)' : '') + '.</div>';
     } else h += '<div class="fe-info"><b>Sem análise cadastrada.</b><br><button type="button" class="tl-btn tl-pri" data-action="fe-nova-analise" data-id="' + t.id + '" style="margin-top:8px;">＋ Cadastrar análise</button></div>';
@@ -3418,26 +3722,27 @@
       var semD = FE_BARRIL.filter(function(k){ return !I.itens[k]; });
       var evs = Object.keys(I.itens).filter(function(k){ return I.itens[k] === 'EV'; });
       if(evs.length) h += '<div class="fe-aviso">🟣 <b>Condição a evitar:</b> ' + evs.map(function(k){ return (k === 'p' ? 'fósforo' : (FE_LONGO[k] || k)); }).join(', ') + ' acima do limite do Manual — não aplique mais desse nutriente/corretivo.</div>';
-      h += '<div class="fe-limite">🔻 <b>Fator mais limitante: ' + FE_LONGO[L] + '</b> — classe <b>' + MPR_NOME[I.itens[L]].toLowerCase() + '</b> pelo Manual PR. Enquanto ele não for corrigido, melhorar os outros rende pouco.' + (ruins.length ? '<br>Também baixos: ' + ruins.map(function(k){ return FE_LONGO[k] + ' (' + MPR_NOME[I.itens[k]].toLowerCase() + ')'; }).join(', ') + '.' : '') + (semD.length ? '<br>Sem dado no laudo: ' + semD.map(function(k){ return FE_ROT[k]; }).join(', ') + '.' : '') + '</div>';
+      h += '<div class="fe-limite">🔻 <b>Fator mais limitante: ' + FE_LONGO[L] + '</b> — classe <b>' + MPR_NOME[I.itens[L]].toLowerCase() + '</b> pelo Manual PR. Enquanto ele não for corrigido, melhorar os outros rende pouco.' + (ruins.length ? '<br>Também baixos: ' + ruins.map(function(k){ return FE_LONGO[k] + ' (' + MPR_NOME[I.itens[k]].toLowerCase() + ')'; }).join(', ') + '.' : '') + (semD.length ? '<br>Sem dado no laudo: ' + semD.map(function(k){ return FE_LONGO[k]; }).join(', ') + '.' : '') + '</div>';
     }
     var dg = feDiagGesso(t.id);
     h += '<div class="fe-gesso">' + (!dg.sub ? '⚪ <b>Gessagem:</b> sem análise de 20–40 cm — para saber se precisa de gesso, colete também essa camada.' : (dg.precisa ? '⚪ <b>Gessagem recomendada</b> pela análise de 20–40 cm de ' + fmtDate(dg.sub.dataColeta) + ': ' + dg.motivos.join(', ') + '. Dose pelo cap. 5 (item 5.6) do Manual.' : '⚪ <b>Gessagem:</b> a camada de 20–40 cm (' + fmtDate(dg.sub.dataColeta) + ') não indica necessidade de gesso.')) + '</div>';
     if(a) h += '<div class="fe-acoes" style="margin-top:8px;"><button type="button" class="tl-btn" data-action="fe-imprimir" data-id="' + t.id + '">🖨️ Imprimir / PDF para o agrônomo ou a revenda</button></div>';
     h += '</div></div></div>';
-    if(a) h += feAdubacaoHtml(t, a);
+    if(a) h += feFocoHtml(t, a);
+    if(a) h += '<div id="fe-plano-anc"></div>' + feAdubacaoHtml(t, a);
     h += feRecomSalvasHtml(t);
     h += feBalancoHtml(t);
     return h;
   }
   function feBarrilSvg(I, L){
-    var x0 = 60, W = 330, base = 270, H = 200, sw = W / FE_BARRIL.length, nivelPct = MPR_ALT[I.itens[L]], nivel = base - H * nivelPct / 100;
-    var s = '<svg class="fe-barril" viewBox="0 0 450 310">';
+    var x0 = 60, W = 470, base = 270, H = 200, sw = W / FE_BARRIL.length, nivelPct = MPR_ALT[I.itens[L]], nivel = base - H * nivelPct / 100;
+    var s = '<svg class="fe-barril" viewBox="0 0 590 310">';
     s += '<path d="M' + (x0 + 4) + ' ' + nivel + ' L' + (x0 + W - 4) + ' ' + nivel + ' L' + (x0 + W - 10) + ' ' + (base - 4) + ' Q' + (x0 + W / 2) + ' ' + (base + 10) + ' ' + (x0 + 10) + ' ' + (base - 4) + 'Z" fill="#7EC3E6" opacity=".7"/>';
     FE_BARRIL.forEach(function(k, i){
       var c = I.itens[k], hh = c ? H * MPR_ALT[c] / 100 : H * 0.5, x = x0 + i * sw + 2, y = base - hh;
       s += '<rect x="' + x + '" y="' + y + '" width="' + (sw - 4) + '" height="' + hh + '" rx="5" fill="' + (c ? MPR_COR[c] : '#CFCFC0') + '" stroke="rgba(0,0,0,.35)"' + (c ? '' : ' stroke-dasharray="4 3"') + '/>';
       s += '<rect x="' + (x + 4) + '" y="' + (y + 5) + '" width="3" height="' + Math.max(0, hh - 10) + '" rx="1.5" fill="rgba(255,255,255,.25)"/>';
-      s += '<text x="' + (x + (sw - 4) / 2) + '" y="' + (base + 18) + '" text-anchor="middle" font-size="13" font-weight="700" fill="#262A1C">' + FE_ROT[k] + '</text>';
+      s += '<text x="' + (x + (sw - 4) / 2) + '" y="' + (base + 18) + '" text-anchor="middle" font-size="11.5" font-weight="700" fill="#262A1C">' + (k === 'mo' ? '<tspan x="' + (x + (sw - 4) / 2) + '">Matéria</tspan><tspan x="' + (x + (sw - 4) / 2) + '" dy="13">orgânica</tspan>' : FE_ROT[k]) + '</text>';
       s += '<text x="' + (x + (sw - 4) / 2) + '" y="' + (y - 6) + '" text-anchor="middle" font-size="10" fill="#5E644B">' + (c ? MPR_NOME[c].replace('Muito ', 'M. ') : 'sem dado') + '</text>';
     });
     [base - 28, base - H * 0.55, base - H + 18].forEach(function(y){ s += '<line x1="' + (x0 - 2) + '" x2="' + (x0 + W + 2) + '" y1="' + y + '" y2="' + y + '" stroke="#5a4a32" stroke-width="3" opacity=".5"/>'; });
@@ -3458,14 +3763,14 @@
       h += '<label>Fase da lavoura<select data-fe-op="fase" data-id="' + t.id + '">' + [['producao','Produção'],['form1','Formação — 1º ano'],['form2','Formação — 2º ano'],['implantacao','Implantação (plantio)']].map(function(o){ return '<option value="' + o[0] + '"' + ((op.fase || 'producao') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>';
       if(op.fase === 'implantacao') h += '<label>Espaçamento entre linhas (m)<input type="number" min="0.5" step="0.1" data-fe-op="espacamento" data-id="' + t.id + '" value="' + (op.espacamento || '') + '"><small>' + (Number(op.espacamento) > 0 ? fmtNum(Math.round(10000 / Number(op.espacamento))) + ' m de sulco por ha' : 'necessário para o cálculo') + '</small></label>';
       h += '<label>Plantas por hectare<input type="number" min="500" step="100" data-fe-op="plantas" data-id="' + t.id + '" value="' + op.plantas + '"></label>';
-      if(!op.fase || op.fase === 'producao') h += '<label>Teor foliar de N (g/kg)<input type="number" min="0" step="0.1" data-fe-op="nFoliar" data-id="' + t.id + '" value="' + escapeHtml(String(op.nFoliar)) + '" placeholder="sem análise foliar"></label>';
-      if(!op.fase || op.fase === 'producao') h += '<label>Teor foliar de S (g/kg)<input type="number" min="0" step="0.1" data-fe-op="sFoliar" data-id="' + t.id + '" value="' + escapeHtml(String(op.sFoliar)) + '" placeholder="sem análise foliar"></label>';
-      if(op.fase !== 'implantacao') h += '<label>Parcelas de N (set → mar)<select data-fe-op="parcelas" data-id="' + t.id + '"><option value="3"' + (String(op.parcelas) === '3' ? ' selected' : '') + '>3 parcelas</option><option value="4"' + (String(op.parcelas) === '4' ? ' selected' : '') + '>4 parcelas</option></select></label>';
+      if(!op.fase || op.fase === 'producao') h += '<label>Nitrogênio foliar (g/kg)<input type="number" min="0" step="0.1" data-fe-op="nFoliar" data-id="' + t.id + '" value="' + escapeHtml(String(op.nFoliar)) + '" placeholder="sem análise foliar"></label>';
+      if(!op.fase || op.fase === 'producao') h += '<label>Enxofre foliar (g/kg)<input type="number" min="0" step="0.1" data-fe-op="sFoliar" data-id="' + t.id + '" value="' + escapeHtml(String(op.sFoliar)) + '" placeholder="sem análise foliar"></label>';
+      if(op.fase !== 'implantacao') h += '<label>Parcelas de nitrogênio (set → mar)<select data-fe-op="parcelas" data-id="' + t.id + '"><option value="3"' + (String(op.parcelas) === '3' ? ' selected' : '') + '>3 parcelas</option><option value="4"' + (String(op.parcelas) === '4' ? ' selected' : '') + '>4 parcelas</option></select></label>';
     }
     if(op.cultura === 'milho2' || op.cultura === 'milho1') h += '<label>Cultura anterior<select data-fe-op="anterior" data-id="' + t.id + '"><option value="leguminosa"' + (op.anterior === 'leguminosa' ? ' selected' : '') + '>Leguminosa (soja, feijão…)</option><option value="graminea"' + (op.anterior === 'graminea' ? ' selected' : '') + '>Gramínea (milho, trigo, aveia…)</option></select></label>';
     h += '<label>Dose dentro da faixa do Manual<select data-fe-op="nivel" data-id="' + t.id + '"><option value="min"' + (op.nivel === 'min' ? ' selected' : '') + '>Menor valor</option><option value="med"' + (op.nivel === 'med' ? ' selected' : '') + '>Meio da faixa</option><option value="max"' + (op.nivel === 'max' ? ' selected' : '') + '>Maior valor</option></select></label>';
     if(op.cultura === 'soja' || (op.cultura === 'cafe' && op.fase !== 'form1' && op.fase !== 'form2')){
-      (op.cultura === 'soja' ? ['B','Cu','Zn','Mn'] : ['B','Mn','Zn'].concat(op.fase === 'implantacao' ? ['Cu'] : [])).forEach(function(m){ var v = op['cls' + m] || 'auto', cmA = feClasseMicro(a, m); h += '<label>' + m + ' no solo<select data-fe-op="cls' + m + '" data-id="' + t.id + '">' + [['auto', cmA ? 'Pela análise: ' + MPR_NOME[cmA.c6] + ' (' + fmtNum(cmA.v) + ')' : 'Pela análise: sem dado'],['nao','Não aplicar'],['baixo','Baixo (ou menos)'],['medio','Médio'],['alto','Alto (ou mais)']].map(function(o){ return '<option value="' + o[0] + '"' + (v === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>'; });
+      (op.cultura === 'soja' ? ['B','Cu','Zn','Mn'] : ['B','Mn','Zn'].concat(op.fase === 'implantacao' ? ['Cu'] : [])).forEach(function(m){ var v = op['cls' + m] || 'auto', cmA = feClasseMicro(a, m); h += '<label><span>' + EMB_MICRO[m].nome + ' <span style="text-transform:none;">(' + m + ')</span> no solo</span><select data-fe-op="cls' + m + '" data-id="' + t.id + '">' + [['auto', cmA ? 'Pela análise: ' + MPR_NOME[cmA.c6] + ' (' + fmtNum(cmA.v) + ')' : 'Pela análise: sem dado'],['nao','Não aplicar'],['baixo','Baixo (ou menos)'],['medio','Médio'],['alto','Alto (ou mais)']].map(function(o){ return '<option value="' + o[0] + '"' + (v === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></label>'; });
     }
     h += '<label>PRNT do calcário (%)<input type="number" min="40" max="130" step="1" data-fe-op="prnt" data-id="' + t.id + '" value="' + op.prnt + '"></label>';
     h += '</div>';
@@ -3476,21 +3781,21 @@
     var unTxt = function(f){ return f ? ' · ' + (f[0] === f[1] ? fmtNum(f[0]) : fmtNum(f[0]) + '–' + fmtNum(f[1])) + ' ' + r.un : ''; };
     if(op.cultura === 'cafe' && r.fase){
       var tabF = r.fase === 'implantacao' ? {N:'após o pegamento', P:'Tab. 15.1', K:'Tab. 15.2'} : {N:'Tab. 15.4', P:'Tab. 15.5', K:'Tab. 15.6'};
-      h += '<div class="fe-n"><span>N</span><b>' + (r.fase === 'implantacao' ? '4 g' : fmtNum(r.N)) + '</b><small>' + (r.fase === 'implantacao' ? 'de N por planta, a cada 30 dias (out → mar)' : 'kg/ha no ano' + unTxt(r.fNun)) + '</small><em>' + tabF.N + '</em></div>';
-      h += '<div class="fe-n"><span>P₂O₅</span><b>' + (r.P2O5 === null ? '⛔' : fmtNum(r.P2O5)) + '</b><small>kg/ha' + unTxt(r.fPun) + ' · P ' + (r.I.itens.p ? MPR_NOME[r.I.itens.p].toLowerCase() : 'sem dado') + '</small><em>' + tabF.P + '</em></div>';
-      h += '<div class="fe-n"><span>K₂O</span><b>' + (r.K2O === null ? '⛔' : fmtNum(r.K2O)) + '</b><small>kg/ha' + unTxt(r.fKun) + ' · K ' + (r.I.itens.k ? MPR_NOME[r.I.itens.k].toLowerCase() : 'sem dado') + '</small><em>' + tabF.K + '</em></div>';
+      h += '<div class="fe-n"><span>Nitrogênio (N)</span><b>' + (r.fase === 'implantacao' ? '4 g' : fmtNum(r.N)) + '</b><small>' + (r.fase === 'implantacao' ? 'de N por planta, a cada 30 dias (out → mar)' : 'kg/ha no ano' + unTxt(r.fNun)) + '</small><em>' + tabF.N + '</em></div>';
+      h += '<div class="fe-n"><span>Fósforo (P₂O₅)</span><b>' + (r.P2O5 === null ? '⛔' : fmtNum(r.P2O5)) + '</b><small>kg/ha' + unTxt(r.fPun) + ' · fósforo ' + (r.I.itens.p ? MPR_NOME[r.I.itens.p].toLowerCase() : 'sem dado') + '</small><em>' + tabF.P + '</em></div>';
+      h += '<div class="fe-n"><span>Potássio (K₂O)</span><b>' + (r.K2O === null ? '⛔' : fmtNum(r.K2O)) + '</b><small>kg/ha' + unTxt(r.fKun) + ' · potássio ' + (r.I.itens.k ? MPR_NOME[r.I.itens.k].toLowerCase() : 'sem dado') + '</small><em>' + tabF.K + '</em></div>';
     }
-    else if(op.cultura === 'cafe') h += '<div class="fe-n"><span>N</span><b>' + fmtNum(r.N) + '</b><small>kg/ha/ano · faixa ' + feFaixaTxt(r.fNcob) + (r.semFoliarN ? ' · sem análise foliar (maior dose)' : ' · N foliar ' + fmtNum(op.nFoliar) + ' g/kg') + '</small><em>Tab. 15.7 · coluna ' + cols[r.col] + '</em></div><div class="fe-n"><span>S</span><b>' + fmtNum(r.S) + '</b><small>kg/ha/ano · faixa ' + feFaixaTxt(r.fS) + (r.semFoliarS ? ' · sem análise foliar (maior dose)' : '') + '</small><em>Tab. 15.8</em></div>';
-    else if(op.cultura === 'milho1') h += '<div class="fe-n"><span>N</span><b>' + fmtNum(r.N) + '</b><small>kg/ha · faixa ' + feFaixaTxt(r.fNtot) + ' → semeadura ' + fmtNum(r.Nsem) + ' (30–50) + cobertura ' + fmtNum(r.Ncob) + '</small><em>Tab. 8.21 · ' + (op.anterior === 'leguminosa' ? 'após leguminosa' : 'após gramínea') + ' · coluna ' + cols[r.col] + '</em></div>';
-    else if(op.cultura === 'milho2') h += '<div class="fe-n"><span>N</span><b>' + fmtNum(r.N) + '</b><small>kg/ha · semeadura ' + fmtNum(r.Nsem) + ' (' + feFaixaTxt(r.fNsem) + ') + cobertura ' + fmtNum(r.Ncob) + ' (' + feFaixaTxt(r.fNcob) + ')</small><em>Tab. 8.25 · ' + (op.anterior === 'leguminosa' ? 'após leguminosa' : 'após gramínea') + '</em></div>';
-    else h += '<div class="fe-n"><span>N</span><b>0</b><small>kg/ha — inoculação com Bradyrhizobium</small><em>cap. 9</em></div>';
+    else if(op.cultura === 'cafe') h += '<div class="fe-n"><span>Nitrogênio (N)</span><b>' + fmtNum(r.N) + '</b><small>kg/ha/ano · faixa ' + feFaixaTxt(r.fNcob) + (r.semFoliarN ? ' · sem análise foliar (maior dose)' : ' · nitrogênio foliar ' + fmtNum(op.nFoliar) + ' g/kg') + '</small><em>Tab. 15.7 · coluna ' + cols[r.col] + '</em></div><div class="fe-n"><span>Enxofre (S)</span><b>' + fmtNum(r.S) + '</b><small>kg/ha/ano · faixa ' + feFaixaTxt(r.fS) + (r.semFoliarS ? ' · sem análise foliar (maior dose)' : '') + '</small><em>Tab. 15.8</em></div>';
+    else if(op.cultura === 'milho1') h += '<div class="fe-n"><span>Nitrogênio (N)</span><b>' + fmtNum(r.N) + '</b><small>kg/ha · faixa ' + feFaixaTxt(r.fNtot) + ' → semeadura ' + fmtNum(r.Nsem) + ' (30–50) + cobertura ' + fmtNum(r.Ncob) + '</small><em>Tab. 8.21 · ' + (op.anterior === 'leguminosa' ? 'após leguminosa' : 'após gramínea') + ' · coluna ' + cols[r.col] + '</em></div>';
+    else if(op.cultura === 'milho2') h += '<div class="fe-n"><span>Nitrogênio (N)</span><b>' + fmtNum(r.N) + '</b><small>kg/ha · semeadura ' + fmtNum(r.Nsem) + ' (' + feFaixaTxt(r.fNsem) + ') + cobertura ' + fmtNum(r.Ncob) + ' (' + feFaixaTxt(r.fNcob) + ')</small><em>Tab. 8.25 · ' + (op.anterior === 'leguminosa' ? 'após leguminosa' : 'após gramínea') + '</em></div>';
+    else h += '<div class="fe-n"><span>Nitrogênio (N)</span><b>0</b><small>kg/ha — inoculação com Bradyrhizobium</small><em>cap. 9</em></div>';
     var tabP = {soja:'Tab. 9.11', milho1:'Tab. 8.22', milho2:'Tab. 8.26', cafe:'Tab. 15.9'}[op.cultura], tabK = {soja:'Tab. 9.12', milho1:'Tab. 8.23', milho2:'Tab. 8.27', cafe:'Tab. 15.10'}[op.cultura];
-    if(!r.fase) h += '<div class="fe-n"><span>P₂O₅</span><b>' + (r.P2O5 === null ? '⛔' : fmtNum(r.P2O5)) + '</b><small>kg/ha · faixa ' + feFaixaTxt(r.fP) + ' · P ' + (r.I.itens.p ? MPR_NOME[r.I.itens.p].toLowerCase() : 'sem dado') + '</small><em>' + tabP + ' · coluna ' + cols[r.col] + '</em></div>';
-    if(!r.fase) h += '<div class="fe-n"><span>K₂O</span><b>' + (r.K2O === null ? '⛔' : fmtNum(r.K2O)) + '</b><small>kg/ha · faixa ' + feFaixaTxt(r.fK) + ' · K ' + (r.I.itens.k ? MPR_NOME[r.I.itens.k].toLowerCase() : 'sem dado') + (op.cultura === 'cafe' ? ' (faixa do café)' : '') + '</small><em>' + tabK + ' · coluna ' + cols[r.col] + '</em></div>';
+    if(!r.fase) h += '<div class="fe-n"><span>Fósforo (P₂O₅)</span><b>' + (r.P2O5 === null ? '⛔' : fmtNum(r.P2O5)) + '</b><small>kg/ha · faixa ' + feFaixaTxt(r.fP) + ' · fósforo ' + (r.I.itens.p ? MPR_NOME[r.I.itens.p].toLowerCase() : 'sem dado') + '</small><em>' + tabP + ' · coluna ' + cols[r.col] + '</em></div>';
+    if(!r.fase) h += '<div class="fe-n"><span>Potássio (K₂O)</span><b>' + (r.K2O === null ? '⛔' : fmtNum(r.K2O)) + '</b><small>kg/ha · faixa ' + feFaixaTxt(r.fK) + ' · potássio ' + (r.I.itens.k ? MPR_NOME[r.I.itens.k].toLowerCase() : 'sem dado') + (op.cultura === 'cafe' ? ' (faixa do café)' : '') + '</small><em>' + tabK + ' · coluna ' + cols[r.col] + '</em></div>';
     h += '<div class="fe-n"><span>Calcário</span><b>' + (r.calagem ? fmtNum(Math.round(r.calagem.nc * 100) / 100) : '0') + '</b><small>t/ha · ' + (r.calagem ? 'V% ' + fmtNum(r.calagem.v1) + ' → ' + r.calagem.v2 + '% (PRNT ' + r.calagem.prnt + '%)' : (op.cultura === 'milho2' ? 'V% já em 70% ou mais' : op.cultura === 'milho1' ? 'V% em 60% ou mais — não precisa (Manual: só abaixo de 60%, elevar a 70%)' : 'V% acima de 50% — não precisa (Manual: só abaixo de 50%, elevar a 60%)')) + '</small><em>' + (op.cultura === 'milho1' ? 'milho safra: elevar V a 70% se < 60%' : op.cultura === 'milho2' ? 'milho 2ª safra: elevar V a 70%' : (op.cultura === 'cafe' ? 'café: elevar V a 60% se < 50% (máx. 2,5 t/ha)' : 'soja: elevar V a 60% se < 50%')) + '</em></div>';
     h += '</div>';
     if(r.avisos.length) h += '<div class="fe-aviso">' + r.avisos.join('<br>') + '</div>';
-    if(r.micro && r.micro.length) h += '<div class="fe-aviso" style="background:#EEF3E2; border-color:#C9D8B0; color:var(--ink);">💧 Micronutrientes: ' + r.micro.map(function(mi){ return '<b>' + mi.m + '</b> ' + fmtNum(mi.dose) + ' kg/ha (' + mi.txt + ')'; }).join(' · ') + '. Classe de B, Cu, Mn e Zn no solo pela Tab. 3.5 do Manual PR — dá para trocar acima.</div>';
+    if(r.micro && r.micro.length) h += '<div class="fe-aviso" style="background:#EEF3E2; border-color:#C9D8B0; color:var(--ink);">💧 Micronutrientes: ' + r.micro.map(function(mi){ return '<b>' + EMB_MICRO[mi.m].nome + ' (' + mi.m + ')</b> ' + fmtNum(mi.dose) + ' kg/ha (' + mi.txt + ')'; }).join(' · ') + '. Classe de B, Cu, Mn e Zn no solo pela Tab. 3.5 do Manual PR — dá para trocar acima.</div>';
     var podeConverter = r.P2O5 !== null && r.K2O !== null && ((r.P2O5 || 0) + (r.K2O || 0) + (r.N || 0) + (r.S || 0) > 0);
     if(podeConverter){
       var conv = feProdutos(r, op, Number(t.area) || 0);
@@ -3498,7 +3803,7 @@
       h += '<div class="fe-sub">🧾 Em produtos (adubos do seu estoque com a fórmula no nome, ou fórmulas comuns)</div>';
       h += '<div class="fe-form">';
       if(op.cultura === 'cafe'){
-        h += '<label>Adubo de N (parcelado)' + sel('nprod', function(f){ return f.n > 0 && f.p === 0; }, conv.selN ? conv.selN.v : '') + '</label>';
+        h += '<label>Adubo de nitrogênio (parcelado)' + sel('nprod', function(f){ return f.n > 0 && f.p === 0; }, conv.selN ? conv.selN.v : '') + '</label>';
         h += '<label>Fonte de fósforo' + sel('base', function(f){ return f.p > 0; }, conv.selBase ? conv.selBase.v : '') + '</label>';
         h += '<label>Complemento de potássio' + sel('kprod', function(f){ return f.k > 0 && f.p === 0; }, conv.selK ? conv.selK.v : '') + '</label>';
       } else {
@@ -3512,6 +3817,17 @@
       conv.itens.forEach(function(x){ totCusto += x.custo; h += '<div class="fe-pl"><span class="fe-pl-ep">' + x.epoca + '</span><b>' + escapeHtml(x.op.nome.replace(' (fórmula comum)', '')) + '</b><span class="fe-pl-d">' + fmtNum(x.kg) + ' kg/ha</span><small>' + x.fornece + ' · ' + fmtNum(Math.round(x.total)) + ' kg no talhão (' + fmtNum(Math.round(x.total / 1000 * 100) / 100) + ' t)' + (x.custo ? ' · ≈ ' + fmtBRL(x.custo) : '') + (x.op.produtoId ? '' : ' · <i>fora do estoque</i>') + '</small></div>'; });
       if(r.calagem && r.calagem.nc > 0) h += '<div class="fe-pl"><span class="fe-pl-ep">Antes do plantio (60–90 dias)</span><b>Calcário' + (op.cultura === 'milho2' && r.I.vals.mg !== null && r.I.vals.mg < 1 ? ' com MgO > 12%' : '') + ' (PRNT ' + r.calagem.prnt + '%)</b><span class="fe-pl-d">' + fmtNum(Math.round(r.calagem.nc * 1000)) + ' kg/ha</span><small>' + fmtNum(Math.round(r.calagem.nc * (Number(t.area) || 0) * 100) / 100) + ' t no talhão</small></div>';
       h += '</div>';
+      var levado = {};
+      conv.itens.forEach(function(x){ var pr = x.op.produtoId ? state.produtos.find(function(q){ return q.id === x.op.produtoId; }) : null, gg = feGarantias(pr); if(!gg) return; Object.keys(gg).forEach(function(m){ levado[m] = (levado[m] || 0) + x.kg * gg[m] / 100; }); });
+      var precisa = {}; (r.micro || []).forEach(function(mi){ precisa[mi.m] = mi.dose; });
+      var linhasMic = [];
+      Object.keys(precisa).forEach(function(m){ var lv = levado[m] || 0, nome = (FE_GAR.find(function(x){ return x[0] === m; }) || [m, m])[1];
+        var noEst = state.produtos.filter(function(q){ var gg = feGarantias(q); return !q.arquivado && gg && gg[m] > 0; });
+        linhasMic.push('<b>' + nome + ' (' + m + ')</b>: precisa ' + fmtNum(precisa[m]) + ' kg/ha · o plano já leva ' + fmtNum(Math.round(lv * 100) / 100) + ' kg/ha' + (lv >= precisa[m] * 0.95 ? ' ✅' : ' → faltam ' + fmtNum(Math.round((precisa[m] - lv) * 100) / 100) + ' kg/ha') + (lv < precisa[m] * 0.95 && noEst.length ? '<br><small>No estoque com ' + nome.toLowerCase() + ': ' + noEst.slice(0, 4).map(function(q){ var pc = feGarantias(q)[m]; return escapeHtml(q.nome) + ' (' + fmtNum(pc) + '% → ' + fmtNum(Math.round((precisa[m] - lv) / (pc / 100))) + ' kg/ha do produto)'; }).join('; ') + '</small>' : ''));
+      });
+      Object.keys(levado).forEach(function(m){ if(precisa[m] === undefined && levado[m] > 0.005){ var nome = (FE_GAR.find(function(x){ return x[0] === m; }) || [m, m])[1]; linhasMic.push('<b>' + nome + ' (' + m + ')</b>: o plano leva ' + fmtNum(Math.round(levado[m] * 100) / 100) + ' kg/ha (não foi pedido pela análise)'); } });
+      if(linhasMic.length) h += '<div class="fe-aviso" style="background:#EEF3E2; border-color:#C9D8B0; color:var(--ink);">💧 <b>Micronutrientes × adubos</b> (pelas garantias cadastradas nos produtos)<br>' + linhasMic.join('<br>') + '</div>';
+      else if(Object.keys(precisa).length) h += '<div class="fe-fonte">💧 Para ver quanto de micronutriente seus adubos já levam, preencha as "Garantias do adubo" no cadastro do produto (aba Produtos e Estoque → Editar).</div>';
       if(totCusto > 0) h += '<div class="fe-custo">💸 Custo estimado dos adubos do estoque: <b>' + fmtBRL(totCusto) + '</b> no talhão · ' + fmtBRL(totCusto / (Number(t.area) || 1)) + '/ha · ' + fmtBRL(totCusto / (Number(t.area) || 1) / (Number(op.sc) || 1)) + ' por saca esperada</div>';
       if(r.partes.length) h += '<ul class="fe-partes">' + r.partes.map(function(p){ return '<li>' + p + '</li>'; }).join('') + '</ul>';
       h += '<div class="fe-acoes"><button type="button" class="tl-btn tl-pri" data-action="fe-salvar" data-id="' + t.id + '">💾 Salvar como recomendação</button><span>Fica pendente no talhão. Só vai para o Diário quando você clicar em <b>📒 Lançar no Diário</b>.</span></div>';
@@ -3560,7 +3876,7 @@
       ['N','P2O5','K2O'].forEach(function(n, i){
         var e = b.ent[n] / a, sOut = b.sai && b.sc > 0 ? b.sai[n] / a : null, sal = sOut === null ? null : e - sOut;
         var fbn = b.tipo === 'soja' && n === 'N';
-        h += '<tr' + (i === 0 ? ' class="fe-bal-top"' : '') + '>' + (i === 0 ? '<td rowspan="3"><b>' + ci.ic + ' ' + escapeHtml(culturaNome(sf.culturaId)) + '</b><br><small>' + escapeHtml(sf.anoAgricola || '') + ' · ' + fmtHa(b.area) + '</small></td><td class="num" rowspan="3">' + (b.sc ? fmtNum(Math.round(b.sc / a * 10) / 10) + ' sc/ha' : '<small>sem colheita ainda</small>') + '</td>' : '') + '<td>' + n.replace('2O5', '₂O₅').replace('2O', '₂O') + '</td><td class="num">' + fmtNum(Math.round(e)) + '</td><td class="num">' + (sOut === null ? (b.tipo === 'soja' && b.sc > 0 ? '<span title="Falta a tabela de exportação da soja">?</span>' : '—') : fmtNum(Math.round(sOut))) + '</td><td class="num">' + (fbn && sal !== null ? '<span title="Na soja o nitrogênio vem da fixação biológica (inoculação) — não precisa repor com adubo">FBN 🌱</span>' : sal === null ? '—' : '<b style="color:' + (sal < -5 ? 'var(--cost-dark)' : (sal > 5 ? 'var(--growth-dark)' : 'var(--ink)')) + '">' + (sal > 0 ? '+' : '') + fmtNum(Math.round(sal)) + '</b>') + '</td></tr>';
+        h += '<tr' + (i === 0 ? ' class="fe-bal-top"' : '') + '>' + (i === 0 ? '<td rowspan="3"><b>' + ci.ic + ' ' + escapeHtml(culturaNome(sf.culturaId)) + '</b><br><small>' + escapeHtml(sf.anoAgricola || '') + ' · ' + fmtHa(b.area) + '</small></td><td class="num" rowspan="3">' + (b.sc ? fmtNum(Math.round(b.sc / a * 10) / 10) + ' sc/ha' : '<small>sem colheita ainda</small>') + '</td>' : '') + '<td>' + {N:'Nitrogênio (N)', P2O5:'Fósforo (P₂O₅)', K2O:'Potássio (K₂O)'}[n] + '</td><td class="num">' + fmtNum(Math.round(e)) + '</td><td class="num">' + (sOut === null ? (b.tipo === 'soja' && b.sc > 0 ? '<span title="Falta a tabela de exportação da soja">?</span>' : '—') : fmtNum(Math.round(sOut))) + '</td><td class="num">' + (fbn && sal !== null ? '<span title="Na soja o nitrogênio vem da fixação biológica (inoculação) — não precisa repor com adubo">FBN 🌱</span>' : sal === null ? '—' : '<b style="color:' + (sal < -5 ? 'var(--cost-dark)' : (sal > 5 ? 'var(--growth-dark)' : 'var(--ink)')) + '">' + (sal > 0 ? '+' : '') + fmtNum(Math.round(sal)) + '</b>') + '</td></tr>';
         if(b.tipo === 'soja') semTab = true;
       });
     });
@@ -3606,7 +3922,7 @@
     var c0 = '';
     var c = '<h2>Talhão ' + escapeHtml(t.nome) + ' — ' + fmtHa(t.area) + '</h2><p>Análise de solo de ' + fmtDate(a.dataColeta) + (a.laboratorio ? ' · ' + escapeHtml(a.laboratorio) : '') + (a.profundidade ? ' · ' + escapeHtml(a.profundidade) : '') + ' · argila: ' + MPR_P[I.arg.k].rot + (I.arg.medida ? '' : ' (estimada)') + '</p>';
     c += '<table><thead><tr><th>Parâmetro</th><th class="num">Valor</th><th>Classe (Manual PR)</th></tr></thead><tbody>';
-    ['ph','v','ca','mg','p','k','s','mo','ctc'].forEach(function(k){ var v = I.vals[k], cl = I.itens[k]; if(v === null && !cl) return; c += '<tr><td>' + (k === 'p' ? 'P (Mehlich-1)' : (k === 'ctc' ? 'CTC pH 7' : (k === 's' ? 'S (0–20 cm)' : MPR_INTERP[k].nome))) + '</td><td class="num">' + (v === null ? '—' : fmtNum(Math.round(v * 100) / 100)) + '</td><td>' + (cl ? MPR_NOME[cl] : '—') + '</td></tr>'; });
+    ['ph','v','ca','mg','p','k','s','mo','ctc'].forEach(function(k){ var v = I.vals[k], cl = I.itens[k]; if(v === null && !cl) return; c += '<tr><td>' + (k === 'p' ? 'Fósforo (P, Mehlich-1)' : (k === 'ctc' ? 'CTC pH 7' : (k === 's' ? 'Enxofre (S, 0–20 cm)' : MPR_INTERP[k].nome))) + '</td><td class="num">' + (v === null ? '—' : fmtNum(Math.round(v * 100) / 100)) + '</td><td>' + (cl ? MPR_NOME[cl] : '—') + '</td></tr>'; });
     ['B','Cu','Mn','Zn'].forEach(function(m){ var cm = feClasseMicro(a, m); if(cm) c += '<tr><td>' + EMB_MICRO[m].nome + '</td><td class="num">' + fmtNum(cm.v) + '</td><td>' + MPR_NOME[cm.c6] + '</td></tr>'; });
     c += '</tbody></table>';
     if(r){
@@ -3619,6 +3935,77 @@
     c += '<div class="assin"><div>Produtor</div><div>Engenheiro agrônomo (CREA)</div></div>';
     abrirImpressao('Recomendação de adubação — ' + t.nome, c);
   }
+  // ===== "Em que você quer focar?" — monta as prioridades a partir da análise e do Manual =====
+  var feFoco = {};
+  var FE_FOCOS = {prod:{t:'📈 Máxima produtividade', nivel:'max'}, acidez:{t:'🧪 Corrigir acidez primeiro', nivel:'med'}, econ:{t:'💰 Menor custo, maior retorno', nivel:'min'}, nutri:{t:'🍃 Nutrição e monitoramento', nivel:'med'}};
+  function feFocoItens(t, a){
+    var op = feOpcoesTalhao(t), r = feRecomendacao(t, a, op), I = r ? r.I : feInterpretar(t, a), c = criteriosRecom(), it = {}, area = Number(t.area) || 0;
+    if(!I) return {it: it, r: r, I: I};
+    var cP = I.itens.p, cK = I.itens.k;
+    if(cP && (cP === 'MB' || cP === 'B')){
+      var alvoP = MPR_P[I.arg.k].bA, p2o5 = Math.max(0, (alvoP - I.vals.p) * 2 * 2.291 / ((Number(c.efP) || 30) / 100)), kgP = Math.round(p2o5 / 0.18 / 10) * 10;
+      it.corrP = {ic:'🧂', tit:'Fosfatagem corretiva', dose: kgP, un:'kg/ha', prod:'Superfosfato simples (18% P₂O₅)', txt:'P ' + MPR_NOME[cP].toLowerCase() + ' (' + fmtNum(I.vals.p) + ' mg/dm³) → elevar ao nível alto (' + fmtNum(alvoP) + ' mg/dm³ na faixa de argila ' + MPR_P[I.arg.k].rot + '). ' + fmtNum(Math.round(p2o5)) + ' kg/ha de P₂O₅, eficiência ' + (c.efP || 30) + '%. A lanço e incorporado, ou dividido em 2–3 anos.', rec:{tipo:'Fosfatagem', fonte:'Superfosfato simples (00-18-00)', doseMedia: kgP, epoca:'Correção (antes do plantio)'}};
+    }
+    if(cK && (cK === 'MB' || cK === 'B')){
+      var refK = op.cultura === 'cafe' ? MPR_INTERP.kCafe : MPR_INTERP.k, alvoK = refK.bA, k2o = Math.max(0, (alvoK - I.vals.k) * 391 * 2 * 1.205 / ((Number(c.efK) || 70) / 100)), kgK = Math.round(k2o / 0.6 / 10) * 10;
+      it.corrK = {ic:'🧂', tit:'Potassagem corretiva', dose: kgK, un:'kg/ha', prod:'Cloreto de potássio (60% K₂O)', txt:'K ' + MPR_NOME[cK].toLowerCase() + ' (' + fmtNum(Math.round(I.vals.k * 1000) / 1000) + ' cmolc/dm³) → elevar ao nível alto (' + fmtNum(alvoK) + '). ' + fmtNum(Math.round(k2o)) + ' kg/ha de K₂O. A lanço, em 2 ou mais vezes se passar de 100 kg/ha.', rec:{tipo:'Potassagem', fonte:'Cloreto de potássio (00-00-60)', doseMedia: kgK, epoca:'Correção (a lanço)'}};
+    }
+    if(r && r.calagem && r.calagem.nc > 0){ var kgC = Math.round(r.calagem.nc * 1000 / 10) * 10; it.cal = {ic:'🪨', tit:'Calagem', dose: kgC, un:'kg/ha', prod:'Calcário' + (I.vals.mg !== null && I.vals.mg < 1 ? ' dolomítico (MgO > 12%)' : '') + ' — PRNT ' + r.calagem.prnt + '%', txt:'V% ' + fmtNum(r.calagem.v1) + ' → ' + r.calagem.v2 + '% (regra do Manual para ' + ({soja:'soja', milho1:'milho safra', milho2:'milho 2ª safra', cafe:'café'}[op.cultura]) + '). Aplicar 60–90 dias antes do plantio/adubação.', rec:{tipo:'Calagem', fonte:'Calcário PRNT ' + r.calagem.prnt + '%', doseMedia: kgC, epoca:'Antes do plantio'}}; }
+    else if(I.itens.ph && (I.itens.ph === 'MB' || I.itens.ph === 'B')) it.cal = {ic:'🪨', tit:'Acidez', dose:null, prod:'pH ' + MPR_NOME[I.itens.ph].toLowerCase(), txt:'O V% está dentro da regra do Manual, mas o pH está ' + MPR_NOME[I.itens.ph].toLowerCase() + ' (' + fmtNum(I.vals.ph) + '). Acompanhe na próxima análise.', info:true};
+    else if(I.vals.v !== null) it.cal = {ic:'✅', tit:'Acidez em dia', dose:null, prod:'V% ' + fmtNum(I.vals.v) + (I.vals.ph !== null ? ' · pH ' + fmtNum(I.vals.ph) : ''), txt:'Pela regra do Manual para esta cultura, não precisa de calcário agora. Reavalie na próxima análise.', info:true};
+    var dg = feDiagGesso(t.id);
+    if(dg.sub && dg.precisa){ var argP = feNum(dg.sub.argila) || feNum(a.argila), kgG = argP ? Math.round(50 * (argP <= 100 ? argP : argP / 10) / 10) * 10 : null; it.gesso = {ic:'⚪', tit:'Gessagem', dose: kgG, un:'kg/ha', prod:'Gesso agrícola', txt:'Camada 20–40 cm: ' + dg.motivos.join(', ') + '.' + (kgG ? ' Dose estimada = 50 × % de argila (regra prática da Embrapa); confira no cap. 5 (item 5.6) do Manual.' : ' Informe a argila para estimar a dose.'), rec: kgG ? {tipo:'Gessagem', fonte:'Gesso agrícola', doseMedia: kgG, epoca:'A lanço, junto ou após a calagem'} : null}; }
+    else if(!dg.sub) it.gesso = {ic:'⚪', tit:'Gessagem: coletar 20–40 cm', dose:null, prod:'Análise da camada 20–40 cm', txt:'Sem essa camada não dá para saber se precisa de gesso (Ca, Al e m% em subsuperfície).', rec:{tipo:'Monitoramento', fonte:'Análise de solo 20–40 cm', doseMedia:0, epoca:'Próxima coleta', semDiario:true}};
+    if(r && r.P2O5 !== null && r.K2O !== null) it.plano = {ic:'🌱', tit:'Adubação de produção', dose:null, prod:'N ' + (op.cultura === 'soja' ? '0 (inoculação)' : (op.fase === 'implantacao' ? '4 g/planta' : fmtNum(r.N))) + ' · P₂O₅ ' + fmtNum(r.P2O5) + ' · K₂O ' + fmtNum(r.K2O) + (r.S ? ' · S ' + fmtNum(r.S) : '') + ' kg/ha', txt:'Pelo Manual PR para ' + fmtNum(op.sc) + ' sc/ha (dose ' + {min:'do início', med:'do meio', max:'do topo'}[op.nivel] + ' da faixa). Os produtos, as épocas e o botão de salvar estão no plano logo abaixo.', plano:true};
+    else if(r) it.plano = {ic:'⛔', tit:'Adubação de produção', dose:null, prod:'Meta inviável', txt:'Com o P ou o K neste nível, o Manual considera a meta de ' + fmtNum(op.sc) + ' sc/ha inviável. Faça a correção primeiro ou reduza a meta no plano abaixo.', plano:true};
+    if(r && r.micro && r.micro.length) it.micro = {ic:'💧', tit:'Micronutrientes', dose:null, prod: r.micro.map(function(m){ return EMB_MICRO[m.m].nome + ' (' + m.m + ') ' + fmtNum(m.dose) + ' kg/ha'; }).join(' · '), txt:'Pelas classes da Tab. 3.5 e as doses do Manual para a cultura. Já entram no plano de adubação abaixo.', plano:true};
+    var semMic = ['B','Cu','Mn','Zn'].filter(function(m){ return !feClasseMicro(a, m); });
+    var velha = feIdadeAnos(a.dataColeta) > 2;
+    it.analise = {ic:'🧪', tit:'Nova análise de solo', dose:null, prod:'0–20 cm' + (dg.sub ? '' : ' e 20–40 cm') + (semMic.length || !I.vals.s ? ' — pedir também ' + semMic.map(function(m){ return EMB_MICRO[m].nome.toLowerCase(); }).concat(I.vals.s ? [] : ['enxofre']).join(', ') : ''), txt: velha ? 'A análise atual tem mais de 2 anos — coletar antes do próximo plantio.' : 'Repetir a cada 2 anos (ou ao fim da soja quando dispensar P e K).', rec:{tipo:'Monitoramento', fonte:'Análise de solo' + (dg.sub ? '' : ' (0–20 e 20–40 cm)'), doseMedia:0, epoca:'Próxima coleta', semDiario:true}};
+    it.foliar = {ic:'🍃', tit:'Análise foliar', dose:null, prod: op.cultura === 'cafe' ? 'Janeiro — 3º par de folhas no chumbinho (100 folhas)' : (op.cultura === 'soja' ? 'Florescimento — 3º/4º trifólio (30–40 plantas)' : 'Florescimento (R1) — folha oposta e abaixo da espiga (30 plantas)'), txt: op.cultura === 'cafe' ? 'Com o nitrogênio e o enxofre foliar, o Manual permite reduzir a dose de N e S da adubação de produção.' : 'Confirma se o que está baixo no solo aparece na planta.', rec:{tipo:'Monitoramento', fonte:'Análise foliar', doseMedia:0, epoca: op.cultura === 'cafe' ? 'Janeiro' : 'Florescimento', semDiario:true}};
+    if(op.cultura === 'soja') it.como = {ic:'🫘', tit:'Cobalto e molibdênio', dose:null, prod:'Cobalto 2–3 g/ha + molibdênio 12–25 g/ha, via semente', txt:(I.vals.ph !== null && I.vals.ph < 4.8 ? 'pH CaCl₂ ' + fmtNum(I.vals.ph) + ' (abaixo de 4,8): maior resposta ao molibdênio. ' : '') + 'Junto com a inoculação.', rec:{tipo:'Micronutrientes', fonte:'Cobalto + molibdênio via semente', doseMedia:0, epoca:'Tratamento de sementes'}};
+    return {it: it, r: r, I: I};
+  }
+  function feFocoLista(t, a){
+    var f = feFoco[t.id] || 'prod', X = feFocoItens(t, a), it = X.it, I = X.I, ordem;
+    var L = I ? feLimitante(I) : null, limK = L === 'p' ? 'corrP' : (L === 'k' ? 'corrK' : (['ph','v','ca','mg'].indexOf(L) !== -1 ? 'cal' : (L === 's' ? 'gesso' : null)));
+    if(f === 'prod') ordem = ['corrP','corrK','cal','plano','gesso','micro','como','analise'];
+    else if(f === 'acidez') ordem = ['cal','gesso','corrP','corrK','plano'];
+    else if(f === 'econ') ordem = [limK, 'plano', 'analise'];
+    else ordem = ['micro','foliar','como','analise','gesso'];
+    var out = [];
+    ordem.forEach(function(k){ if(k && it[k] && out.indexOf(it[k]) === -1){ it[k].k = k; out.push(it[k]); } });
+    return out.filter(function(c){ return !c.info; }).concat(out.filter(function(c){ return c.info; }));
+  }
+  function feFocoHtml(t, a){
+    var f = feFoco[t.id] || 'prod';
+    var h = '<div class="paper fe-bloco"><div class="fe-tit">🎯 Em que você quer focar? <small>monta as prioridades a partir da análise e do Manual PR</small></div>';
+    h += '<div class="tl-tools" style="margin-bottom:10px;">' + Object.keys(FE_FOCOS).map(function(k){ return '<button type="button" class="tl-chip' + (f === k ? ' on' : '') + '" data-action="fe-foco" data-id="' + t.id + '" data-f="' + k + '">' + FE_FOCOS[k].t + '</button>'; }).join('') + '</div>';
+    var lista = feFocoLista(t, a);
+    if(!lista.length) return h + '<div class="fe-vazio">Nada urgente para este foco — o solo está em bom nível. 👍</div></div>';
+    var pend = feRecsAtuais(t).filter(function(x){ return x.rec.status !== 'Aplicada'; });
+    h += '<div class="fe-focos">';
+    var nPri = 0;
+    lista.forEach(function(c){
+      var ja = c.rec && pend.some(function(x){ return x.rec.tipo === c.rec.tipo && semAcento(x.rec.fonte || '') === semAcento(c.rec.fonte || ''); });
+      var i = c.info ? -1 : nPri++;
+      h += '<div class="fe-fc">' + (c.info ? '<span class="fe-pri fe-pri2">ℹ️ situação</span>' : '<span class="fe-pri fe-pri' + Math.min(i, 2) + '">' + (i + 1) + 'º' + (i === 0 ? ' — fazer primeiro' : '') + '</span>') + '<b>' + c.ic + ' ' + c.tit + '</b>';
+      if(c.dose) h += '<div class="fe-fc-d">' + fmtNum(c.dose) + ' ' + c.un + '</div><div class="fe-fc-p">' + escapeHtml(c.prod) + ' · ' + fmtNum(Math.round(c.dose * (Number(t.area) || 0) / 100) / 10) + ' t no talhão</div>';
+      else h += '<div class="fe-fc-p"><b>' + escapeHtml(c.prod) + '</b></div>';
+      h += '<div class="fe-fc-t">' + c.txt + '</div>';
+      if(c.plano) h += '<button type="button" class="tl-btn" data-action="fe-ir-plano">⬇ Ver o plano de adubação</button>';
+      else if(c.rec) h += ja ? '<button type="button" class="tl-btn" disabled>✔ Já salva</button>' : '<button type="button" class="tl-btn tl-pri" data-action="fe-foco-salvar" data-id="' + t.id + '" data-k="' + c.k + '">💾 Salvar recomendação</button>';
+      h += '</div>';
+    });
+    return h + '</div><div class="fe-fonte">Salvar deixa pendente na lista "Recomendações deste talhão". Nada vai para o Diário sem você clicar em 📒 Lançar no Diário e confirmar.</div></div>';
+  }
+  function feFocoSalvar(talhaoId, k){
+    var t = state.talhoes.find(function(x){ return x.id === talhaoId; }), a = t ? feAnaliseSup(t.id) : null; if(!a) return;
+    var c = feFocoItens(t, a).it[k]; if(!c || !c.rec) return;
+    var rec = Object.assign({doseMin:'', doseMax:'', area:'', status:'Recomendada', origem:'foco', observacao: c.txt.replace(/<[^>]+>/g, ''), criadoEm: Date.now()}, c.rec);
+    a.recomendacoes = (a.recomendacoes || []).filter(function(x){ return !(x.origem === 'foco' && x.status !== 'Aplicada' && x.tipo === rec.tipo && x.fonte === rec.fonte); }).concat([rec]);
+    saveKey('analisesSolo', state.analisesSolo); renderFertilidade();
+  }
   function feRecomSalvasHtml(t){
     var todas = recomendacoesDoTalhao(t.id), atuais = feRecsAtuais(t), antigas = todas.filter(function(x){ return atuais.indexOf(x) === -1; });
     var lista = feVerAntigas[t.id] ? todas : atuais;
@@ -3629,16 +4016,29 @@
     lista.forEach(function(x){
       var r = x.rec, ap = r.status === 'Aplicada', area = areaDaRecomendacao(r, t.id);
       var ic = {Calagem:'🪨', Gessagem:'⚪', Fosfatagem:'🧂', Potassagem:'🧂', 'Adubação':'🌱', Micronutrientes:'💧'}[r.tipo] || '📋';
-      var origemTag = r.origem === 'manualPR' ? '<span class="fe-orig fe-orig-pr">Manual PR</span>' : (r.calculada ? '<span class="fe-orig">cálculo geral</span>' : '<span class="fe-orig">do laudo / manual</span>');
+      var origemTag = r.origem === 'manualPR' ? '<span class="fe-orig fe-orig-pr">Manual PR</span>' : r.origem === 'foco' ? '<span class="fe-orig fe-orig-pr">🎯 foco</span>' : (r.calculada ? '<span class="fe-orig">cálculo geral</span>' : '<span class="fe-orig">do laudo / manual</span>');
       var antiga = antigas.indexOf(x) !== -1;
       h += '<div class="fe-rec' + (ap ? ' fe-ap' : '') + (antiga ? ' fe-antiga' : '') + '"><span class="fe-rec-ic">' + ic + '</span><div class="fe-rec-m"><b>' + escapeHtml(r.tipo) + (r.epoca ? ' · ' + escapeHtml(r.epoca) : '') + '</b> ' + origemTag + (antiga ? ' <span class="fe-orig">análise antiga</span>' : '') + '<div>' + escapeHtml(r.fonte || '—') + (r.doseMedia ? ' · <b>' + fmtNum(r.doseMedia) + ' kg/ha</b> · ' + fmtNum(Math.round((Number(r.doseMedia) || 0) * area / 1000 * 100) / 100) + ' t em ' + fmtHa(area) : '') + '</div><small>Análise de ' + fmtDate(x.analise.dataColeta) + (r.observacao ? ' · ' + escapeHtml(r.observacao) : '') + (ap && r.aplicadaEm ? ' · ✅ lançada no Diário em ' + fmtDate(r.aplicadaEm) : '') + '</small></div>';
       if(ap) h += '<span class="pd-nv pd-nv-ok">Aplicada</span>';
+      else if(r.semDiario) h += '<span class="pd-nv pd-nv-perto">Pendente</span><button type="button" class="tl-btn" data-action="fe-feito" data-id="' + x.analise.id + '" data-idx="' + x.idx + '">✔ Marcar como feita</button><details class="tl-more"><summary title="Mais ações">⋯</summary><div class="tl-menu"><button type="button" class="tl-danger" data-action="fe-rec-remover" data-id="' + x.analise.id + '" data-idx="' + x.idx + '">🗑️ Remover</button></div></details>';
       else h += '<span class="pd-nv pd-nv-perto">Pendente</span><button type="button" class="tl-btn fe-diario" data-action="fe-lancar-diario" data-id="' + x.analise.id + '" data-idx="' + x.idx + '">📒 Lançar no Diário</button><details class="tl-more"><summary title="Mais ações">⋯</summary><div class="tl-menu"><button type="button" data-action="recom-marcar-aplicada" data-id="' + x.analise.id + '" data-idx="' + x.idx + '">✔ Marcar como feita (sem Diário)</button><button type="button" class="tl-danger" data-action="fe-rec-remover" data-id="' + x.analise.id + '" data-idx="' + x.idx + '">🗑️ Remover</button></div></details>';
       h += '</div>';
     });
     return h + '</div>';
   }
   // Salva o plano como recomendações na análise mais recente do talhão
+  // Garantias de micronutrientes do adubo (% no produto), digitadas no cadastro do produto
+  var FE_GAR = [['B','Boro'],['Zn','Zinco'],['Cu','Cobre'],['Mn','Manganês'],['Mo','Molibdênio'],['Co','Cobalto'],['Fe','Ferro']];
+  function feMicroLevado(lista, m){ var t = 0; lista.forEach(function(x){ var pr = x.op && x.op.produtoId ? state.produtos.find(function(q){ return q.id === x.op.produtoId; }) : null, gg = feGarantias(pr); if(gg && gg[m]) t += x.kg * gg[m] / 100; }); return t; }
+  function feGarantias(p){ var g = p && p.garantias; if(!g) return null; var o = {}, tem = false; FE_GAR.forEach(function(x){ var v = Number(g[x[0]]); if(v > 0){ o[x[0]] = v; tem = true; } }); return tem ? o : null; }
+  function feGarantiasTexto(g){ return FE_GAR.filter(function(x){ return g[x[0]] > 0; }).map(function(x){ return x[1] + ' ' + fmtNum(g[x[0]]) + '%'; }).join(' · '); }
+  function garantiasAduboHtml(p){
+    p = p || {};
+    var g = p.garantias || {}, eh = /fertiliz|adubo|corretiv|foliar|calcar|gesso|npk|ureia|cloreto|fosfat/.test(semAcento((p.categoria || '') + ' ' + (p.nome || '')));
+    var h = '<details class="gar-box" style="grid-column:1/-1;"' + (eh || feGarantias(p) ? ' open' : '') + '><summary>🧪 Garantias do adubo — micronutrientes (% no produto) <small>preencha só se for adubo; copie da embalagem ou da nota</small></summary><div class="gar-grid">';
+    FE_GAR.forEach(function(x){ h += '<label><span>' + x[1] + ' <span style="text-transform:none;">(' + x[0] + ')</span></span><input type="number" min="0" max="100" step="0.001" name="gar_' + x[0] + '" value="' + (Number(g[x[0]]) > 0 ? g[x[0]] : '') + '" placeholder="%"></label>'; });
+    return h + '</div><p class="gar-nota">N, P₂O₅ e K₂O o sistema lê no nome (ex.: "04-14-08"). Os micronutrientes daqui entram nas recomendações da aba Fertilidade do Solo.</p></details>';
+  }
   function feSalvar(talhaoId){
     var t = state.talhoes.find(function(x){ return x.id === talhaoId; }), a = t ? feAnaliseSup(t.id) : null; if(!a) return;
     var op = feOpcoesTalhao(t), r = feRecomendacao(t, a, op); if(!r) return;
@@ -3696,6 +4096,9 @@
     safeRender('talhoes', renderTalhoes);
     safeRender('safras', renderSafras);
     safeRender('fertilidade', renderFertilidade);
+    safeRender('mapaGeral', renderMapaGeral);
+    safeRender('planoSafra', renderPlanoSafra);
+    safeRender('planoAdubacao', renderPlanoAdubacao);
     safeRender('culturas', function(){ renderGenericTab('culturas'); });
     safeRender('produtos', renderProdutos);
     safeRender('compras', renderCompras);
@@ -4860,6 +5263,7 @@
     h += '<button type="button" data-action="arquivar-produto" data-id="' + p.id + '">📦 Arquivar</button>';
     h += '<button type="button" class="tl-danger" data-action="del-produto" data-id="' + p.id + '">🗑️ Remover</button>';
     h += '</div></details></div>';
+    var garP = feGarantias(p); if(garP) h += '<div class="pd-ativo">💧 ' + escapeHtml(feGarantiasTexto(garP)) + '</div>';
     if(p.principioAtivo) h += '<div class="pd-ativo">🧬 ' + escapeHtml(p.principioAtivo) + (p.modoAcao ? ' <span>' + escapeHtml(p.modoAcao) + '</span>' : '') + '</div>';
     h += '<div class="pd-est"><div><b>' + fmtNum(e) + '</b> ' + escapeHtml(un) + '</div><span class="pd-nv ' + NV[nv][1] + '">' + NV[nv][0] + '</span></div>';
     var descEmb = descreverEmEmbalagens(p.id, p.estoqueAtual);
@@ -4894,6 +5298,7 @@
     html += field('number', 'estoqueMinimo', 'Estoque mínimo', false, '0', {step:'0.01', min:'0'}, editingRecord ? editingRecord.estoqueMinimo : undefined);
     html += camposCarenciaHtml(editingRecord);
     html += camposAtivoHtml(editingRecord);
+    html += garantiasAduboHtml(editingRecord);
     var cmCompras = editingRecord ? custoMedioComprasProduto(editingRecord.id) : 0;
     html += field('number', 'custoManual', 'Custo por ' + (editingRecord ? unidadeControle(editingRecord) || 'unidade' : 'unidade') + ' (R$) — opcional', false, cmCompras > 0 ? 'Compras: ' + cmCompras.toFixed(2) : '0,00', {step:'0.0001', min:'0'}, editingRecord && Number(editingRecord.custoManual) > 0 ? editingRecord.custoManual : undefined);
     html += '<p style="grid-column:1/-1; font-size:11px; color:var(--ink-soft); margin:-6px 0 0;">Deixe em branco para usar o custo médio das compras' + (cmCompras > 0 ? ' (hoje ' + fmtBRL(cmCompras) + ' por ' + escapeHtml(unidadeControle(editingRecord)) + ')' : '') + '. Preenchido, esse valor passa a valer para o custo das aplicações no Diário de Campo — as já lançadas são recalculadas ao salvar.</p>';
@@ -13154,7 +13559,7 @@
     html += '<div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:6px 14px;">';
     document.querySelectorAll('#nav .nav-btn').forEach(function(b){
       var t = b.dataset.tab; if(b.classList.contains('nav-sub') || t === 'painel' || t === 'configuracoes' || t === 'ajuda' || !abaPermitida(t)) return;
-      html += '<label style="font-size:13px; display:flex; gap:6px; align-items:center;"><input type="checkbox" class="menu-mostrar" data-tab="' + t + '"' + (ocM.indexOf(t) === -1 ? ' checked' : '') + '> ' + escapeHtml(b.textContent) + '</label>';
+      html += '<label style="font-size:13px; display:flex; gap:6px; align-items:center;"><input type="checkbox" class="menu-mostrar" data-tab="' + t + '"' + (ocM.indexOf(t) === -1 ? ' checked' : '') + '> ' + escapeHtml((b.querySelector('.nav-txt') || b).textContent) + '</label>';
     });
     html += '</div></div>';
 
@@ -13259,7 +13664,7 @@
   function setGroupCollapsed(label, collapsed){
     label.classList.toggle('collapsed', collapsed);
     var el = label.nextElementSibling;
-    while(el && !el.classList.contains('nav-group-label')){
+    while(el && !el.classList.contains('nav-group-label') && !el.classList.contains('nav-rodape')){
       el.style.display = collapsed ? 'none' : '';
       el = el.nextElementSibling;
     }
@@ -13965,6 +14370,7 @@
       prodFields.carenciaObs = data.get('carenciaObs') || ''; prodFields.carenciaFonte = data.get('carenciaFonte') || '';
       prodFields.carenciaDias = '';
       prodFields.agrofitRegistro = data.get('agrofitRegistro') || ''; prodFields.bulaUrl = data.get('bulaUrl') || ''; if(data.get('ativoFonte')) prodFields.ativoFonte = data.get('ativoFonte');
+      var garF = {}; FE_GAR.forEach(function(x){ var v = parseFloat(data.get('gar_' + x[0])); if(v > 0) garF[x[0]] = v; }); prodFields.garantias = Object.keys(garF).length ? garF : null;
       prodFields.classe = data.get('classe') || ''; prodFields.principioAtivo = (data.get('principioAtivo') || '').trim(); prodFields.modoAcao = (data.get('modoAcao') || '').trim().toUpperCase().replace(/\s+/g, ' ');
       if(prodEditingId) delete prodFields.estoqueAtual; // estoque só muda por compra, aplicação ou ajuste registrado
       lerEmbalagensDoDom();
@@ -14643,6 +15049,7 @@
     var action = btn.dataset.action;
     var id = btn.dataset.id;
     if(action.indexOf('mapa-') === 0 && acaoMapa(action, btn)) return;
+    if(/^(mg|ps)-/.test(action) && acaoTelasNovas(action, btn)) return;
     if(action.indexOf('dossie-') === 0){ acaoDossie(action, btn); return; }
     if(action === 'carencia-usar-bula'){ aplicarBulaNoForm(); return; }
     if(action === 'ativo-usar-catalogo'){ aplicarAtivoCatalogoNoForm(); return; }
@@ -15849,6 +16256,10 @@
     if(action === 'fe-nova-analise'){ soloTalhaoFiltro = id; switchTab('talhoes'); renderAll(); var secSoloF = document.getElementById('secao-analise-solo'); if(secSoloF) secSoloF.scrollIntoView({behavior:'smooth', block:'start'}); return; }
     if(action === 'fe-salvar'){ feSalvar(id); return; }
     if(action === 'fe-imprimir'){ feImprimir(id); return; }
+    if(action === 'fe-foco'){ var fNv = btn.getAttribute('data-f'); feFoco[id] = fNv; var tFo = state.talhoes.find(function(x){ return x.id === id; }); if(tFo){ feOpcoesTalhao(tFo).nivel = FE_FOCOS[fNv].nivel; } renderFertilidade(); return; }
+    if(action === 'fe-foco-salvar'){ feFocoSalvar(id, btn.getAttribute('data-k')); return; }
+    if(action === 'fe-feito'){ var aFt = state.analisesSolo.find(function(x){ return x.id === id; }); if(!aFt || !aFt.recomendacoes) return; var rFt = aFt.recomendacoes[Number(btn.dataset.idx)]; if(!rFt) return; rFt.status = 'Aplicada'; rFt.aplicadaEm = hojeISO(); saveKey('analisesSolo', state.analisesSolo); renderFertilidade(); return; }
+    if(action === 'fe-ir-plano'){ var anc = document.getElementById('fe-plano-anc'); if(anc) anc.scrollIntoView({behavior:'smooth', block:'start'}); return; }
     if(action === 'fe-npk-salvar'){
       var pN = state.produtos.find(function(x){ return x.id === id; }); if(!pN) return;
       var gv = function(k){ var el = document.getElementById('fe-npk-' + k + '-' + id); return el ? parseFloat(el.value) || 0 : 0; };
