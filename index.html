@@ -3406,7 +3406,8 @@
       if(kFaltaC > 2 && selK){ var kgKc = Math.round(kFaltaC / (selK.f.k / 100) / 5) * 5, nK = Math.min(nParc, 2); for(var iK = 1; iK <= nK; iK++) lista.push({epoca: 'Potássio ' + iK + ' de ' + nK + ' (junto com o N)', op: selK, kg: Math.round(kgKc / nK / 5) * 5, fornece: 'K₂O ' + fmtNum(Math.round(kgKc / nK * selK.f.k / 100)) + ' kg/ha'}); }
       if(K < kBase - 10) r.avisos.push('O formulado de N escolhido já leva ' + fmtNum(Math.round(kBase)) + ' kg/ha de K₂O, acima dos ' + fmtNum(K) + ' recomendados — considere um adubo só de nitrogênio (ureia, sulfato de amônio).');
       (r.micro || []).forEach(function(mi){ if(feMicroLevado(lista, mi.m) >= mi.dose * 0.95) return; lista.push({epoca:'Início das chuvas (set–out)', op:{nome: EMB_MICRO[mi.m].nome + ' (' + mi.m + ') — kg/ha do elemento (fonte à escolha)', f:{n:0,p:0,k:0}}, kg: mi.dose, fornece: mi.txt}); });
-      if((r.S || 0) > 0){ var gessoKg = Math.round(r.S / 0.15 / 5) * 5; lista.push({epoca: 'Início das chuvas (uma vez)', op: {nome: 'Gesso agrícola (~15% S) — ou outra fonte de enxofre', f:{n:0,p:0,k:0}}, kg: gessoKg, fornece: 'S ' + fmtNum(r.S) + ' kg/ha (Tab. 15.8)'}); }
+      var sLev = feMicroLevado(lista, 'S'), sFalta = (r.S || 0) - sLev;
+      if((r.S || 0) > 0 && sFalta > r.S * 0.05){ var gessoKg = Math.round(sFalta / 0.15 / 5) * 5; lista.push({epoca: 'Início das chuvas (uma vez)', op: {nome: 'Gesso agrícola (~15% S) — ou outra fonte de enxofre', f:{n:0,p:0,k:0}}, kg: gessoKg, fornece: 'S ' + fmtNum(Math.round(sFalta)) + ' kg/ha (Tab. 15.8' + (sLev > 0.5 ? '; o restante já vem nos adubos' : '') + ')'}); }
       lista.forEach(function(x){ x.total = x.kg * area; x.custo = x.op.produtoId ? x.total * feCustoKg(x.op.produtoId) : 0; });
       return {itens: lista, selBase: selP, selK: selK, selN: selNK};
     }
@@ -3819,14 +3820,14 @@
       h += '</div>';
       var levado = {};
       conv.itens.forEach(function(x){ var pr = x.op.produtoId ? state.produtos.find(function(q){ return q.id === x.op.produtoId; }) : null, gg = feGarantias(pr); if(!gg) return; Object.keys(gg).forEach(function(m){ levado[m] = (levado[m] || 0) + x.kg * gg[m] / 100; }); });
-      var precisa = {}; (r.micro || []).forEach(function(mi){ precisa[mi.m] = mi.dose; });
+      var precisa = {}; if((r.S || 0) > 0) precisa.S = r.S; (r.micro || []).forEach(function(mi){ precisa[mi.m] = mi.dose; });
       var linhasMic = [];
       Object.keys(precisa).forEach(function(m){ var lv = levado[m] || 0, nome = (FE_GAR.find(function(x){ return x[0] === m; }) || [m, m])[1];
         var noEst = state.produtos.filter(function(q){ var gg = feGarantias(q); return !q.arquivado && gg && gg[m] > 0; });
         linhasMic.push('<b>' + nome + ' (' + m + ')</b>: precisa ' + fmtNum(precisa[m]) + ' kg/ha · o plano já leva ' + fmtNum(Math.round(lv * 100) / 100) + ' kg/ha' + (lv >= precisa[m] * 0.95 ? ' ✅' : ' → faltam ' + fmtNum(Math.round((precisa[m] - lv) * 100) / 100) + ' kg/ha') + (lv < precisa[m] * 0.95 && noEst.length ? '<br><small>No estoque com ' + nome.toLowerCase() + ': ' + noEst.slice(0, 4).map(function(q){ var pc = feGarantias(q)[m]; return escapeHtml(q.nome) + ' (' + fmtNum(pc) + '% → ' + fmtNum(Math.round((precisa[m] - lv) / (pc / 100))) + ' kg/ha do produto)'; }).join('; ') + '</small>' : ''));
       });
-      Object.keys(levado).forEach(function(m){ if(precisa[m] === undefined && levado[m] > 0.005){ var nome = (FE_GAR.find(function(x){ return x[0] === m; }) || [m, m])[1]; linhasMic.push('<b>' + nome + ' (' + m + ')</b>: o plano leva ' + fmtNum(Math.round(levado[m] * 100) / 100) + ' kg/ha (não foi pedido pela análise)'); } });
-      if(linhasMic.length) h += '<div class="fe-aviso" style="background:#EEF3E2; border-color:#C9D8B0; color:var(--ink);">💧 <b>Micronutrientes × adubos</b> (pelas garantias cadastradas nos produtos)<br>' + linhasMic.join('<br>') + '</div>';
+      Object.keys(levado).forEach(function(m){ if(precisa[m] === undefined && levado[m] > 0.005){ var nome = (FE_GAR.find(function(x){ return x[0] === m; }) || [m, m])[1]; linhasMic.push('<b>' + nome + ' (' + m + ')</b>: o plano leva ' + fmtNum(Math.round(levado[m] * 100) / 100) + ' kg/ha' + (m === 'Ca' ? ' (soma ao cálcio do calcário)' : ' (não foi pedido pela análise)')); } });
+      if(linhasMic.length) h += '<div class="fe-aviso" style="background:#EEF3E2; border-color:#C9D8B0; color:var(--ink);">💧 <b>Cálcio, enxofre e micronutrientes × adubos</b> (pelas garantias cadastradas nos produtos)<br>' + linhasMic.join('<br>') + '</div>';
       else if(Object.keys(precisa).length) h += '<div class="fe-fonte">💧 Para ver quanto de micronutriente seus adubos já levam, preencha as "Garantias do adubo" no cadastro do produto (aba Produtos e Estoque → Editar).</div>';
       if(totCusto > 0) h += '<div class="fe-custo">💸 Custo estimado dos adubos do estoque: <b>' + fmtBRL(totCusto) + '</b> no talhão · ' + fmtBRL(totCusto / (Number(t.area) || 1)) + '/ha · ' + fmtBRL(totCusto / (Number(t.area) || 1) / (Number(op.sc) || 1)) + ' por saca esperada</div>';
       if(r.partes.length) h += '<ul class="fe-partes">' + r.partes.map(function(p){ return '<li>' + p + '</li>'; }).join('') + '</ul>';
@@ -4028,16 +4029,16 @@
   }
   // Salva o plano como recomendações na análise mais recente do talhão
   // Garantias de micronutrientes do adubo (% no produto), digitadas no cadastro do produto
-  var FE_GAR = [['B','Boro'],['Zn','Zinco'],['Cu','Cobre'],['Mn','Manganês'],['Mo','Molibdênio'],['Co','Cobalto'],['Fe','Ferro']];
+  var FE_GAR = [['Ca','Cálcio'],['S','Enxofre'],['B','Boro'],['Zn','Zinco'],['Cu','Cobre'],['Mn','Manganês'],['Mo','Molibdênio'],['Co','Cobalto'],['Fe','Ferro']];
   function feMicroLevado(lista, m){ var t = 0; lista.forEach(function(x){ var pr = x.op && x.op.produtoId ? state.produtos.find(function(q){ return q.id === x.op.produtoId; }) : null, gg = feGarantias(pr); if(gg && gg[m]) t += x.kg * gg[m] / 100; }); return t; }
   function feGarantias(p){ var g = p && p.garantias; if(!g) return null; var o = {}, tem = false; FE_GAR.forEach(function(x){ var v = Number(g[x[0]]); if(v > 0){ o[x[0]] = v; tem = true; } }); return tem ? o : null; }
   function feGarantiasTexto(g){ return FE_GAR.filter(function(x){ return g[x[0]] > 0; }).map(function(x){ return x[1] + ' ' + fmtNum(g[x[0]]) + '%'; }).join(' · '); }
   function garantiasAduboHtml(p){
     p = p || {};
     var g = p.garantias || {}, eh = /fertiliz|adubo|corretiv|foliar|calcar|gesso|npk|ureia|cloreto|fosfat/.test(semAcento((p.categoria || '') + ' ' + (p.nome || '')));
-    var h = '<details class="gar-box" style="grid-column:1/-1;"' + (eh || feGarantias(p) ? ' open' : '') + '><summary>🧪 Garantias do adubo — micronutrientes (% no produto) <small>preencha só se for adubo; copie da embalagem ou da nota</small></summary><div class="gar-grid">';
+    var h = '<details class="gar-box" style="grid-column:1/-1;"' + (eh || feGarantias(p) ? ' open' : '') + '><summary>🧪 Garantias do adubo — cálcio, enxofre e micronutrientes (% no produto) <small>preencha só se for adubo; copie da embalagem ou da nota</small></summary><div class="gar-grid">';
     FE_GAR.forEach(function(x){ h += '<label><span>' + x[1] + ' <span style="text-transform:none;">(' + x[0] + ')</span></span><input type="number" min="0" max="100" step="0.001" name="gar_' + x[0] + '" value="' + (Number(g[x[0]]) > 0 ? g[x[0]] : '') + '" placeholder="%"></label>'; });
-    return h + '</div><p class="gar-nota">N, P₂O₅ e K₂O o sistema lê no nome (ex.: "04-14-08"). Os micronutrientes daqui entram nas recomendações da aba Fertilidade do Solo.</p></details>';
+    return h + '</div><p class="gar-nota">N, P₂O₅ e K₂O o sistema lê no nome (ex.: "04-14-08"). Cálcio, enxofre e micronutrientes daqui entram nas recomendações da aba Fertilidade do Solo.</p></details>';
   }
   function feSalvar(talhaoId){
     var t = state.talhoes.find(function(x){ return x.id === talhaoId; }), a = t ? feAnaliseSup(t.id) : null; if(!a) return;
