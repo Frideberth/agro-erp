@@ -118,6 +118,13 @@
   .sf-user{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .sf-sair{color:#E6EBD5 !important; font-weight:700; white-space:nowrap; text-decoration:none !important;}
   .menu-mobile, .menu-fundo{display:none;}
+  #avisos-tela:empty{display:none;}
+  .at-box{background:#FFF8E6; border:1px solid #EBD9A6; border-left:4px solid #E0B23C; border-radius:12px; padding:10px 14px; margin:0 0 16px;}
+  .at-tit{font-weight:800; font-size:13.5px; margin-bottom:4px; color:var(--ink);} .at-tit small{font-weight:500; color:var(--ink-soft); margin-left:6px;}
+  .at-item{display:flex; align-items:center; gap:10px; padding:7px 0; border-top:1px dashed #EBD9A6; font-size:13px; color:var(--ink);} .at-item:first-of-type{border-top:0;}
+  .at-item.grave .at-txt b{color:#C0453A;} .at-ic{width:22px; text-align:center;} .at-txt{flex:1;} .at-onde{font-size:11.5px; color:var(--ink-soft); background:#fff; border:1px solid #EBD9A6; border-radius:99px; padding:1px 8px; margin-left:4px;}
+  .at-item .tl-btn{padding:5px 11px; font-size:12px;}
+  #sub-abas button .nav-badge{margin-left:6px; display:inline-block; vertical-align:1px;}
   #sub-abas{display:flex; flex-wrap:wrap; gap:6px; margin:-8px 0 18px;}
   #sub-abas:empty{display:none;}
   #sub-abas button{font-family:inherit; font-size:13px; font-weight:600; padding:7px 14px; border-radius:6px; cursor:pointer; border:2px solid var(--paper-line); background:var(--paper); color:var(--ink);}
@@ -776,6 +783,7 @@
       <div id="loading-indicator">Carregando dados…</div>
     </div>
     <div id="sub-abas"></div>
+    <div id="avisos-tela"></div>
 
     <section id="tab-painel" class="tab-content"></section>
     <section id="tab-propriedades" class="tab-content hidden"></section>
@@ -2997,9 +3005,9 @@
   function menuOcultas(){ try{ var r = window.localStorage.getItem(MENU_OCULTAS_KEY); return r ? JSON.parse(r) : []; }catch(e){ return []; } }
   function temCafe(){ return state.culturas.some(function(c){ return /caf/.test(semAcento(c.nome)) && state.safras.some(function(s){ return s.culturaId === c.id; }); }); }
   function atualizarBadgesMenu(){
-    var cont = {}, grave = {};
-    try{ listaPendencias().forEach(function(it){ if(!it.tab) return; cont[it.tab] = (cont[it.tab] || 0) + it.qtd; if(it.grave) grave[it.tab] = true; }); }catch(e){}
-    try{ var pa = 0; talhoesAtivos().forEach(function(t){ pa += feRecsAtuais(t).filter(function(x){ return x.rec.status !== 'Aplicada'; }).length; }); if(pa) cont.planoAdubacao = pa; }catch(e){}
+    var cont = {}, grave = {}; pendPorTab = {};
+    try{ listaPendencias().forEach(function(it){ if(!it.tab) return; cont[it.tab] = (cont[it.tab] || 0) + it.qtd; if(it.grave) grave[it.tab] = true; (pendPorTab[it.tab] = pendPorTab[it.tab] || []).push(it); }); }catch(e){}
+    try{ var pa = 0; talhoesAtivos().forEach(function(t){ pa += feRecsAtuais(t).filter(function(x){ return x.rec.status !== 'Aplicada'; }).length; }); if(pa){ cont.planoAdubacao = pa; pendPorTab.planoAdubacao = [{qtd: pa, icone:'🌿', texto:'recomendação(ões) de adubação salvas e ainda não aplicadas — veja abaixo, por época', tab:'planoAdubacao', filtro:'', grave:false}]; } }catch(e){}
     document.querySelectorAll('#nav .nav-badge').forEach(function(x){ x.remove(); });
     var porBtn = new Map();
     Object.keys(cont).forEach(function(tab){
@@ -3007,12 +3015,32 @@
       if(!bt){ var hb = hubDaAba(tab); if(hb) bt = document.querySelector('#nav .nav-btn[data-hub="' + hb.id + '"]'); }
       if(!bt) return; var o = porBtn.get(bt) || {n:0, g:false}; o.n += cont[tab]; o.g = o.g || !!grave[tab]; porBtn.set(bt, o);
     });
+    try{ desenharAvisosTela(abaAtual); }catch(e){}
     porBtn.forEach(function(o, bt){ var sp = document.createElement('span'); sp.className = 'nav-badge' + (o.g ? ' grave' : ''); sp.textContent = o.n > 99 ? '99+' : o.n; bt.appendChild(sp); });
     document.querySelectorAll('#nav .nav-group-label').forEach(function(l){
       var n = 0, gr = false, el = l.nextElementSibling;
       while(el && !el.classList.contains('nav-group-label') && !el.classList.contains('nav-rodape')){ var o = porBtn.get(el); if(o && !el.classList.contains('nav-oculta')){ n += o.n; gr = gr || o.g; } el = el.nextElementSibling; }
       var gb = l.querySelector('.nav-g-badge'); if(gb){ gb.textContent = n ? (n > 99 ? '99+' : n) : ''; gb.className = 'nav-g-badge' + (n ? ' on' : '') + (gr ? ' grave' : ''); }
     });
+  }
+  var pendPorTab = {};
+  function desenharAvisosTela(tab){
+    var box = document.getElementById('avisos-tela'); if(!box) return;
+    var hub = hubDaAba(tab), tabs = hub ? hub.tabs.map(function(t){ return t[0]; }) : [tab];
+    var itens = []; tabs.forEach(function(t){ (pendPorTab[t] || []).forEach(function(it){ itens.push(it); }); });
+    if(!itens.length || tab === 'painel'){ box.innerHTML = ''; return; }
+    var nomeAba = function(t){ var h = hubDaAba(t), x = h && h.tabs.find(function(y){ return y[0] === t; }); return x ? x[1] : (pageMeta[t] ? pageMeta[t].title : t); };
+    var h = '<div class="at-box"><div class="at-tit">🔔 Avisos desta tela <small>são os números que aparecem no menu</small></div>';
+    itens.forEach(function(it){
+      var aqui = it.tab === tab;
+      h += '<div class="at-item' + (it.grave ? ' grave' : '') + '"><span class="at-ic">' + it.icone + '</span><span class="at-txt"><b>' + it.qtd + '</b> ' + it.texto + (aqui ? '' : ' <span class="at-onde">em ' + escapeHtml(nomeAba(it.tab)) + '</span>') + '</span>';
+      if(it.tab === 'planoAdubacao'){ if(!aqui) h += '<button type="button" class="tl-btn" data-action="ir-pendencia" data-tab="planoAdubacao" data-filtro="">abrir →</button>'; }
+      else if(!aqui || it.filtro) h += '<button type="button" class="tl-btn" data-action="ir-pendencia" data-tab="' + it.tab + '" data-filtro="' + (it.filtro || '') + '">' + (aqui ? 'mostrar →' : 'abrir →') + '</button>';
+      h += '</div>';
+    });
+    box.innerHTML = h + '</div>';
+    var sb = document.getElementById('sub-abas');
+    if(sb) sb.querySelectorAll('[data-subaba]').forEach(function(b){ var n = (pendPorTab[b.dataset.subaba] || []).reduce(function(s, it){ return s + it.qtd; }, 0), g = (pendPorTab[b.dataset.subaba] || []).some(function(it){ return it.grave; }); var old = b.querySelector('.nav-badge'); if(old) old.remove(); if(n){ var sp = document.createElement('span'); sp.className = 'nav-badge' + (g ? ' grave' : ''); sp.textContent = n; b.appendChild(sp); } });
   }
   function fecharMenuMobile(){ document.body.classList.remove('menu-aberto'); }
   document.addEventListener('click', function(e){
@@ -3034,6 +3062,7 @@
     var bAj = document.getElementById('btn-ajuda-tela'); if(bAj) bAj.style.display = (tab === 'ajuda') ? 'none' : '';
     document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.tab === tab || (!!hubSw && b.dataset.hub === hubSw.id)); });
     desenharSubAbas(tab);
+    try{ desenharAvisosTela(tab); }catch(eAv){}
     document.querySelectorAll('.tab-content').forEach(function(sec){ sec.classList.toggle('hidden', sec.id !== 'tab-' + tab); });
     document.getElementById('page-title').textContent = pageMeta[tab].title;
     document.getElementById('page-subtitle').textContent = pageMeta[tab].subtitle;
@@ -4176,7 +4205,7 @@
     var negativos = state.produtos.filter(function(p){ return !p.arquivado && (Number(p.estoqueAtual) || 0) < -0.0005; });
     add(negativos.length, '📦', 'produto(s) com estoque negativo: ' + negativos.slice(0, 4).map(function(p){ return p.nome; }).join(', ') + (negativos.length > 4 ? '…' : ''), 'produtos', '', true);
     var semCusto = state.produtos.filter(function(p){ return !p.arquivado && (Number(p.estoqueAtual) || 0) > 0 && !(custoMedioProduto(p.id) > 0); });
-    add(semCusto.length, '💲', 'produto(s) com estoque mas sem custo (a aplicação no Diário sai com custo zero)', 'produtos');
+    add(semCusto.length, '💲', 'produto(s) com estoque mas sem custo (a aplicação no Diário sai com custo zero): ' + semCusto.slice(0, 5).map(function(p){ return p.nome; }).join(', ') + (semCusto.length > 5 ? '…' : ''), 'produtos');
     var ativas = state.safras.filter(function(sf){ return sf.ativa !== false && sf.status !== 'colhida'; });
     add(ativas.filter(function(sf){ return !sf.dataPlantio; }).length, '🌱', 'safra(s) em andamento sem data de plantio', 'safras');
     add(state.safras.filter(function(sf){ return sf.dataPlantio && sf.previsaoColheita && sf.previsaoColheita < sf.dataPlantio; }).length, '📆', 'safra(s) com previsão de colheita antes do plantio', 'safras');
