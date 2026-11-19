@@ -3029,7 +3029,7 @@
   function atualizarBadgesMenu(){
     var cont = {}, grave = {}; pendPorTab = {};
     try{ listaPendencias().forEach(function(it){ if(!it.tab) return; cont[it.tab] = (cont[it.tab] || 0) + it.qtd; if(it.grave) grave[it.tab] = true; (pendPorTab[it.tab] = pendPorTab[it.tab] || []).push(it); }); }catch(e){}
-    try{ var rp = rsPendencias(); var itR = []; if(rp.viol) itR.push({qtd: rp.viol, icone:'⚠️', texto:'aplicação(ões) com colheita antes do fim da carência neste ano agrícola', tab:'rastreabilidade', filtro:'', grave:true}); if(rp.semRec) itR.push({qtd: rp.semRec, icone:'📝', texto:'aplicação(ões) de defensivo sem nº de receituário neste ano agrícola — preencha no Diário de Campo', tab:'rastreabilidade', filtro:'', grave:false}); if(itR.length){ pendPorTab.rastreabilidade = itR; itR.forEach(function(it){ cont.rastreabilidade = (cont.rastreabilidade || 0) + it.qtd; if(it.grave) grave.rastreabilidade = true; }); } }catch(e){}
+    try{ var rp = rsPendencias(); var itR = []; if(rp.viol) itR.push({qtd: rp.viol, icone:'⚠️', texto:'aplicação(ões) com colheita antes do fim da carência neste ano agrícola', tab:'rastreabilidade', filtro:'', grave:true}); if(rp.plant.length) itR.push({qtd: rp.plant.length, icone:'🌱', texto:'data(s) de plantio que não conferem: ' + rp.plant.map(rsDivergTexto).join(' · '), tab:'rastreabilidade', filtro:'', grave:false}); if(rp.semRec) itR.push({qtd: rp.semRec, icone:'📝', texto:'aplicação(ões) de defensivo sem nº de receituário neste ano agrícola — preencha no Diário de Campo', tab:'rastreabilidade', filtro:'', grave:false}); if(itR.length){ pendPorTab.rastreabilidade = itR; itR.forEach(function(it){ cont.rastreabilidade = (cont.rastreabilidade || 0) + it.qtd; if(it.grave) grave.rastreabilidade = true; }); } }catch(e){}
     try{ var pa = 0; talhoesAtivos().forEach(function(t){ pa += feRecsAtuais(t).filter(function(x){ return x.rec.status !== 'Aplicada'; }).length; }); if(pa){ cont.planoAdubacao = pa; pendPorTab.planoAdubacao = [{qtd: pa, icone:'🌿', texto:'recomendação(ões) de adubação salvas e ainda não aplicadas — veja abaixo, por época', tab:'planoAdubacao', filtro:'', grave:false}]; } }catch(e){}
     document.querySelectorAll('#nav .nav-badge').forEach(function(x){ x.remove(); });
     var porBtn = new Map();
@@ -3696,6 +3696,26 @@
   }
   /* ---------------- Rastreabilidade (central) ---------------- */
   var rsAno = null, rsAberta = {};
+  // datas de plantio: cadastro da safra × lançamento no Diário
+  function rsDivergPlantio(d){
+    var out = [];
+    d.sfs.forEach(function(sf){
+      var ops = []; d.aplicacoes.forEach(function(a){ if(/plant|semead/i.test(semAcento(a.tipo || '')) && a.safraIds.indexOf(sf.id) !== -1 && a.data && ops.indexOf(a.data) === -1) ops.push(a.data); });
+      if(!ops.length) return;
+      ops.sort();
+      var y = parseInt(sf.anoAgricola, 10), ini = y ? y + '-07-01' : '', fim = y ? (y + 1) + '-06-30' : '';
+      var fora = ini ? ops.filter(function(dt){ return dt < ini || dt > fim; }) : [];
+      var dif = sf.dataPlantio && !ops.some(function(dt){ return Math.abs((new Date(dt + 'T12:00:00') - new Date(sf.dataPlantio + 'T12:00:00')) / 86400000) <= 3; });
+      if(fora.length || dif) out.push({sf: sf, tal: talhaoNome(sf.talhaoId), cad: sf.dataPlantio || '', diario: ops, fora: fora, dif: !!dif});
+    });
+    return out;
+  }
+  function rsDivergTexto(x){
+    var t = [];
+    if(x.fora.length) t.push('Diário com plantio em ' + x.fora.map(fmtDate).join(', ') + ', fora do ano agrícola ' + x.sf.anoAgricola + ' (data digitada errada?)');
+    if(x.dif) t.push('cadastro da safra diz ' + fmtDate(x.cad) + ', Diário diz ' + x.diario.map(fmtDate).join(', '));
+    return x.tal + ': ' + t.join('; ');
+  }
   function rsConferencia(d){
     var naoColhida = !d.colheitas.length && d.sfs.every(function(sf){ return sf.status !== 'colhida'; });
     var hoje = hojeISO();
@@ -3706,6 +3726,7 @@
       {k:'rec', ok: !d.semReceituario.length, txt:'Receituário nas aplicações de defensivo', obs: d.semReceituario.length ? d.semReceituario.length + ' aplicação(ões) sem nº de receituário' : ''},
       {k:'car2', ok: !d.violadas.length && !d.semCarencia.length, txt:'Carência respeitada antes da colheita', obs: d.violadas.length ? d.violadas.length + ' colhida(s) antes do fim da carência' : (d.semCarencia.length ? d.semCarencia.length + ' defensivo(s) sem carência cadastrada' : '')},
       {k:'reg', ok: !d.naoRegistrados.length, txt:'Produtos registrados para a cultura', obs: d.naoRegistrados.length ? d.naoRegistrados.map(function(a){ return produtoNome(a.produtoId); }).filter(function(v, i, arr){ return arr.indexOf(v) === i; }).join(', ') : ''},
+      {k:'plant', ok: !rsDivergPlantio(d).length, txt:'Data de plantio confere (cadastro da safra × Diário)', obs: rsDivergPlantio(d).map(rsDivergTexto).join(' · ')},
       {k:'colh', ok: d.colheitas.length > 0 ? true : (naoColhida ? 'pend' : false), txt:'Colheita registrada', obs: naoColhida ? 'safra ainda não colhida' : (d.colheitas.length ? '' : 'marcada como colhida, mas sem registro de colheita')},
       {k:'dest', ok: d.vendas.length > 0 ? true : 'pend', txt:'Destino da produção (venda / saída)', obs: d.vendas.length ? '' : 'ainda sem saída registrada'}
     ];
@@ -3720,17 +3741,25 @@
     return a.sort().reverse();
   }
   function rsPendencias(){
-    var out = {viol: 0, semRec: 0};
-    try{ var ano = psAnoAtual(); rsLavourasDoAno(ano).forEach(function(l){ var d = dadosDossie(safrasDaLavoura(l.id)); out.viol += d.violadas.length; out.semRec += d.semReceituario.length; }); }catch(e){}
+    var out = {viol: 0, semRec: 0, plant: []};
+    try{ var ano = psAnoAtual(); rsLavourasDoAno(ano).forEach(function(l){ var d = dadosDossie(safrasDaLavoura(l.id)); out.viol += d.violadas.length; out.semRec += d.semReceituario.length; out.plant = out.plant.concat(rsDivergPlantio(d)); }); }catch(e){}
     return out;
   }
   function rsLinhaTempo(d){
     var ev = [];
-    d.sfs.forEach(function(sf){ if(sf.dataPlantio) ev.push({data: sf.dataPlantio, ic:'🌱', txt:'Plantio — ' + talhaoNome(sf.talhaoId)}); });
+    var divs = rsDivergPlantio(d);
+    d.sfs.forEach(function(sf){
+      if(!sf.dataPlantio) return;
+      var temOp = d.aplicacoes.some(function(a){ return /plant|semead/i.test(semAcento(a.tipo || '')) && a.safraIds.indexOf(sf.id) !== -1; });
+      var dv = divs.find(function(x){ return x.sf === sf; });
+      if(temOp && !(dv && dv.dif)) return; // o lançamento do Diário já aparece
+      ev.push({data: sf.dataPlantio, ic:'🌱', txt:'Plantio — ' + talhaoNome(sf.talhaoId) + ' (data do cadastro da safra' + (dv && dv.dif ? ' — ⚠️ o Diário diz ' + dv.diario.map(fmtDate).join(', ') : (temOp ? '' : '; sem lançamento no Diário')) + ')'});
+    });
     var porOp = {};
     d.aplicacoes.forEach(function(a){ if(!a.data) return; var k = a.op.id; if(!porOp[k]){ porOp[k] = {data: a.data, ic: a.defensivo ? '🧴' : '🚜', tipo: a.tipo, talhoes: a.talhoes, prods: [], rec: a.op.receituario || '', car: []}; ev.push(porOp[k]); }
       if(a.produtoId) porOp[k].prods.push(produtoNome(a.produtoId)); if(a.carencia !== null && a.carencia !== undefined) porOp[k].car.push(a); });
-    ev.forEach(function(e){ if(e.prods !== undefined){ e.txt = escapeHtml(e.tipo) + ' — ' + escapeHtml(e.talhoes) + (e.prods.length ? '<br><small>' + e.prods.map(escapeHtml).join(', ') + (e.rec ? ' · receituário ' + escapeHtml(e.rec) : (e.ic === '🧴' ? ' · <b style="color:#C0453A;">sem receituário</b>' : '')) + (e.car.length ? ' · carência até ' + e.car.map(function(a){ return fmtDate(a.libera) + (a.situacao === 'violada' ? ' ⚠️' : ''); }).filter(function(v, i, arr){ return arr.indexOf(v) === i; }).join(', ') : '') + '</small>' : ''); e.html = true; } });
+    var foraDts = []; divs.forEach(function(x){ foraDts = foraDts.concat(x.fora); });
+    ev.forEach(function(e){ if(e.prods !== undefined){ e.txt = escapeHtml(e.tipo) + ' — ' + escapeHtml(e.talhoes) + (/plant|semead/i.test(semAcento(e.tipo || '')) && foraDts.indexOf(e.data) !== -1 ? ' <b style="color:#C0453A;">⚠️ data fora do ano agrícola — confira no Diário</b>' : '') + (e.prods.length ? '<br><small>' + e.prods.map(escapeHtml).join(', ') + (e.rec ? ' · receituário ' + escapeHtml(e.rec) : (e.ic === '🧴' ? ' · <b style="color:#C0453A;">sem receituário</b>' : '')) + (e.car.length ? ' · carência até ' + e.car.map(function(a){ return fmtDate(a.libera) + (a.situacao === 'violada' ? ' ⚠️' : ''); }).filter(function(v, i, arr){ return arr.indexOf(v) === i; }).join(', ') : '') + '</small>' : ''); e.html = true; } });
     d.colheitas.forEach(function(c){ var sf = state.safras.find(function(x){ return x.id === c.safraId; }); ev.push({data: c.data, ic:'🧺', txt:'Colheita — ' + (sf ? talhaoNome(sf.talhaoId) : '') + ' · ' + fmtNum(c.quantidade) + ' ' + (c.unidade || '') + (c.localArmazenagem ? ' → ' + c.localArmazenagem : '')}); });
     d.vendas.forEach(function(v){ ev.push({data: v.data, ic:'🚚', txt:'Saída / venda · ' + fmtNum(v.quantidade) + ' ' + (v.unidade || '') + (v.parceiroId ? ' → ' + parceiroNome(v.parceiroId) : '')}); });
     ev.sort(function(a, b){ return (a.data || '').localeCompare(b.data || ''); });
