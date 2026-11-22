@@ -124,7 +124,7 @@
   .at-item{display:flex; align-items:center; gap:10px; padding:7px 0; border-top:1px dashed #EBD9A6; font-size:13px; color:var(--ink);} .at-item:first-of-type{border-top:0;}
   .at-item.grave .at-txt b{color:#C0453A;} .at-ic{width:22px; text-align:center;} .at-txt{flex:1;} .at-onde{font-size:11.5px; color:var(--ink-soft); background:#fff; border:1px solid #EBD9A6; border-radius:99px; padding:1px 8px; margin-left:4px;}
   .at-item .tl-btn{padding:5px 11px; font-size:12px;}
-  #sub-abas button .nav-badge{margin-left:6px; display:inline-block; vertical-align:1px;}
+  #sub-abas button .nav-badge{position:absolute; top:-7px; right:-7px; box-shadow:0 0 0 2px #2F3A27;}
   #sub-abas{display:flex; flex-wrap:wrap; gap:6px; margin:-8px 0 18px;}
   #sub-abas:empty{display:none;}
   #sub-abas button{font-family:inherit; font-size:13px; font-weight:600; padding:7px 14px; border-radius:6px; cursor:pointer; border:2px solid var(--paper-line); background:var(--paper); color:var(--ink);}
@@ -528,7 +528,17 @@
   tbody td{padding:10px 12px;}
   tbody tr:hover td{background:#FAFAF0;}
   .note-box{border-left:4px solid var(--accent); border-radius:10px; font-size:12.5px; line-height:1.55;}
-  #sub-abas button{border-radius:99px; padding:7px 16px;}
+  /* abas do topo: cartões com ícone e resumo */
+  #sub-abas{display:grid; grid-template-columns:repeat(var(--n, 2), minmax(0, 250px)); gap:10px; margin:-4px 0 20px;}
+  #sub-abas button{position:relative; display:flex; align-items:center; gap:12px; text-align:left; padding:11px 14px; border-radius:14px; border:2px solid rgba(255,255,255,0.14); background:rgba(255,255,255,0.06); color:#E3E8D2; font-weight:500; transition:background .15s, border-color .15s, transform .15s;}
+  #sub-abas button:hover{background:rgba(255,255,255,0.12); border-color:rgba(255,255,255,0.28); transform:translateY(-1px);}
+  #sub-abas button.on{background:var(--paper); color:var(--ink); border-color:#C4D678; box-shadow:0 0 0 3px rgba(196,214,120,0.35);}
+  #sub-abas .sa-ic{width:40px; height:40px; flex-shrink:0; border-radius:11px; background:rgba(255,255,255,0.10); display:flex; align-items:center; justify-content:center; font-size:20px;}
+  #sub-abas button.on .sa-ic{background:#E3F1D6;}
+  #sub-abas .sa-txt{min-width:0; display:flex; flex-direction:column; gap:1px;}
+  #sub-abas .sa-txt strong{font-size:14.5px; font-weight:800; line-height:1.2;}
+  #sub-abas .sa-txt small{font-size:11.5px; opacity:0.78; line-height:1.3;}
+  @media (max-width: 820px){ #sub-abas{grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px;} #sub-abas button{padding:9px 10px; gap:9px;} #sub-abas .sa-ic{width:32px; height:32px; font-size:16px;} #sub-abas .sa-txt strong{font-size:13px;} #sub-abas .sa-txt small{font-size:10.5px;} }
   .property-card{border-radius:14px;}
   .section-title{font-family:inherit; font-weight:800; font-size:17px;}
 
@@ -555,6 +565,9 @@
   .pa-epoca{margin-bottom:12px;} .pa-ep-tit{font-weight:800; font-size:13.5px; margin:8px 0 6px;} .pa-ep-tit small{font-weight:500; color:var(--ink-soft);}
   .pa-ic{font-size:20px; width:36px; text-align:center; flex-shrink:0;}
   @media (max-width: 820px){ .mg-wrap{grid-template-columns:1fr;} }
+  .rt-tab tfoot td{padding:10px 12px; border-top:2px solid var(--paper-line); background:#F3F1E2; font-weight:700;}
+  .tl-custo{display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 8px; width:100%; margin:8px 0 2px; padding:8px 11px; border:1px solid #EBD9A6; background:#FFF8E6; border-radius:10px; font-family:inherit; font-size:12px; color:var(--ink); cursor:pointer; text-align:left;}
+  .tl-custo:hover{border-color:#E0B23C;} .tl-custo span{color:var(--ink-soft);} .tl-custo b{font-size:14px; color:var(--cost-dark, #A23E2E);} .tl-custo small{color:var(--ink-soft); margin-left:auto;}
   /* ---------- Rastreabilidade ---------- */
   .rs-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:14px;}
   .rs-card{background:var(--paper); border:1px solid var(--paper-line); border-radius:14px; padding:14px 16px; box-shadow:var(--shadow);}
@@ -3013,11 +3026,30 @@
   function abaPermitida(tab){ return !(typeof papelAtual === 'function' && papelAtual() === 'campo' && PERMITIDAS_CAMPO.indexOf(tab) === -1); }
   function hubDaAba(tab){ return NAV_HUBS.find(function(h){ return h.tabs.some(function(t){ return t[0] === tab; }); }) || null; }
   var hubUltimaAba = {};
+  var SUBABA_IC = {propriedades:'📋', arrendamentos:'📜', mapaGeral:'🗺️', talhoes:'🧩', patrimonio:'🚜', produtos:'📦', parceiros:'👥', equipe:'👷', safras:'🌾', culturas:'🌱', caderneta:'☕', fluxoCaixa:'🏦', contaCorrente:'💳'};
+  function subAbaResumo(tab){
+    var n = function(a){ return (a || []).length; }, pl = function(q, um, varios){ return q + ' ' + (q === 1 ? um : varios); };
+    if(tab === 'propriedades'){ var pr = state.propriedades, car = pr.filter(function(p){ return p.codigoCAR; }).length; return pl(pr.length, 'imóvel', 'imóveis') + ' · ' + car + ' com CAR'; }
+    if(tab === 'arrendamentos') return pl(n(state.arrendamentos), 'contrato', 'contratos') + ' · pagos e recebidos';
+    if(tab === 'mapaGeral'){ var tA = talhoesAtivos(); return tA.filter(function(t){ return t.contorno && t.contorno.length > 2; }).length + ' de ' + tA.length + ' talhões no mapa'; }
+    if(tab === 'talhoes'){ var tB = talhoesAtivos(); return pl(tB.length, 'talhão', 'talhões') + ' · ' + fmtHa(tB.reduce(function(s, t){ return s + (Number(t.area) || 0); }, 0)); }
+    if(tab === 'patrimonio') return pl(n(state.patrimonio), 'máquina ou bem', 'máquinas e bens');
+    if(tab === 'produtos') return pl(state.produtos.filter(function(p){ return !p.arquivado; }).length, 'produto ativo', 'produtos ativos') + ' no estoque';
+    if(tab === 'parceiros') return pl(n(state.parceiros), 'fornecedor ou cliente', 'fornecedores e clientes');
+    if(tab === 'equipe') return pl(n(state.equipe), 'pessoa', 'pessoas') + ' na equipe';
+    if(tab === 'safras'){ var an = psAnoAtual(); return pl(state.safras.filter(function(s){ return normalizarAnoAgricola(s.anoAgricola) === an; }).length, 'talhão plantado', 'talhões plantados') + ' em ' + an; }
+    if(tab === 'culturas') return pl(n(state.culturas), 'cultura cadastrada', 'culturas cadastradas');
+    if(tab === 'caderneta') return pl(n(state.cafeLotes), 'lote de café', 'lotes de café');
+    if(tab === 'fluxoCaixa') return 'Entradas e saídas mês a mês';
+    if(tab === 'contaCorrente') return 'Extrato por parceiro';
+    return '';
+  }
   function desenharSubAbas(tab){
     var box = document.getElementById('sub-abas'); if(!box) return;
     var hub = hubDaAba(tab), abas = hub ? hub.tabs.filter(function(t){ return abaPermitida(t[0]); }) : [];
     if(abas.length < 2){ box.innerHTML = ''; return; }
-    box.innerHTML = abas.map(function(t){ return '<button type="button" data-subaba="' + t[0] + '" class="' + (t[0] === tab ? 'on' : '') + '">' + t[1] + '</button>'; }).join('');
+    box.style.setProperty('--n', abas.length);
+    box.innerHTML = abas.map(function(t){ var r = ''; try{ r = subAbaResumo(t[0]); }catch(e){} return '<button type="button" data-subaba="' + t[0] + '" class="' + (t[0] === tab ? 'on' : '') + '"><span class="sa-ic">' + (SUBABA_IC[t[0]] || '📄') + '</span><span class="sa-txt"><strong>' + t[1] + '</strong>' + (r ? '<small>' + escapeHtml(r) + '</small>' : '') + '</span></button>'; }).join('');
   }
   document.addEventListener('click', function(e){
     var b = e.target.closest && e.target.closest('#sub-abas [data-subaba]'); if(!b) return;
@@ -3821,6 +3853,8 @@
   }
   function acaoTelasNovas(action, btn){
     var id = btn.dataset.id;
+    if(action === 'rent-talhao-ano'){ rentTalhaoAno = btn.dataset.ano; renderRentabilidade(); var rT = document.getElementById('rent-por-talhao'); if(rT) rT.scrollIntoView({block:'start'}); return true; }
+    if(action === 'tl-ver-custo'){ rentTalhaoAno = btn.dataset.ano; switchTab('rentabilidade'); renderRentabilidade(); var rT2 = document.getElementById('rent-por-talhao'); if(rT2) rT2.scrollIntoView({behavior:'smooth', block:'start'}); return true; }
     if(action === 'rs-ano'){ rsAno = btn.dataset.ano; renderRastreabilidade(); return true; }
     if(action === 'rs-tempo'){ rsAberta[id] = !rsAberta[id]; renderRastreabilidade(); return true; }
     if(action === 'rs-ir'){ switchTab(btn.dataset.tab); window.scrollTo(0, 0); return true; }
@@ -6497,6 +6531,10 @@
     h += '<div class="tl-crop"><span class="tl-crop-ic" style="background:' + ci.cor + '26;">' + ci.ic + '</span><div><b>' + escapeHtml(nomeC) + '</b><small>' + (t.culturaAnteriorId ? 'anterior: ' + escapeHtml(culturaNome(t.culturaAnteriorId)) : '&nbsp;') + '</small></div>';
     if(safra) h += '<span class="tl-pill tl-st-' + safra.status + '">' + STATUS_LABEL[safra.status] + '</span>';
     h += '</div>';
+    if(safra && safra.anoAgricola){
+      try{ var ctA = custoTalhaoNoAno(t.id, normalizarAnoAgricola(safra.anoAgricola));
+        h += '<button type="button" class="tl-custo" data-action="tl-ver-custo" data-ano="' + escapeHtml(normalizarAnoAgricola(safra.anoAgricola)) + '" title="Ver na Rentabilidade → Por talhão"><span>💸 Custo ' + escapeHtml(normalizarAnoAgricola(safra.anoAgricola)) + '</span><b>' + fmtBRL(ctA.custo) + '</b><small>' + (ctA.area ? fmtBRL(ctA.custo / ctA.area) + '/ha' : '') + (ctA.sacas > 0 ? ' · ' + fmtBRL(ctA.custo / ctA.sacas) + '/sc' : '') + '</small></button>'; }catch(eC){}
+    }
     if(an){
       h += '<div class="tl-soil">';
       var ph = Number(an.ph);
@@ -9313,6 +9351,18 @@
   function contasReceberRecebidasPorTalhao(talhaoId){
     return state.contasReceber.filter(function(c){ return c.status === 'Recebido' && c.talhaoId === talhaoId; }).reduce(function(s,c){ return s + valorLiquidoContaReceber(c); }, 0);
   }
+  // custo/receita de um talhão num ano agrícola (soma das safras dele naquele ano; mesmo critério do "custo direto" das lavouras)
+  var rentTalhaoAno = null;
+  function custoTalhaoNoAno(talhaoId, ano){
+    var sfs = state.safras.filter(function(s){ return s.talhaoId === talhaoId && normalizarAnoAgricola(s.anoAgricola) === ano; });
+    var ids = sfs.map(function(s){ return s.id; }), t = state.talhoes.find(function(x){ return x.id === talhaoId; }) || {};
+    var area = sfs.reduce(function(m, s){ return Math.max(m, Number(s.areaPlantada) || 0); }, 0) || Number(t.area) || 0;
+    return {sfs: sfs, ids: ids, area: area,
+      custo: sfs.reduce(function(sm, s){ return sm + custoDiretoSafra(s.id); }, 0),
+      receita: sfs.reduce(function(sm, s){ return sm + receitaDiretaSafra(s.id); }, 0),
+      estoque: ids.length ? estoqueValorPorSafraIds(ids) : 0,
+      sacas: ids.length ? producaoTotalEmSacas(ids) : 0};
+  }
   function custosTotaisPorTalhao(talhaoId){ return custosFinanceiroPorTalhao(talhaoId) + contasPagarPagasPorTalhao(talhaoId); }
   function receitasTotaisPorTalhao(talhaoId){ return receitasFinanceiroPorTalhao(talhaoId) + contasReceberRecebidasPorTalhao(talhaoId); }
   function producaoTotalEmSacas(safraIds){
@@ -11672,8 +11722,24 @@
 
     html += painelOcupacaoHtml();
 
-    html += '<div class="section-title">Por talhão</div>';
-    if(!state.talhoes.length){
+    html += '<div class="section-title" id="rent-por-talhao">Por talhão</div>';
+    var anosRT = []; state.safras.forEach(function(sf){ var a = normalizarAnoAgricola(sf.anoAgricola); if(a && anosRT.indexOf(a) === -1) anosRT.push(a); }); anosRT.sort().reverse();
+    if(rentTalhaoAno === null) rentTalhaoAno = anosRT.indexOf(psAnoAtual()) !== -1 ? psAnoAtual() : (anosRT[0] || 'todos');
+    if(rentTalhaoAno !== 'todos' && anosRT.indexOf(rentTalhaoAno) === -1) rentTalhaoAno = 'todos';
+    html += '<div class="tl-tools" style="margin:-4px 0 10px;">' + anosRT.map(function(a){ return '<button type="button" class="tl-chip' + (a === rentTalhaoAno ? ' on' : '') + '" data-action="rent-talhao-ano" data-ano="' + a + '">📅 ' + a + (a === psAnoAtual() ? ' (atual)' : '') + '</button>'; }).join('') + '<button type="button" class="tl-chip' + (rentTalhaoAno === 'todos' ? ' on' : '') + '" data-action="rent-talhao-ano" data-ano="todos">∑ Todos os anos</button></div>';
+    if(state.talhoes.length && rentTalhaoAno !== 'todos'){
+      var totRT = {c:0, r:0, e:0, a:0};
+      html += '<div class="paper table-wrap"><table class="rt-tab"><thead><tr><th>Talhão</th><th>Cultura em ' + rentTalhaoAno + '</th><th>Área</th><th>Custos</th><th>Custo/ha</th><th>Custo/saca</th><th>Receitas</th><th>Estoque projetado</th><th>Resultado</th></tr></thead><tbody>';
+      talhoesAtivos().forEach(function(t){
+        var x = custoTalhaoNoAno(t.id, rentTalhaoAno); if(!x.sfs.length) return;
+        var res = x.receita + x.estoque - x.custo; totRT.c += x.custo; totRT.r += x.receita; totRT.e += x.estoque; totRT.a += x.area;
+        html += '<tr data-tip="tal|' + t.id + '"><td>' + escapeHtml(t.nome) + '</td><td>' + x.sfs.map(function(sf){ var n = culturaNome(sf.culturaId); return tlCulturaInfo(n).ic + ' ' + escapeHtml(n); }).join(' + ') + '</td><td class="num">' + fmtHa(x.area) + '</td>';
+        html += '<td class="num cost">' + fmtBRL(x.custo) + '</td><td class="num"><b>' + (x.area ? fmtBRL(x.custo / x.area) : '—') + '</b></td><td class="num">' + (x.sacas > 0 ? fmtBRL(x.custo / x.sacas) : '—') + '</td>';
+        html += '<td class="num growth">' + fmtBRL(x.receita) + '</td><td class="num growth">' + fmtBRL(x.estoque) + '</td><td class="num ' + (res >= 0 ? 'growth' : 'cost') + '">' + fmtBRL(res) + '</td></tr>';
+      });
+      html += '</tbody><tfoot><tr><td><b>Total</b></td><td></td><td class="num">' + fmtHa(totRT.a) + '</td><td class="num cost"><b>' + fmtBRL(totRT.c) + '</b></td><td class="num">' + (totRT.a ? fmtBRL(totRT.c / totRT.a) : '—') + '</td><td></td><td class="num growth">' + fmtBRL(totRT.r) + '</td><td class="num growth">' + fmtBRL(totRT.e) + '</td><td class="num ' + (totRT.r + totRT.e - totRT.c >= 0 ? 'growth' : 'cost') + '">' + fmtBRL(totRT.r + totRT.e - totRT.c) + '</td></tr></tfoot></table></div>';
+      html += '<p style="font-size:11.5px; color:#C9D0B4; margin:6px 0 0;">Custos lançados direto nas safras de ' + rentTalhaoAno + ' (insumos do Diário, máquinas e lançamentos com destino na lavoura) — o mesmo critério do "custo direto" das lavouras. Custos gerais rateados ficam no método SENAR, acima.</p>';
+    } else if(!state.talhoes.length){
       html += '<div class="paper empty-state">Cadastre talhões para ver a rentabilidade.</div>';
     } else {
       html += '<div class="paper table-wrap"><table><thead><tr><th>Talhão</th><th>Cultura atual</th><th>Custos</th><th>Custo/ha</th><th>Custo/saca</th><th>Receitas</th><th>Estoque projetado</th><th>Resultado</th><th>Retorno s/ custo</th></tr></thead><tbody>';
@@ -11704,7 +11770,7 @@
       html += '</tbody></table></div>';
     }
 
-    html += '<div class="paper note-box"><strong>Por lavoura / por cultura:</strong> custos e receitas lançados direto na lavoura (destino "Lavoura"), pagos/recebidos. Custos gerais e de máquinas (destinos "Geral" e "Máquina / equipamento") só entram se você ligar a opção, rateados entre as lavouras ativas em cada mês, pela área plantada. Depreciação e custo de oportunidade entram pelos meses em que a lavoura ocupa a terra × área plantada ÷ área total da fazenda. Custos "só talhão" não entram em lavoura.<br><strong>Por talhão:</strong> tudo que já caiu no talhão, de qualquer lavoura e de qualquer ano, mais os custos "só talhão".</div>';
+    html += '<div class="paper note-box"><strong>Por lavoura / por cultura:</strong> custos e receitas lançados direto na lavoura (destino "Lavoura"), pagos/recebidos. Custos gerais e de máquinas (destinos "Geral" e "Máquina / equipamento") só entram se você ligar a opção, rateados entre as lavouras ativas em cada mês, pela área plantada. Depreciação e custo de oportunidade entram pelos meses em que a lavoura ocupa a terra × área plantada ÷ área total da fazenda. Custos "só talhão" não entram em lavoura.<br><strong>Por talhão:</strong> escolha o ano agrícola para ver o custo da safra de cada talhão; em "Todos os anos" aparece tudo que já caiu no talhão, de qualquer lavoura e de qualquer ano, mais os custos "só talhão".</div>';
 
     el.innerHTML = html;
     atualizarSimCustoSenar();
@@ -13605,7 +13671,7 @@
     XLSX.writeFile(wb, 'fazenda-relatorio.xlsx');
   }
 
-  var adminDados = null, adminCarregando = false, conviteRecemCriado = null;
+  var adminDados = null, adminCarregando = false, conviteRecemCriado = null, conviteVerAntigos = false;
   function carregarAdminDados(){
     if(adminCarregando) return; adminCarregando = true;
     authPost({acao:'admin-listar'}).then(function(d){ adminCarregando = false; if(d && d.usuarios){ adminDados = d; renderConfiguracoes(); } }).catch(function(){ adminCarregando = false; });
@@ -13635,8 +13701,11 @@
     });
     h += '</tbody></table></div>';
     var hojeIso = new Date().toISOString();
-    var cvs = adminDados.convites.slice().reverse();
-    if(cvs.length){
+    var cvsTodos = adminDados.convites.slice().reverse();
+    var cvAntigo = function(c){ return !c.usadoPor && (c.revogado || c.expira < hojeIso); };
+    var nAntigos = cvsTodos.filter(cvAntigo).length;
+    var cvs = conviteVerAntigos ? cvsTodos : cvsTodos.filter(function(c){ return !cvAntigo(c); });
+    if(cvsTodos.length){
       h += '<div style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin:16px 0 6px;">Convites</div>';
       h += '<div class="table-wrap"><table class="sem-ordenacao"><thead><tr><th>Código</th><th>Para</th><th>Situação</th><th></th></tr></thead><tbody>';
       cvs.forEach(function(c){
@@ -13644,6 +13713,8 @@
         h += '<tr><td style="font-family:monospace; font-size:13px;">' + escapeHtml(c.codigo) + '</td><td>' + escapeHtml(c.obs || '—') + '</td><td>' + situ + '</td><td>' + (!c.usadoPor && !c.revogado && c.expira >= hojeIso ? '<button type="button" class="btn-del" data-action="convite-revogar" data-id="' + escapeHtml(c.codigo) + '">Cancelar</button>' : '') + '</td></tr>';
       });
       h += '</tbody></table></div>';
+      if(!cvs.length) h += '<p style="font-size:12.5px; color:var(--ink-soft); margin:6px 0;">Nenhum convite aguardando.</p>';
+      if(nAntigos) h += '<button type="button" class="btn-edit" data-action="convite-ver-antigos" style="margin-top:8px;">' + (conviteVerAntigos ? '✕ Esconder vencidos e cancelados' : '🕓 Ver vencidos e cancelados (' + nAntigos + ')') + '</button>';
     }
     h += '<p style="font-size:11.5px; color:var(--ink-soft); margin:10px 0 0;">Desativar bloqueia a entrada na hora (os dados ficam guardados; reativar devolve o acesso). "Nova senha" cria uma senha provisória para quem esqueceu — mande para a pessoa e peça para trocar. Cada pessoa envia o próprio certificado digital para importar as notas da SEFAZ.</p>';
     return h + '</div>';
@@ -15231,7 +15302,7 @@
     var action = btn.dataset.action;
     var id = btn.dataset.id;
     if(action.indexOf('mapa-') === 0 && acaoMapa(action, btn)) return;
-    if(/^(mg|ps|rs)-/.test(action) && acaoTelasNovas(action, btn)) return;
+    if(/^(mg|ps|rs|rent-talhao|tl-ver-custo)/.test(action) && acaoTelasNovas(action, btn)) return;
     if(action.indexOf('dossie-') === 0){ acaoDossie(action, btn); return; }
     if(action === 'carencia-usar-bula'){ aplicarBulaNoForm(); return; }
     if(action === 'ativo-usar-catalogo'){ aplicarAtivoCatalogoNoForm(); return; }
@@ -15293,6 +15364,7 @@
       }); return;
     }
     if(action === 'convite-copiar'){ var ta = document.getElementById('convite-texto'); if(ta){ ta.select(); try{ document.execCommand('copy'); }catch(e){} if(navigator.clipboard) navigator.clipboard.writeText(ta.value).catch(function(){}); btn.textContent = '✅ Copiado'; } return; }
+    if(action === 'convite-ver-antigos'){ conviteVerAntigos = !conviteVerAntigos; renderConfiguracoes(); return; }
     if(action === 'convite-revogar'){
       if(!window.confirm('Cancelar o convite ' + id + '? O código deixa de funcionar.')) return;
       authPost({acao:'convite-revogar', codigo: id}).then(function(d){ if(d && d.ok){ adminDados = null; renderConfiguracoes(); } else alert((d && d.error) || 'Não foi possível cancelar.'); }); return;
