@@ -568,6 +568,24 @@
   .rt-tab tfoot td{padding:10px 12px; border-top:2px solid var(--paper-line); background:#F3F1E2; font-weight:700;}
   .tl-custo{display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 8px; width:100%; margin:8px 0 2px; padding:8px 11px; border:1px solid #EBD9A6; background:#FFF8E6; border-radius:10px; font-family:inherit; font-size:12px; color:var(--ink); cursor:pointer; text-align:left;}
   .tl-custo:hover{border-color:#E0B23C;} .tl-custo span{color:var(--ink-soft);} .tl-custo b{font-size:14px; color:var(--cost-dark, #A23E2E);} .tl-custo small{color:var(--ink-soft); margin-left:auto;}
+  /* ---------- Diário: situação e programadas ---------- */
+  .di-situ{display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; padding:10px 12px; background:#F3F1E2; border:1px solid var(--paper-line); border-radius:12px;}
+  .di-situ-rot{font-size:11px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin-right:4px;}
+  .di-situ-op{display:inline-flex; cursor:pointer;} .di-situ-op input{position:absolute; opacity:0; pointer-events:none;}
+  .di-situ-op span{padding:7px 13px; border-radius:99px; border:2px solid var(--paper-line); background:#fff; font-size:13px; font-weight:700; transition:all .12s;}
+  .di-situ-op input:checked + span{border-color:var(--growth); background:var(--growth); color:#fff;}
+  .di-situ-aexecutar input:checked + span{border-color:#B58A1E; background:#E0B23C; color:#2B2B1F;}
+  .di-situ-execucao input:checked + span{border-color:#2F6F8F; background:#4F95B8; color:#fff;}
+  .di-situ-op input:focus-visible + span{outline:2px solid var(--accent); outline-offset:2px;}
+  .di-situ-nota{flex-basis:100%; font-size:11.5px; color:var(--ink-soft);}
+  .di-prog-banner{padding:11px 16px; margin:0 0 12px; border-left:4px solid #E0B23C; font-size:13px;} .di-prog-banner.fin{border-left-color:var(--growth); background:#EEF6E6;}
+  .di-prog-cont{font-size:12px; color:var(--ink-soft); font-weight:600; margin-left:6px;} .di-prog-cont b{color:#A23E2E !important;}
+  .di-prog-lista{border:1px dashed #E0B23C;}
+  .di-prog .ct-data{background:#FFF4D6;} .di-prog-atr .ct-data{background:#FBE3DE; color:#A23E2E;}
+  .di-st{display:inline-block; font-size:11px; font-weight:800; padding:2px 8px; border-radius:99px; margin-left:4px; vertical-align:1px;}
+  .di-st-aex{background:#FFF1D6; color:#8A6514;} .di-st-exec{background:#DDEEF6; color:#2F6F8F;} .di-st-atr{background:#FBE3DE; color:#A23E2E;}
+  .di-prod-falta{border-color:#E8A797 !important; background:#FDF0EC !important; color:#A23E2E;}
+  .di-prog-acts{flex-wrap:wrap; justify-content:flex-end;}
   /* ---------- Rastreabilidade ---------- */
   .rs-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:14px;}
   .rs-card{background:var(--paper); border:1px solid var(--paper-line); border-radius:14px; padding:14px 16px; box-shadow:var(--shadow);}
@@ -863,7 +881,7 @@
 (function(){
   "use strict";
 
-  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas','sefazNotasPendentes','sefazItensRevisao','sefazProgresso','analisesSolo','imagensCampo','importsAplicados','lavouras','sefazResumos','ajustesEstoque','configUnidades','alertasLidos','manutPlanos','manutOS','manutLeituras','manutCalibracoes','colheitaApanhas','cafeLotes','inspecoes'];
+  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas','sefazNotasPendentes','sefazItensRevisao','sefazProgresso','analisesSolo','imagensCampo','importsAplicados','lavouras','sefazResumos','ajustesEstoque','configUnidades','alertasLidos','manutPlanos','manutOS','manutLeituras','manutCalibracoes','colheitaApanhas','cafeLotes','inspecoes','diarioProgramadas'];
   var state = {};
   var editState = null; // {scope:'generic', entityKey, id} ou {scope:'talhoes'|'safras'|'operacoes'|'financeiro'|'producao', id}
   ALL_KEYS.forEach(function(k){ state[k] = []; });
@@ -1687,7 +1705,7 @@
   function loadKey(key){
     return rawGet(currentWorkspaceId + '::' + key).then(function(v){ return v || []; });
   }
-  var CHAVES_PAPEL_CAMPO = ['operacoes', 'produtos', 'chuvas', 'imagensCampo', 'colheitaApanhas', 'cafeLotes', 'inspecoes'];
+  var CHAVES_PAPEL_CAMPO = ['operacoes', 'produtos', 'chuvas', 'imagensCampo', 'colheitaApanhas', 'cafeLotes', 'inspecoes', 'diarioProgramadas'];
   var currentWorkspaceInfo = null; // {id, nome, compartilhado, papel, dono}
   var avisoSomenteLeitura = 0, carregandoWorkspace = false;
   function papelAtual(){ return currentWorkspaceInfo && currentWorkspaceInfo.compartilhado ? currentWorkspaceInfo.papel : 'dono'; }
@@ -2969,7 +2987,7 @@
     painel: {t:'Dashboard', txt:'Resumo da fazenda e o painel <b>📋 Pendências</b>: tudo que precisa de atenção (lançamentos sem destino, contas vencidas, estoque negativo, produtos sem custo, safras com dados faltando, notas da SEFAZ esperando ciência, parcelas de financiamento). Clique em "abrir →" para ir direto à tela certa.'},
     fertilidade: {t:'Fertilidade do Solo', txt:'1) Escolha o talhão nos quadrinhos (as cores mostram o fator limitante, pH, V%, P, K ou MO pelas classes do Manual de Adubação e Calagem do Paraná). 2) Veja o <b>barril de Liebig</b>: a tábua mais baixa é o que mais segura a produção. 3) Em <b>Adubação de produção</b>, escolha a cultura (soja, milho safra, milho 2ª safra ou café — produção, formação ou implantação), a meta de sacas e os adubos; o sistema calcula N, P₂O₅, K₂O, calcário e as épocas. 4) <b>💾 Salvar</b> deixa pendente; <b>📒 Lançar no Diário</b> abre o Diário preenchido e só registra quando você confirmar lá. Use 🖨️ para imprimir para o agrônomo, 🛒 para a lista de compra e ⚖️ para ver se o solo está sendo reposto. Coletar a camada 20–40 cm libera o diagnóstico de gesso.'},
     safras: {t:'Lavouras e Safras', txt:'A <b>lavoura</b> é uma cultura num ano agrícola (ex.: Soja 2026/2027) plantada em um ou vários talhões. Cada talhão dentro dela é uma <b>safra</b>. Use os botões de ano acima da tabela de lavouras para filtrar. "Apelido" dá um nome curto (ex.: Milho Safrinha); "Encerrar" tira a lavoura da lista de destinos dos lançamentos. Inativar uma safra esconde ela dos formulários sem apagar o histórico.'},
-    operacoes: {t:'Diário de Campo', txt:'Registre cada atividade como um receituário: lavoura e talhões, produtos com dose (por ha ou por alqueire), máquinas com horas, alvo, volume de calda, nº do receituário e responsável técnico. Os produtos saem do estoque na hora; editar ou remover devolve. O custo (insumos + máquinas) entra na safra. 🧾 imprime a ficha de aplicação.'},
+    operacoes: {t:'Diário de Campo', txt:'<b>Situação:</b> no topo do formulário escolha <b>✅ Já foi feita</b>, <b>🗓️ A executar</b> (planejada, com data prevista) ou <b>🔄 Em execução</b>. As programadas aparecem no bloco <b>🗓️ Programadas</b>, com os botões ▶ Iniciar e ✔ Finalizar; elas <b>não baixam estoque, não entram no custo e não contam carência</b> até serem finalizadas. Ao finalizar, confira a data real e as quantidades usadas. Atrasadas e produtos que vão faltar aparecem nos avisos. Registre cada atividade como um receituário: lavoura e talhões, produtos com dose (por ha ou por alqueire), máquinas com horas, alvo, volume de calda, nº do receituário e responsável técnico. Os produtos saem do estoque na hora; editar ou remover devolve. O custo (insumos + máquinas) entra na safra. 🧾 imprime a ficha de aplicação.'},
     caderneta: {t:'Caderneta do Café', txt:'No terreiro ou na lavoura: registre a apanha do dia (várias pessoas de uma vez), veja a tabela pessoa × semana e use 💰 Lançar pagamento para criar a despesa paga na lavoura. Em Processamento, crie lotes e acompanhe terreiro → secador → tulha → beneficiado; com as sacas beneficiadas, ➜ Colheita leva o lote para o estoque. O rendimento mostra quantas medidas deram uma saca.'},
     inspecao: {t:'Inspeção de Campo', txt:'Rotina de monitoramento (ex.: terça e sexta, 7h–9h). Escolha o talhão: os alvos aparecem pela cultura (café, soja, milho), com o nível de ação de referência. A Situação por talhão mostra quem está há mais de 7 dias sem inspeção e o que passou do nível. Os níveis são editáveis em ⚙️.'},
     producao: {t:'Colheita e Vendas', txt:'Entradas de colheita somam no estoque de cada safra. Vendas podem sair de um talhão ou do <b>estoque geral</b> da cultura, com descontos (a receita líquida vai para o Financeiro). ▸ Raio-x mostra, por talhão, colhido, vendido, saldo e sc/ha. Saídas que são entrega de venda antecipada só se desfazem pela aba Venda Antecipada.'},
@@ -3711,7 +3729,8 @@
         grupos[e].forEach(function(o){
           var r = o.x.rec, ar = areaDaRecomendacao(r, o.t.id), ic = {Calagem:'🪨', Gessagem:'⚪', Fosfatagem:'🧂', Potassagem:'🧂', 'Adubação':'🌱', Micronutrientes:'💧'}[r.tipo] || '📋';
           h += '<div class="fn-row pa-row"><span class="pa-ic">' + ic + '</span><div class="fn-main"><b>' + escapeHtml(r.tipo) + ' · ' + escapeHtml(o.t.nome) + '</b><div class="fn-data">' + escapeHtml(r.fonte || '—') + (r.doseMedia ? ' · ' + fmtNum(r.doseMedia) + ' kg/ha × ' + fmtHa(ar) + ' = <b>' + fmtNum(Math.round(Number(r.doseMedia) * ar / 1000 * 100) / 100) + ' t</b>' : '') + '</div></div>';
-          h += '<div class="fn-acts">' + (r.semDiario ? '<button type="button" class="tl-btn" data-action="fe-feito" data-id="' + o.x.analise.id + '" data-idx="' + o.x.idx + '">✔ Feita</button>' : '<button type="button" class="tl-btn fe-diario" data-action="fe-lancar-diario" data-id="' + o.x.analise.id + '" data-idx="' + o.x.idx + '">📒 Lançar no Diário</button>') + '<button type="button" class="tl-btn" data-action="mg-fert" data-id="' + o.t.id + '" title="Abrir na Fertilidade">🧪</button></div></div>';
+          var pgPa = feProgDaRec(r);
+          h += '<div class="fn-acts">' + (pgPa ? '<span class="di-st ' + (pgPa.situacao === 'execucao' ? 'di-st-exec">🔄 Em execução' : 'di-st-aex">🗓️ Programada') + (pgPa.data ? ' ' + fmtDate(pgPa.data) : '') + '</span><button type="button" class="tl-btn" data-action="di-prog-finalizar" data-id="' + pgPa.id + '">✔ Finalizar</button>' : (r.semDiario ? '<button type="button" class="tl-btn" data-action="fe-feito" data-id="' + o.x.analise.id + '" data-idx="' + o.x.idx + '">✔ Feita</button>' : '<button type="button" class="tl-btn fe-diario" data-action="fe-lancar-diario" data-id="' + o.x.analise.id + '" data-idx="' + o.x.idx + '">📒 Lançar no Diário</button>')) + '<button type="button" class="tl-btn" data-action="mg-fert" data-id="' + o.t.id + '" title="Abrir na Fertilidade">🧪</button></div></div>';
         });
         h += '</div>';
       });
@@ -4221,6 +4240,7 @@
     a.recomendacoes = (a.recomendacoes || []).filter(function(x){ return !(x.origem === 'foco' && x.status !== 'Aplicada' && x.tipo === rec.tipo && x.fonte === rec.fonte); }).concat([rec]);
     saveKey('analisesSolo', state.analisesSolo); renderFertilidade();
   }
+  function feProgDaRec(r){ return r && r.programadaId ? (state.diarioProgramadas || []).find(function(x){ return x.id === r.programadaId; }) || null : null; }
   function feRecomSalvasHtml(t){
     var todas = recomendacoesDoTalhao(t.id), atuais = feRecsAtuais(t), antigas = todas.filter(function(x){ return atuais.indexOf(x) === -1; });
     var lista = feVerAntigas[t.id] ? todas : atuais;
@@ -4236,6 +4256,7 @@
       h += '<div class="fe-rec' + (ap ? ' fe-ap' : '') + (antiga ? ' fe-antiga' : '') + '"><span class="fe-rec-ic">' + ic + '</span><div class="fe-rec-m"><b>' + escapeHtml(r.tipo) + (r.epoca ? ' · ' + escapeHtml(r.epoca) : '') + '</b> ' + origemTag + (antiga ? ' <span class="fe-orig">análise antiga</span>' : '') + '<div>' + escapeHtml(r.fonte || '—') + (r.doseMedia ? ' · <b>' + fmtNum(r.doseMedia) + ' kg/ha</b> · ' + fmtNum(Math.round((Number(r.doseMedia) || 0) * area / 1000 * 100) / 100) + ' t em ' + fmtHa(area) : '') + '</div><small>Análise de ' + fmtDate(x.analise.dataColeta) + (r.observacao ? ' · ' + escapeHtml(r.observacao) : '') + (ap && r.aplicadaEm ? ' · ✅ lançada no Diário em ' + fmtDate(r.aplicadaEm) : '') + '</small></div>';
       if(ap) h += '<span class="pd-nv pd-nv-ok">Aplicada</span>';
       else if(r.semDiario) h += '<span class="pd-nv pd-nv-perto">Pendente</span><button type="button" class="tl-btn" data-action="fe-feito" data-id="' + x.analise.id + '" data-idx="' + x.idx + '">✔ Marcar como feita</button><details class="tl-more"><summary title="Mais ações">⋯</summary><div class="tl-menu"><button type="button" class="tl-danger" data-action="fe-rec-remover" data-id="' + x.analise.id + '" data-idx="' + x.idx + '">🗑️ Remover</button></div></details>';
+      else if(feProgDaRec(r)){ var pgR = feProgDaRec(r); h += '<span class="pd-nv pd-nv-perto">' + (pgR.situacao === 'execucao' ? '🔄 Em execução' : '🗓️ Programada') + (pgR.data ? ' · ' + fmtDate(pgR.data) : '') + '</span><button type="button" class="tl-btn" data-action="di-prog-finalizar" data-id="' + pgR.id + '">✔ Finalizar no Diário</button>'; }
       else h += '<span class="pd-nv pd-nv-perto">Pendente</span><button type="button" class="tl-btn fe-diario" data-action="fe-lancar-diario" data-id="' + x.analise.id + '" data-idx="' + x.idx + '">📒 Lançar no Diário</button><details class="tl-more"><summary title="Mais ações">⋯</summary><div class="tl-menu"><button type="button" data-action="recom-marcar-aplicada" data-id="' + x.analise.id + '" data-idx="' + x.idx + '">✔ Marcar como feita (sem Diário)</button><button type="button" class="tl-danger" data-action="fe-rec-remover" data-id="' + x.analise.id + '" data-idx="' + x.idx + '">🗑️ Remover</button></div></details>';
       h += '</div>';
     });
@@ -4396,6 +4417,12 @@
     add(ativas.filter(function(sf){ return !sf.dataPlantio; }).length, '🌱', 'safra(s) em andamento sem data de plantio', 'safras');
     add(state.safras.filter(function(sf){ return sf.dataPlantio && sf.previsaoColheita && sf.previsaoColheita < sf.dataPlantio; }).length, '📆', 'safra(s) com previsão de colheita antes do plantio', 'safras');
     add(state.safras.filter(function(sf){ return !sf.anoAgricola; }).length, '❔', 'safra(s) sem ano agrícola (ficam fora das lavouras)', 'safras', '', true);
+    try{
+      var pgAtr = (state.diarioProgramadas || []).filter(diProgAtrasada);
+      add(pgAtr.length, '⏰', 'atividade(s) programada(s) no Diário com data prevista já passada e ainda não iniciada: ' + pgAtr.slice(0, 4).map(function(x){ return (x.tipo || 'atividade') + ' ' + fmtDate(x.data); }).join(', ') + (pgAtr.length > 4 ? '…' : ''), 'operacoes');
+      var faltaPg = diFaltaEstoqueProgramadas(), fk = Object.keys(faltaPg);
+      add(fk.length, '📦', 'produto(s) sem estoque suficiente para as atividades programadas: ' + fk.slice(0, 4).map(function(pid){ return produtoNome(pid) + ' (falta ' + fmtNum(faltaPg[pid].falta) + ' ' + (unidadeProduto(pid) || '') + ')'; }).join(', ') + (fk.length > 4 ? '…' : ''), 'produtos');
+    }catch(ePg){}
     var vaAtrasadas = state.vendasAntecipadas.filter(function(v){ return v.status === 'Aberto' && v.dataEntregaPrevista && v.dataEntregaPrevista < hoje; });
     add(vaAtrasadas.length, '🚚', 'venda(s) antecipada(s) com entrega prevista já passada', 'vendasAntecipadas');
     var em30 = new Date(Date.now() + 30 * 86400000).toISOString().slice(0,10);
@@ -7624,6 +7651,46 @@
     var cm = (o.maquinas || []).reduce(function(sm, m){ return sm + (Number(m.horas) || 0) * custoHoraMaquina(m.patrimonioId); }, 0);
     return cp + cm;
   }
+  /* ---------- Atividades programadas (a executar / em execução) ---------- */
+  function diProgramadas(){ return (state.diarioProgramadas || []).slice().sort(function(a, b){ return (a.data || '9999').localeCompare(b.data || '9999') || (a.criadoEm || 0) - (b.criadoEm || 0); }); }
+  function diProgAtrasada(pg){ return pg.situacao === 'aexecutar' && pg.data && pg.data < hojeISO(); }
+  // quanto de cada produto as programadas vão precisar × estoque atual
+  function diFaltaEstoqueProgramadas(){
+    var prec = {}; (state.diarioProgramadas || []).forEach(function(pg){ produtosDaOperacao(pg).forEach(function(pp){ if(pp.produtoId) prec[pp.produtoId] = (prec[pp.produtoId] || 0) + (Number(pp.quantidade) || 0); }); });
+    var out = {}; Object.keys(prec).forEach(function(pid){ var pr = state.produtos.find(function(x){ return x.id === pid; }), est = pr ? Number(pr.estoqueAtual) || 0 : 0; if(prec[pid] > est + 0.0005) out[pid] = {precisa: prec[pid], estoque: est, falta: Math.round((prec[pid] - est) * 1000) / 1000}; });
+    return out;
+  }
+  function diProgramadasHtml(){
+    var lista = diProgramadas(); if(!lista.length) return '';
+    var falta = diFaltaEstoqueProgramadas(), hoje = hojeISO();
+    var nA = lista.filter(function(x){ return x.situacao === 'aexecutar'; }).length, nE = lista.filter(function(x){ return x.situacao === 'execucao'; }).length, nAt = lista.filter(diProgAtrasada).length;
+    var h = '<div class="fn-mes-cab"><b>🗓️ Programadas</b> <span class="di-prog-cont">' + (nA ? nA + ' a executar' : '') + (nA && nE ? ' · ' : '') + (nE ? nE + ' em execução' : '') + (nAt ? ' · <b style="color:#E8907F;">' + nAt + ' atrasada(s)</b>' : '') + '</span></div><div class="paper fn-lista di-prog-lista">';
+    lista.forEach(function(o){
+      var aps = aplicacoesDaOperacao(o), sf = aps[0] && aps[0].safraId ? state.safras.find(function(x){ return x.id === aps[0].safraId; }) : null, prods = produtosDaOperacao(o), atr = diProgAtrasada(o);
+      var st = o.situacao === 'execucao' ? '<span class="di-st di-st-exec">🔄 Em execução' + (o.iniciadoEm ? ' desde ' + fmtDate(o.iniciadoEm) : '') + '</span>' : (atr ? '<span class="di-st di-st-atr">⏰ Atrasada · prevista ' + fmtDate(o.data) + '</span>' : '<span class="di-st di-st-aex">🗓️ A executar' + (o.data ? (o.data === hoje ? ' · hoje' : ' · prevista ' + fmtDate(o.data)) : ' · sem data') + '</span>');
+      h += '<div class="fn-row di-row di-prog' + (atr ? ' di-prog-atr' : '') + '">';
+      h += '<span class="ct-data"><b>' + (o.data ? o.data.slice(8,10) : '—') + '</b><small>' + (o.data ? MESES[parseInt(o.data.slice(5,7), 10) - 1].slice(0,3) : '') + '</small></span>';
+      h += '<span class="fn-ic" style="background:' + tipoAtividadeCor(o.tipo) + '55;">' + diIcone(o.tipo) + '</span>';
+      h += '<div class="fn-main"><div class="fn-desc">' + escapeHtml(o.tipo || 'Atividade') + (sf ? ' <span class="di-lav">· ' + escapeHtml(lavouraLabel(sf.lavouraId)) + '</span>' : '') + ' ' + st + (o.recomendacaoSolo ? ' <span class="fn-orig" style="border-color:#B5822B; color:#B5822B;">🧪 recomendação</span>' : '') + '</div>';
+      var sub = [];
+      if(aps.length) sub.push('🧩 ' + escapeHtml(aps.map(function(a){ return talhaoNome(a.talhaoId); }).join(', ')) + ' · ' + fmtHa(areaTotalOperacao(o)));
+      if(o.responsavelId) sub.push('👷 ' + escapeHtml(membroNome(o.responsavelId)));
+      if(o.alvo) sub.push('🎯 ' + escapeHtml(o.alvo));
+      if(sub.length) h += '<div class="fn-sub">' + sub.join(' · ') + '</div>';
+      var tags = '';
+      prods.forEach(function(pp){ var un = unidadeProduto(pp.produtoId) || pp.unidade || '', f = falta[pp.produtoId]; tags += '<span class="di-prod' + (f ? ' di-prod-falta' : '') + '" title="' + (f ? 'As programadas precisam de ' + fmtNum(f.precisa) + ' ' + un + '; no estoque há ' + fmtNum(f.estoque) + ' ' + un : '') + '">' + escapeHtml(produtoNome(pp.produtoId)) + ' <b>' + fmtNum(pp.quantidade) + ' ' + escapeHtml(un) + '</b>' + (f ? ' ⚠️ falta ' + fmtNum(f.falta) + ' ' + escapeHtml(un) : '') + '</span>'; });
+      (o.maquinas || []).forEach(function(m){ tags += '<span class="di-prod di-maq">🚜 ' + escapeHtml(nomePatrimonio(m.patrimonioId)) + (m.horas ? ' <b>' + fmtNum(m.horas) + ' h</b>' : '') + '</span>'; });
+      if(tags) h += '<div class="fn-tags">' + tags + '</div>';
+      if(o.observacao) h += '<div class="di-obs">💬 ' + escapeHtml(o.observacao.length > 160 ? o.observacao.slice(0,160) + '…' : o.observacao) + '</div>';
+      h += '</div><div class="fn-acts di-prog-acts">';
+      if(o.situacao === 'aexecutar') h += '<button type="button" class="tl-btn" data-action="di-prog-iniciar" data-id="' + o.id + '" title="Marcar como em execução">▶ Iniciar</button>';
+      h += '<button type="button" class="tl-btn tl-pri" data-action="di-prog-finalizar" data-id="' + o.id + '" title="Registrar como feita: baixa o estoque e lança o custo">✔ Finalizar</button>';
+      h += '<button type="button" class="tl-btn fn-ed" data-action="di-prog-editar" data-id="' + o.id + '" title="Editar">✏️</button>';
+      h += '<details class="tl-more"><summary title="Mais ações">⋯</summary><div class="tl-menu">' + (o.situacao === 'execucao' ? '<button type="button" data-action="di-prog-voltar" data-id="' + o.id + '">↩ Voltar para "a executar"</button>' : '') + '<button type="button" class="tl-danger" data-action="di-prog-excluir" data-id="' + o.id + '">🗑️ Excluir programação</button></div></details>';
+      h += '</div></div>';
+    });
+    return h + '</div>';
+  }
   function diFeedHtml(){
     var ops = (state.operacoes || []).filter(function(o){ return !diarioFiltroTipo || (o.tipo || 'Outro') === diarioFiltroTipo; });
     if(!ops.length) return '<div class="paper empty-state">Nenhuma atividade neste filtro.</div>';
@@ -7666,28 +7733,37 @@
     var el = document.getElementById('tab-operacoes');
     var tiposDisponiveis = state.tiposAtividade.filter(function(t){ return t.nome !== 'Colheita' && t.nome !== 'Venda'; });
     var editingRecord = (editState && editState.scope === 'operacoes') ? state.operacoes.find(function(x){ return x.id === editState.id; }) : null;
+    var progRecord = (editState && editState.scope === 'programada') ? (state.diarioProgramadas || []).find(function(x){ return x.id === editState.id; }) : null;
+    if(editState && editState.scope === 'programada' && !progRecord){ editState = null; diarioFinalizando = false; }
+    if(progRecord) editingRecord = progRecord; // preenche o formulário com a atividade programada
 
     var html = '';
     if(!editingRecord) html += bannerAcaoDiarioHtml() + bannerRecomDiarioHtml();
+    if(progRecord) html += '<div class="paper di-prog-banner' + (diarioFinalizando ? ' fin' : '') + '">' + (diarioFinalizando ? '✔ <b>Finalizando a atividade programada.</b> Confira a <b>data real</b>, as doses e as quantidades que foram usadas de verdade e clique em <b>Registrar atividade</b>. Só agora o estoque é baixado e o custo entra na safra.' : '🗓️ <b>Editando uma atividade programada</b> — ela ainda não mexe no estoque nem no custo.') + '</div>';
     var acPre = !editingRecord && diarioAcaoInspecao ? diarioAcaoInspecao : null;
     var mostrarFormOp = editingRecord || acPre || diarioRecomVinculo || diarioFormAberto || !state.operacoes.length;
     html += diTopoHtml(editingRecord || acPre || diarioFormAberto);
     if(!mostrarFormOp){
+      html += diProgramadasHtml();
       html += diarioVista === 'lista' ? '' : diFeedHtml();
     }
     var insPre = acPre ? (state.inspecoes || []).find(function(i){ return i.id === acPre.inspecaoId; }) : null;
     var tipoPulvPre = acPre ? ((tiposDisponiveis.find(function(t){ return /pulveriz/i.test(semAcento(t.nome)); }) || {}).nome) : undefined;
     if(mostrarFormOp){
-    html += '<div class="paper form-card"><h3>' + (editingRecord ? 'Editar atividade' : (acPre ? 'Nova aplicação (ação da inspeção)' : 'Nova atividade')) + '</h3>';
+    html += '<div class="paper form-card"><h3>' + (progRecord ? (diarioFinalizando ? 'Finalizar atividade' : 'Editar atividade programada') : (editingRecord ? 'Editar atividade' : (acPre ? 'Nova aplicação (ação da inspeção)' : 'Nova atividade'))) + '</h3>';
     if(!tiposDisponiveis.length){
       html += '<div class="empty-state">Nenhum tipo de atividade cadastrado ainda. <button type="button" class="btn" data-action="open-tipo-modal" style="margin-top:10px;">+ Cadastrar tipo de atividade</button></div>';
     } else {
-      html += '<form class="entry-form" id="form-operacao"' + (editingRecord ? ' data-editing-id="' + editingRecord.id + '"' : '') + '>';
+      html += '<form class="entry-form" id="form-operacao"' + (progRecord ? ' data-prog-id="' + progRecord.id + '"' : (editingRecord ? ' data-editing-id="' + editingRecord.id + '"' : '')) + '>';
+      if(!editingRecord || progRecord){
+        var situPadrao = progRecord ? (diarioFinalizando ? 'finalizado' : progRecord.situacao) : (diarioRecomVinculo ? 'aexecutar' : 'finalizado');
+        html += '<div class="di-situ" style="grid-column:1/-1;"><span class="di-situ-rot">Situação</span>' + DI_SITUACOES.map(function(x){ return '<label class="di-situ-op di-situ-' + x[0] + '"><input type="radio" name="situacao" value="' + x[0] + '"' + (situPadrao === x[0] ? ' checked' : '') + '><span>' + x[1] + '</span></label>'; }).join('') + '<small class="di-situ-nota">Enquanto não estiver <b>finalizada</b>, a atividade não baixa o estoque, não entra no custo e não conta carência. Em "A executar", a data é a <b>prevista</b>.</small></div>';
+      }
       html += '<div class="field-with-add">';
       html += '<div style="flex:1;">' + selectField('tipo', 'Tipo', tiposDisponiveis.map(function(t){ return {value:t.nome, label:t.nome}; }), editingRecord ? editingRecord.tipo : tipoPulvPre) + '</div>';
       html += '<button type="button" class="btn-add-inline" data-action="open-tipo-modal" title="Novo tipo de atividade">+</button>';
       html += '</div>';
-      html += field('date', 'data', 'Data', false, '', {}, editingRecord ? editingRecord.data : (acPre ? calHoje() : undefined));
+      html += field('date', 'data', 'Data', false, '', {}, progRecord && diarioFinalizando ? hojeISO() : (editingRecord ? editingRecord.data : (acPre ? calHoje() : undefined)));
       html += selectField('parceiroId', 'Parceiro (opcional)', [{value:'', label:'—'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })), editingRecord ? editingRecord.parceiroId : undefined);
       html += selectField('responsavelId', 'Responsável (opcional)', [{value:'', label:'—'}].concat(state.equipe.map(function(m){ return {value:m.id, label:m.nome}; })), editingRecord ? editingRecord.responsavelId : undefined);
       html += '<div id="diario-dinamico" style="grid-column: 1 / -1; border-top:1px dashed var(--paper-line); margin-top:4px;"></div>';
@@ -7700,7 +7776,7 @@
       html += field('text', 'responsavelTecnico', 'Responsável técnico (agrônomo)', false, '', {}, editingRecord ? editingRecord.responsavelTecnico : undefined);
       html += '<label style="grid-column:1/-1; display:flex; align-items:center; gap:6px; font-size:12.5px;"><input type="checkbox" name="custear"' + (editingRecord && editingRecord.custear === false ? '' : ' checked') + '> Somar o custo dos produtos na safra <span style="font-size:11px; color:var(--ink-soft);">(desmarque se a compra desses produtos já foi lançada direto na lavoura, pra não contar duas vezes)</span></label>';
       html += '<div class="field" style="grid-column: 1 / -1;"><label for="f-observacao">Observação</label><textarea id="f-observacao" name="observacao" rows="5" placeholder="Ex: Aplicação pós-chuva, recomendação agronômica, condições observadas...">' + (!editingRecord && insPre ? escapeHtml('Ação da inspeção de ' + fmtDate(insPre.data) + ': ' + acimaDoNivel(insPre).map(function(a){ return a.alvo + ' ' + fmtNum(a.valor) + ' (nível ' + fmtNum(a.nivel) + ')'; }).join(', ') + '.') : '') + (editingRecord && editingRecord.observacao ? escapeHtml(editingRecord.observacao) : '') + '</textarea></div>';
-      html += '<button type="submit" class="btn">' + (editingRecord ? 'Salvar alterações' : 'Registrar atividade') + '</button>';
+      html += '<button type="submit" class="btn">' + (progRecord ? (diarioFinalizando ? '✔ Registrar atividade (finalizar)' : 'Salvar alterações') : (editingRecord ? 'Salvar alterações' : 'Registrar atividade')) + '</button>';
       var origemRasc = editingRecord ? editingRecord.id : 'novo';
       if(!diarioRascunho || diarioRascunho.origem !== origemRasc) diarioRascunho = rascunhoDiarioDoRegistro(editingRecord);
       if(editingRecord) html += '<button type="button" class="btn-cancel" data-action="cancel-edit">Cancelar</button>';
@@ -7709,6 +7785,7 @@
     }
     html += '</div>';
     }
+    if(mostrarFormOp && !progRecord) html += diProgramadasHtml();
     if(mostrarFormOp && state.operacoes.length && diarioVista !== 'lista') html += diFeedHtml();
 
     if(diarioVista === 'lista'){
@@ -9353,6 +9430,8 @@
   }
   // custo/receita de um talhão num ano agrícola (soma das safras dele naquele ano; mesmo critério do "custo direto" das lavouras)
   var rentTalhaoAno = null;
+  var DI_SITUACOES = [['finalizado','✅ Já foi feita (finalizada)'],['aexecutar','🗓️ A executar'],['execucao','🔄 Em execução']];
+  var diarioFinalizando = false;
   function custoTalhaoNoAno(talhaoId, ano){
     var sfs = state.safras.filter(function(s){ return s.talhaoId === talhaoId && normalizarAnoAgricola(s.anoAgricola) === ano; });
     var ids = sfs.map(function(s){ return s.id; }), t = state.talhoes.find(function(x){ return x.id === talhaoId; }) || {};
@@ -15028,6 +15107,11 @@
     if(form.id === 'form-operacao'){
       diarioFormAberto = false;
       var opEditingId = form.dataset.editingId;
+      var progIdSub = form.dataset.progId || '';
+      var situSub = data.get('situacao') || 'finalizado';
+      if(opEditingId) situSub = 'finalizado'; // atividade já registrada continua registrada
+      var progSub = progIdSub ? (state.diarioProgramadas || []).find(function(x){ return x.id === progIdSub; }) : null;
+      if(progIdSub && !progSub){ alert('Essa atividade programada não existe mais (pode ter sido finalizada ou excluída em outro aparelho).'); editState = null; diarioFinalizando = false; renderAll(); return; }
       lerRascunhoDiarioDoDom();
       var rsc = diarioRascunho || rascunhoDiarioDoRegistro(null);
       var aplicacoesOp = [];
@@ -15065,6 +15149,30 @@
         parceiroId: data.get('parceiroId') || '', responsavelId: data.get('responsavelId') || '',
         observacao: (data.get('observacao')||'').trim(), estoqueBaixado: true
       };
+      // atividade programada (a executar / em execução): guarda à parte, sem estoque, custo nem carência
+      if(situSub !== 'finalizado'){
+        if(!Array.isArray(state.diarioProgramadas)) state.diarioProgramadas = [];
+        var pf = Object.assign({}, opFields, {estoqueBaixado: false, situacao: situSub});
+        if(progSub){
+          if(situSub === 'execucao') pf.iniciadoEm = progSub.iniciadoEm || hojeISO();
+          if(situSub === 'aexecutar') pf.iniciadoEm = '';
+          Object.keys(pf).forEach(function(k){ progSub[k] = pf[k]; });
+          progSub.alteradoEm = Date.now();
+        } else {
+          pf.id = uid(); pf.criadoEm = Date.now();
+          if(situSub === 'execucao') pf.iniciadoEm = hojeISO();
+          if(diarioAcaoInspecao) pf.inspecaoId = diarioAcaoInspecao.inspecaoId;
+          if(diarioRecomVinculo){
+            var aPg = state.analisesSolo.find(function(x){ return x.id === diarioRecomVinculo.analiseId; }), rPg = aPg && aPg.recomendacoes ? aPg.recomendacoes[diarioRecomVinculo.idx] : null;
+            if(rPg){ rPg.programadaId = pf.id; pf.recomendacaoSolo = {analiseId: aPg.id, idx: diarioRecomVinculo.idx}; saveKey('analisesSolo', state.analisesSolo); }
+            diarioRecomVinculo = null;
+          }
+          state.diarioProgramadas.push(pf);
+        }
+        saveKey('diarioProgramadas', state.diarioProgramadas);
+        editState = null; diarioRascunho = null; diarioPreTalhaoId = ''; diarioAcaoInspecao = null; diarioFinalizando = false;
+        form.reset(); renderAll(); return;
+      }
       // estoque: devolve o que a versão anterior tinha tirado e tira o novo
       var ajusteEstoque = {};
       if(opEditingId){
@@ -15084,16 +15192,23 @@
       } else {
         opFields.id = uid(); opFields.criadoEm = Date.now();
         if(diarioAcaoInspecao) opFields.inspecaoId = diarioAcaoInspecao.inspecaoId;
+        if(progSub){
+          // finalizando uma atividade programada: herda os vínculos e guarda o histórico do planejamento
+          if(progSub.inspecaoId) opFields.inspecaoId = progSub.inspecaoId;
+          opFields.programada = {id: progSub.id, criadoEm: progSub.criadoEm, dataPrevista: progSub.data || '', iniciadoEm: progSub.iniciadoEm || ''};
+          if(progSub.recomendacaoSolo && !diarioRecomVinculo) diarioRecomVinculo = {analiseId: progSub.recomendacaoSolo.analiseId, idx: progSub.recomendacaoSolo.idx};
+        }
         if(diarioRecomVinculo){
           var aVin = state.analisesSolo.find(function(x){ return x.id === diarioRecomVinculo.analiseId; }), rVin = aVin && aVin.recomendacoes ? aVin.recomendacoes[diarioRecomVinculo.idx] : null;
-          if(rVin){ rVin.status = 'Aplicada'; rVin.operacaoId = opFields.id; rVin.aplicadaEm = opFields.data || hojeISO(); opFields.recomendacaoSolo = {analiseId: aVin.id, idx: diarioRecomVinculo.idx}; saveKey('analisesSolo', state.analisesSolo); }
+          if(rVin){ delete rVin.programadaId; rVin.status = 'Aplicada'; rVin.operacaoId = opFields.id; rVin.aplicadaEm = opFields.data || hojeISO(); opFields.recomendacaoSolo = {analiseId: aVin.id, idx: diarioRecomVinculo.idx}; saveKey('analisesSolo', state.analisesSolo); }
           diarioRecomVinculo = null;
         }
         state.operacoes.push(opFields);
+        if(progSub){ state.diarioProgramadas = state.diarioProgramadas.filter(function(x){ return x.id !== progSub.id; }); saveKey('diarioProgramadas', state.diarioProgramadas); }
       }
       saveKey('operacoes', state.operacoes);
       if(mudouEstoque) saveKey('produtos', state.produtos);
-      editState = null; diarioRascunho = null; diarioPreTalhaoId = ''; diarioAcaoInspecao = null;
+      editState = null; diarioRascunho = null; diarioPreTalhaoId = ''; diarioAcaoInspecao = null; diarioFinalizando = false;
       form.reset(); renderAll(); return;
     }
 
@@ -15396,12 +15511,12 @@
       var precoCot = inputCot ? (parseFloat(inputCot.value) || 0) : 0;
       if(precoCot <= 0){ alert('Digite um preço maior que zero antes de salvar.'); return; }
       var idxCot = state.cotacoes.findIndex(function(c){ return c.culturaId === id; });
-      var hojeISO = new Date().toISOString().slice(0, 10);
+      var hojeCot = hojeISO();
       if(idxCot !== -1){
         state.cotacoes[idxCot].preco = precoCot;
-        state.cotacoes[idxCot].dataAtualizacao = hojeISO;
+        state.cotacoes[idxCot].dataAtualizacao = hojeCot;
       } else {
-        state.cotacoes.push({id: uid(), culturaId: id, preco: precoCot, dataAtualizacao: hojeISO});
+        state.cotacoes.push({id: uid(), culturaId: id, preco: precoCot, dataAtualizacao: hojeCot});
       }
       saveKey('cotacoes', state.cotacoes);
       renderPainel();
@@ -15837,7 +15952,7 @@
     if(action === 'export-backup'){ exportarBackupJSON(); return; }
     if(action === 'import-financeiro'){ importarFinanceiroDeArquivo(); return; }
     if(action === 'import-backup'){ var fileInput = document.getElementById('backup-file-input'); if(fileInput) fileInput.click(); return; }
-    if(action === 'cancel-edit'){ editState = null; renderAll(); return; }
+    if(action === 'cancel-edit'){ editState = null; diarioFinalizando = false; renderAll(); return; }
     if(action === 'sort-generic-table'){
       var entKeyOrdenar = btn.dataset.entity;
       var colKeyOrdenar = btn.dataset.key;
@@ -16503,7 +16618,26 @@
     if(action === 'co-abrir'){ colheitaFormAberto = btn.getAttribute('data-f'); editState = null; renderProducao(); var fCo = document.getElementById(colheitaFormAberto === 'venda' ? 'form-colheita-venda' : 'form-colheita-entrada'); if(fCo) fCo.scrollIntoView({behavior:'smooth', block:'start'}); return; }
     if(action === 'co-fechar'){ colheitaFormAberto = null; renderProducao(); return; }
     if(action === 'co-mais'){ colheitaFeedLimite += 80; renderProducao(); return; }
-    if(action === 'di-novo'){ diarioFormAberto = true; editState = null; renderOperacoes(); var fDi = document.getElementById('form-operacao'); if(fDi) fDi.scrollIntoView({behavior:'smooth', block:'start'}); return; }
+    if(action === 'di-prog-editar' || action === 'di-prog-finalizar'){
+      var pgE = (state.diarioProgramadas || []).find(function(x){ return x.id === id; }); if(!pgE) return;
+      editState = {scope:'programada', id: id}; diarioFinalizando = action === 'di-prog-finalizar'; diarioRascunho = null; diarioRecomVinculo = null; diarioAcaoInspecao = null;
+      if(abaAtual !== 'operacoes') switchTab('operacoes');
+      renderOperacoes(); var fPg = document.getElementById('form-operacao'); if(fPg) fPg.scrollIntoView({behavior:'smooth', block:'start'}); return;
+    }
+    if(action === 'di-prog-iniciar' || action === 'di-prog-voltar'){
+      var pgI = (state.diarioProgramadas || []).find(function(x){ return x.id === id; }); if(!pgI) return;
+      if(action === 'di-prog-iniciar'){ pgI.situacao = 'execucao'; pgI.iniciadoEm = hojeISO(); } else { pgI.situacao = 'aexecutar'; pgI.iniciadoEm = ''; }
+      pgI.alteradoEm = Date.now(); saveKey('diarioProgramadas', state.diarioProgramadas); renderAll(); return;
+    }
+    if(action === 'di-prog-excluir'){
+      var pgX = (state.diarioProgramadas || []).find(function(x){ return x.id === id; }); if(!pgX) return;
+      if(!window.confirm('Excluir a programação "' + (pgX.tipo || 'atividade') + (pgX.data ? ' de ' + fmtDate(pgX.data) : '') + '"?\n\nComo ela ainda não foi feita, nada muda no estoque nem no custo.')) return;
+      if(pgX.recomendacaoSolo){ var aX = state.analisesSolo.find(function(x){ return x.id === pgX.recomendacaoSolo.analiseId; }), rX = aX && aX.recomendacoes ? aX.recomendacoes[pgX.recomendacaoSolo.idx] : null; if(rX && rX.programadaId === pgX.id){ delete rX.programadaId; saveKey('analisesSolo', state.analisesSolo); } }
+      state.diarioProgramadas = state.diarioProgramadas.filter(function(x){ return x.id !== id; }); saveKey('diarioProgramadas', state.diarioProgramadas);
+      if(editState && editState.scope === 'programada' && editState.id === id){ editState = null; diarioFinalizando = false; }
+      renderAll(); return;
+    }
+    if(action === 'di-novo'){ diarioFormAberto = true; editState = null; diarioFinalizando = false; renderOperacoes(); var fDi = document.getElementById('form-operacao'); if(fDi) fDi.scrollIntoView({behavior:'smooth', block:'start'}); return; }
     if(action === 'di-fechar-form'){ diarioFormAberto = false; diarioRecomVinculo = null; renderOperacoes(); return; }
     if(action === 'fe-modo'){ feModo = btn.getAttribute('data-m'); renderFertilidade(); return; }
     if(action === 'fe-sel'){ feSel = id; renderFertilidade(); var dFe = document.querySelector('#tab-fertilidade .fe-det'); if(dFe) dFe.scrollIntoView({behavior:'smooth', block:'start'}); return; }
