@@ -609,6 +609,31 @@
   .mt-peca-lin{display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-bottom:5px;}
   .mt-puxar{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:8px 0 2px; padding:8px 10px; background:#F3F1E2; border-radius:10px; font-size:12.5px;}
   .mt-os-atr .ct-data{background:#FBE3DE; color:#A23E2E;}
+  .mt-abrir{cursor:pointer;} .mt-seta{color:var(--ink-soft); font-weight:400;} .mt-abrir:hover h3{color:var(--growth);}
+  .mtf-voltar{font-family:inherit; display:inline-flex; gap:6px; align-items:center; color:#E3E8D2; font-weight:700; font-size:13.5px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); padding:7px 14px; border-radius:99px; margin-bottom:14px; cursor:pointer;} .mtf-voltar:hover{background:rgba(255,255,255,.15);}
+  .mtf-hero{display:grid; grid-template-columns:minmax(0, 400px) 1fr; background:var(--paper); border:1px solid var(--paper-line); border-radius:18px; overflow:hidden; box-shadow:var(--shadow);}
+  .mtf-foto{border-radius:0;} .mtf-foto-bt{position:absolute; right:10px; bottom:10px; font-family:inherit; font-size:12px; font-weight:700; background:rgba(255,255,255,.92); border:0; padding:6px 11px; border-radius:99px; cursor:pointer;}
+  .mtf-info{padding:18px 22px; display:flex; flex-direction:column; gap:10px; min-width:0;}
+  .mtf-st{position:static; display:inline-block; box-shadow:none; font-size:12.5px;}
+  .mtf-info h2{margin:0; font-family:'Zilla Slab', serif; font-size:28px; line-height:1.15;} .mtf-sub{color:var(--ink-soft); font-size:13px; margin-top:-4px;}
+  .mtf-hor{display:flex; align-items:center; gap:14px; flex-wrap:wrap; background:#F0EEDD; border-radius:12px; padding:10px 14px;} .mtf-hor b{font-size:24px; display:block;} .mtf-hor small{color:var(--ink-soft); font-size:11.5px; display:block;}
+  .mtf-hor-in{margin-left:auto; display:flex; gap:6px;} .mtf-hor-in input{width:150px; padding:7px 9px; border:1px solid var(--paper-line); border-radius:8px; background:#fff;}
+  .mtf-acoes{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+  .mtf-abas{display:flex; gap:6px; flex-wrap:wrap; margin:4px 0 12px;}
+  .mtf-abas button{font-family:inherit; position:relative; padding:9px 15px; border-radius:12px; font-weight:700; font-size:13.5px; color:#E3E8D2; background:rgba(255,255,255,.07); border:2px solid rgba(255,255,255,.12); cursor:pointer;} .mtf-abas button:hover{background:rgba(255,255,255,.14);}
+  .mtf-abas button.on{background:var(--paper); color:var(--ink); border-color:#C4D678; box-shadow:0 0 0 3px rgba(196,214,120,.35);} .mtf-abas .nav-badge{display:inline-block; margin-left:4px;}
+  .mtf-corpo{padding:0; overflow:hidden;} .mtf-pad{padding:14px 16px;} .mtf-pad .btn-cancel[data-action="mt-modo"]{display:none;}
+  .mtf-form{padding:14px 16px; background:#F1F1E4; border-bottom:1px solid var(--paper-line);} .mtf-form .btn-cancel[data-action="mt-modo"]{float:right;}
+  .mtf-sec{font-size:11.5px; font-weight:800; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; padding:9px 16px; background:#EEEDDD; border-top:1px solid var(--paper-line);}
+  .mtf-sec:first-child{border-top:0;}
+  .mtf-os{display:grid; grid-template-columns:56px 1fr auto; gap:14px; padding:13px 16px; border-top:1px solid var(--paper-line); align-items:center;}
+  .mtf-os .ct-data{background:#DDEEF6;} .mtf-os.fin .ct-data{background:#E3F1D6;} .mtf-os.atr .ct-data{background:#FBE3DE; color:#A23E2E;}
+  .mtf-os-t{font-weight:700; font-size:14px;} .mtf-os-d{text-align:right; display:flex; flex-direction:column; align-items:flex-end; gap:2px;} .mtf-os-d b{font-size:15px;} .mtf-os-d small{color:var(--ink-soft); font-size:11px;}
+  .mtf-os-a{display:flex; gap:6px; margin-top:6px; align-items:center;}
+  .mtf-add{border-style:dashed !important; cursor:pointer; font-family:inherit; background:#fff;} .mtf-add:hover{border-color:var(--growth) !important;}
+  .mt-st-fin{background:#E3F1D6; color:#3F6B1E;}
+  .mtf-corpo table{margin:0;} .mtf-corpo .table-wrap{padding:6px 10px 10px;}
+  @media (max-width: 820px){ .mtf-hero{grid-template-columns:1fr;} .mtf-os{grid-template-columns:48px 1fr;} .mtf-os-d{grid-column:1 / -1; align-items:flex-start; text-align:left;} .mtf-hor-in{margin-left:0;} }
   .mt-painel{padding:14px 16px; margin-top:14px; border-left:4px solid #C4D678;}
   /* ---------- Rastreabilidade ---------- */
   .rs-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:14px;}
@@ -10431,7 +10456,7 @@
     veiculo: {nome:'Caminhão / veículo', itens:[['Óleo do motor + filtro',0,10000,6],['Filtros de combustível e ar',0,20000,12],['Freios (revisão)',0,20000,12],['Pneus (rodízio e calibragem)',0,10000,0],['Revisão geral',0,40000,24]]},
     implemento: {nome:'Implemento (grade, plantadeira…)', itens:[['Engraxamento',10,0,0],['Rolamentos, discos e parafusos',0,0,12]]}
   };
-  var mtSel = '', mtModo = '', mtMsg = '', mtOSRasc = null;
+  var mtSel = '', mtModo = '', mtMsg = '', mtOSRasc = null, mtFicha = '', mtFichaAba = 'os';
   var mtVista = (function(){ try{ return localStorage.getItem('agro-manut-vista') === 'lista' ? 'lista' : 'cards'; }catch(e){ return 'cards'; } })();
   /* ---- foto do equipamento: guardada à parte (padronizada em 800×600, JPEG) ---- */
   var mtFotoCache = {}, mtFotoBuscando = {}, mtFotoTimer = null;
@@ -10570,6 +10595,7 @@
     var fora = mtForaDaManutencao();
     var foraHtml = fora.length ? '<div class="paper" style="padding:10px 14px; margin-top:14px; font-size:12.5px;"><b>Fora da manutenção (' + fora.length + '):</b> ' + fora.map(function(m){ return escapeHtml(m.nome) + (pode ? ' <button type="button" data-action="mt-incluir" data-id="' + m.id + '" style="' + MT_BTN + ' padding:2px 8px; font-size:11px;">↩ Voltar</button>' : ''); }).join(' · ') + '</div>' : '';
     if(!ms.length){ el.innerHTML = '<div class="paper empty-state">' + (fora.length ? 'Todas as máquinas estão fora da manutenção.' : 'Cadastre as máquinas, veículos e implementos em <b>Máquinas e Patrimônio</b> para controlar a manutenção.') + '</div>' + foraHtml; return; }
+    if(mtFicha){ var mFi = ms.find(function(x){ return x.id === mtFicha; }); if(mFi){ el.innerHTML = '<div class="mt-ficha">' + mtFichaHtml(mFi, pode) + '</div>'; return; } mtFicha = ''; }
     var av = mtAvisos(), abertas = mtArr('manutOS').filter(function(o){ return o.status === 'Aberta' || o.status === 'Agendada'; });
     var desde12 = mtAddMeses(hoje, -12), gasto12 = mtArr('manutOS').filter(function(o){ return o.status === 'Concluída' && (o.dataSaida || o.data) >= desde12; }).reduce(function(sm, o){ return sm + mtCustoPecas(o) + (Number(o.valorServico) || 0); }, 0);
     var nVenc = av.filter(function(a){ return a.tipo === 'vencido' && !a.calib && !a.osId; }).length, nVcd = av.filter(function(a){ return a.tipo === 'vencendo' && !a.calib && !a.osId; }).length;
@@ -10641,6 +10667,129 @@
     el.innerHTML = h;
   }
   document.addEventListener('change', function(e){ if(e.target && e.target.classList && e.target.classList.contains('mt-os-peca')){ mtLerOSForm(); renderManutencao(); } });
+
+  /* ---------- Ficha da máquina (tela própria) ---------- */
+  function mtResumo12(m){
+    var hoje = mtHoje(), desde = mtAddMeses(hoje, -12), oss = mtArr('manutOS').filter(function(o){ return o.patrimonioId === m.id; });
+    var conc = oss.filter(function(o){ return o.status === 'Concluída' && (o.dataSaida || o.data) >= desde; });
+    var custo = conc.reduce(function(s, o){ return s + mtCustoPecas(o) + (Number(o.valorServico) || 0); }, 0), horas = mtHorasUso(m.id, desde, '');
+    var dias = {};
+    oss.filter(function(o){ return (o.status === 'Concluída' && (o.dataSaida || o.data) >= desde) || o.status === 'Aberta'; }).forEach(function(o){
+      var ini = o.inicioEm || o.data, fim = o.status === 'Concluída' ? (o.dataSaida || o.data) : hoje; if(!ini || !fim) return;
+      for(var dd = ini < desde ? desde : ini, g = 0; dd < fim && g < 400; dd = mtAddDias(dd, 1), g++) dias[dd] = 1;
+    });
+    return {custo: custo, horas: horas, dias: Object.keys(dias).length, porHora: horas > 0 ? custo / horas : null, nConc: conc.length, prev: conc.filter(function(o){ return o.tipo !== 'Corretiva'; }).length, corr: conc.filter(function(o){ return o.tipo === 'Corretiva'; }).length};
+  }
+  function mtFichaOSHtml(o, pode){
+    var serv = mtNomesServicos(o), conc = o.status === 'Concluída', atr = o.status === 'Agendada' && o.data && o.data < mtHoje();
+    var tit = (o.descricao || serv.join(', ') || 'Ordem de serviço'), sub = [escapeHtml(o.tipo || 'Preventiva')];
+    if(serv.length && o.descricao) sub.push(escapeHtml(serv.join(', ')));
+    if(o.parceiroId) sub.push('🏪 ' + escapeHtml((state.parceiros.find(function(p){ return p.id === o.parceiroId; }) || {}).nome || ''));
+    if(o.horimetro) sub.push(fmtNum(o.horimetro) + ' h'); if(o.km) sub.push(fmtNum(o.km) + ' km');
+    var st = conc ? '<span class="di-st mt-st-fin">✅ Finalizada · ' + mtDiasParada(o) + ' dia(s) parada' + (o.dataSaida && o.dataSaida !== o.data ? ' · pronta em ' + fmtDate(o.dataSaida) : '') + '</span>' : (o.status === 'Aberta' ? '<span class="di-st di-st-exec">🔄 Em execução · ' + mtDiasParada(o) + ' dia(s)</span>' : '<span class="di-st ' + (atr ? 'di-st-atr">⏰ Atrasada · prevista ' : 'di-st-aex">🗓️ A executar · ') + fmtDate(o.data) + '</span>');
+    var d = conc ? (o.dataSaida || o.data) : o.data;
+    var h = '<div class="mtf-os' + (conc ? ' fin' : '') + (atr ? ' atr' : '') + '"><span class="ct-data"><b>' + (d ? d.slice(8,10) : '—') + '</b><small>' + (d ? MESES[parseInt(d.slice(5,7), 10) - 1].slice(0,3) + ' ' + d.slice(2,4) : '') + '</small></span>';
+    h += '<div class="mtf-os-m"><div class="mtf-os-t">' + escapeHtml(tit) + ' ' + st + '</div><div class="fn-sub">' + sub.join(' · ') + '</div>';
+    var tags = (o.pecas || []).map(function(pc){ var c = mtCompraDaPeca(pc), vu = conc ? {v: Number(pc.custoUnit) || 0, est: false} : mtValorUnitPeca(pc); return '<span class="di-prod">🔩 ' + escapeHtml(produtoNome(pc.produtoId)) + ' <b>× ' + fmtNum(pc.quantidade) + '</b>' + (c && c.notaFiscal ? ' <small>· NF ' + escapeHtml(c.notaFiscal) + '</small>' : '') + (vu.v > 0 ? ' <small>· ' + (vu.est ? '≈ ' : '') + fmtBRL(vu.v * pc.quantidade) + '</small>' : ' <small style="color:#A23E2E;">· sem custo</small>') + '</span>'; }).join('');
+    if(!conc && pode) tags += '<button type="button" class="di-prod mtf-add" data-action="mt-os-editar" data-id="' + o.id + '">＋ Peça</button><button type="button" class="di-prod mtf-add" data-action="mt-os-editar" data-id="' + o.id + '" data-puxar="1">🧾 Puxar de uma nota</button>';
+    if(tags) h += '<div class="fn-tags">' + tags + '</div>';
+    h += '</div><div class="mtf-os-d"><b>' + (conc ? '' : '≈ ') + fmtBRL(mtCustoPecas(o) + (Number(o.valorServico) || 0)) + '</b><small>' + (conc ? 'peças + serviço' : 'estimado') + '</small>';
+    if(pode){
+      h += '<div class="mtf-os-a">';
+      if(!conc){ if(o.status === 'Agendada') h += '<button type="button" class="tl-btn" data-action="mt-os-iniciar" data-id="' + o.id + '">▶ Iniciar</button>'; h += '<button type="button" class="tl-btn tl-pri" data-action="mt-os-finalizar" data-id="' + o.id + '">✔ Finalizar</button><button type="button" class="tl-btn fn-ed" data-action="mt-os-editar" data-id="' + o.id + '" title="Editar">✏️</button>'; }
+      h += '<details class="tl-more"><summary title="Mais ações">⋯</summary><div class="tl-menu">' + (o.status === 'Aberta' ? '<button type="button" data-action="mt-os-voltar" data-id="' + o.id + '">↩ Voltar para "a executar"</button>' : '') + '<button type="button" class="tl-danger" data-action="mt-excluir-os" data-id="' + o.id + '">🗑️ Excluir' + (conc ? ' (devolve as peças ao estoque)' : '') + '</button></div></details></div>';
+    }
+    return h + '</div></div>';
+  }
+  function mtComPainel(modo, m, pode){ var b = mtModo; mtModo = modo; var x = ''; try{ x = mtPainelHtml(m, pode); } finally { mtModo = b; } return x; }
+  function mtFichaHtml(m, pode){
+    var km = mtUsaKm(m), hor = mtHorimetro(m.id), kmv = mtKm(m.id), r12 = mtResumo12(m), pulv = mtEhPulverizador(m);
+    var oss = mtArr('manutOS').filter(function(o){ return o.patrimonioId === m.id; });
+    var exec = oss.filter(function(o){ return o.status === 'Aberta'; }).sort(function(a, b){ return (a.inicioEm || a.data || '').localeCompare(b.inicioEm || b.data || ''); });
+    var agend = oss.filter(function(o){ return o.status === 'Agendada'; }).sort(function(a, b){ return (a.data || '').localeCompare(b.data || ''); });
+    var fin = oss.filter(function(o){ return o.status === 'Concluída'; }).sort(function(a, b){ return (b.dataSaida || b.data || '').localeCompare(a.dataSaida || a.data || ''); });
+    var pls = mtPlanos(m.id).map(function(pl){ return {pl: pl, s: mtSituacaoPlano(pl)}; }), ordem = {vencido: 0, vencendo: 1, ok: 2, sem: 3};
+    pls.sort(function(a, b){ return ordem[a.s.st] - ordem[b.s.st]; });
+    var pior = pls[0] || null;
+    var st = exec.length || m.status === 'Em manutenção' ? {c:'exec', t:'🔧 Em manutenção' + (exec[0] ? ' há ' + mtDiasParada(exec[0]) + ' dia(s)' : '')} : (agend.length ? {c:'agend', t:'🗓️ OS agendada ' + fmtDate(agend[0].data)} : (pior ? {c: pior.s.st, t: {vencido:'⏰ Serviço vencido', vencendo:'⚠️ Serviço perto', ok:'✅ Em dia', sem:'❔ Sem registro'}[pior.s.st]} : {c:'sem', t:'📋 Sem plano'}));
+    var leit = km ? (kmv.valor ? fmtNum(kmv.valor) + ' km' : '—') : (hor.valor || hor.base ? fmtNum(hor.valor) + ' h' : '—');
+    var leitInfo = km ? (kmv.base ? 'leitura de ' + fmtDate(kmv.base.data) : 'informe a leitura') : (hor.base ? 'leitura de ' + fmtDate(hor.base.data) + ' + horas do Diário/Colheita' : 'só horas do Diário/Colheita — informe a leitura');
+    var subP = [escapeHtml(m.categoria || '')]; if(m.dataAquisicao) subP.push('desde ' + fmtDate(m.dataAquisicao)); if(Number(m.valor) > 0) subP.push('valor ' + fmtBRL(m.valor));
+    var h = '<button type="button" class="mtf-voltar" data-action="mt-ficha-fechar">← Voltar para as máquinas</button>';
+    if(pode) h += '<input type="file" id="mt-foto-input" accept="image/*" style="display:none;">';
+    if(mtMsg){ h += '<div class="paper note-box" style="margin:0 0 14px;">' + mtMsg + '</div>'; mtMsg = ''; }
+    h += '<div class="mtf-hero"><div class="mt-foto mtf-foto" data-mt-foto="' + m.id + '">' + mtFotoHtml(m, pode) + (pode && m.foto ? '<button type="button" class="mtf-foto-bt" data-action="mt-foto" data-id="' + m.id + '">📷 Trocar foto</button>' : '') + '</div>';
+    h += '<div class="mtf-info"><div><span class="mt-st mt-st-' + st.c + ' mtf-st">' + st.t + '</span></div><h2>' + escapeHtml(m.nome) + '</h2><div class="mtf-sub">' + subP.join(' · ') + '</div>';
+    h += '<div class="mtf-hor"><div><small>' + (km ? '🛣️ Hodômetro' : '⏱️ Horímetro') + '</small><b>' + leit + '</b><small>' + leitInfo + '</small></div>' + (pode ? '<div class="mtf-hor-in"><input type="number" step="0.1" min="0" id="mt-leit-' + m.id + '" placeholder="' + (km ? 'km atual' : 'horímetro atual') + '"><button type="button" class="tl-btn" data-action="mt-leitura" data-id="' + m.id + '">Atualizar</button></div>' : '') + '</div>';
+    if(pode){
+      h += '<div class="mtf-acoes"><button type="button" class="tl-btn tl-pri" data-action="mt-nova-os" data-id="' + m.id + '">🔧 Nova OS</button>';
+      if(exec.length) h += '<button type="button" class="tl-btn" data-action="mt-os-finalizar" data-id="' + exec[0].id + '">✔ Finalizar OS em execução' + (exec.length > 1 ? ' (' + exec.length + ')' : '') + '</button>';
+      if(pulv) h += '<button type="button" class="tl-btn" data-action="mt-ficha-aba" data-aba="calib">🎯 Calibrar</button>';
+      if(!m.foto) h += '<button type="button" class="tl-btn" data-action="mt-foto" data-id="' + m.id + '">📷 Foto</button>';
+      h += '<details class="tl-more"><summary title="Mais ações">⋯</summary><div class="tl-menu">' + (m.foto ? '<button type="button" data-action="mt-foto-remover" data-id="' + m.id + '">🖼️ Tirar a foto</button>' : '') + '<button type="button" class="tl-danger" data-action="mt-excluir-maq" data-id="' + m.id + '">🚫 Tirar da manutenção</button></div></details></div>';
+    }
+    h += '</div></div>';
+    // números
+    h += '<div class="tl-kpis" style="margin-top:14px;">';
+    h += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#FFF1D6;">💸</span><div><b>' + fmtBRL(r12.custo) + '</b><small>manutenção em 12 meses · ' + r12.prev + ' preventiva(s), ' + r12.corr + ' corretiva(s)</small></div></div>';
+    h += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#DDEEF6;">⏱️</span><div><b>' + r12.dias + ' dia(s)</b><small>parada nos últimos 12 meses</small></div></div>';
+    h += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#E3F1D6;">🚜</span><div><b>' + fmtNum(r12.horas) + ' h</b><small>trabalhadas em 12 meses</small></div></div>';
+    h += '<div class="tl-kpi"><span class="tl-kpi-i">📊</span><div><b>' + (r12.porHora !== null ? fmtBRL(r12.porHora) + '/h' : '—') + '</b><small>custo de manutenção por hora</small></div></div>';
+    h += '</div>';
+    if(Number(m.valor) > 0 && r12.custo > Number(m.valor) * 0.15) h += '<div class="paper note-box" style="margin:0 0 12px; border-left-color:#C0453A;">⚠️ A manutenção dos últimos 12 meses passou de 15% do valor da máquina (' + fmtBRL(m.valor) + '). Vale avaliar se compensa trocar.</div>';
+    // abas
+    var nAb = exec.length + agend.length, usoN = mtUsoMaquina(m.id).length;
+    var abas = [['os', '🔧 Ordens de serviço', nAb], ['plano', '📋 Plano de manutenção', pls.filter(function(x){ return x.s.st === 'vencido' || x.s.st === 'vencendo'; }).length], ['pecas', '🔩 Peças trocadas', 0], ['uso', '📒 Uso (Diário e Colheita)', 0], ['leituras', '📟 Leituras', 0]];
+    if(pulv) abas.push(['calib', '🎯 Calibração', 0]);
+    if(!abas.some(function(a){ return a[0] === mtFichaAba; })) mtFichaAba = 'os';
+    h += '<div class="mtf-abas">' + abas.map(function(a){ return '<button type="button" class="' + (a[0] === mtFichaAba ? 'on' : '') + '" data-action="mt-ficha-aba" data-aba="' + a[0] + '">' + a[1] + (a[2] ? ' <span class="nav-badge">' + a[2] + '</span>' : '') + '</button>'; }).join('') + '</div>';
+    h += '<div class="paper mtf-corpo">';
+    if(mtFichaAba === 'os'){
+      if(mtModo === 'os' && mtSel === m.id) h += '<div class="mtf-form" id="mt-painel">' + mtComPainel('os', m, pode) + '</div>';
+      if(!oss.length && !(mtModo === 'os' && mtSel === m.id)) h += '<div class="fe-vazio" style="padding:20px;">Nenhuma ordem de serviço ainda. Use <b>🔧 Nova OS</b> no topo.</div>';
+      if(exec.length){ h += '<div class="mtf-sec">🔄 Em execução</div>'; exec.forEach(function(o){ h += mtFichaOSHtml(o, pode); }); }
+      if(agend.length){ h += '<div class="mtf-sec">🗓️ A executar</div>'; agend.forEach(function(o){ h += mtFichaOSHtml(o, pode); }); }
+      if(fin.length){ h += '<div class="mtf-sec">✅ Finalizadas</div>'; fin.forEach(function(o){ h += mtFichaOSHtml(o, pode); }); }
+    } else if(mtFichaAba === 'plano'){
+      h += '<div class="mtf-pad">' + mtComPainel('plano', m, pode) + '</div>';
+    } else if(mtFichaAba === 'calib'){
+      h += '<div class="mtf-pad">' + mtComPainel('calib', m, pode) + '</div>';
+    } else if(mtFichaAba === 'pecas'){
+      var trocas = []; fin.forEach(function(o){ (o.pecas || []).forEach(function(pc){ trocas.push({o: o, pc: pc, c: mtCompraDaPeca(pc)}); }); });
+      if(!trocas.length) h += '<div class="fe-vazio" style="padding:20px;">Nenhuma peça trocada em ordens finalizadas ainda.</div>';
+      else {
+        var totP = trocas.reduce(function(sm, t){ return sm + (Number(t.pc.custoUnit) || 0) * t.pc.quantidade; }, 0);
+        h += '<div class="table-wrap"><table class="sem-ordenacao"><thead><tr><th>Data</th><th>Peça</th><th class="num">Qtd</th><th>Nota fiscal</th><th>Ordem de serviço</th><th class="num">Valor</th></tr></thead><tbody>';
+        trocas.forEach(function(t){ h += '<tr><td>' + fmtDate(t.o.dataSaida || t.o.data) + '</td><td>' + escapeHtml(produtoNome(t.pc.produtoId)) + '</td><td class="num">' + fmtNum(t.pc.quantidade) + '</td><td>' + (t.c ? '🧾 ' + escapeHtml(mtNfTexto(t.c)) : '<span style="color:var(--ink-soft);">—</span>') + '</td><td style="font-size:12px;">' + escapeHtml(t.o.descricao || mtNomesServicos(t.o).join(', ') || '') + '</td><td class="num">' + (t.pc.custoUnit ? fmtBRL(t.pc.quantidade * t.pc.custoUnit) : '—') + '</td></tr>'; });
+        h += '</tbody><tfoot><tr><td colspan="5"><b>Total em peças</b></td><td class="num"><b>' + fmtBRL(totP) + '</b></td></tr></tfoot></table></div>';
+      }
+    } else if(mtFichaAba === 'uso'){
+      var uso = mtUsoMaquina(m.id);
+      if(!uso.length) h += '<div class="fe-vazio" style="padding:20px;">Esta máquina ainda não aparece em nenhuma atividade do Diário nem na Colheita.</div>';
+      else {
+        var totH = uso.reduce(function(sm, u){ return sm + u.horas; }, 0);
+        h += '<div class="table-wrap"><table class="sem-ordenacao"><thead><tr><th>Data</th><th>Atividade</th><th>Onde</th><th class="num">Horas</th></tr></thead><tbody>';
+        uso.slice(0, 200).forEach(function(u){ h += '<tr><td>' + fmtDate(u.data) + '</td><td>' + u.ic + ' ' + escapeHtml(u.tipo) + '</td><td style="font-size:12.5px;">' + escapeHtml(u.onde) + '</td><td class="num">' + fmtNum(u.horas) + ' h</td></tr>'; });
+        h += '</tbody><tfoot><tr><td colspan="3"><b>Total (' + uso.length + ' registro(s))</b></td><td class="num"><b>' + fmtNum(Math.round(totH * 10) / 10) + ' h</b></td></tr></tfoot></table></div>';
+      }
+    } else if(mtFichaAba === 'leituras'){
+      var lts = mtLeituras(m.id);
+      if(!lts.length) h += '<div class="fe-vazio" style="padding:20px;">Nenhuma leitura informada. Use o campo do ' + (km ? 'hodômetro' : 'horímetro') + ' no topo.</div>';
+      else {
+        h += '<div class="table-wrap"><table class="sem-ordenacao"><thead><tr><th>Data</th><th class="num">' + (km ? 'Km' : 'Horímetro') + '</th><th>Origem</th></tr></thead><tbody>';
+        lts.forEach(function(l){ h += '<tr><td>' + fmtDate(l.data) + '</td><td class="num">' + (km ? (l.km ? fmtNum(l.km) + ' km' : '—') : (l.horas ? fmtNum(l.horas) + ' h' : '—')) + '</td><td>' + (l.origem === 'os' ? '🔧 ordem de serviço' : '📟 leitura informada') + '</td></tr>'; });
+        h += '</tbody></table></div>';
+      }
+    }
+    h += '</div>';
+    return h;
+  }
+  function mtUsoMaquina(mid){
+    var out = [];
+    state.operacoes.forEach(function(o){ (o.maquinas || []).forEach(function(x){ if(x.patrimonioId !== mid) return; var aps = aplicacoesDaOperacao(o); out.push({data: o.data || '', tipo: o.tipo || 'Atividade', ic: diIcone(o.tipo), onde: aps.map(function(a){ return talhaoNome(a.talhaoId); }).join(', ') || '—', horas: Number(x.horas) || 0}); }); });
+    state.producao.forEach(function(p){ if(p.maquinaId !== mid) return; var sf = state.safras.find(function(x){ return x.id === p.safraId; }); out.push({data: p.data || '', tipo: p.tipo === 'saida' ? 'Venda / saída' : 'Colheita', ic: '🧺', onde: sf ? talhaoNome(sf.talhaoId) + ' · ' + culturaNome(sf.culturaId) : '—', horas: Number(p.horasUso) || 0}); });
+    return out.sort(function(a, b){ return (b.data || '').localeCompare(a.data || ''); });
+  }
   function mtCardHtml(m, pode){
     var km = mtUsaKm(m), hor = mtHorimetro(m.id), kmv = mtKm(m.id), pls = mtPlanos(m.id).map(function(pl){ return {pl: pl, s: mtSituacaoPlano(pl)}; });
     var ordem = {vencido: 0, vencendo: 1, ok: 2, sem: 3};
@@ -10652,8 +10801,8 @@
     var st = m.status === 'Em manutenção' || osAb.length ? {c:'exec', t:'🔧 Em manutenção' + (osAb[0] ? ' há ' + mtDiasParada(osAb[0]) + ' dia(s)' : '')} : (osAg.length ? {c:'agend', t:'🗓️ OS agendada ' + fmtDate(osAg[0].data)} : (pior ? {c: pior.s.st, t: {vencido:'⏰ Serviço vencido', vencendo:'⚠️ Serviço perto', ok:'✅ Em dia', sem:'❔ Sem registro'}[pior.s.st]} : {c:'sem', t:'📋 Sem plano'}));
     var pct = pior ? mtPctPlano(pior.pl, pior.s) : null;
     var h = '<article class="mt-card' + (mtSel === m.id && mtModo ? ' sel' : '') + '">';
-    h += '<div class="mt-foto" data-mt-foto="' + m.id + '">' + mtFotoHtml(m, pode) + '<span class="mt-st mt-st-' + st.c + '">' + st.t + '</span></div>';
-    h += '<div class="mt-corpo"><div class="mt-topo"><div><h3>' + escapeHtml(m.nome) + '</h3><small>' + escapeHtml(m.categoria || '') + '</small></div>';
+    h += '<div class="mt-foto mt-abrir" data-mt-foto="' + m.id + '" data-action="mt-ficha" data-id="' + m.id + '" title="Abrir a ficha da máquina">' + mtFotoHtml(m, pode) + '<span class="mt-st mt-st-' + st.c + '">' + st.t + '</span></div>';
+    h += '<div class="mt-corpo"><div class="mt-topo"><div class="mt-abrir" data-action="mt-ficha" data-id="' + m.id + '" title="Abrir a ficha da máquina"><h3>' + escapeHtml(m.nome) + ' <span class="mt-seta">›</span></h3><small>' + escapeHtml(m.categoria || '') + '</small></div>';
     h += '<details class="tl-more"><summary title="Mais ações">⋯</summary><div class="tl-menu">';
     if(pode) h += '<button type="button" data-action="mt-foto" data-id="' + m.id + '">📷 ' + (m.foto ? 'Trocar foto' : 'Adicionar foto') + '</button>' + (m.foto ? '<button type="button" data-action="mt-foto-remover" data-id="' + m.id + '">🖼️ Tirar a foto</button>' : '');
     if(mtEhPulverizador(m) || m.categoria === 'Máquina') h += '<button type="button" data-action="mt-modo" data-id="' + m.id + '" data-modo="calib">🎯 Calibração</button>';
@@ -10664,7 +10813,7 @@
     h += '<div class="mt-prox">' + (pior ? (pior.s.st === 'sem' ? '<b>' + escapeHtml(pior.pl.servico) + '</b><small>informe quando foi feito pela última vez</small>' : '<b>' + escapeHtml(pior.pl.servico) + '</b><small>' + pior.s.partes.map(mtFaltaTxt).join(' · ') + '</small>' + (pct !== null ? '<div class="mt-barra"><i class="mt-b-' + pior.s.st + '" style="width:' + Math.max(3, pct).toFixed(0) + '%"></i></div>' : '')) : '<small>Sem plano de manutenção — clique em 📋 Plano para montar.</small>') + '</div>';
     if(cal) h += '<div class="mt-cal">🎯 calibrado em ' + fmtDate(cal.data) + (cal.proxima ? ' · próxima ' + fmtDate(cal.proxima) : '') + '</div>';
     else if(mtEhPulverizador(m)) h += '<div class="mt-cal">🎯 sem calibração registrada</div>';
-    h += '<div class="mt-acoes">' + (pode ? '<button type="button" class="tl-btn tl-pri" data-action="mt-nova-os" data-id="' + m.id + '">🔧 Nova OS</button>' : '') + '<button type="button" class="tl-btn" data-action="mt-modo" data-id="' + m.id + '" data-modo="plano">📋 Plano (' + pls.length + ')</button><button type="button" class="tl-btn" data-action="mt-modo" data-id="' + m.id + '" data-modo="hist">📜 Histórico</button></div>';
+    h += '<div class="mt-acoes">' + (pode ? '<button type="button" class="tl-btn tl-pri" data-action="mt-nova-os" data-id="' + m.id + '">🔧 Nova OS</button>' : '') + '<button type="button" class="tl-btn" data-action="mt-ficha" data-id="' + m.id + '">📂 Abrir ficha</button></div>';
     h += '</div></article>';
     return h;
   }
@@ -10716,7 +10865,7 @@
     h += '<td style="font-size:12px;">' + ((o.pecas || []).length ? o.pecas.map(function(pc){ var cN = mtCompraDaPeca(pc); return escapeHtml(produtoNome(pc.produtoId)) + ' × ' + fmtNum(pc.quantidade) + (cN && cN.notaFiscal ? ' <span style="color:var(--ink-soft);">· NF ' + escapeHtml(cN.notaFiscal) + '</span>' : '')  + (function(){ var vu = o.status === 'Concluída' ? {v: Number(pc.custoUnit) || 0, est: false} : mtValorUnitPeca(pc); return vu.v > 0 ? ' <span style="color:var(--ink-soft);">(' + (vu.est ? '≈ ' : '') + fmtBRL(pc.quantidade * vu.v) + ')</span>' : ' <span style="color:#A23E2E;">(sem custo)</span>'; })(); }).join('<br>') : '—') + '</td>';
     h += '<td class="num">' + (Number(o.valorServico) ? fmtBRL(o.valorServico) : '—') + (o.parceiroId ? '<br><span style="font-size:11px; color:var(--ink-soft);">' + escapeHtml((state.parceiros.find(function(p){ return p.id === o.parceiroId; }) || {}).nome || '') + '</span>' : '') + '</td>';
     if(!abertas) h += '<td class="num"><b>' + (o.status !== 'Concluída' ? '≈ ' : '') + fmtBRL(mtCustoPecas(o) + (Number(o.valorServico) || 0)) + '</b>' + (o.status !== 'Concluída' ? '<br><span style="font-size:10.5px; color:var(--ink-soft); font-family:inherit;">estimado · ' + (o.status === 'Aberta' ? 'em execução' : 'a executar') + '</span>' : '') + '</td>';
-    h += '<td style="white-space:nowrap;">' + (pode && (o.status === 'Aberta' || o.status === 'Agendada') ? '<button type="button" class="btn-edit" data-action="mt-os-finalizar" data-id="' + o.id + '">✔ Finalizar</button>' : '') + (pode ? '<button type="button" class="btn-del" data-action="mt-excluir-os" data-id="' + o.id + '" title="Excluir (devolve as peças ao estoque e apaga o lançamento)">×</button>' : '') + '</td></tr>';
+    h += '<td style="white-space:nowrap;">' + (pode && (o.status === 'Aberta' || o.status === 'Agendada') ? '<button type="button" class="btn-edit" data-action="mt-os-editar" data-id="' + o.id + '" title="Editar: adicionar ou trocar peças, serviços e valores">✏️ Editar / peças</button><button type="button" class="btn-edit" data-action="mt-os-finalizar" data-id="' + o.id + '">✔ Finalizar</button>' : '') + (pode ? '<button type="button" class="btn-del" data-action="mt-excluir-os" data-id="' + o.id + '" title="Excluir (devolve as peças ao estoque e apaga o lançamento)">×</button>' : '') + '</td></tr>';
     return h;
   }
   function mtPainelHtml(m, pode){
@@ -10905,6 +11054,20 @@
   function mtSalvarTudo(){ ['manutOS','manutPlanos','manutLeituras','manutCalibracoes','produtos','ajustesEstoque','financeiro','patrimonio'].forEach(function(k){ saveKey(k, state[k]); }); }
   function acaoManutencao(action, btn){
     var id = btn.dataset.id;
+    if(action === 'mt-ficha'){ if(!id) return true; mtFicha = id; mtFichaAba = 'os'; mtModo = ''; mtSel = ''; mtOSRasc = null; renderManutencao(); window.scrollTo(0, 0); return true; }
+    if(action === 'mt-ficha-fechar'){ mtFicha = ''; mtModo = ''; mtSel = ''; mtOSRasc = null; renderManutencao(); window.scrollTo(0, 0); return true; }
+    if(action === 'mt-ficha-aba'){ mtFichaAba = btn.dataset.aba || 'os'; if(mtFichaAba !== 'os'){ mtModo = ''; mtOSRasc = null; } renderManutencao(); return true; }
+    // na visão de cartões, as ações de uma máquina abrem a ficha dela
+    if(mtVista !== 'lista' || mtFicha){
+      var mIdF = '', abaF = '';
+      if(action === 'mt-modo' && btn.dataset.modo){ mIdF = id; abaF = btn.dataset.modo === 'plano' ? 'plano' : (btn.dataset.modo === 'calib' ? 'calib' : 'os'); }
+      if(action === 'mt-nova-os'){ mIdF = id; abaF = 'os'; }
+      if(action === 'mt-os-editar' || action === 'mt-os-finalizar'){ var oF = mtArr('manutOS').find(function(x){ return x.id === id; }); if(oF){ mIdF = oF.patrimonioId; abaF = 'os'; } }
+      if(mIdF){
+        var abrindo = mtFicha !== mIdF; mtFicha = mIdF; mtFichaAba = abaF;
+        if(action === 'mt-modo'){ mtModo = ''; mtSel = ''; mtOSRasc = null; renderManutencao(); if(abrindo) window.scrollTo(0, 0); return true; }
+      }
+    }
     if(action === 'mt-vista'){ mtVista = btn.dataset.vista === 'lista' ? 'lista' : 'cards'; try{ localStorage.setItem('agro-manut-vista', mtVista); }catch(e){} renderManutencao(); return true; }
     if(action === 'mt-foto'){ var inF = document.getElementById('mt-foto-input'); if(inF){ inF.dataset.id = id; inF.click(); } return true; }
     if(action === 'mt-foto-remover'){
@@ -10917,7 +11080,7 @@
       var mx = state.patrimonio.find(function(x){ return x.id === id; }); if(!mx) return true;
       if(action === 'mt-excluir-maq'){
         if(!window.confirm('Tirar "' + mx.nome + '" da manutenção?\n\nEla some desta tela e dos avisos, mas continua em Máquinas e Patrimônio. O plano e o histórico ficam guardados — dá para voltar depois.')) return true;
-        mx.semManutencao = true; if(mtSel === id){ mtSel = ''; mtModo = ''; }
+        mx.semManutencao = true; if(mtSel === id){ mtSel = ''; mtModo = ''; } if(mtFicha === id) mtFicha = '';
         mtMsg = '✓ ' + escapeHtml(mx.nome) + ' saiu da manutenção. Para voltar, use "↩ Voltar" no fim da página.';
       } else { delete mx.semManutencao; mtMsg = '✓ ' + escapeHtml(mx.nome) + ' voltou para a manutenção.'; }
       saveKey('patrimonio', state.patrimonio); renderManutencao(); return true;
@@ -10985,7 +11148,7 @@
       }
       if(!osAnt) mtArr('manutOS').push(os);
       mtSalvarTudo();
-      mtOSRasc = null; mtModo = modo === 'fim' ? 'hist' : ''; if(modo !== 'fim') mtSel = '';
+      mtOSRasc = null; mtModo = modo === 'fim' && !mtFicha ? 'hist' : ''; if(modo !== 'fim' || mtFicha) mtSel = ''; if(mtFicha) mtFichaAba = 'os';
       mtMsg = '✓ Ordem de serviço de ' + escapeHtml(mq4 ? mq4.nome : '') + (modo === 'fim' ? ' finalizada' + (pecas.length ? ', peças baixadas do estoque' : '') + (os.financeiroId ? ', serviço de ' + fmtBRL(os.valorServico) + ' lançado no Financeiro' : '') + ' — ' + mtDiasParada(os) + ' dia(s) parada' : (modo === 'exec' ? ' em execução — a máquina ficou "em manutenção"' : ' agendada para ' + fmtDate(os.data) + ' (a máquina continua trabalhando)')) + '.';
       renderAll(); return true;
     }
@@ -10993,7 +11156,9 @@
       var oe = mtArr('manutOS').find(function(x){ return x.id === id; }); if(!oe || oe.status === 'Concluída') return true;
       mtSel = oe.patrimonioId; mtModo = 'os';
       mtOSRasc = {editId: oe.id, finalizando: action === 'mt-os-finalizar', data: oe.data, dataSaida: mtHoje(), horimetro: oe.horimetro, km: oe.km, tipo: oe.tipo, descricao: oe.descricao, parceiroId: oe.parceiroId, valorServico: oe.valorServico, contaId: oe.contaId, planoIds: (oe.planoIds || []).slice(), pecas: (oe.pecas || []).map(function(pc){ return {produtoId: pc.produtoId, quantidade: pc.quantidade, compraId: pc.compraId}; })};
-      renderManutencao(); var pE = document.getElementById('mt-painel'); if(pE) pE.scrollIntoView({behavior: 'smooth', block: 'start'}); return true;
+      renderManutencao(); var pE = document.getElementById('mt-painel'); if(pE) pE.scrollIntoView({behavior: 'smooth', block: 'start'});
+      if(btn.dataset.puxar){ var sN = document.getElementById('mt-os-nota'); if(sN){ sN.scrollIntoView({behavior: 'smooth', block: 'center'}); setTimeout(function(){ sN.focus(); }, 300); } }
+      return true;
     }
     if(action === 'mt-os-iniciar' || action === 'mt-os-voltar'){
       var oi = mtArr('manutOS').find(function(x){ return x.id === id; }); if(!oi || oi.status === 'Concluída') return true;
