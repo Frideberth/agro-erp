@@ -10493,6 +10493,7 @@
   function mtUsaKm(m){ return !!m && m.categoria === 'Veículo'; }
   function mtEhPulverizador(m){ return !!m && (/pulveri|jacto|uniport|condor|advance|atomiz|columbia|arbus/i.test(m.nome || '') || mtArr('manutCalibracoes').some(function(c){ return c.patrimonioId === m.id; })); }
   function mtAddMeses(d, n){ var dt = new Date(d + 'T12:00:00'); dt.setMonth(dt.getMonth() + n); return dt.toISOString().slice(0,10); }
+  function mtAddDias(d, n){ var dt = new Date(d + 'T12:00:00'); dt.setDate(dt.getDate() + n); return dt.toISOString().slice(0,10); }
   function mtDias(a, b){ return Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 86400000); }
   // horas trabalhadas (Diário de Campo + Colheita) depois de uma data
   function mtHorasUso(mid, desde, ate){
@@ -10696,7 +10697,15 @@
     return h + '</div></div>';
   }
   function mtNomesServicos(o){ return (o.planoIds || []).map(function(id){ var p = mtArr('manutPlanos').find(function(x){ return x.id === id; }); return p ? p.servico : ''; }).filter(Boolean); }
-  function mtCustoPecas(o){ return (o.pecas || []).reduce(function(s, pc){ return s + (Number(pc.quantidade) || 0) * (Number(pc.custoUnit) || 0); }, 0); }
+  // valor unitário da peça: o gravado ao finalizar; antes disso, uma estimativa (preço da nota escolhida ou custo médio do estoque)
+  function mtValorUnitPeca(pc){
+    if(Number(pc.custoUnit) > 0) return {v: Number(pc.custoUnit), est: false};
+    var c = mtCompraDaPeca(pc);
+    if(c){ var q = Number(c.quantidade) || 0, vt = Number(c.valorTotal) || 0; if(q > 0 && vt > 0) return {v: vt / q, est: true, nf: true}; }
+    var p = state.produtos.find(function(x){ return x.id === pc.produtoId; }), cm = p ? (custoMedioProduto(p.id) || Number(p.custoManual) || 0) : 0;
+    return {v: cm, est: true};
+  }
+  function mtCustoPecas(o){ return (o.pecas || []).reduce(function(s, pc){ return s + (Number(pc.quantidade) || 0) * (o.status === 'Concluída' ? (Number(pc.custoUnit) || 0) : mtValorUnitPeca(pc).v); }, 0); }
   function mtLinhaOS(o, pode, abertas){
     var m = state.patrimonio.find(function(x){ return x.id === o.patrimonioId; });
     var serv = mtNomesServicos(o).concat(o.descricao ? [o.descricao] : []);
@@ -10704,10 +10713,10 @@
     if(abertas) h += '<td>' + escapeHtml(m ? m.nome : '—') + '</td>';
     h += '<td><span class="badge" style="background:' + (o.tipo === 'Corretiva' ? '#D08370' : '#A9B7C6') + '; color:#1B1508;">' + escapeHtml(o.tipo || 'Preventiva') + '</span></td>';
     h += '<td style="font-size:12px;">' + (serv.length ? serv.map(escapeHtml).join('<br>') : '—') + '</td>';
-    h += '<td style="font-size:12px;">' + ((o.pecas || []).length ? o.pecas.map(function(pc){ var cN = mtCompraDaPeca(pc); return escapeHtml(produtoNome(pc.produtoId)) + ' × ' + fmtNum(pc.quantidade) + (cN && cN.notaFiscal ? ' <span style="color:var(--ink-soft);">· NF ' + escapeHtml(cN.notaFiscal) + '</span>' : '') + (pc.custoUnit ? ' <span style="color:var(--ink-soft);">(' + fmtBRL(pc.quantidade * pc.custoUnit) + ')</span>' : ''); }).join('<br>') : '—') + '</td>';
+    h += '<td style="font-size:12px;">' + ((o.pecas || []).length ? o.pecas.map(function(pc){ var cN = mtCompraDaPeca(pc); return escapeHtml(produtoNome(pc.produtoId)) + ' × ' + fmtNum(pc.quantidade) + (cN && cN.notaFiscal ? ' <span style="color:var(--ink-soft);">· NF ' + escapeHtml(cN.notaFiscal) + '</span>' : '')  + (function(){ var vu = o.status === 'Concluída' ? {v: Number(pc.custoUnit) || 0, est: false} : mtValorUnitPeca(pc); return vu.v > 0 ? ' <span style="color:var(--ink-soft);">(' + (vu.est ? '≈ ' : '') + fmtBRL(pc.quantidade * vu.v) + ')</span>' : ' <span style="color:#A23E2E;">(sem custo)</span>'; })(); }).join('<br>') : '—') + '</td>';
     h += '<td class="num">' + (Number(o.valorServico) ? fmtBRL(o.valorServico) : '—') + (o.parceiroId ? '<br><span style="font-size:11px; color:var(--ink-soft);">' + escapeHtml((state.parceiros.find(function(p){ return p.id === o.parceiroId; }) || {}).nome || '') + '</span>' : '') + '</td>';
-    if(!abertas) h += '<td class="num"><b>' + fmtBRL(mtCustoPecas(o) + (Number(o.valorServico) || 0)) + '</b></td>';
-    h += '<td style="white-space:nowrap;">' + (pode && o.status === 'Aberta' ? '<button type="button" class="btn-edit" data-action="mt-concluir-os" data-id="' + o.id + '">✓ Concluir</button>' : '') + (pode ? '<button type="button" class="btn-del" data-action="mt-excluir-os" data-id="' + o.id + '" title="Excluir (devolve as peças ao estoque e apaga o lançamento)">×</button>' : '') + '</td></tr>';
+    if(!abertas) h += '<td class="num"><b>' + (o.status !== 'Concluída' ? '≈ ' : '') + fmtBRL(mtCustoPecas(o) + (Number(o.valorServico) || 0)) + '</b>' + (o.status !== 'Concluída' ? '<br><span style="font-size:10.5px; color:var(--ink-soft); font-family:inherit;">estimado · ' + (o.status === 'Aberta' ? 'em execução' : 'a executar') + '</span>' : '') + '</td>';
+    h += '<td style="white-space:nowrap;">' + (pode && (o.status === 'Aberta' || o.status === 'Agendada') ? '<button type="button" class="btn-edit" data-action="mt-os-finalizar" data-id="' + o.id + '">✔ Finalizar</button>' : '') + (pode ? '<button type="button" class="btn-del" data-action="mt-excluir-os" data-id="' + o.id + '" title="Excluir (devolve as peças ao estoque e apaga o lançamento)">×</button>' : '') + '</td></tr>';
     return h;
   }
   function mtPainelHtml(m, pode){
@@ -10816,7 +10825,14 @@
       var cp = prev.reduce(function(s, o){ return s + mtCustoPecas(o) + (Number(o.valorServico) || 0); }, 0), cc = custoAno - cp;
       h += fechar + '<div style="font-weight:600; margin-bottom:8px;">📜 Histórico — ' + escapeHtml(m.nome) + '</div>';
       h += '<div class="stat-row" style="margin-bottom:10px;">' + statCard('Manutenção (12 meses)', fmtBRL(custoAno), 'cost') + statCard('Preventivas', prev.length + ' · ' + fmtBRL(cp)) + statCard('Corretivas (quebras)', corr.length + ' · ' + fmtBRL(cc), corr.length ? 'cost' : '') + statCard('Horas trabalhadas (12 meses)', fmtNum(horasAno) + ' h') + statCard('Manutenção por hora', horasAno > 0 ? fmtBRL(custoAno / horasAno) + '/h' : '—') + '</div>';
-      var diasPar = oss.filter(function(o){ return (o.status === 'Concluída' && (o.dataSaida || o.data) >= desde) || o.status === 'Aberta'; }).reduce(function(sm, o){ return sm + mtDiasParada(o); }, 0);
+      var diasSet = {};
+      oss.filter(function(o){ return (o.status === 'Concluída' && (o.dataSaida || o.data) >= desde) || o.status === 'Aberta'; }).forEach(function(o){
+        var ini = o.inicioEm || o.data, fim = o.status === 'Concluída' ? (o.dataSaida || o.data) : hoje; if(!ini || !fim) return;
+        for(var dd = ini < desde ? desde : ini, guard = 0; dd < fim && guard < 400; dd = mtAddDias(dd, 1), guard++) diasSet[dd] = 1;
+      });
+      var diasPar = Object.keys(diasSet).length;
+      var abertasM = oss.filter(function(o){ return o.status !== 'Concluída'; }), estAb = abertasM.reduce(function(sm, o){ return sm + mtCustoPecas(o) + (Number(o.valorServico) || 0); }, 0);
+      if(abertasM.length) h += '<p style="font-size:12.5px; margin:0 0 6px;">🔄 <b>' + abertasM.length + ' ordem(ns) ainda não finalizada(s)</b>, com ≈ ' + fmtBRL(estAb) + ' em peças e serviço. Esse valor só entra no custo da máquina ao finalizar.</p>';
       h += '<p style="font-size:12.5px; margin:0 0 8px;">⏱️ <b>' + diasPar + ' dia(s) parada</b> em manutenção nos últimos 12 meses.</p>';
       var trocas = []; oss.filter(function(o){ return o.status === 'Concluída'; }).forEach(function(o){ (o.pecas || []).forEach(function(pc){ trocas.push({o: o, pc: pc, c: mtCompraDaPeca(pc)}); }); });
       if(trocas.length){
