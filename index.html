@@ -586,6 +586,30 @@
   .di-st-aex{background:#FFF1D6; color:#8A6514;} .di-st-exec{background:#DDEEF6; color:#2F6F8F;} .di-st-atr{background:#FBE3DE; color:#A23E2E;}
   .di-prod-falta{border-color:#E8A797 !important; background:#FDF0EC !important; color:#A23E2E;}
   .di-prog-acts{flex-wrap:wrap; justify-content:flex-end;}
+  /* ---------- Manutenção: cartões ---------- */
+  .mt-cab{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin:22px 0 10px;}
+  .mt-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:14px;}
+  .mt-card{background:var(--paper); border:1px solid var(--paper-line); border-radius:16px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--shadow); transition:box-shadow .15s, transform .15s;}
+  .mt-card:hover{transform:translateY(-1px);} .mt-card.sel{outline:3px solid #C4D678;}
+  .mt-foto{position:relative; aspect-ratio:4 / 3; background:linear-gradient(135deg, #ECEAD9, #DCDAC4); overflow:hidden;}
+  .mt-foto img{width:100%; height:100%; object-fit:cover; display:block;}
+  .mt-foto-vazia{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:var(--ink-soft);}
+  .mt-foto-ic{font-size:54px; opacity:.85;}
+  .mt-foto-add{font-family:inherit; font-size:12.5px; font-weight:700; border:1.5px dashed #A9AE8E; background:rgba(255,255,255,.7); color:var(--ink); padding:6px 12px; border-radius:99px; cursor:pointer;} .mt-foto-add:hover{border-color:var(--growth);}
+  .mt-st{position:absolute; left:10px; top:10px; font-size:11.5px; font-weight:800; padding:4px 10px; border-radius:99px; box-shadow:0 1px 4px rgba(0,0,0,.2);}
+  .mt-st-ok{background:#E3F1D6; color:#3F6B1E;} .mt-st-vencendo{background:#FFF1D6; color:#8A6514;} .mt-st-vencido{background:#C0453A; color:#fff;} .mt-st-sem{background:#F3F1E2; color:var(--ink-soft);} .mt-st-exec{background:#4F95B8; color:#fff;} .mt-st-agend{background:#FFF1D6; color:#8A6514;}
+  .mt-corpo{padding:12px 14px 14px; display:flex; flex-direction:column; gap:9px; flex:1;}
+  .mt-topo{display:flex; justify-content:space-between; gap:8px;} .mt-topo h3{margin:0; font-size:15.5px; line-height:1.25;} .mt-topo small{color:var(--ink-soft); font-size:11.5px;}
+  .mt-hor{display:flex; justify-content:space-between; align-items:baseline; font-size:12px; color:var(--ink-soft);} .mt-hor b{font-size:17px; color:var(--ink);}
+  .mt-leit{display:flex; gap:6px;} .mt-leit input{flex:1; min-width:0; padding:6px 8px; border:1px solid var(--paper-line); border-radius:8px; background:#FCFCF5; font-size:12.5px;} .mt-leit .tl-btn{padding:6px 10px; font-size:12px;}
+  .mt-prox{background:#F3F1E2; border-radius:10px; padding:8px 10px; font-size:12.5px;} .mt-prox b{display:block;} .mt-prox small{color:var(--ink-soft); font-size:11.5px;}
+  .mt-barra{height:6px; background:#E2E0CC; border-radius:99px; margin-top:6px; overflow:hidden;} .mt-barra i{display:block; height:100%; border-radius:99px; background:var(--growth);} .mt-barra .mt-b-vencendo{background:#E0B23C;} .mt-barra .mt-b-vencido{background:#C0453A;}
+  .mt-cal{font-size:11.5px; color:var(--ink-soft);}
+  .mt-acoes{display:flex; gap:6px; flex-wrap:wrap; margin-top:auto;} .mt-acoes .tl-btn{padding:7px 10px; font-size:12.5px;}
+  .mt-peca-lin{display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-bottom:5px;}
+  .mt-puxar{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:8px 0 2px; padding:8px 10px; background:#F3F1E2; border-radius:10px; font-size:12.5px;}
+  .mt-os-atr .ct-data{background:#FBE3DE; color:#A23E2E;}
+  .mt-painel{padding:14px 16px; margin-top:14px; border-left:4px solid #C4D678;}
   /* ---------- Rastreabilidade ---------- */
   .rs-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:14px;}
   .rs-card{background:var(--paper); border:1px solid var(--paper-line); border-radius:14px; padding:14px 16px; box-shadow:var(--shadow);}
@@ -2996,7 +3020,7 @@
     contasPagar: {t:'Contas a Pagar', txt:'Mostra os <b>lançamentos de despesa pendentes</b> (tudo fica num lugar só: em Lançamentos). Aqui você cria conta futura (com parcelas mensais, se quiser), conta do plano de contas e destino. "💰 Pagar" pede data e valor; pagando menos, o saldo continua pendente num lançamento novo. Os filtros mostram pendentes, pagas ou todas. Duplicatas de NF-e entram aqui sozinhas na importação.'},
     contasReceber: {t:'Contas a Receber', txt:'Mostra os <b>lançamentos de receita pendentes</b> (eles ficam em Lançamentos). Aqui você cria valores a receber, com desconto opcional e parcelas. "💵 Receber" pede data e valor e marca como recebido. Vendas de colheita já geram receita sozinhas — não lance a mesma venda aqui.'},
     compras: {t:'Compras e NF-e', txt:'Três caminhos: compra manual, importar XML ou importar notas da SEFAZ (precisa do certificado A1). Notas que chegam só como resumo precisam de "ciência" para liberar os itens. Na revisão, cada item vira compra (estoque + despesa) ou entrada de colheita. Remover uma compra tira do estoque e apaga a despesa ligada.'},
-    manutencao: {t:'Manutenção', txt:'Para cada máquina: <b>horímetro</b> (última leitura + horas lançadas no Diário e na Colheita; veículos em km), <b>plano preventivo</b> (serviços a cada X horas, km ou meses — use um modelo pronto e ajuste pelo manual), <b>ordens de serviço</b> (peças saem do estoque e o serviço vai para o Financeiro com destino na máquina), <b>calibração</b> do pulverizador (calcula o L/ha e aponta os bicos fora da média) e <b>histórico</b> com custo por hora. Os avisos de vencimento ficam no topo desta tela.'},
+    manutencao: {t:'Manutenção', txt:'<b>Cartões:</b> cada máquina tem um cartão com foto (📷 Adicionar foto — fica em tamanho padrão 4:3), horímetro, próximo serviço com barrinha e a situação. ☰ Tabela mostra a lista antiga. <b>Ordens de serviço:</b> 🗓️ <b>Agendar</b> (a máquina continua trabalhando), 🔄 <b>Em execução</b> (a máquina fica parada e conta os dias) e ✔ <b>Finalizar</b> (informe o dia em que ficou pronta; só então as peças saem do estoque e o serviço vai para o Financeiro). Em cada peça escolha de qual <b>nota fiscal</b> ela veio, ou use <b>🧾 Puxar as peças de uma nota fiscal</b>. O 📜 Histórico mostra os dias parada e as peças trocadas com a nota. Para cada máquina: <b>horímetro</b> (última leitura + horas lançadas no Diário e na Colheita; veículos em km), <b>plano preventivo</b> (serviços a cada X horas, km ou meses — use um modelo pronto e ajuste pelo manual), <b>ordens de serviço</b> (peças saem do estoque e o serviço vai para o Financeiro com destino na máquina), <b>calibração</b> do pulverizador (calcula o L/ha e aponta os bicos fora da média) e <b>histórico</b> com custo por hora. Os avisos de vencimento ficam no topo desta tela.'},
     financiamentos: {t:'Financiamentos', txt:'Cadastre o contrato com valor, taxa ao ano, número de parcelas, periodicidade e 1º vencimento. Escolha o sistema: <b>parcela informada</b> (um valor só), <b>parcelas do contrato</b> (valor e data de cada uma, digitados em 📅 Parcelas), <b>SAC</b> ou <b>PRICE</b>. Se deu entrada, informe o valor e a data. "📅 Parcelas" mostra o cronograma com amortização, juros e saldo, e imprime. "Pagar parcela" dá baixa e lança a despesa no Financeiro.'},
     arrendamentos: {t:'Arrendamentos', txt:'Contratos de arrendamento de terra pagos ou recebidos, com valores e vencimentos.'},
     servicosPrestados: {t:'Serviços', txt:'Serviços que você contratou (colheita, frete…) ou prestou a outros. Cada serviço é um lançamento (despesa se contratou, receita se prestou) com quantidade × valor unitário — aparece também em Lançamentos e, se pendente, em Contas a Pagar ou a Receber.'},
@@ -4423,6 +4447,12 @@
       var faltaPg = diFaltaEstoqueProgramadas(), fk = Object.keys(faltaPg);
       add(fk.length, '📦', 'produto(s) sem estoque suficiente para as atividades programadas: ' + fk.slice(0, 4).map(function(pid){ return produtoNome(pid) + ' (falta ' + fmtNum(faltaPg[pid].falta) + ' ' + (unidadeProduto(pid) || '') + ')'; }).join(', ') + (fk.length > 4 ? '…' : ''), 'produtos');
     }catch(ePg){}
+    try{
+      var osAtr = mtArr('manutOS').filter(function(o){ return o.status === 'Agendada' && o.data && o.data < hoje; });
+      add(osAtr.length, '🔧', 'ordem(ns) de serviço de manutenção agendada(s) com data passada e ainda não iniciada(s)', 'manutencao');
+      var mtVenc = mtAvisos().filter(function(a){ return a.tipo === 'vencido' && a.planoId; });
+      add(mtVenc.length, '🛠️', 'serviço(s) de manutenção vencido(s): ' + mtVenc.slice(0, 3).map(function(a){ return a.m.nome; }).join(', ') + (mtVenc.length > 3 ? '…' : ''), 'manutencao');
+    }catch(eMt){}
     var vaAtrasadas = state.vendasAntecipadas.filter(function(v){ return v.status === 'Aberto' && v.dataEntregaPrevista && v.dataEntregaPrevista < hoje; });
     add(vaAtrasadas.length, '🚚', 'venda(s) antecipada(s) com entrega prevista já passada', 'vendasAntecipadas');
     var em30 = new Date(Date.now() + 30 * 86400000).toISOString().slice(0,10);
@@ -10402,6 +10432,60 @@
     implemento: {nome:'Implemento (grade, plantadeira…)', itens:[['Engraxamento',10,0,0],['Rolamentos, discos e parafusos',0,0,12]]}
   };
   var mtSel = '', mtModo = '', mtMsg = '', mtOSRasc = null;
+  var mtVista = (function(){ try{ return localStorage.getItem('agro-manut-vista') === 'lista' ? 'lista' : 'cards'; }catch(e){ return 'cards'; } })();
+  /* ---- foto do equipamento: guardada à parte (padronizada em 800×600, JPEG) ---- */
+  var mtFotoCache = {}, mtFotoBuscando = {}, mtFotoTimer = null;
+  function mtFotoChave(id){ return currentWorkspaceId + '::fotoMaq::' + id; }
+  function mtIconeMaq(m){ var n = semAcento((m.nome || '') + ' ' + (m.categoria || '')); return /pulveri|jacto|uniport|condor|advance|atomiz/.test(n) ? '💦' : (/colhed|colheit|plataforma/.test(n) ? '🌾' : (/veicul|caminh|camionet|carro|moto|hilux|strada|saveiro/.test(n) ? '🚚' : (/trator|valtra|massey|john|new holland|case|yanmar|agrale|kubota|ford/.test(n) ? '🚜' : '⚙️'))); }
+  function mtFotoHtml(m, pode){
+    if(m.foto && mtFotoCache[m.id]) return '<img src="' + mtFotoCache[m.id] + '" alt="Foto de ' + escapeHtml(m.nome) + '" loading="lazy">';
+    if(m.foto && !mtFotoBuscando[m.id]){
+      mtFotoBuscando[m.id] = true;
+      if(!currentWorkspaceId){ mtFotoBuscando[m.id] = false; }
+      else rawGet(mtFotoChave(m.id)).then(function(v){ if(v && v.dados){ mtFotoCache[m.id] = v.dados; document.querySelectorAll('[data-mt-foto="' + m.id + '"] .mt-foto-vazia').forEach(function(ph){ var im = document.createElement('img'); im.src = v.dados; im.alt = 'Foto de ' + (m.nome || ''); ph.parentNode.replaceChild(im, ph); }); } else setTimeout(function(){ mtFotoBuscando[m.id] = false; }, 3000); }).catch(function(){ mtFotoBuscando[m.id] = false; });
+    }
+    return '<span class="mt-foto-vazia"><span class="mt-foto-ic">' + mtIconeMaq(m) + '</span>' + (m.foto ? '<small>carregando foto…</small>' : (pode ? '<button type="button" class="mt-foto-add" data-action="mt-foto" data-id="' + m.id + '">📷 Adicionar foto</button>' : '')) + '</span>';
+  }
+  // recorta no centro em 4:3 e reduz para 800×600 — todas as fotos ficam do mesmo tamanho
+  function mtProcessarFoto(file, cb){
+    var rd = new FileReader();
+    rd.onload = function(ev){
+      var img = new Image();
+      img.onload = function(){
+        var W = 800, H = 600, r = Math.max(W / img.width, H / img.height), w = img.width * r, h = img.height * r;
+        var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+        var cx = cv.getContext('2d'); cx.fillStyle = '#F3F1E2'; cx.fillRect(0, 0, W, H);
+        cx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+        cb(cv.toDataURL('image/jpeg', 0.82));
+      };
+      img.onerror = function(){ cb(null); };
+      img.src = ev.target.result;
+    };
+    rd.onerror = function(){ cb(null); };
+    rd.readAsDataURL(file);
+  }
+  document.addEventListener('change', function(e){
+    var inp = e.target; if(!inp || inp.id !== 'mt-foto-input') return;
+    var id = inp.dataset.id, f = inp.files && inp.files[0], m = state.patrimonio.find(function(x){ return x.id === id; });
+    inp.value = '';
+    if(!f || !m) return;
+    if(!/^image\//.test(f.type)){ alert('Escolha um arquivo de imagem (foto).'); return; }
+    if(f.size > 15 * 1024 * 1024){ alert('A foto precisa ter até 15 MB.'); return; }
+    mtProcessarFoto(f, function(url){
+      if(!url){ alert('Não consegui abrir essa foto. Tente outra (JPG ou PNG).'); return; }
+      rawSet(mtFotoChave(id), {dados: url, em: Date.now()}).then(function(){
+        m.foto = {em: Date.now()}; mtFotoCache[id] = url; saveKey('patrimonio', state.patrimonio);
+        mtMsg = '✓ Foto de ' + escapeHtml(m.nome) + ' salva.'; renderManutencao();
+      });
+    });
+  });
+  // quanto do intervalo do próximo serviço já foi usado (0–100)
+  function mtPctPlano(pl, s){
+    var pt = s.partes[0]; if(!pt) return null;
+    var tot = pt.tipo === 'h' ? Number(pl.cadaHoras) : (pt.tipo === 'km' ? Number(pl.cadaKm) : Number(pl.cadaMeses) * 30.4);
+    if(!(tot > 0)) return null;
+    return Math.max(0, Math.min(100, (tot - pt.falta) / tot * 100));
+  }
   function mtHoje(){ return new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10); }
   function mtArr(k){ if(!Array.isArray(state[k])) state[k] = []; return state[k]; }
   function mtMaquinas(){ return patrimonioParaDestino().filter(function(p){ return p.categoria !== 'Benfeitoria' && !p.semManutencao; }); }
@@ -10472,7 +10556,8 @@
       mtPlanos(m.id).forEach(function(pl){ var s = mtSituacaoPlano(pl); if(s.st === 'vencido' || s.st === 'vencendo') av.push({tipo: s.st, m: m, txt: pl.servico + ' — ' + s.partes.filter(function(pt){ return true; }).map(mtFaltaTxt).join(' · '), planoId: pl.id}); });
       var c = mtUltimaCalib(m.id); if(c && c.proxima){ var d = mtDias(hoje, c.proxima); if(d <= 15) av.push({tipo: d < 0 ? 'vencido' : 'vencendo', m: m, txt: 'Calibração ' + (d < 0 ? 'vencida desde ' : 'até ') + fmtDate(c.proxima), calib: true}); }
     });
-    mtArr('manutOS').forEach(function(o){ if(o.status === 'Aberta' && mtDias(o.data, hoje) > 7){ var m = state.patrimonio.find(function(x){ return x.id === o.patrimonioId; }); if(m) av.push({tipo: 'vencendo', m: m, txt: 'Ordem de serviço aberta desde ' + fmtDate(o.data) + (o.descricao ? ' (' + o.descricao + ')' : ''), osId: o.id}); } });
+    mtArr('manutOS').forEach(function(o){ if(o.status === 'Agendada' && o.data && o.data < hoje){ var mA = state.patrimonio.find(function(x){ return x.id === o.patrimonioId; }); if(mA) av.push({tipo: 'vencido', m: mA, txt: 'Ordem de serviço agendada para ' + fmtDate(o.data) + ' ainda não iniciada', osId: o.id, agendada: true}); } });
+    mtArr('manutOS').forEach(function(o){ if(o.status === 'Aberta' && mtDias(o.inicioEm || o.data, hoje) > 7){ var m = state.patrimonio.find(function(x){ return x.id === o.patrimonioId; }); if(m) av.push({tipo: 'vencendo', m: m, txt: 'Ordem de serviço aberta desde ' + fmtDate(o.data) + (o.descricao ? ' (' + o.descricao + ')' : ''), osId: o.id}); } });
     return av.sort(function(a, b){ return (a.tipo === 'vencido' ? 0 : 1) - (b.tipo === 'vencido' ? 0 : 1); });
   }
   function mtContaPadrao(){ var c = state.contasFinanceiro.find(function(x){ return /manuten/i.test(x.nome || ''); }); return c ? c.id : ''; }
@@ -10484,8 +10569,17 @@
     var fora = mtForaDaManutencao();
     var foraHtml = fora.length ? '<div class="paper" style="padding:10px 14px; margin-top:14px; font-size:12.5px;"><b>Fora da manutenção (' + fora.length + '):</b> ' + fora.map(function(m){ return escapeHtml(m.nome) + (pode ? ' <button type="button" data-action="mt-incluir" data-id="' + m.id + '" style="' + MT_BTN + ' padding:2px 8px; font-size:11px;">↩ Voltar</button>' : ''); }).join(' · ') + '</div>' : '';
     if(!ms.length){ el.innerHTML = '<div class="paper empty-state">' + (fora.length ? 'Todas as máquinas estão fora da manutenção.' : 'Cadastre as máquinas, veículos e implementos em <b>Máquinas e Patrimônio</b> para controlar a manutenção.') + '</div>' + foraHtml; return; }
-    var av = mtAvisos(), abertas = mtArr('manutOS').filter(function(o){ return o.status === 'Aberta'; });
-    var h = '<div class="stat-row">' + statCard('Máquinas', String(ms.length)) + statCard('Serviços vencidos', String(av.filter(function(a){ return a.tipo === 'vencido' && !a.calib && !a.osId; }).length), 'cost') + statCard('Vencendo', String(av.filter(function(a){ return a.tipo === 'vencendo' && !a.calib && !a.osId; }).length)) + statCard('Ordens abertas', String(abertas.length)) + statCard('Calibrações a fazer', String(av.filter(function(a){ return a.calib; }).length)) + '</div>';
+    var av = mtAvisos(), abertas = mtArr('manutOS').filter(function(o){ return o.status === 'Aberta' || o.status === 'Agendada'; });
+    var desde12 = mtAddMeses(hoje, -12), gasto12 = mtArr('manutOS').filter(function(o){ return o.status === 'Concluída' && (o.dataSaida || o.data) >= desde12; }).reduce(function(sm, o){ return sm + mtCustoPecas(o) + (Number(o.valorServico) || 0); }, 0);
+    var nVenc = av.filter(function(a){ return a.tipo === 'vencido' && !a.calib && !a.osId; }).length, nVcd = av.filter(function(a){ return a.tipo === 'vencendo' && !a.calib && !a.osId; }).length;
+    var h = '<div class="tl-head"><div class="tl-head-txt"><b>Manutenção de máquinas</b><span>' + ms.length + ' máquinas e equipamentos · plano preventivo, ordens de serviço, peças e calibração</span></div></div>';
+    h += '<div class="tl-kpis">';
+    h += '<div class="tl-kpi"><span class="tl-kpi-i">🚜</span><div><b>' + ms.length + '</b><small>máquinas acompanhadas</small></div></div>';
+    h += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#DDEEF6;">🔧</span><div><b>' + ms.filter(function(m){ return m.status === 'Em manutenção'; }).length + '</b><small>paradas em manutenção agora</small></div></div>';
+    h += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:' + (nVenc ? '#FBE3DE' : '#E3F1D6') + ';">' + (nVenc ? '⏰' : '✅') + '</span><div><b>' + nVenc + (nVcd ? ' <small style="display:inline; font-weight:600;">+ ' + nVcd + ' vencendo</small>' : '') + '</b><small>serviços vencidos</small></div></div>';
+    h += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#FFF1D6;">💸</span><div><b>' + fmtBRL(gasto12) + '</b><small>gasto em manutenção (12 meses)</small></div></div>';
+    h += '</div>';
+    if(pode) h += '<input type="file" id="mt-foto-input" accept="image/*" style="display:none;">';
     if(mtMsg){ h += '<div class="paper note-box" style="margin:0 0 14px;">' + mtMsg + '</div>'; mtMsg = ''; }
     // avisos
     if(av.length){
@@ -10496,14 +10590,35 @@
         if(pode){
           if(a.planoId) h += '<button type="button" data-action="mt-nova-os" data-id="' + a.m.id + '" data-plano="' + a.planoId + '" style="' + MT_BTN + '">🔧 Abrir ordem de serviço</button>';
           else if(a.calib) h += '<button type="button" data-action="mt-modo" data-id="' + a.m.id + '" data-modo="calib" style="' + MT_BTN + '">🎯 Calibrar</button>';
-          else if(a.osId) h += '<button type="button" data-action="mt-concluir-os" data-id="' + a.osId + '" style="' + MT_BTN + '">✓ Concluir</button>';
+          else if(a.osId && a.agendada) h += '<button type="button" data-action="mt-os-iniciar" data-id="' + a.osId + '" style="' + MT_BTN + '">▶ Iniciar</button>';
+          else if(a.osId) h += '<button type="button" data-action="mt-os-finalizar" data-id="' + a.osId + '" style="' + MT_BTN + '">✔ Finalizar</button>';
         }
         h += '</div>';
       });
       h += '</div>';
     }
+    // OS em execução e a executar
+    var emExec = abertas.filter(function(o){ return o.status === 'Aberta'; }), agend = abertas.filter(function(o){ return o.status === 'Agendada'; }).sort(function(a, b){ return (a.data || '').localeCompare(b.data || ''); });
+    h += '<div class="section-title">Ordens de serviço' + (abertas.length ? ' <small style="font-weight:600; font-size:12px; color:#C9D0B4;">' + (emExec.length ? emExec.length + ' em execução' : '') + (emExec.length && agend.length ? ' · ' : '') + (agend.length ? agend.length + ' a executar' : '') + '</small>' : '') + '</div>';
+    if(!abertas.length) h += '<div class="paper empty-state" style="padding:14px;">Nenhuma ordem de serviço em execução ou agendada. Use 🔧 Nova OS no cartão da máquina.</div>';
+    else {
+      h += '<div class="paper fn-lista">';
+      emExec.forEach(function(o){ h += mtOSRowHtml(o, pode); });
+      agend.forEach(function(o){ h += mtOSRowHtml(o, pode); });
+      h += '</div>';
+    }
     // máquinas
-    h += '<div class="section-title">Máquinas e equipamentos</div><div class="paper table-wrap"><table class="sem-ordenacao"><thead><tr><th>Máquina</th><th>Horímetro / km</th><th>Próximo serviço</th><th>Situação</th><th></th></tr></thead><tbody>';
+    h += '<div class="mt-cab"><div class="section-title" style="margin:0;">Máquinas e equipamentos</div><div class="tl-vista"><button type="button" data-action="mt-vista" data-vista="cards" class="' + (mtVista !== 'lista' ? 'on' : '') + '">▦ Cartões</button><button type="button" data-action="mt-vista" data-vista="lista" class="' + (mtVista === 'lista' ? 'on' : '') + '">☰ Tabela</button></div></div>';
+    if(mtVista !== 'lista'){
+      h += '<div class="mt-grid">';
+      // primeiro as paradas, depois as com serviço vencido / perto, depois as demais
+      var pesoM = function(m){ if(m.status === 'Em manutenção') return 0; var pi = mtPlanos(m.id).map(function(pl){ return mtSituacaoPlano(pl).st; }); return pi.indexOf('vencido') !== -1 ? 1 : (pi.indexOf('vencendo') !== -1 ? 2 : 3); };
+      ms.slice().sort(function(a, b){ return pesoM(a) - pesoM(b) || (a.nome || '').localeCompare(b.nome || '', 'pt-BR'); }).forEach(function(m){ h += mtCardHtml(m, pode); });
+      h += '</div>';
+      var mSelC = mtSel && mtModo ? ms.find(function(x){ return x.id === mtSel; }) : null;
+      if(mSelC) h += '<div class="paper mt-painel" id="mt-painel">' + mtPainelHtml(mSelC, pode) + '</div>';
+    } else {
+    h += '<div class="paper table-wrap"><table class="sem-ordenacao"><thead><tr><th>Máquina</th><th>Horímetro / km</th><th>Próximo serviço</th><th>Situação</th><th></th></tr></thead><tbody>';
     ms.forEach(function(m){
       var km = mtUsaKm(m), hor = mtHorimetro(m.id), kmv = mtKm(m.id), pls = mtPlanos(m.id).map(function(pl){ return {pl: pl, s: mtSituacaoPlano(pl)}; });
       var ordem = {vencido: 0, vencendo: 1, ok: 2, sem: 3};
@@ -10516,20 +10631,69 @@
       h += '<td style="font-size:12.5px;">' + (pior ? (pior.s.st === 'sem' ? escapeHtml(pior.pl.servico) + ' — informe a última vez' : escapeHtml(pior.pl.servico) + '<br><span style="font-size:11.5px; color:var(--ink-soft);">' + pior.s.partes.map(mtFaltaTxt).join(' · ') + '</span>') : '<span style="color:var(--ink-soft);">sem plano</span>') + (cal ? '<br><span style="font-size:11.5px;">🎯 calibrado em ' + fmtDate(cal.data) + (cal.proxima ? ', próxima ' + fmtDate(cal.proxima) : '') + '</span>' : (mtEhPulverizador(m) ? '<br><span style="font-size:11.5px; color:var(--ink-soft);">🎯 sem calibração registrada</span>' : '')) + '</td>';
       h += '<td>' + (pior ? mtBadge(pior.s.st) : '—') + (m.status === 'Em manutenção' ? '<br><span class="badge" style="background:#A9B7C6; color:#1B1508; margin-top:3px;">🔧 em manutenção</span>' : '') + '</td>';
       h += '<td style="white-space:nowrap;"><button type="button" class="btn-edit" data-action="mt-modo" data-id="' + m.id + '" data-modo="plano">📋 Plano (' + pls.length + ')</button>' + (pode ? '<button type="button" class="btn-edit" data-action="mt-nova-os" data-id="' + m.id + '">🔧 Nova OS</button>' : '') + (mtEhPulverizador(m) || m.categoria === 'Máquina' ? '<button type="button" class="btn-edit" data-action="mt-modo" data-id="' + m.id + '" data-modo="calib">🎯 Calibração</button>' : '') + '<button type="button" class="btn-edit" data-action="mt-modo" data-id="' + m.id + '" data-modo="hist">📜 Histórico</button>' + (pode ? '<button type="button" class="btn-del" data-action="mt-excluir-maq" data-id="' + m.id + '" title="Tirar esta máquina da manutenção (ela continua em Máquinas e Patrimônio)">🚫</button>' : '') + '</td></tr>';
-      if(mtSel === m.id && mtModo) h += '<tr><td colspan="5" style="background:#F1F1E4; padding:12px 14px;">' + mtPainelHtml(m, pode) + '</td></tr>';
+      if(mtSel === m.id && mtModo) h += '<tr><td colspan="5" style="background:#F1F1E4; padding:12px 14px;" id="mt-painel">' + mtPainelHtml(m, pode) + '</td></tr>';
     });
     h += '</tbody></table></div>';
-    // OS abertas
-    h += '<div class="section-title">Ordens de serviço abertas</div>';
-    if(!abertas.length) h += '<div class="paper empty-state" style="padding:14px;">Nenhuma ordem de serviço aberta.</div>';
-    else {
-      h += '<div class="paper table-wrap"><table class="sem-ordenacao"><thead><tr><th>Data</th><th>Máquina</th><th>Tipo</th><th>Serviços</th><th>Peças</th><th class="num">Serviço (R$)</th><th></th></tr></thead><tbody>';
-      abertas.forEach(function(o){ h += mtLinhaOS(o, pode, true); });
-      h += '</tbody></table></div>';
     }
     h += foraHtml;
     h += '<div class="paper note-box">📟 O horímetro soma a última leitura que você informar com as horas lançadas no Diário de Campo e na Colheita. Caminhões e veículos usam km (informe a leitura). 📋 No plano, cada serviço tem intervalo por horas, km e/ou meses — os modelos prontos são referência: ajuste pelo manual da máquina. 🔧 Ao concluir uma ordem de serviço, as peças saem do estoque (o custo delas já entrou na compra) e o valor do serviço/oficina é lançado no Financeiro com destino na máquina.</div>';
     el.innerHTML = h;
+  }
+  document.addEventListener('change', function(e){ if(e.target && e.target.classList && e.target.classList.contains('mt-os-peca')){ mtLerOSForm(); renderManutencao(); } });
+  function mtCardHtml(m, pode){
+    var km = mtUsaKm(m), hor = mtHorimetro(m.id), kmv = mtKm(m.id), pls = mtPlanos(m.id).map(function(pl){ return {pl: pl, s: mtSituacaoPlano(pl)}; });
+    var ordem = {vencido: 0, vencendo: 1, ok: 2, sem: 3};
+    pls.sort(function(a, b){ return ordem[a.s.st] - ordem[b.s.st] || ((a.s.partes[0] || {}).falta || 0) - ((b.s.partes[0] || {}).falta || 0); });
+    var pior = pls.length ? pls[0] : null, cal = mtEhPulverizador(m) ? mtUltimaCalib(m.id) : null;
+    var leit = km ? (kmv.valor ? fmtNum(kmv.valor) + ' km' : '—') : (hor.valor || hor.base ? fmtNum(hor.valor) + ' h' : '—');
+    var osAb = mtArr('manutOS').filter(function(o){ return o.patrimonioId === m.id && o.status === 'Aberta'; });
+    var osAg = mtArr('manutOS').filter(function(o){ return o.patrimonioId === m.id && o.status === 'Agendada'; }).sort(function(a, b){ return (a.data || '').localeCompare(b.data || ''); });
+    var st = m.status === 'Em manutenção' || osAb.length ? {c:'exec', t:'🔧 Em manutenção' + (osAb[0] ? ' há ' + mtDiasParada(osAb[0]) + ' dia(s)' : '')} : (osAg.length ? {c:'agend', t:'🗓️ OS agendada ' + fmtDate(osAg[0].data)} : (pior ? {c: pior.s.st, t: {vencido:'⏰ Serviço vencido', vencendo:'⚠️ Serviço perto', ok:'✅ Em dia', sem:'❔ Sem registro'}[pior.s.st]} : {c:'sem', t:'📋 Sem plano'}));
+    var pct = pior ? mtPctPlano(pior.pl, pior.s) : null;
+    var h = '<article class="mt-card' + (mtSel === m.id && mtModo ? ' sel' : '') + '">';
+    h += '<div class="mt-foto" data-mt-foto="' + m.id + '">' + mtFotoHtml(m, pode) + '<span class="mt-st mt-st-' + st.c + '">' + st.t + '</span></div>';
+    h += '<div class="mt-corpo"><div class="mt-topo"><div><h3>' + escapeHtml(m.nome) + '</h3><small>' + escapeHtml(m.categoria || '') + '</small></div>';
+    h += '<details class="tl-more"><summary title="Mais ações">⋯</summary><div class="tl-menu">';
+    if(pode) h += '<button type="button" data-action="mt-foto" data-id="' + m.id + '">📷 ' + (m.foto ? 'Trocar foto' : 'Adicionar foto') + '</button>' + (m.foto ? '<button type="button" data-action="mt-foto-remover" data-id="' + m.id + '">🖼️ Tirar a foto</button>' : '');
+    if(mtEhPulverizador(m) || m.categoria === 'Máquina') h += '<button type="button" data-action="mt-modo" data-id="' + m.id + '" data-modo="calib">🎯 Calibração</button>';
+    if(pode) h += '<button type="button" class="tl-danger" data-action="mt-excluir-maq" data-id="' + m.id + '">🚫 Tirar da manutenção</button>';
+    h += '</div></details></div>';
+    h += '<div class="mt-hor"><span>' + (km ? '🛣️ Hodômetro' : '⏱️ Horímetro') + '</span><b>' + leit + '</b></div>';
+    if(pode) h += '<div class="mt-leit"><input type="number" step="0.1" min="0" id="mt-leit-' + m.id + '" placeholder="' + (km ? 'km atual' : 'horímetro atual') + '"><button type="button" class="tl-btn" data-action="mt-leitura" data-id="' + m.id + '">Atualizar</button></div>';
+    h += '<div class="mt-prox">' + (pior ? (pior.s.st === 'sem' ? '<b>' + escapeHtml(pior.pl.servico) + '</b><small>informe quando foi feito pela última vez</small>' : '<b>' + escapeHtml(pior.pl.servico) + '</b><small>' + pior.s.partes.map(mtFaltaTxt).join(' · ') + '</small>' + (pct !== null ? '<div class="mt-barra"><i class="mt-b-' + pior.s.st + '" style="width:' + Math.max(3, pct).toFixed(0) + '%"></i></div>' : '')) : '<small>Sem plano de manutenção — clique em 📋 Plano para montar.</small>') + '</div>';
+    if(cal) h += '<div class="mt-cal">🎯 calibrado em ' + fmtDate(cal.data) + (cal.proxima ? ' · próxima ' + fmtDate(cal.proxima) : '') + '</div>';
+    else if(mtEhPulverizador(m)) h += '<div class="mt-cal">🎯 sem calibração registrada</div>';
+    h += '<div class="mt-acoes">' + (pode ? '<button type="button" class="tl-btn tl-pri" data-action="mt-nova-os" data-id="' + m.id + '">🔧 Nova OS</button>' : '') + '<button type="button" class="tl-btn" data-action="mt-modo" data-id="' + m.id + '" data-modo="plano">📋 Plano (' + pls.length + ')</button><button type="button" class="tl-btn" data-action="mt-modo" data-id="' + m.id + '" data-modo="hist">📜 Histórico</button></div>';
+    h += '</div></article>';
+    return h;
+  }
+  // compras (NF) de um produto, da mais recente para a mais antiga
+  function mtComprasDoProduto(pid){ return (state.compras || []).filter(function(c){ return c.produtoId === pid; }).sort(function(a, b){ return (b.data || '').localeCompare(a.data || '') || (b.criadoEm || 0) - (a.criadoEm || 0); }); }
+  function mtNfTexto(c){ if(!c) return ''; var f = c.fornecedorId ? (state.parceiros.find(function(p){ return p.id === c.fornecedorId; }) || {}).nome : ''; return (c.notaFiscal ? 'NF ' + c.notaFiscal : 'compra sem nº') + (f ? ' · ' + f : '') + (c.data ? ' · ' + fmtDate(c.data) : ''); }
+  function mtCompraDaPeca(pc){ return pc && pc.compraId ? (state.compras || []).find(function(c){ return c.id === pc.compraId; }) || null : null; }
+  // notas recentes que têm itens (para "puxar peças de uma nota")
+  function mtNotasRecentes(){
+    var g = {}, ordem = [], lim = mtAddMeses(mtHoje(), -12);
+    (state.compras || []).forEach(function(c){ if(!c.produtoId || (c.data && c.data < lim)) return; var k = (c.notaFiscal || ('sem-' + c.id)) + '|' + (c.fornecedorId || ''); if(!g[k]){ g[k] = {k: k, itens: [], data: c.data || '', c0: c}; ordem.push(k); } g[k].itens.push(c); if((c.data || '') > g[k].data) g[k].data = c.data; });
+    return ordem.map(function(k){ return g[k]; }).sort(function(a, b){ return (b.data || '').localeCompare(a.data || ''); }).slice(0, 60);
+  }
+  function mtDiasParada(o){ var ini = o.inicioEm || o.data, fim = o.status === 'Concluída' ? (o.dataSaida || o.data) : mtHoje(); return ini && fim ? Math.max(0, mtDias(ini, fim)) : 0; }
+  var MT_OS_ST = {Agendada: {ic:'🗓️', t:'A executar', c:'agend'}, Aberta: {ic:'🔄', t:'Em execução', c:'exec'}, 'Concluída': {ic:'✅', t:'Finalizada', c:'ok'}};
+  function mtOSRowHtml(o, pode){
+    var m = state.patrimonio.find(function(x){ return x.id === o.patrimonioId; }), serv = mtNomesServicos(o).concat(o.descricao ? [o.descricao] : []), hoje = mtHoje();
+    var atr = o.status === 'Agendada' && o.data && o.data < hoje, st = MT_OS_ST[o.status] || MT_OS_ST.Aberta;
+    var h = '<div class="fn-row mt-os-row' + (atr ? ' mt-os-atr' : '') + '"><span class="ct-data"><b>' + (o.data ? o.data.slice(8,10) : '—') + '</b><small>' + (o.data ? MESES[parseInt(o.data.slice(5,7), 10) - 1].slice(0,3) : '') + '</small></span>';
+    h += '<div class="fn-main"><div class="fn-desc">' + escapeHtml(m ? m.nome : '—') + ' <span class="di-st ' + (o.status === 'Aberta' ? 'di-st-exec' : (atr ? 'di-st-atr' : 'di-st-aex')) + '">' + st.ic + ' ' + (o.status === 'Aberta' ? 'Em execução · parada há ' + mtDiasParada(o) + ' dia(s)' : (atr ? 'Atrasada · prevista ' + fmtDate(o.data) : 'A executar · ' + fmtDate(o.data))) + '</span> <span class="fn-orig">' + escapeHtml(o.tipo || 'Preventiva') + '</span></div>';
+    if(serv.length) h += '<div class="fn-sub">🔧 ' + serv.map(escapeHtml).join(' · ') + '</div>';
+    var tags = (o.pecas || []).map(function(pc){ var c = mtCompraDaPeca(pc); return '<span class="di-prod">🔩 ' + escapeHtml(produtoNome(pc.produtoId)) + ' <b>× ' + fmtNum(pc.quantidade) + '</b>' + (c && c.notaFiscal ? ' <small>· NF ' + escapeHtml(c.notaFiscal) + '</small>' : '') + '</span>'; }).join('');
+    if(tags) h += '<div class="fn-tags">' + tags + '</div>';
+    h += '</div><div class="fn-acts di-prog-acts">';
+    if(pode){
+      if(o.status === 'Agendada') h += '<button type="button" class="tl-btn" data-action="mt-os-iniciar" data-id="' + o.id + '" title="A máquina entra em manutenção hoje">▶ Iniciar</button>';
+      h += '<button type="button" class="tl-btn tl-pri" data-action="mt-os-finalizar" data-id="' + o.id + '">✔ Finalizar</button><button type="button" class="tl-btn fn-ed" data-action="mt-os-editar" data-id="' + o.id + '" title="Editar">✏️</button>';
+      h += '<details class="tl-more"><summary title="Mais ações">⋯</summary><div class="tl-menu">' + (o.status === 'Aberta' ? '<button type="button" data-action="mt-os-voltar" data-id="' + o.id + '">↩ Voltar para "a executar"</button>' : '') + '<button type="button" class="tl-danger" data-action="mt-excluir-os" data-id="' + o.id + '">🗑️ Excluir</button></div></details>';
+    }
+    return h + '</div></div>';
   }
   function mtNomesServicos(o){ return (o.planoIds || []).map(function(id){ var p = mtArr('manutPlanos').find(function(x){ return x.id === id; }); return p ? p.servico : ''; }).filter(Boolean); }
   function mtCustoPecas(o){ return (o.pecas || []).reduce(function(s, pc){ return s + (Number(pc.quantidade) || 0) * (Number(pc.custoUnit) || 0); }, 0); }
@@ -10540,7 +10704,7 @@
     if(abertas) h += '<td>' + escapeHtml(m ? m.nome : '—') + '</td>';
     h += '<td><span class="badge" style="background:' + (o.tipo === 'Corretiva' ? '#D08370' : '#A9B7C6') + '; color:#1B1508;">' + escapeHtml(o.tipo || 'Preventiva') + '</span></td>';
     h += '<td style="font-size:12px;">' + (serv.length ? serv.map(escapeHtml).join('<br>') : '—') + '</td>';
-    h += '<td style="font-size:12px;">' + ((o.pecas || []).length ? o.pecas.map(function(pc){ return escapeHtml(produtoNome(pc.produtoId)) + ' × ' + fmtNum(pc.quantidade) + (pc.custoUnit ? ' <span style="color:var(--ink-soft);">(' + fmtBRL(pc.quantidade * pc.custoUnit) + ')</span>' : ''); }).join('<br>') : '—') + '</td>';
+    h += '<td style="font-size:12px;">' + ((o.pecas || []).length ? o.pecas.map(function(pc){ var cN = mtCompraDaPeca(pc); return escapeHtml(produtoNome(pc.produtoId)) + ' × ' + fmtNum(pc.quantidade) + (cN && cN.notaFiscal ? ' <span style="color:var(--ink-soft);">· NF ' + escapeHtml(cN.notaFiscal) + '</span>' : '') + (pc.custoUnit ? ' <span style="color:var(--ink-soft);">(' + fmtBRL(pc.quantidade * pc.custoUnit) + ')</span>' : ''); }).join('<br>') : '—') + '</td>';
     h += '<td class="num">' + (Number(o.valorServico) ? fmtBRL(o.valorServico) : '—') + (o.parceiroId ? '<br><span style="font-size:11px; color:var(--ink-soft);">' + escapeHtml((state.parceiros.find(function(p){ return p.id === o.parceiroId; }) || {}).nome || '') + '</span>' : '') + '</td>';
     if(!abertas) h += '<td class="num"><b>' + fmtBRL(mtCustoPecas(o) + (Number(o.valorServico) || 0)) + '</b></td>';
     h += '<td style="white-space:nowrap;">' + (pode && o.status === 'Aberta' ? '<button type="button" class="btn-edit" data-action="mt-concluir-os" data-id="' + o.id + '">✓ Concluir</button>' : '') + (pode ? '<button type="button" class="btn-del" data-action="mt-excluir-os" data-id="' + o.id + '" title="Excluir (devolve as peças ao estoque e apaga o lançamento)">×</button>' : '') + '</td></tr>';
@@ -10583,9 +10747,12 @@
     if(mtModo === 'os'){
       var r = mtOSRasc || {pecas: [], planoIds: []};
       var horAt2 = mtHorimetro(m.id).valor, kmAt2 = mtKm(m.id).valor;
-      h += fechar + '<div style="font-weight:600; margin-bottom:8px;">🔧 Nova ordem de serviço — ' + escapeHtml(m.nome) + '</div>';
+      var osEd = r.editId ? mtArr('manutOS').find(function(x){ return x.id === r.editId; }) : null;
+      h += fechar + '<div style="font-weight:600; margin-bottom:8px;">🔧 ' + (osEd ? (r.finalizando ? 'Finalizar ordem de serviço' : 'Editar ordem de serviço') + ' (' + (MT_OS_ST[osEd.status] || {}).t + ')' : 'Nova ordem de serviço') + ' — ' + escapeHtml(m.nome) + '</div>';
+      if(r.finalizando) h += '<div class="di-prog-banner fin" style="margin:0 0 10px;">✔ Confira as peças, as quantidades e o valor do serviço e informe o dia em que a máquina ficou pronta. Só ao finalizar as peças saem do estoque e o serviço vai para o Financeiro.</div>';
       h += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px;">';
-      h += '<div class="field" style="margin:0;"><label>Data</label><input type="date" id="mt-os-data" value="' + (r.data || hoje) + '" style="' + MT_EST + '"></div>';
+      h += '<div class="field" style="margin:0;"><label>' + (osEd ? 'Entrada / data prevista' : 'Data (entrada ou prevista)') + '</label><input type="date" id="mt-os-data" value="' + (r.data || hoje) + '" style="' + MT_EST + '"></div>';
+      h += '<div class="field" style="margin:0;"><label>Pronta em (data de saída)</label><input type="date" id="mt-os-saida" value="' + (r.dataSaida || hoje) + '" style="' + MT_EST + '"></div>';
       h += '<div class="field" style="margin:0;"><label>Horímetro (h)</label><input type="number" step="0.1" min="0" id="mt-os-hor" value="' + (r.horimetro != null ? r.horimetro : (horAt2 || '')) + '" style="' + MT_EST + '"></div>';
       if(km) h += '<div class="field" style="margin:0;"><label>Km</label><input type="number" step="1" min="0" id="mt-os-km" value="' + (r.km != null ? r.km : (kmAt2 || '')) + '" style="' + MT_EST + '"></div>';
       h += '<div class="field" style="margin:0;"><label>Tipo</label><select id="mt-os-tipo" style="' + MT_EST + '"><option' + (r.tipo !== 'Corretiva' ? ' selected' : '') + '>Preventiva</option><option' + (r.tipo === 'Corretiva' ? ' selected' : '') + '>Corretiva</option></select></div>';
@@ -10601,16 +10768,20 @@
       var opcProd = state.produtos.slice().sort(function(a, b){ var ma = /manuten|peca|filtro|oleo|rolament|correia|pino|bucha/i.test(semAcento((a.categoria || '') + ' ' + a.nome)) ? 0 : 1, mb = /manuten|peca|filtro|oleo|rolament|correia|pino|bucha/i.test(semAcento((b.categoria || '') + ' ' + b.nome)) ? 0 : 1; return ma - mb || a.nome.localeCompare(b.nome, 'pt-BR'); });
       h += '<div style="font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin:10px 0 4px;">Peças e materiais do estoque</div>';
       (r.pecas.length ? r.pecas : [{produtoId: '', quantidade: ''}]).forEach(function(pc, i){
-        h += '<div style="display:flex; gap:6px; align-items:center; margin-bottom:4px;"><select class="mt-os-peca" data-i="' + i + '" style="' + MT_EST + ' flex:1; max-width:520px;"><option value="">— escolha —</option>' + opcProd.map(function(p){ return '<option value="' + p.id + '"' + (p.id === pc.produtoId ? ' selected' : '') + '>' + escapeHtml(p.nome) + (p.arquivado ? ' (arquivado)' : ' — estoque ' + fmtNum(p.estoqueAtual) + ' ' + escapeHtml(p.unidade || '')) + '</option>'; }).join('') + '</select><input type="number" step="any" min="0" class="mt-os-qtd" data-i="' + i + '" value="' + escapeHtml(String(pc.quantidade || '')) + '" placeholder="qtd" style="' + MT_EST + ' width:90px;"></div>';
+        var cps = pc.produtoId ? mtComprasDoProduto(pc.produtoId) : [];
+        if(pc.produtoId && pc.compraId === undefined && cps.length) pc.compraId = cps[0].id;
+        h += '<div class="mt-peca-lin"><select class="mt-os-peca" data-i="' + i + '" style="' + MT_EST + ' flex:1; max-width:520px;"><option value="">— escolha —</option>' + opcProd.map(function(p){ return '<option value="' + p.id + '"' + (p.id === pc.produtoId ? ' selected' : '') + '>' + escapeHtml(p.nome) + (p.arquivado ? ' (arquivado)' : ' — estoque ' + fmtNum(p.estoqueAtual) + ' ' + escapeHtml(p.unidade || '')) + '</option>'; }).join('') + '</select><input type="number" step="any" min="0" class="mt-os-qtd" data-i="' + i + '" value="' + escapeHtml(String(pc.quantidade || '')) + '" placeholder="qtd" style="' + MT_EST + ' width:90px;">' + (pc.produtoId ? '<select class="mt-os-nf" data-i="' + i + '" title="De qual nota fiscal veio esta peça" style="' + MT_EST + ' max-width:330px;"><option value="">— sem nota —</option>' + cps.slice(0, 12).map(function(c){ return '<option value="' + c.id + '"' + (c.id === pc.compraId ? ' selected' : '') + '>🧾 ' + escapeHtml(mtNfTexto(c)) + ' · ' + fmtNum(c.quantidade) + '</option>'; }).join('') + '</select>' : '') + '</div>';
       });
+      var nRec = mtNotasRecentes();
+      if(nRec.length) h += '<div class="mt-puxar"><span>🧾 Puxar as peças de uma nota fiscal:</span><select id="mt-os-nota" style="' + MT_EST + ' max-width:420px;"><option value="">— escolha a nota —</option>' + nRec.map(function(g){ return '<option value="' + escapeHtml(g.k) + '">' + escapeHtml(mtNfTexto(g.c0)) + ' · ' + g.itens.length + ' item(ns)</option>'; }).join('') + '</select><button type="button" class="btn-edit" data-action="mt-os-puxar-nota">+ Adicionar itens da nota</button></div>';
       h += '<button type="button" class="btn-edit" data-action="mt-os-add-peca">+ Peça</button>';
       h += '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin-top:10px;">';
       h += '<div class="field" style="margin:0;"><label>Oficina / mecânico (opcional)</label><select id="mt-os-parc" style="' + MT_EST + '"><option value="">—</option>' + state.parceiros.map(function(p){ return '<option value="' + p.id + '"' + (p.id === r.parceiroId ? ' selected' : '') + '>' + escapeHtml(p.nome) + '</option>'; }).join('') + '</select></div>';
       h += '<div class="field" style="margin:0;"><label>Valor do serviço / mão de obra (R$)</label><input type="number" step="0.01" min="0" id="mt-os-valor" value="' + escapeHtml(String(r.valorServico || '')) + '" style="' + MT_EST + '"></div>';
       h += '<div class="field" style="margin:0;"><label>Conta no Financeiro</label><select id="mt-os-conta" style="' + MT_EST + '"><option value="">—</option>' + state.contasFinanceiro.map(function(c){ return '<option value="' + c.id + '"' + (c.id === (r.contaId || mtContaPadrao()) ? ' selected' : '') + '>' + escapeHtml(contaLabel(c.id)) + '</option>'; }).join('') + '</select></div>';
       h += '</div>';
-      h += '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;"><button type="button" class="btn" data-action="mt-os-salvar" data-id="' + m.id + '" data-concluir="1">Salvar e concluir</button><button type="button" class="btn-edit" data-action="mt-os-salvar" data-id="' + m.id + '" data-concluir="0">Salvar como aberta (máquina fica "em manutenção")</button></div>';
-      h += '<p style="font-size:11px; color:var(--ink-soft); margin:6px 0 0;">Ao concluir: as peças saem do estoque, os serviços marcados do plano reiniciam a contagem e o valor do serviço é lançado no Financeiro (pago, destino: esta máquina).</p>';
+      h += '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;"><button type="button" class="btn" data-action="mt-os-salvar" data-id="' + m.id + '" data-concluir="1">✔ ' + (osEd ? 'Finalizar' : 'Salvar já finalizada') + '</button><button type="button" class="btn-edit" data-action="mt-os-salvar" data-id="' + m.id + '" data-concluir="0">🔄 ' + (osEd && osEd.status === 'Aberta' ? 'Salvar (continua em execução)' : 'Salvar em execução (máquina parada)') + '</button><button type="button" class="btn-edit" data-action="mt-os-salvar" data-id="' + m.id + '" data-concluir="agendar">🗓️ ' + (osEd && osEd.status === 'Agendada' ? 'Salvar (continua a executar)' : 'Agendar (a executar)') + '</button></div>';
+      h += '<p style="font-size:11px; color:var(--ink-soft); margin:6px 0 0;">🗓️ A executar: só agenda (a máquina continua trabalhando). 🔄 Em execução: a máquina fica "em manutenção" e conta os dias parada. ✔ Finalizar: as peças saem do estoque, os serviços marcados do plano reiniciam a contagem e o valor do serviço é lançado no Financeiro (pago, na data de saída, destino: esta máquina).</p>';
     }
     if(mtModo === 'calib'){
       var ult = mtUltimaCalib(m.id), base = ult || {};
@@ -10645,10 +10816,18 @@
       var cp = prev.reduce(function(s, o){ return s + mtCustoPecas(o) + (Number(o.valorServico) || 0); }, 0), cc = custoAno - cp;
       h += fechar + '<div style="font-weight:600; margin-bottom:8px;">📜 Histórico — ' + escapeHtml(m.nome) + '</div>';
       h += '<div class="stat-row" style="margin-bottom:10px;">' + statCard('Manutenção (12 meses)', fmtBRL(custoAno), 'cost') + statCard('Preventivas', prev.length + ' · ' + fmtBRL(cp)) + statCard('Corretivas (quebras)', corr.length + ' · ' + fmtBRL(cc), corr.length ? 'cost' : '') + statCard('Horas trabalhadas (12 meses)', fmtNum(horasAno) + ' h') + statCard('Manutenção por hora', horasAno > 0 ? fmtBRL(custoAno / horasAno) + '/h' : '—') + '</div>';
+      var diasPar = oss.filter(function(o){ return (o.status === 'Concluída' && (o.dataSaida || o.data) >= desde) || o.status === 'Aberta'; }).reduce(function(sm, o){ return sm + mtDiasParada(o); }, 0);
+      h += '<p style="font-size:12.5px; margin:0 0 8px;">⏱️ <b>' + diasPar + ' dia(s) parada</b> em manutenção nos últimos 12 meses.</p>';
+      var trocas = []; oss.filter(function(o){ return o.status === 'Concluída'; }).forEach(function(o){ (o.pecas || []).forEach(function(pc){ trocas.push({o: o, pc: pc, c: mtCompraDaPeca(pc)}); }); });
+      if(trocas.length){
+        h += '<div style="font-weight:700; font-size:13px; margin:10px 0 4px;">🔩 Peças trocadas</div><div class="table-wrap"><table class="sem-ordenacao" style="font-size:12.5px;"><thead><tr><th>Data</th><th>Peça</th><th class="num">Qtd</th><th>Nota fiscal</th><th class="num">Valor</th></tr></thead><tbody>';
+        trocas.forEach(function(t){ h += '<tr><td>' + fmtDate(t.o.dataSaida || t.o.data) + '</td><td>' + escapeHtml(produtoNome(t.pc.produtoId)) + '</td><td class="num">' + fmtNum(t.pc.quantidade) + '</td><td>' + (t.c ? '🧾 ' + escapeHtml(mtNfTexto(t.c)) : '<span style="color:var(--ink-soft);">—</span>') + '</td><td class="num">' + (t.pc.custoUnit ? fmtBRL(t.pc.quantidade * t.pc.custoUnit) : '—') + '</td></tr>'; });
+        h += '</tbody></table></div>';
+      }
       if(Number(m.valor) > 0 && custoAno > Number(m.valor) * 0.15) h += '<p style="font-size:12.5px; color:var(--cost-dark); margin:0 0 8px;">⚠️ A manutenção dos últimos 12 meses passou de 15% do valor da máquina (' + fmtBRL(m.valor) + '). Vale avaliar se compensa trocar.</p>';
       if(!oss.length) h += '<p style="font-size:12.5px; color:var(--ink-soft);">Nenhuma ordem de serviço registrada.</p>';
       else {
-        h += '<div class="table-wrap"><table class="sem-ordenacao" style="font-size:12.5px;"><thead><tr><th>Data</th><th>Tipo</th><th>Serviços</th><th>Peças</th><th class="num">Serviço</th><th class="num">Total</th><th></th></tr></thead><tbody>';
+        h += '<div style="font-weight:700; font-size:13px; margin:12px 0 4px;">📋 Ordens de serviço</div><div class="table-wrap"><table class="sem-ordenacao" style="font-size:12.5px;"><thead><tr><th>Data</th><th>Tipo</th><th>Serviços</th><th>Peças</th><th class="num">Serviço</th><th class="num">Total</th><th></th></tr></thead><tbody>';
         oss.forEach(function(o){ h += mtLinhaOS(o, typeof podeGravarChave !== 'function' || podeGravarChave('manutOS'), false).replace('<tr>', o.status === 'Aberta' ? '<tr style="background:#FFF6E0;">' : '<tr>'); });
         h += '</tbody></table></div>';
       }
@@ -10664,18 +10843,24 @@
     var g = function(id){ var e = document.getElementById(id); return e ? e.value : undefined; };
     var r = mtOSRasc;
     if(g('mt-os-data') !== undefined){
-      r.data = g('mt-os-data'); r.horimetro = g('mt-os-hor') === '' ? null : parseFloat(g('mt-os-hor')); r.km = g('mt-os-km') === undefined || g('mt-os-km') === '' ? null : parseFloat(g('mt-os-km'));
+      r.data = g('mt-os-data'); r.dataSaida = g('mt-os-saida') || r.dataSaida; r.horimetro = g('mt-os-hor') === '' ? null : parseFloat(g('mt-os-hor')); r.km = g('mt-os-km') === undefined || g('mt-os-km') === '' ? null : parseFloat(g('mt-os-km'));
       r.tipo = g('mt-os-tipo'); r.descricao = g('mt-os-desc'); r.parceiroId = g('mt-os-parc'); r.valorServico = g('mt-os-valor'); r.contaId = g('mt-os-conta');
       r.planoIds = Array.prototype.map.call(document.querySelectorAll('.mt-os-plano:checked'), function(c){ return c.value; });
-      var sels = document.querySelectorAll('.mt-os-peca'), qs = document.querySelectorAll('.mt-os-qtd');
-      r.pecas = Array.prototype.map.call(sels, function(s, i){ return {produtoId: s.value, quantidade: qs[i] ? qs[i].value : ''}; });
+      var sels = document.querySelectorAll('.mt-os-peca'), qs = document.querySelectorAll('.mt-os-qtd'), ant = r.pecas || [];
+      r.pecas = Array.prototype.map.call(sels, function(s, i){
+        var nf = document.querySelector('.mt-os-nf[data-i="' + i + '"]'), velho = ant[i] || {};
+        var cId = nf ? nf.value : (s.value && s.value === velho.produtoId ? velho.compraId : undefined);
+        if(s.value !== velho.produtoId) cId = undefined; // trocou a peça: sugere de novo a nota mais recente
+        return {produtoId: s.value, quantidade: qs[i] ? qs[i].value : '', compraId: cId};
+      });
     }
     return r;
   }
   // conclui a OS: baixa peças, reinicia serviços, lança o serviço no Financeiro, devolve o status da máquina
   function mtConcluirOS(o){
     var m = state.patrimonio.find(function(x){ return x.id === o.patrimonioId; });
-    if(o.data && typeof periodoFechado === 'function' && periodoFechado(o.data)){ alert('O mês de ' + fmtDate(o.data) + ' está fechado no Financeiro. Reabra-o ou use outra data.'); return false; }
+    var dFim = o.dataSaida || o.data;
+    if(dFim && typeof periodoFechado === 'function' && periodoFechado(dFim)){ alert('O mês de ' + fmtDate(dFim) + ' está fechado no Financeiro. Reabra-o ou use outra data.'); return false; }
     o.ajusteIds = o.ajusteIds || [];
     if(!o.estoqueBaixado){
       if(!Array.isArray(state.ajustesEstoque)) state.ajustesEstoque = [];
@@ -10684,7 +10869,7 @@
         pc.custoUnit = custoMedioProduto(p.id) || Number(p.custoManual) || 0;
         var ant = Number(p.estoqueAtual) || 0, novo = Math.round((ant - Number(pc.quantidade)) * 1000) / 1000;
         p.estoqueAtual = novo;
-        var aj = {id: uid(), produtoId: p.id, data: o.data, anterior: ant, novo: novo, diferenca: Math.round((novo - ant) * 1000) / 1000, motivo: 'Usado em manutenção', observacao: 'OS ' + (m ? m.nome : '') + (o.descricao ? ' — ' + o.descricao : ''), osId: o.id, criadoEm: Date.now()};
+        var aj = {id: uid(), produtoId: p.id, data: dFim, anterior: ant, novo: novo, diferenca: Math.round((novo - ant) * 1000) / 1000, motivo: 'Usado em manutenção', observacao: 'OS ' + (m ? m.nome : '') + (o.descricao ? ' — ' + o.descricao : ''), osId: o.id, criadoEm: Date.now()};
         state.ajustesEstoque.push(aj); o.ajusteIds.push(aj.id);
       });
       o.estoqueBaixado = true;
@@ -10692,19 +10877,25 @@
     var valor = Number(o.valorServico) || 0;
     if(valor > 0 && !o.financeiroId){
       var cid = o.contaId || '', serv = mtNomesServicos(o).concat(o.descricao ? [o.descricao] : []);
-      var f = {id: uid(), origem: 'manutencao', osId: o.id, contaId: cid, tipo: 'custo', categoria: cid ? contaNome(cid) : 'Manutenção de máquinas', valor: Math.round(valor * 100) / 100, quantidade: 0, unidade: '', peso: 0, status: 'Pago', data: o.data, vencimento: '', parceiroId: o.parceiroId || '', membroId: '',
+      var f = {id: uid(), origem: 'manutencao', osId: o.id, contaId: cid, tipo: 'custo', categoria: cid ? contaNome(cid) : 'Manutenção de máquinas', valor: Math.round(valor * 100) / 100, quantidade: 0, unidade: '', peso: 0, status: 'Pago', data: dFim, vencimento: '', parceiroId: o.parceiroId || '', membroId: '',
         descricao: 'Manutenção ' + (o.tipo === 'Corretiva' ? 'corretiva' : 'preventiva') + ' — ' + (m ? m.nome : '') + (serv.length ? ': ' + serv.join(', ') : ''), criadoEm: Date.now()};
       aplicarDestino(f, {destino: 'maquina', maquinas: [o.patrimonioId]});
       state.financeiro.push(f); o.financeiroId = f.id;
     }
-    o.status = 'Concluída'; o.concluidaEm = Date.now();
+    o.status = 'Concluída'; o.concluidaEm = Date.now(); if(!o.dataSaida) o.dataSaida = dFim; if(!o.inicioEm) o.inicioEm = o.data;
     if(m && m.status === 'Em manutenção' && !mtArr('manutOS').some(function(x){ return x.id !== o.id && x.patrimonioId === m.id && x.status === 'Aberta'; })){ m.status = o.statusAnterior || 'Operando'; }
     return true;
   }
   function mtSalvarTudo(){ ['manutOS','manutPlanos','manutLeituras','manutCalibracoes','produtos','ajustesEstoque','financeiro','patrimonio'].forEach(function(k){ saveKey(k, state[k]); }); }
   function acaoManutencao(action, btn){
     var id = btn.dataset.id;
-    if(action === 'mt-modo'){ if(mtSel === id && mtModo === btn.dataset.modo) mtModo = ''; else { mtSel = id; mtModo = btn.dataset.modo; } mtOSRasc = null; renderManutencao(); return true; }
+    if(action === 'mt-vista'){ mtVista = btn.dataset.vista === 'lista' ? 'lista' : 'cards'; try{ localStorage.setItem('agro-manut-vista', mtVista); }catch(e){} renderManutencao(); return true; }
+    if(action === 'mt-foto'){ var inF = document.getElementById('mt-foto-input'); if(inF){ inF.dataset.id = id; inF.click(); } return true; }
+    if(action === 'mt-foto-remover'){
+      var mF = state.patrimonio.find(function(x){ return x.id === id; }); if(!mF || !window.confirm('Tirar a foto de "' + mF.nome + '"?')) return true;
+      rawSet(mtFotoChave(id), null); delete mF.foto; delete mtFotoCache[id]; mtFotoBuscando[id] = false; saveKey('patrimonio', state.patrimonio); renderManutencao(); return true;
+    }
+    if(action === 'mt-modo'){ if(mtSel === id && mtModo === btn.dataset.modo) mtModo = ''; else { mtSel = id; mtModo = btn.dataset.modo; } mtOSRasc = null; renderManutencao(); var pM = document.getElementById('mt-painel'); if(pM && mtModo) pM.scrollIntoView({behavior: 'smooth', block: 'start'}); return true; }
     if(action === 'mt-nova-os'){ mtSel = id; mtModo = 'os'; mtOSRasc = {pecas: [], planoIds: btn.dataset.plano ? [btn.dataset.plano] : [], tipo: 'Preventiva'}; renderManutencao(); var a = document.getElementById('mt-os-data'); if(a) a.scrollIntoView({behavior: 'smooth', block: 'center'}); return true; }
     if(action === 'mt-excluir-maq' || action === 'mt-incluir'){
       var mx = state.patrimonio.find(function(x){ return x.id === id; }); if(!mx) return true;
@@ -10752,19 +10943,60 @@
     }
     if(action === 'mt-os-add-peca'){ var r = mtLerOSForm(); r.pecas.push({produtoId: '', quantidade: ''}); renderManutencao(); return true; }
     if(action === 'mt-os-salvar'){
-      var r2 = mtLerOSForm(), mq4 = state.patrimonio.find(function(x){ return x.id === id; });
+      var r2 = mtLerOSForm(), mq4 = state.patrimonio.find(function(x){ return x.id === id; }), modo = btn.dataset.concluir === '1' ? 'fim' : (btn.dataset.concluir === 'agendar' ? 'agendar' : 'exec');
       if(!r2.data){ alert('Informe a data.'); return true; }
-      var pecas = r2.pecas.filter(function(pc){ return pc.produtoId && Number(pc.quantidade) > 0; }).map(function(pc){ return {produtoId: pc.produtoId, quantidade: Number(pc.quantidade)}; });
+      var pecas = r2.pecas.filter(function(pc){ return pc.produtoId && Number(pc.quantidade) > 0; }).map(function(pc){ return {produtoId: pc.produtoId, quantidade: Number(pc.quantidade), compraId: pc.compraId || ''}; });
       if(!r2.planoIds.length && !(r2.descricao || '').trim() && !pecas.length){ alert('Marque os serviços do plano, descreva o que foi feito ou informe as peças.'); return true; }
-      var os = {id: uid(), patrimonioId: id, data: r2.data, horimetro: r2.horimetro || null, km: r2.km || null, tipo: r2.tipo || 'Preventiva', status: 'Aberta', planoIds: r2.planoIds, descricao: (r2.descricao || '').trim(), pecas: pecas, parceiroId: r2.parceiroId || '', valorServico: parseFloat(r2.valorServico) || 0, contaId: r2.contaId || '', statusAnterior: mq4 && mq4.status !== 'Em manutenção' ? (mq4.status || 'Operando') : 'Operando', criadoEm: Date.now()};
-      if(btn.dataset.concluir === '1'){ if(!mtConcluirOS(os)) return true; }
-      else if(mq4) mq4.status = 'Em manutenção';
-      mtArr('manutOS').push(os); mtSalvarTudo();
-      mtOSRasc = null; mtModo = 'hist'; mtMsg = '✓ Ordem de serviço de ' + escapeHtml(mq4 ? mq4.nome : '') + (os.status === 'Concluída' ? ' concluída' + (pecas.length ? ', peças baixadas do estoque' : '') + (os.financeiroId ? ', serviço de ' + fmtBRL(os.valorServico) + ' lançado no Financeiro' : '') : ' aberta — a máquina ficou "em manutenção"') + '.';
+      var osAnt = r2.editId ? mtArr('manutOS').find(function(x){ return x.id === r2.editId; }) : null;
+      if(r2.editId && !osAnt){ alert('Essa ordem de serviço não existe mais.'); mtOSRasc = null; renderManutencao(); return true; }
+      if(osAnt && osAnt.status === 'Concluída'){ alert('Essa ordem de serviço já foi finalizada.'); mtOSRasc = null; renderManutencao(); return true; }
+      if(modo === 'fim'){ var saida = r2.dataSaida || mtHoje(), entrada = (osAnt && osAnt.status === 'Aberta' && osAnt.inicioEm) ? osAnt.inicioEm : r2.data; if(saida < entrada){ alert('A data em que ficou pronta (' + fmtDate(saida) + ') não pode ser antes da entrada (' + fmtDate(entrada) + '). Corrija as datas.'); return true; } }
+      var campos = {data: r2.data, horimetro: r2.horimetro || null, km: r2.km || null, tipo: r2.tipo || 'Preventiva', planoIds: r2.planoIds, descricao: (r2.descricao || '').trim(), pecas: pecas, parceiroId: r2.parceiroId || '', valorServico: parseFloat(r2.valorServico) || 0, contaId: r2.contaId || ''};
+      var os = osAnt || {id: uid(), patrimonioId: id, status: 'Agendada', criadoEm: Date.now()};
+      Object.keys(campos).forEach(function(k){ os[k] = campos[k]; });
+      var eraAberta = os.status === 'Aberta';
+      if(!eraAberta && modo !== 'agendar' && mq4){ os.statusAnterior = mq4.status !== 'Em manutenção' ? (mq4.status || 'Operando') : (os.statusAnterior || 'Operando'); }
+      if(modo !== 'agendar' && !os.inicioEm) os.inicioEm = r2.data;
+      if(os.status === 'Aberta' && osAnt && r2.data && r2.data !== os.inicioEm) os.inicioEm = r2.data; // corrigiu a data de entrada
+      if(modo === 'fim'){
+        os.dataSaida = r2.dataSaida || mtHoje();
+        if(!mtConcluirOS(os)){ if(!osAnt){} return true; }
+      } else if(modo === 'exec'){
+        os.status = 'Aberta'; if(mq4) mq4.status = 'Em manutenção';
+      } else {
+        os.status = 'Agendada'; os.inicioEm = '';
+        if(eraAberta && mq4 && mq4.status === 'Em manutenção' && !mtArr('manutOS').some(function(x){ return x.id !== os.id && x.patrimonioId === mq4.id && x.status === 'Aberta'; })) mq4.status = os.statusAnterior || 'Operando';
+      }
+      if(!osAnt) mtArr('manutOS').push(os);
+      mtSalvarTudo();
+      mtOSRasc = null; mtModo = modo === 'fim' ? 'hist' : ''; if(modo !== 'fim') mtSel = '';
+      mtMsg = '✓ Ordem de serviço de ' + escapeHtml(mq4 ? mq4.nome : '') + (modo === 'fim' ? ' finalizada' + (pecas.length ? ', peças baixadas do estoque' : '') + (os.financeiroId ? ', serviço de ' + fmtBRL(os.valorServico) + ' lançado no Financeiro' : '') + ' — ' + mtDiasParada(os) + ' dia(s) parada' : (modo === 'exec' ? ' em execução — a máquina ficou "em manutenção"' : ' agendada para ' + fmtDate(os.data) + ' (a máquina continua trabalhando)')) + '.';
       renderAll(); return true;
     }
+    if(action === 'mt-os-editar' || action === 'mt-os-finalizar'){
+      var oe = mtArr('manutOS').find(function(x){ return x.id === id; }); if(!oe || oe.status === 'Concluída') return true;
+      mtSel = oe.patrimonioId; mtModo = 'os';
+      mtOSRasc = {editId: oe.id, finalizando: action === 'mt-os-finalizar', data: oe.data, dataSaida: mtHoje(), horimetro: oe.horimetro, km: oe.km, tipo: oe.tipo, descricao: oe.descricao, parceiroId: oe.parceiroId, valorServico: oe.valorServico, contaId: oe.contaId, planoIds: (oe.planoIds || []).slice(), pecas: (oe.pecas || []).map(function(pc){ return {produtoId: pc.produtoId, quantidade: pc.quantidade, compraId: pc.compraId}; })};
+      renderManutencao(); var pE = document.getElementById('mt-painel'); if(pE) pE.scrollIntoView({behavior: 'smooth', block: 'start'}); return true;
+    }
+    if(action === 'mt-os-iniciar' || action === 'mt-os-voltar'){
+      var oi = mtArr('manutOS').find(function(x){ return x.id === id; }); if(!oi || oi.status === 'Concluída') return true;
+      var mi = state.patrimonio.find(function(x){ return x.id === oi.patrimonioId; });
+      if(action === 'mt-os-iniciar'){ if(oi.status !== 'Agendada') return true; oi.status = 'Aberta'; if(oi.data && oi.data !== mtHoje()) oi.dataPrevista = oi.data; oi.data = mtHoje(); oi.inicioEm = mtHoje(); if(mi){ if(mi.status !== 'Em manutenção') oi.statusAnterior = mi.status || 'Operando'; mi.status = 'Em manutenção'; } mtMsg = '✓ ' + escapeHtml(mi ? mi.nome : '') + ' entrou em manutenção hoje.'; }
+      else { if(oi.status !== 'Aberta') return true; oi.status = 'Agendada'; oi.inicioEm = ''; if(mi && mi.status === 'Em manutenção' && !mtArr('manutOS').some(function(x){ return x.id !== oi.id && x.patrimonioId === mi.id && x.status === 'Aberta'; })) mi.status = oi.statusAnterior || 'Operando'; }
+      mtSalvarTudo(); renderAll(); return true;
+    }
+    if(action === 'mt-os-puxar-nota'){
+      var rN = mtLerOSForm(), kN = (document.getElementById('mt-os-nota') || {}).value; if(!kN){ alert('Escolha a nota.'); return true; }
+      var gN = mtNotasRecentes().find(function(x){ return x.k === kN; }); if(!gN) return true;
+      rN.pecas = rN.pecas.filter(function(pc){ return pc.produtoId; });
+      var nAdd = 0; gN.itens.forEach(function(c){ if(rN.pecas.some(function(pc){ return pc.compraId === c.id; })) return; rN.pecas.push({produtoId: c.produtoId, quantidade: Number(c.quantidade) || '', compraId: c.id}); nAdd++; });
+      if(!nAdd) alert('Os itens dessa nota já estão na ordem de serviço.');
+      renderManutencao(); return true;
+    }
     if(action === 'mt-concluir-os'){
-      var o = mtArr('manutOS').find(function(x){ return x.id === id; }); if(!o) return true;
+      var o = mtArr('manutOS').find(function(x){ return x.id === id; }); if(!o || o.status === 'Concluída') return true;
+      if(!o.dataSaida) o.dataSaida = mtHoje();
       if(!mtConcluirOS(o)) return true;
       mtSalvarTudo(); mtMsg = '✓ Ordem de serviço concluída.'; renderAll(); return true;
     }
