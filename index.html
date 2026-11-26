@@ -5879,7 +5879,7 @@
       var ROTULO_RESUMO = {aguardando:'Aguardando ciência', ciencia:'Ciência registrada — falta baixar', erro:'Erro', cancelada:'Cancelada pelo emitente', denegada:'Denegada'};
       var COR_RESUMO = {aguardando:'#DFA84E', ciencia:'#3B6EA5', erro:'#A23E2E', cancelada:'#8B8368', denegada:'#8B8368'};
       resumosLista.forEach(function(r){
-        html += '<tr><td>' + (r.status === 'cancelada' || r.status === 'denegada' ? '' : '<input type="checkbox" class="sefaz-resumo-cb" value="' + r.chave + '">') + '</td>';
+        html += '<tr><td><input type="checkbox" class="sefaz-resumo-cb" value="' + r.chave + '"' + (r.status === 'cancelada' || r.status === 'denegada' ? ' data-inativa="1" title="Nota cancelada/denegada: só dá para tirar da lista"' : '') + '></td>';
         html += '<td>' + (r.dataEmissao ? fmtDate(r.dataEmissao) : '—') + '</td>';
         html += '<td>' + escapeHtml(r.emitente || '—') + '</td>';
         html += '<td class="num">' + fmtBRL(r.valor) + '</td>';
@@ -5890,7 +5890,9 @@
       html += '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">';
       html += '<button type="button" class="btn" data-action="dar-ciencia-resumos"' + (sefazOperacaoEmAndamento ? ' disabled' : '') + '>📝 Dar ciência e baixar as marcadas</button>';
       html += '<button type="button" class="btn-cancel" data-action="baixar-resumos"' + (sefazOperacaoEmAndamento ? ' disabled' : '') + '>⬇️ Baixar XML de novo (já com ciência)</button>';
-      html += '<button type="button" class="btn-cancel" data-action="remover-resumos">Remover marcadas da lista</button>';
+      html += '<button type="button" class="btn-cancel" data-action="remover-resumos">🗑️ Remover marcadas da lista</button>';
+      var nInat = resumosLista.filter(function(r){ return r.status === 'cancelada' || r.status === 'denegada'; }).length;
+      if(nInat) html += '<button type="button" class="btn-cancel" data-action="remover-resumos-canceladas">🧹 Tirar as canceladas/denegadas (' + nInat + ')</button>';
       html += '</div>';
     }
     html += '</div>';
@@ -6355,7 +6357,8 @@
       });
   }
   function baixarNovamenteResumos(chaves){
-    if(!chaves.length){ alert('Marque as notas.'); return; }
+    chaves = (chaves || []).filter(function(ch){ var r = (state.sefazResumos || []).find(function(x){ return x.chave === ch; }); return !r || (r.status !== 'cancelada' && r.status !== 'denegada'); });
+    if(!chaves.length){ alert('Marque as notas (as canceladas/denegadas não podem ser baixadas).'); return; }
     var dadosB = dadosConsultaSefaz();
     if(!dadosB.documento){ alert('Preencha o CPF ou CNPJ lá em cima.'); return; }
     baixarResumosPorChave(chaves, dadosB).then(function(baixadas){
@@ -16108,6 +16111,12 @@
     }
     if(action === 'dar-ciencia-resumos'){ var chCi = chavesResumosMarcados(); if(!chCi.length){ alert('Marque as notas na lista de resumos.'); return; } darCienciaEBaixar(chCi); return; }
     if(action === 'baixar-resumos'){ baixarNovamenteResumos(chavesResumosMarcados()); return; }
+    if(action === 'remover-resumos-canceladas'){
+      var nC = (state.sefazResumos || []).filter(function(r){ return r.status === 'cancelada' || r.status === 'denegada'; }).length; if(!nC) return;
+      if(!window.confirm('Tirar da lista ' + nC + ' nota(s) cancelada(s) ou denegada(s) pelo emitente? Elas não têm valor fiscal; nada muda no estoque nem no Financeiro.')) return;
+      state.sefazResumos = state.sefazResumos.filter(function(r){ return r.status !== 'cancelada' && r.status !== 'denegada'; });
+      saveKey('sefazResumos', state.sefazResumos); renderCompras(); return;
+    }
     if(action === 'remover-resumos'){
       var chRem = chavesResumosMarcados();
       if(!chRem.length){ alert('Marque as notas.'); return; }
