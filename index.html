@@ -511,6 +511,11 @@
   .stat-card{border-radius:12px; padding:13px 16px; border-top:4px solid #DCE7C9;}
   .stat-card .label{text-transform:none; letter-spacing:0; font-size:12px; font-weight:600;}
   .stat-card .value{font-family:inherit; font-weight:800; font-size:clamp(16px, 1.5vw, 21px); margin-top:4px;}
+  /* visual único: os quadrinhos antigos ficam iguais aos novos (número em cima, explicação embaixo) */
+  .stat-row{gap:12px; margin-bottom:14px;}
+  .stat-card{display:flex; flex-direction:column-reverse; justify-content:flex-end; gap:2px; border-top:0; border:1px solid var(--paper-line); border-radius:12px; padding:12px 14px; box-shadow:var(--shadow); background:var(--paper);}
+  .stat-card .label{font-size:11.5px; font-weight:500; color:var(--ink-soft); text-transform:none; letter-spacing:0;}
+  .stat-card .value{font-size:19px; font-weight:700; margin:0; font-family:inherit; line-height:1.2;}
   .form-card{border-radius:12px; padding:18px 20px;}
   .form-card h3{font-family:inherit; font-size:16px; font-weight:800; border-bottom:none; padding-bottom:0; margin-bottom:14px;}
   .field input, .field select, .field textarea{border-radius:8px; padding:9px 10px; background:#FFFFFF;}
@@ -586,6 +591,44 @@
   .di-st-aex{background:#FFF1D6; color:#8A6514;} .di-st-exec{background:#DDEEF6; color:#2F6F8F;} .di-st-atr{background:#FBE3DE; color:#A23E2E;}
   .di-prod-falta{border-color:#E8A797 !important; background:#FDF0EC !important; color:#A23E2E;}
   .di-prog-acts{flex-wrap:wrap; justify-content:flex-end;}
+  /* ---------- Inspeção: cartões ---------- */
+  .fe-bal tr.fe-bal-mic td{font-size:12.5px; color:var(--ink-soft);} .fe-bal tr.fe-bal-mic td:first-child{padding-left:14px;}
+  .ins-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:12px; margin-bottom:8px;}
+  .ins-card{background:var(--paper); border:1px solid var(--paper-line); border-radius:14px; padding:13px 15px; display:flex; flex-direction:column; gap:8px; box-shadow:var(--shadow);} .ins-card.al{border:2px solid #E8A797;}
+  .ins-top{display:flex; gap:10px; align-items:center;} .ins-top b{display:block; font-size:15px;} .ins-top small{color:var(--ink-soft); font-size:11.5px;}
+  .ins-ic{width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:19px; flex-shrink:0;}
+  .ins-st{align-self:flex-start; font-size:11.5px; font-weight:800; padding:3px 10px; border-radius:99px;} .ins-st.ok{background:#E3F1D6; color:#3F6B1E;} .ins-st.at{background:#FFF1D6; color:#8A6514;} .ins-st.al{background:#C0453A; color:#fff;}
+  .ins-lin{display:flex; justify-content:space-between; font-size:12.5px;} .ins-lin span{color:var(--ink-soft);}
+  .ins-acao{font-size:12px; display:flex; flex-wrap:wrap; gap:4px; align-items:flex-start;} .ins-acao .badge{display:inline-block; white-space:normal; line-height:1.35; text-align:left; border-radius:8px !important; padding:4px 9px; margin:0 !important;} .ins-acao br{display:none;} .ins-bt{margin-top:auto; align-self:flex-start;}
+  /* ---------- Orçado x Realizado / atalhos ---------- */
+  .orc-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:12px; margin-bottom:6px;}
+  .orc-card{background:var(--paper); border:1px solid var(--paper-line); border-radius:14px; padding:12px 14px; display:flex; flex-direction:column; gap:7px; box-shadow:var(--shadow);}
+  .orc-top{display:flex; justify-content:space-between; gap:8px; align-items:flex-start;} .orc-top b{font-size:14px; line-height:1.25;}
+  .orc-pct{font-size:12px; font-weight:800; padding:2px 9px; border-radius:99px; background:#E3F1D6; color:#3F6B1E; white-space:nowrap;} .orc-pct.sem{background:#F0EEDD; color:var(--ink-soft); font-weight:600;}
+  .orc-perto .orc-pct{background:#FFF1D6; color:#8A6514;} .orc-est .orc-pct{background:#C0453A; color:#fff;}
+  .orc-bar{height:8px; background:#ECEBDD; border-radius:99px; overflow:hidden;} .orc-bar i{display:block; height:100%; border-radius:99px; background:var(--growth);} .orc-perto .orc-bar i{background:#E0B23C;} .orc-est .orc-bar i{background:#C0453A;}
+  .orc-nums{display:flex; justify-content:space-between;} .orc-nums small{display:block; font-size:11px; color:var(--ink-soft);} .orc-nums b{font-size:13.5px;} .orc-nums div:last-child{text-align:right;}
+  .orc-pe{display:flex; justify-content:space-between; align-items:center; gap:8px; border-top:1px dashed var(--paper-line); padding-top:7px; font-size:12px; color:var(--ink-soft);} .orc-pe .tl-btn{padding:5px 10px; font-size:12px;}
+  .ui-atalhos{margin:-4px 0 14px;} .ui-ir{font-size:12px; font-weight:700; color:#C9D0B4; margin-right:2px;}
+  /* ---------- Caixa e Conta-corrente: cartões ---------- */
+  .cx-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:12px;}
+  .cx-card{font-family:inherit; text-align:left; color:var(--ink); background:var(--paper); border:1px solid var(--paper-line); border-radius:14px; padding:13px 15px; display:flex; flex-direction:column; gap:5px; cursor:pointer; box-shadow:var(--shadow); transition:transform .12s, box-shadow .12s;}
+  .cx-card:hover{transform:translateY(-1px);} .cx-card.sel{outline:3px solid #C4D678;} .cx-card.atual{border:2px solid #C4D678;}
+  .cx-top{display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;} .cx-top b{font-size:15.5px;}
+  .cx-tag{font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:99px; background:#E3F1D6; color:#3F6B1E;} .cx-tag-at{background:#C4D678; color:#2B2B1F;} .cx-tag-fut{background:#DDEEF6; color:#2F6F8F;} .cx-tag-atr{background:#FFF1D6; color:#8A6514;}
+  .cx-lin{display:flex; justify-content:space-between; font-size:12.5px;} .cx-lin span{color:var(--ink-soft);}
+  .cx-bar{height:6px; background:#ECEBDD; border-radius:99px; overflow:hidden;} .cx-bar i{display:block; height:100%; border-radius:99px;} .cx-bar .ent{background:#6AA53B;} .cx-bar .sai{background:#D9634F;}
+  .cx-prev{font-size:11px; color:var(--ink-soft); margin-top:-2px;}
+  .cx-pe{display:flex; justify-content:space-between; gap:8px; border-top:1px dashed var(--paper-line); padding-top:7px; margin-top:3px;} .cx-pe small{display:block; font-size:11px; color:var(--ink-soft);} .cx-pe b{font-size:14px;} .cx-pe div:last-child{text-align:right;}
+  .cx-det{margin-top:14px; padding:0; overflow:hidden;} .cx-det-cab{display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid var(--paper-line);} .cx-det .fn-lista{box-shadow:none; border:0; border-radius:0;}
+  .ctc-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:12px;}
+  .ctc-card{font-family:inherit; text-align:left; color:var(--ink); background:var(--paper); border:1px solid var(--paper-line); border-radius:14px; padding:13px 15px; display:flex; flex-direction:column; gap:9px; cursor:pointer; box-shadow:var(--shadow); transition:transform .12s;}
+  .ctc-card:hover{transform:translateY(-1px); border-color:#C4D678;}
+  .ctc-top{display:flex; gap:10px; align-items:center;} .ctc-top b{display:block; font-size:14.5px; line-height:1.25;} .ctc-top small{color:var(--ink-soft); font-size:11.5px;}
+  .ctc-av{width:40px; height:40px; flex-shrink:0; border-radius:12px; background:#E3E8D2; color:#3F4A2E; font-weight:800; display:flex; align-items:center; justify-content:center; font-size:14px;}
+  .ctc-st{align-self:flex-start; font-size:12px; font-weight:800; padding:4px 10px; border-radius:99px;} .ctc-st.devo{background:#FBE3DE; color:#A23E2E;} .ctc-st.rec{background:#E3F1D6; color:#3F6B1E;} .ctc-st.ok{background:#F0EEDD; color:var(--ink-soft);}
+  .ctc-nums{display:flex; justify-content:space-between; gap:8px; border-top:1px dashed var(--paper-line); padding-top:8px;} .ctc-nums small{display:block; font-size:11px; color:var(--ink-soft);} .ctc-nums b{font-size:13.5px;} .ctc-nums div:last-child{text-align:right;}
+  .ctc-obs{font-size:11px; color:var(--ink-soft);}
   /* ---------- Manutenção: cartões ---------- */
   .mt-cab{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin:22px 0 10px;}
   .mt-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:14px;}
@@ -2462,6 +2505,29 @@
           marcarImportAplicado('cp-cr-plano-contas-v1');
         })();
         (function(){
+          // Financiamentos 2026: separa juros × amortização nas parcelas já pagas e lança a liberação dos custeios (pedido do dono em 27/11/2026)
+          if(importJaAplicado('financiamentos-mov-2026-v1')) return;
+          var mudouF = false, parseBR = function(t){ return parseFloat(String(t).replace(/\./g, '').replace(',', '.')) || 0; };
+          state.financeiro.slice().forEach(function(f){
+            if(f.origem !== 'financiamento' || f.movFinanciamento || f.finMov || !(f.data || '').startsWith('2026')) return;
+            var m = /amortiza[çc][ãa]o R\$\s*([\d\.,]+)\s*\+\s*juros R\$\s*([\d\.,]+)/.exec(f.descricao || ''); if(!m) return;
+            var am = parseBR(m[1]), ju = parseBR(m[2]); if(!(am > 0) || Math.abs(am + ju - (Number(f.valor) || 0)) > 1) return;
+            var fin = state.financiamentos.find(function(x){ return (x.pagamentos || []).some(function(pg){ return pg.financeiroId === f.id; }); });
+            var cJ = contaJurosFinanciamento(), jId = uid();
+            if(ju > 0) state.financeiro.push({id: jId, origem: 'financiamento', finMov: 'juros', finId: fin ? fin.id : '', contaId: cJ, tipo: 'custo', categoria: 'Juros de financiamento', valor: Math.round(ju * 100) / 100, quantidade: 0, peso: 0, unidade: '', status: 'Pago', data: f.data, vencimento: '', talhoesIds: f.talhoesIds || [], talhaoId: f.talhaoId || '', parceiroId: '', membroId: '', descricao: (f.descricao || '').replace(/\s*\(amortiza.*$/, '') + ' — juros', criadoEm: (f.criadoEm || Date.now()) + 1, separadoDe: f.id});
+            f.valorOriginal = f.valor; f.valor = Math.round(am * 100) / 100; f.movFinanciamento = true; f.finMov = 'amortizacao'; f.finId = fin ? fin.id : ''; f.talhoesIds = []; f.talhaoId = '';
+            f.descricao = (f.descricao || '').replace(/\s*\(amortiza.*$/, '') + ' — amortização (devolução do empréstimo); juros ' + fmtBRL(ju) + ' lançados à parte';
+            if(fin){ var pg = fin.pagamentos.find(function(x){ return x.financeiroId === f.id; }); if(pg){ pg.jurosFinanceiroId = ju > 0 ? jId : ''; pg.juros = Math.round(ju * 100) / 100; pg.amortizacao = f.valor; } }
+            mudouF = true;
+          });
+          state.financiamentos.forEach(function(fin){
+            if(fin.tipo !== 'Custeio' || !(fin.dataContratacao || '').startsWith('2026') || fin.liberacaoFinanceiroId) return;
+            if(lancarLiberacaoFinanciamento(fin, fin.dataContratacao)) mudouF = true;
+          });
+          if(mudouF){ saveKey('financeiro', state.financeiro); saveKey('financiamentos', state.financiamentos); }
+          marcarImportAplicado('financiamentos-mov-2026-v1');
+        })();
+        (function(){
           if(importJaAplicado('redistribuir-entregas-negativas-v1')) return;
           var est = estoquePorSafra();
           var negativas = state.safras.filter(function(sf){ var e = est[sf.id]; return e && e.entrada - e.saida < -0.0005; });
@@ -3022,6 +3088,19 @@
       'Registre as horas no <b>Diário de Campo</b> e na <b>Colheita</b>, ou as leituras do horímetro em Máquinas e Patrimônio, para a conta ficar real.',
       'Para a equipe: dias com atividade registrada (como responsável no Diário ou na Colheita) contra os meses de salário pago.'
     ]},
+    {id:'maquina', titulo:'Manutenção de uma máquina (com peças da nota)', passos:[
+      '<b>Manutenção</b> → clique no cartão da máquina para abrir a <b>ficha da máquina</b>.',
+      'Na ficha, <b>🔧 Nova OS</b>: 🗓️ Agendar (ainda trabalhando) ou 🔄 Em execução (máquina parada, conta os dias).',
+      'Adicione as peças escolhendo de qual <b>nota fiscal</b> vieram, ou use <b>🧾 Puxar as peças de uma nota fiscal</b>; o valor vem da nota.',
+      'Quando ficar pronta, <b>✔ Finalizar</b> com o dia da saída: as peças saem do estoque e o serviço vai para o Financeiro na máquina.',
+      'Na ficha você vê o histórico, os dias parada, o custo dos últimos 12 meses e o horímetro.'
+    ]},
+    {id:'financiamento', titulo:'Financiamentos (custeio, investimento)', passos:[
+      '<b>Financiamentos</b> → ＋ cadastre o contrato com valor, taxa, parcelas e 1º vencimento.',
+      'Quando o dinheiro cair na conta, abra 📅 Parcelas e use <b>Lançar liberação do crédito no Caixa</b> (entra no caixa, mas não é receita da lavoura).',
+      'No vencimento, <b>Pagar parcela</b>: o sistema separa <b>juros</b> (despesa) e <b>amortização</b> (só devolução do dinheiro).',
+      'Nos <b>Relatórios</b> o movimento de financiamentos aparece num bloco à parte, para não distorcer o resultado da safra.'
+    ]},
     {id:'backup', titulo:'Backup e segurança', passos:[
       'Os dados ficam na nuvem (Netlify), separados por conta: cada pessoa entra com o próprio e-mail e senha e só vê os próprios dados. Em cada aparelho você entra uma vez; a sessão dura 30 dias.',
       'Troque a senha em <b>Configurações</b>. Esqueceu? O administrador cria uma nova; o próprio administrador usa "Esqueci a senha → Sou o administrador" com o código de recuperação do Netlify.',
@@ -3034,7 +3113,7 @@
     planoSafra: {t:'Plano de Safra', txt:'Cada linha é um talhão e cada coluna um ano agrícola. Os quadrinhos tracejados são safras <b>planejadas</b>. Clique em <b>＋</b> num ano para planejar: abre o cadastro de lavoura com o ano e o status "Planejada" já preenchidos. O aviso 🔁 aparece quando a mesma cultura anual se repete 3 anos seguidos no talhão.'},
     planoAdubacao: {t:'Plano de Adubação', txt:'Junta as recomendações salvas na <b>Fertilidade do Solo</b> de todos os talhões: primeiro por época (o que fazer e quando), depois por talhão, e a lista de compra com os totais. Nada vai para o Diário sozinho: use <b>📒 Lançar no Diário</b> quando for aplicar.'},
     painel: {t:'Dashboard', txt:'Resumo da fazenda e o painel <b>📋 Pendências</b>: tudo que precisa de atenção (lançamentos sem destino, contas vencidas, estoque negativo, produtos sem custo, safras com dados faltando, notas da SEFAZ esperando ciência, parcelas de financiamento). Clique em "abrir →" para ir direto à tela certa.'},
-    fertilidade: {t:'Fertilidade do Solo', txt:'1) Escolha o talhão nos quadrinhos (as cores mostram o fator limitante, pH, V%, P, K ou MO pelas classes do Manual de Adubação e Calagem do Paraná). 2) Veja o <b>barril de Liebig</b>: a tábua mais baixa é o que mais segura a produção. 3) Em <b>Adubação de produção</b>, escolha a cultura (soja, milho safra, milho 2ª safra ou café — produção, formação ou implantação), a meta de sacas e os adubos; o sistema calcula N, P₂O₅, K₂O, calcário e as épocas. 4) <b>💾 Salvar</b> deixa pendente; <b>📒 Lançar no Diário</b> abre o Diário preenchido e só registra quando você confirmar lá. Use 🖨️ para imprimir para o agrônomo, 🛒 para a lista de compra e ⚖️ para ver se o solo está sendo reposto. Coletar a camada 20–40 cm libera o diagnóstico de gesso.'},
+    fertilidade: {t:'Fertilidade do Solo', txt:'1) Escolha o talhão nos quadrinhos (as cores mostram o fator limitante, pH, V%, P, K ou MO pelas classes do Manual de Adubação e Calagem do Paraná). 2) Veja o <b>barril de Liebig</b>: a tábua mais baixa é o que mais segura a produção. 3) Em <b>Adubação de produção</b>, escolha a cultura (soja, milho safra, milho 2ª safra ou café — produção, formação ou implantação), a meta de sacas e os adubos; o sistema calcula N, P₂O₅, K₂O, calcário e as épocas. 4) <b>💾 Salvar</b> deixa pendente; <b>📒 Lançar no Diário</b> abre o Diário preenchido e só registra quando você confirmar lá. Use 🖨️ para imprimir para o agrônomo, 🛒 para a lista de compra e ⚖️ para ver se o solo está sendo reposto (nitrogênio, fósforo e potássio pela fórmula do adubo; cálcio, enxofre e micronutrientes pelas <b>Garantias do adubo</b> do cadastro do produto, inclusive os foliares). Coletar a camada 20–40 cm libera o diagnóstico de gesso.'},
     safras: {t:'Lavouras e Safras', txt:'A <b>lavoura</b> é uma cultura num ano agrícola (ex.: Soja 2026/2027) plantada em um ou vários talhões. Cada talhão dentro dela é uma <b>safra</b>. Use os botões de ano acima da tabela de lavouras para filtrar. "Apelido" dá um nome curto (ex.: Milho Safrinha); "Encerrar" tira a lavoura da lista de destinos dos lançamentos. Inativar uma safra esconde ela dos formulários sem apagar o histórico.'},
     operacoes: {t:'Diário de Campo', txt:'<b>Situação:</b> no topo do formulário escolha <b>✅ Já foi feita</b>, <b>🗓️ A executar</b> (planejada, com data prevista) ou <b>🔄 Em execução</b>. As programadas aparecem no bloco <b>🗓️ Programadas</b>, com os botões ▶ Iniciar e ✔ Finalizar; elas <b>não baixam estoque, não entram no custo e não contam carência</b> até serem finalizadas. Ao finalizar, confira a data real e as quantidades usadas. Atrasadas e produtos que vão faltar aparecem nos avisos. Registre cada atividade como um receituário: lavoura e talhões, produtos com dose (por ha ou por alqueire), máquinas com horas, alvo, volume de calda, nº do receituário e responsável técnico. Os produtos saem do estoque na hora; editar ou remover devolve. O custo (insumos + máquinas) entra na safra. 🧾 imprime a ficha de aplicação.'},
     caderneta: {t:'Caderneta do Café', txt:'No terreiro ou na lavoura: registre a apanha do dia (várias pessoas de uma vez), veja a tabela pessoa × semana e use 💰 Lançar pagamento para criar a despesa paga na lavoura. Em Processamento, crie lotes e acompanhe terreiro → secador → tulha → beneficiado; com as sacas beneficiadas, ➜ Colheita leva o lote para o estoque. O rendimento mostra quantas medidas deram uma saca.'},
@@ -3045,14 +3124,14 @@
     contasPagar: {t:'Contas a Pagar', txt:'Mostra os <b>lançamentos de despesa pendentes</b> (tudo fica num lugar só: em Lançamentos). Aqui você cria conta futura (com parcelas mensais, se quiser), conta do plano de contas e destino. "💰 Pagar" pede data e valor; pagando menos, o saldo continua pendente num lançamento novo. Os filtros mostram pendentes, pagas ou todas. Duplicatas de NF-e entram aqui sozinhas na importação.'},
     contasReceber: {t:'Contas a Receber', txt:'Mostra os <b>lançamentos de receita pendentes</b> (eles ficam em Lançamentos). Aqui você cria valores a receber, com desconto opcional e parcelas. "💵 Receber" pede data e valor e marca como recebido. Vendas de colheita já geram receita sozinhas — não lance a mesma venda aqui.'},
     compras: {t:'Compras e NF-e', txt:'Três caminhos: compra manual, importar XML ou importar notas da SEFAZ (precisa do certificado A1). Notas que chegam só como resumo precisam de "ciência" para liberar os itens. Na revisão, cada item vira compra (estoque + despesa) ou entrada de colheita. Remover uma compra tira do estoque e apaga a despesa ligada.'},
-    manutencao: {t:'Manutenção', txt:'<b>Cartões:</b> cada máquina tem um cartão com foto (📷 Adicionar foto — fica em tamanho padrão 4:3), horímetro, próximo serviço com barrinha e a situação. ☰ Tabela mostra a lista antiga. <b>Ordens de serviço:</b> 🗓️ <b>Agendar</b> (a máquina continua trabalhando), 🔄 <b>Em execução</b> (a máquina fica parada e conta os dias) e ✔ <b>Finalizar</b> (informe o dia em que ficou pronta; só então as peças saem do estoque e o serviço vai para o Financeiro). Em cada peça escolha de qual <b>nota fiscal</b> ela veio, ou use <b>🧾 Puxar as peças de uma nota fiscal</b>. O 📜 Histórico mostra os dias parada e as peças trocadas com a nota. Para cada máquina: <b>horímetro</b> (última leitura + horas lançadas no Diário e na Colheita; veículos em km), <b>plano preventivo</b> (serviços a cada X horas, km ou meses — use um modelo pronto e ajuste pelo manual), <b>ordens de serviço</b> (peças saem do estoque e o serviço vai para o Financeiro com destino na máquina), <b>calibração</b> do pulverizador (calcula o L/ha e aponta os bicos fora da média) e <b>histórico</b> com custo por hora. Os avisos de vencimento ficam no topo desta tela.'},
-    financiamentos: {t:'Financiamentos', txt:'Cadastre o contrato com valor, taxa ao ano, número de parcelas, periodicidade e 1º vencimento. Escolha o sistema: <b>parcela informada</b> (um valor só), <b>parcelas do contrato</b> (valor e data de cada uma, digitados em 📅 Parcelas), <b>SAC</b> ou <b>PRICE</b>. Se deu entrada, informe o valor e a data. "📅 Parcelas" mostra o cronograma com amortização, juros e saldo, e imprime. "Pagar parcela" dá baixa e lança a despesa no Financeiro.'},
+    manutencao: {t:'Manutenção', txt:'<b>Ficha da máquina:</b> clique no cartão (ou no nome) para abrir a página da máquina, com tudo dela num lugar só: resumo dos últimos 12 meses, ordens de serviço, peças trocadas com a nota, plano preventivo, horímetro e uso no Diário. <b>Cartões:</b> cada máquina tem um cartão com foto (📷 Adicionar foto — fica em tamanho padrão 4:3), horímetro, próximo serviço com barrinha e a situação. ☰ Tabela mostra a lista antiga. <b>Ordens de serviço:</b> 🗓️ <b>Agendar</b> (a máquina continua trabalhando), 🔄 <b>Em execução</b> (a máquina fica parada e conta os dias) e ✔ <b>Finalizar</b> (informe o dia em que ficou pronta; só então as peças saem do estoque e o serviço vai para o Financeiro). Em cada peça escolha de qual <b>nota fiscal</b> ela veio, ou use <b>🧾 Puxar as peças de uma nota fiscal</b>. O 📜 Histórico mostra os dias parada e as peças trocadas com a nota. Para cada máquina: <b>horímetro</b> (última leitura + horas lançadas no Diário e na Colheita; veículos em km), <b>plano preventivo</b> (serviços a cada X horas, km ou meses — use um modelo pronto e ajuste pelo manual), <b>ordens de serviço</b> (peças saem do estoque e o serviço vai para o Financeiro com destino na máquina), <b>calibração</b> do pulverizador (calcula o L/ha e aponta os bicos fora da média) e <b>histórico</b> com custo por hora. Os avisos de vencimento ficam no topo desta tela.'},
+    financiamentos: {t:'Financiamentos', txt:'Cadastre o contrato com valor, taxa ao ano, número de parcelas, periodicidade e 1º vencimento. Escolha o sistema: <b>parcela informada</b> (um valor só), <b>parcelas do contrato</b> (valor e data de cada uma, digitados em 📅 Parcelas), <b>SAC</b> ou <b>PRICE</b>. Se deu entrada, informe o valor e a data. "📅 Parcelas" mostra o cronograma com amortização, juros e saldo, e imprime. "Pagar parcela" dá baixa e lança no Financeiro <b>separado</b>: os <b>juros</b> são despesa (conta Juros de financiamento, entram no resultado) e a <b>amortização</b> é só devolução do dinheiro (sai do caixa, mas não é custo). Quando o banco liberar o dinheiro, use <b>Lançar liberação do crédito no Caixa</b> no cronograma: entra no caixa como receita não operacional e também não conta como resultado. Nos Relatórios esses movimentos aparecem num bloco à parte.'},
     arrendamentos: {t:'Arrendamentos', txt:'Contratos de arrendamento de terra pagos ou recebidos, com valores e vencimentos.'},
     servicosPrestados: {t:'Serviços', txt:'Serviços que você contratou (colheita, frete…) ou prestou a outros. Cada serviço é um lançamento (despesa se contratou, receita se prestou) com quantidade × valor unitário — aparece também em Lançamentos e, se pendente, em Contas a Pagar ou a Receber.'},
     rentabilidade: {t:'Rentabilidade', txt:'No topo, o <b>custo de produção pelo método SENAR</b> (COE → COT → CT) da lavoura escolhida, com diagnóstico, simulador, sensibilidade e o modo <b>Orçado</b> para planejar. Mais abaixo, a ocupação de máquinas e equipe. Resultado por lavoura, por cultura, por máquina e por talhão. As caixas no topo incluem custos gerais rateados, depreciação e custo de oportunidade. 📄 PDF gera o relatório de custo de produção da lavoura (por talhão, insumos, máquinas e contas).'},
-    fluxoCaixa: {t:'Fluxo de Caixa', txt:'Entradas e saídas mês a mês, com o que já foi pago/recebido e o que está pendente.'},
-    contaCorrente: {t:'Conta-Corrente', txt:'Extrato por parceiro: tudo que foi pago ou recebido de cada fornecedor, cliente ou prestador.'},
-    orcamento: {t:'Orçado x Realizado', txt:'Planeje valores por conta e ano e compare com o que realmente aconteceu.'},
+    fluxoCaixa: {t:'Fluxo de Caixa', txt:'Entradas e saídas mês a mês, em cartões: cada mês mostra o que entrou, o que saiu e o saldo acumulado. Clique no mês para ver os lançamentos; os filtros separam realizado (já pago/recebido) e previsto (pendente). ☰ Tabela mostra a visão antiga.'},
+    contaCorrente: {t:'Conta-Corrente', txt:'Extrato por parceiro em cartões: quanto você pagou, recebeu e ainda deve ou tem a receber de cada fornecedor, cliente ou prestador. Use a busca e os filtros (a pagar, a receber) e clique no cartão para ver o extrato.'},
+    orcamento: {t:'Orçado x Realizado', txt:'Escolha o ano e clique em <b>＋ Definir orçamento</b> para dizer quanto pretende gastar (ou receber) em cada conta. Cada cartão mostra o orçado, o realizado e a barrinha de quanto já foi usado; vermelho = passou do orçado. O total compara só as contas que têm orçamento.'},
     relatorios: {t:'Relatórios', txt:'Receitas e despesas agrupadas por subgrupo e conta do plano de contas.'},
     indicadores: {t:'Indicadores', txt:'Gráficos e exportação para Excel e PDF.'},
     propriedades: {t:'Propriedades', txt:'Cada imóvel rural com sua área. O nome aparece no cabeçalho dos relatórios impressos.'},
@@ -3068,7 +3147,7 @@
   function renderAjuda(){
     var el = document.getElementById('tab-ajuda');
     if(!el) return;
-    var h = '<div class="paper form-card"><h3>Como usar o sistema</h3><p style="font-size:13px; margin:0 0 10px;">Comece pelos <b>passo a passo</b> abaixo. Em qualquer tela, o botão <b>?</b> ao lado do título abre a explicação daquela tela. O Dashboard mostra as <b>pendências</b> — é o melhor lugar para começar o dia.</p>';
+    var h = uiHead('Ajuda', 'Passo a passo das tarefas do dia a dia e a explicação de cada tela') + '<div class="paper form-card"><h3>Como usar o sistema</h3><p style="font-size:13px; margin:0 0 10px;">Comece pelos <b>passo a passo</b> abaixo. Em qualquer tela, o botão <b>?</b> ao lado do título abre a explicação daquela tela. O Dashboard mostra as <b>pendências</b> — é o melhor lugar para começar o dia.</p>';
     h += '<div style="display:flex; flex-wrap:wrap; gap:6px;">' + AJUDA_FLUXOS.map(function(f){ return '<a href="#ajuda-' + f.id + '" data-action="ajuda-ir" data-id="ajuda-' + f.id + '" style="font-size:12.5px; padding:5px 11px; border:1px solid var(--paper-line); border-radius:14px; text-decoration:none; color:var(--ink); background:var(--paper);">' + escapeHtml(f.titulo) + '</a>'; }).join('') + '</div></div>';
     AJUDA_FLUXOS.forEach(function(f){
       h += '<div class="paper" id="ajuda-' + f.id + '" style="padding:16px 20px; margin-bottom:14px;"><h3 style="margin:0 0 8px;">' + escapeHtml(f.titulo) + '</h3><ol style="margin:0; padding-left:20px; font-size:13.5px; line-height:1.6;">' + f.passos.map(function(p){ return '<li>' + p + '</li>'; }).join('') + '</ol></div>';
@@ -3919,8 +3998,36 @@
     h += '</div>';
     el.innerHTML = h;
   }
+  // cabeçalho e quadrinhos de números no padrão do sistema
+  function uiHead(titulo, sub, botoes){ return '<div class="tl-head"><div class="tl-head-txt"><b>' + titulo + '</b>' + (sub ? '<span>' + sub + '</span>' : '') + '</div>' + (botoes || '') + '</div>'; }
+  function uiKpis(itens){ return '<div class="tl-kpis">' + itens.map(function(k){ return '<div class="tl-kpi"><span class="tl-kpi-i"' + (k.bg ? ' style="background:' + k.bg + ';"' : '') + '>' + k.ic + '</span><div><b' + (k.cls ? ' class="' + k.cls + '"' : '') + '>' + k.v + '</b><small>' + k.t + '</small></div></div>'; }).join('') + '</div>'; }
+  function uiAtalhosSecoes(elId){
+    // chips "ir para" com as seções (.section-title) da tela
+    var el = document.getElementById(elId); if(!el) return;
+    var tits = el.querySelectorAll('.section-title'); if(tits.length < 3) return;
+    var box = document.createElement('div'); box.className = 'tl-tools ui-atalhos';
+    box.innerHTML = '<span class="ui-ir">Ir para:</span>' + Array.prototype.map.call(tits, function(t, i){ t.id = elId + '-sec-' + i; return '<button type="button" class="tl-chip" data-action="ui-ir" data-alvo="' + t.id + '">' + escapeHtml(t.textContent.trim().slice(0, 40)) + '</button>'; }).join('');
+    var ref = el.querySelector('.tl-kpis'); if(ref && ref.nextSibling) el.insertBefore(box, ref.nextSibling); else el.insertBefore(box, el.firstChild);
+  }
   function acaoTelasNovas(action, btn){
     var id = btn.dataset.id;
+    if(action === 'ins-vista'){ insVista = btn.dataset.vista === 'lista' ? 'lista' : 'cards'; try{ localStorage.setItem('agro-ins-vista', insVista); }catch(e){} renderInspecao(); return true; }
+    if(action === 'ins-ir-form'){ var fI = document.getElementById('ins-form-titulo'); if(fI) fI.scrollIntoView({behavior:'smooth', block:'start'}); return true; }
+    if(action === 'gen-novo'){ genFormAberto[btn.dataset.entity] = !genFormAberto[btn.dataset.entity]; if(!genFormAberto[btn.dataset.entity] && editState && editState.entityKey === btn.dataset.entity) editState = null; renderGenericTab(btn.dataset.entity); return true; }
+    if(action === 'ui-imprimir'){ window.print(); return true; }
+    if(action === 'ui-ir'){ var alv = document.getElementById(btn.dataset.alvo); if(alv) alv.scrollIntoView({behavior:'smooth', block:'start'}); return true; }
+    if(action === 'orc-ano'){ orcamentoAnoSelecionado = parseInt(btn.dataset.ano, 10) || orcamentoAnoSelecionado; renderOrcamento(); return true; }
+    if(action === 'orc-form'){ orcFormAberto = !orcFormAberto; renderOrcamento(); return true; }
+    if(action === 'orc-vista'){ orcVista = btn.dataset.vista === 'lista' ? 'lista' : 'cards'; try{ localStorage.setItem('agro-orc-vista', orcVista); }catch(e){} renderOrcamento(); return true; }
+    if(action === 'orc-editar'){ orcFormAberto = true; orcContaEditar = btn.dataset.id || ''; renderOrcamento(); var fo = document.getElementById('f-orc-valor'); if(fo){ fo.scrollIntoView({behavior:'smooth', block:'center'}); fo.focus(); } return true; }
+    if(action === 'cx-filtro'){ caixaFiltro = btn.dataset.f || 'proximos'; caixaMesAberto = ''; renderFluxoCaixa(); return true; }
+    if(action === 'cx-vista'){ caixaVista = btn.dataset.vista === 'lista' ? 'lista' : 'cards'; try{ localStorage.setItem('agro-caixa-vista', caixaVista); }catch(e){} renderFluxoCaixa(); return true; }
+    if(action === 'cx-mes'){ caixaMesAberto = caixaMesAberto === btn.dataset.ym ? '' : btn.dataset.ym; renderFluxoCaixa(); var dC = document.getElementById('cx-det'); if(dC) dC.scrollIntoView({behavior:'smooth', block:'start'}); return true; }
+    if(action === 'ctc-filtro'){ ctcFiltro = btn.dataset.f || ''; renderContaCorrente(); return true; }
+    if(action === 'ctc-vista'){ ctcVista = btn.dataset.vista === 'lista' ? 'lista' : 'cards'; try{ localStorage.setItem('agro-cc-vista', ctcVista); }catch(e){} renderContaCorrente(); return true; }
+    if(action === 'ctc-abrir'){ contaCorrenteParceiroId = id || ''; renderContaCorrente(); window.scrollTo(0, 0); return true; }
+    if(action === 'ctc-voltar'){ contaCorrenteParceiroId = ''; renderContaCorrente(); window.scrollTo(0, 0); return true; }
+    if(action === 'ctc-imprimir'){ window.print(); return true; }
     if(action === 'rent-talhao-ano'){ rentTalhaoAno = btn.dataset.ano; renderRentabilidade(); var rT = document.getElementById('rent-por-talhao'); if(rT) rT.scrollIntoView({block:'start'}); return true; }
     if(action === 'tl-ver-custo'){ rentTalhaoAno = btn.dataset.ano; switchTab('rentabilidade'); renderRentabilidade(); var rT2 = document.getElementById('rent-por-talhao'); if(rT2) rT2.scrollIntoView({behavior:'smooth', block:'start'}); return true; }
     if(action === 'rs-ano'){ rsAno = btn.dataset.ano; renderRastreabilidade(); return true; }
@@ -4132,7 +4239,7 @@
   }
   function feBalancoSafra(sf){
     var ck = semAcento(culturaNome(sf.culturaId)), tipo = /caf/.test(ck) ? 'cafe' : (/milho/.test(ck) ? 'milho' : (/soja/.test(ck) ? 'soja' : ''));
-    var ent = {N:0, P2O5:0, K2O:0}, semForm = {}, area = areaPlantadaSafra(sf) || 0;
+    var ent = {N:0, P2O5:0, K2O:0}, semForm = {}, area = areaPlantadaSafra(sf) || 0, entMic = {}, liq = {}, semKgMic = {};
     state.operacoes.forEach(function(o){
       var fr = fracaoOperacaoNaSafra(o, sf.id); if(!(fr > 0)) return;
       produtosDaOperacao(o).forEach(function(pp){
@@ -4141,29 +4248,44 @@
         if(!f || kg === null){ semForm[p.nome] = true; return; }
         ent.N += kg * f.n / 100; ent.P2O5 += kg * f.p / 100; ent.K2O += kg * f.k / 100;
       });
+      produtosDaOperacao(o).forEach(function(pp){
+        var p = state.produtos.find(function(x){ return x.id === pp.produtoId; }), gg = feGarantias(p); if(!gg) return;
+        var q = (Number(pp.quantidade) || 0) * fr, kg = feKgDoProduto(p.id, q), un = semAcento(unidadeControle(p) || '');
+        if(kg === null && (un === 'l' || un === 'lt' || un === 'litro' || un === 'litros')){ kg = q; liq[p.nome] = true; }
+        if(kg === null){ semKgMic[p.nome] = true; return; }
+        Object.keys(gg).forEach(function(m){ entMic[m] = (entMic[m] || 0) + kg * gg[m] / 100; });
+      });
     });
     var sc = 0; state.producao.forEach(function(p){ if(p.safraId !== sf.id || p.tipo !== 'entrada') return; var x = sacasDeProducao(p); if(x !== null) sc += x; });
     var sai = null, ex = FE_EXPORT[tipo];
-    if(ex){ var t = tipo === 'cafe' ? sc * 60 * 3 / 1000 : sc * 0.06; sai = {N: t * ex.N, P2O5: t * ex.P * 2.291, K2O: t * ex.K * 1.205, t: t}; }
-    return {sf: sf, tipo: tipo, area: area, sc: sc, ent: ent, sai: sai, semForm: Object.keys(semForm)};
+    if(ex){ var t = tipo === 'cafe' ? sc * 60 * 3 / 1000 : sc * 0.06; sai = {N: t * ex.N, P2O5: t * ex.P * 2.291, K2O: t * ex.K * 1.205, t: t}; if(ex.Ca) sai.Ca = t * ex.Ca; if(ex.S) sai.S = t * ex.S; }
+    return {sf: sf, tipo: tipo, area: area, sc: sc, ent: ent, sai: sai, semForm: Object.keys(semForm), entMic: entMic, liq: Object.keys(liq), semKgMic: Object.keys(semKgMic)};
   }
   function feBalancoHtml(t){
     var sfs = state.safras.filter(function(s){ return s.talhaoId === t.id; }).sort(function(a, b){ return (b.dataPlantio || b.anoAgricola || '').localeCompare(a.dataPlantio || a.anoAgricola || ''); }).slice(0, 5);
     var h = '<div class="paper fe-bloco"><div class="fe-tit">⚖️ Balanço de nutrientes por safra <small>entrou nos adubos do Diário × saiu nos grãos colhidos (Manual PR Tab. 8.24, 9.14 e 15.12)</small></div>';
     if(!sfs.length) return h + '<div class="fe-vazio">Sem safras neste talhão.</div></div>';
     h += '<div class="table-wrap"><table class="sem-ordenacao fe-bal"><thead><tr><th>Safra</th><th class="num">Colhido</th><th>Nutriente</th><th class="num">Entrou (kg/ha)</th><th class="num">Saiu (kg/ha)</th><th class="num">Saldo (kg/ha)</th></tr></thead><tbody>';
-    var semTab = false, semF = {};
+    var semTab = false, semF = {}, liqF = {}, semKgF = {}, temMic = false;
     sfs.forEach(function(sf){
       var b = feBalancoSafra(sf), a = b.area || 1, ci = tlCulturaInfo(culturaNome(sf.culturaId));
-      b.semForm.forEach(function(n){ semF[n] = true; });
+      b.semForm.forEach(function(n){ semF[n] = true; }); b.liq.forEach(function(n){ liqF[n] = true; }); b.semKgMic.forEach(function(n){ semKgF[n] = true; });
+      var extras = FE_GAR.filter(function(x){ return (b.entMic[x[0]] || 0) / a > 0.0005; }), nl = 3 + extras.length;
+      if(extras.length) temMic = true;
       ['N','P2O5','K2O'].forEach(function(n, i){
         var e = b.ent[n] / a, sOut = b.sai && b.sc > 0 ? b.sai[n] / a : null, sal = sOut === null ? null : e - sOut;
         var fbn = b.tipo === 'soja' && n === 'N';
-        h += '<tr' + (i === 0 ? ' class="fe-bal-top"' : '') + '>' + (i === 0 ? '<td rowspan="3"><b>' + ci.ic + ' ' + escapeHtml(culturaNome(sf.culturaId)) + '</b><br><small>' + escapeHtml(sf.anoAgricola || '') + ' · ' + fmtHa(b.area) + '</small></td><td class="num" rowspan="3">' + (b.sc ? fmtNum(Math.round(b.sc / a * 10) / 10) + ' sc/ha' : '<small>sem colheita ainda</small>') + '</td>' : '') + '<td>' + {N:'Nitrogênio (N)', P2O5:'Fósforo (P₂O₅)', K2O:'Potássio (K₂O)'}[n] + '</td><td class="num">' + fmtNum(Math.round(e)) + '</td><td class="num">' + (sOut === null ? (b.tipo === 'soja' && b.sc > 0 ? '<span title="Falta a tabela de exportação da soja">?</span>' : '—') : fmtNum(Math.round(sOut))) + '</td><td class="num">' + (fbn && sal !== null ? '<span title="Na soja o nitrogênio vem da fixação biológica (inoculação) — não precisa repor com adubo">FBN 🌱</span>' : sal === null ? '—' : '<b style="color:' + (sal < -5 ? 'var(--cost-dark)' : (sal > 5 ? 'var(--growth-dark)' : 'var(--ink)')) + '">' + (sal > 0 ? '+' : '') + fmtNum(Math.round(sal)) + '</b>') + '</td></tr>';
+        h += '<tr' + (i === 0 ? ' class="fe-bal-top"' : '') + '>' + (i === 0 ? '<td rowspan="' + nl + '"><b>' + ci.ic + ' ' + escapeHtml(culturaNome(sf.culturaId)) + '</b><br><small>' + escapeHtml(sf.anoAgricola || '') + ' · ' + fmtHa(b.area) + '</small></td><td class="num" rowspan="' + nl + '">' + (b.sc ? fmtNum(Math.round(b.sc / a * 10) / 10) + ' sc/ha' : '<small>sem colheita ainda</small>') + '</td>' : '') + '<td>' + {N:'Nitrogênio (N)', P2O5:'Fósforo (P₂O₅)', K2O:'Potássio (K₂O)'}[n] + '</td><td class="num">' + fmtNum(Math.round(e)) + '</td><td class="num">' + (sOut === null ? (b.tipo === 'soja' && b.sc > 0 ? '<span title="Falta a tabela de exportação da soja">?</span>' : '—') : fmtNum(Math.round(sOut))) + '</td><td class="num">' + (fbn && sal !== null ? '<span title="Na soja o nitrogênio vem da fixação biológica (inoculação) — não precisa repor com adubo">FBN 🌱</span>' : sal === null ? '—' : '<b style="color:' + (sal < -5 ? 'var(--cost-dark)' : (sal > 5 ? 'var(--growth-dark)' : 'var(--ink)')) + '">' + (sal > 0 ? '+' : '') + fmtNum(Math.round(sal)) + '</b>') + '</td></tr>';
         if(b.tipo === 'soja') semTab = true;
       });
+      extras.forEach(function(x){
+        var m = x[0], e = b.entMic[m] / a, macro = m === 'Ca' || m === 'S';
+        var sOut = macro && b.sai && b.sai[m] !== undefined && b.sc > 0 ? b.sai[m] / a : null, sal = sOut === null ? null : e - sOut;
+        var fmtV = function(v){ return macro ? fmtNum(Math.round(v * 10) / 10) : fmtNum(Math.round(v * 1000)) + ' g'; };
+        h += '<tr class="fe-bal-mic"><td>' + x[1] + (macro ? '' : ' <small>(micro)</small>') + '</td><td class="num">' + fmtV(e) + '</td><td class="num">' + (sOut === null ? '<span title="' + (macro ? 'Sem colheita registrada ainda' : 'O Manual não traz a exportação deste micronutriente') + '">—</span>' : fmtV(sOut)) + '</td><td class="num">' + (sal === null ? '—' : '<b style="color:' + (sal < -1 ? 'var(--cost-dark)' : (sal > 1 ? 'var(--growth-dark)' : 'var(--ink)')) + '">' + (sal > 0 ? '+' : '') + fmtV(sal) + '</b>') + '</td></tr>';
+      });
     });
-    h += '</tbody></table></div><div class="fe-fonte">Saldo negativo (vermelho) = a colheita levou mais do que foi reposto: o solo está sendo "minerado" e a análise tende a cair. Positivo = acumulando.' + ' Soja: exportação do Manual PR (Tab. 9.14); o N da soja vem da fixação biológica (FBN), por isso não entra no saldo. Café: produção em sacas beneficiadas convertida para café em coco (×3, pelas faixas do Manual).' + (Object.keys(semF).length ? '<br>⚠️ Adubos aplicados sem fórmula N-P-K reconhecida (não entraram na conta): ' + Object.keys(semF).map(escapeHtml).join(', ') + ' — informe a fórmula no quadro "Adubos sem fórmula" abaixo.' : '') + '</div></div>';
+    h += '</tbody></table></div><div class="fe-fonte">Saldo negativo (vermelho) = a colheita levou mais do que foi reposto: o solo está sendo "minerado" e a análise tende a cair. Positivo = acumulando.' + ' Soja: exportação do Manual PR (Tab. 9.14); o N da soja vem da fixação biológica (FBN), por isso não entra no saldo. Café: produção em sacas beneficiadas convertida para café em coco (×3, pelas faixas do Manual).' + (Object.keys(semF).length ? '<br>⚠️ Adubos aplicados sem fórmula N-P-K reconhecida (não entraram na conta): ' + Object.keys(semF).map(escapeHtml).join(', ') + ' — informe a fórmula no quadro "Adubos sem fórmula" abaixo.' : '') + (temMic ? '<br>💧 Cálcio, enxofre e micronutrientes vêm das "Garantias do adubo" cadastradas nos produtos (adubos de solo e foliares do Diário). Micronutrientes em gramas por hectare; a saída nos grãos só é calculada para cálcio e enxofre (o Manual não traz a exportação dos micronutrientes). Calcário e gesso só entram se tiverem as garantias preenchidas.' + (Object.keys(liqF).length ? ' Produtos líquidos contados como 1 litro ≈ 1 kg: ' + Object.keys(liqF).map(escapeHtml).join(', ') + '.' : '') : '') + (Object.keys(semKgF).length ? '<br>⚠️ Com garantias, mas sem dar para converter a quantidade em kg (não entraram): ' + Object.keys(semKgF).map(escapeHtml).join(', ') + '.' : '') + '</div></div>';
     return h;
   }
   function feAdubosSemFormulaHtml(){
@@ -5075,8 +5197,32 @@
     }
     document.getElementById('tab-' + entityKey).innerHTML = html;
   }
+  var genFormAberto = {};
   function renderGenericTab(entityKey){
-    document.getElementById('tab-' + entityKey).innerHTML = buildGenericFormHtml(entityKey) + buildGenericTableHtml(entityKey);
+    var lista = state[entityKey] || [], editando = editState && editState.scope === 'generic' && editState.entityKey === entityKey;
+    var aberto = editando || genFormAberto[entityKey] || !lista.length, h = '', rot = String((ENTITY_CONFIGS[entityKey] && ENTITY_CONFIGS[entityKey].label) || 'registro').toLowerCase();
+    var botao = '<button type="button" class="tl-btn' + (aberto && lista.length ? '' : ' tl-pri') + '" data-action="gen-novo" data-entity="' + entityKey + '">' + (aberto && lista.length ? '✕ Fechar formulário' : '＋ Nova ' + rot) + '</button>';
+    if(entityKey === 'vendasAntecipadas'){
+      var hj = hojeISO(), ab = lista.filter(function(v){ return v.status === 'Aberto'; }), atr = ab.filter(function(v){ return v.dataEntregaPrevista && v.dataEntregaPrevista < hj; });
+      var scAb = ab.reduce(function(s2, v){ return s2 + Math.max(0, (Number(v.quantidade) || 0) - (Number(v.quantidadeEntregue) || 0)); }, 0), valAb = ab.reduce(function(s2, v){ return s2 + Math.max(0, (Number(v.quantidade) || 0) - (Number(v.quantidadeEntregue) || 0)) * (Number(v.precoFixado) || 0); }, 0);
+      var ent = lista.filter(function(v){ return v.status === 'Entregue'; });
+      h += uiHead('Venda antecipada', 'Contratos de venda a termo, com preço fixado antes da colheita', botao);
+      h += uiKpis([
+        {ic:'🤝', v: ab.length, t:'contrato(s) em aberto'},
+        {ic:'🌾', bg:'#FFF1D6', v: fmtNum(scAb) + ' sc', t:'ainda a entregar'},
+        {ic:'💰', bg:'#E3F1D6', v: fmtBRL(valAb), t:'a receber pelos contratos abertos (bruto)', cls:'fn-pos'},
+        {ic: atr.length ? '⏰' : '✅', bg: atr.length ? '#FBE3DE' : '#E3F1D6', v: atr.length, t:'com entrega prevista já passada · ' + ent.length + ' entregue(s)', cls: atr.length ? 'fn-neg' : ''}
+      ]);
+    } else if(entityKey === 'culturas'){
+      h += uiHead('Culturas', 'Tipos de cultura usados nas lavouras (café, soja, milho…)', botao);
+      h += uiKpis([
+        {ic:'🌱', v: lista.length, t:'cultura(s) cadastrada(s)'},
+        {ic:'🌾', bg:'#E3F1D6', v: lista.filter(function(c){ return state.safras.some(function(sf){ return sf.culturaId === c.id; }); }).length, t:'com safra registrada'}
+      ].concat((state.lavouras || []).length ? [{ic:'🗓️', bg:'#DDEEF6', v: (state.lavouras || []).length, t:'lavoura(s) no histórico'}] : []));
+    } else h += uiHead(pageMeta[entityKey] ? pageMeta[entityKey].title : rot, '', botao);
+    if(aberto) h += buildGenericFormHtml(entityKey);
+    h += buildGenericTableHtml(entityKey);
+    document.getElementById('tab-' + entityKey).innerHTML = h;
   }
 
   var patrimonioHorimetroId = null;
@@ -5727,11 +5873,14 @@
 
     var html = '';
     if(!nfeTelaFocoAtiva){
-    html += '<div class="stat-row">';
-    html += statCard('Compras registradas', state.compras.length);
-    html += statCard('Total comprado', fmtBRL(totalComprado), 'cost');
-    html += statCard('Aguardando recebimento', comprasPendentes);
-    html += '</div>';
+    var anoCp = hojeISO().slice(0, 4), cpAno = state.compras.filter(function(c){ return String(c.data || '').slice(0, 4) === anoCp; });
+    html += uiHead('Compras e NF-e', 'Notas da SEFAZ, XML, compras manuais e entrada no estoque — cada compra vira despesa no Financeiro');
+    html += uiKpis([
+      {ic:'🧾', v: state.compras.length, t:'compras registradas · ' + state.notasFiscaisImportadas.length + ' nota(s) importada(s)'},
+      {ic:'💸', bg:'#FBE3DE', v: fmtBRL(cpAno.reduce(function(s2, c){ return s2 + (Number(c.valorTotal) || 0); }, 0)), t:'comprado em ' + anoCp + ' (' + cpAno.length + ')', cls:'fn-neg'},
+      {ic:'📦', bg:'#FFF1D6', v: fmtBRL(totalComprado), t:'total comprado (todos os anos)'},
+      {ic: comprasPendentes ? '🚚' : '✅', bg: comprasPendentes ? '#FFF1D6' : '#E3F1D6', v: comprasPendentes, t:'aguardando recebimento', cls: comprasPendentes ? 'fn-neg' : ''}
+    ]);
 
     if(state.notasFiscaisImportadas.length){
       var notasOrdenadas = state.notasFiscaisImportadas.slice().sort(function(a,b){ return (b.dataImportacao||'').localeCompare(a.dataImportacao||''); });
@@ -7936,7 +8085,7 @@
       h += '<span class="fn-ic ' + (rec ? 'fn-ic-rec' : 'fn-ic-cus') + '">' + fnIcone(f) + '</span>';
       h += '<div class="fn-main"><div class="fn-desc">' + escapeHtml(f.descricao || (f.contaId ? contaNome(f.contaId) : '—')) + (f.temAnexo ? ' <button type="button" class="fn-mini" data-action="ver-anexo" data-id="' + f.id + '" title="Ver comprovante">📎</button>' : '') + '</div>';
       h += '<div class="fn-sub">' + sub.join(' · ') + '</div>';
-      h += '<div class="fn-tags"><span class="fn-dest">' + destinoCelulaHtml(f) + '</span>' + (f.origem ? '<span class="fn-orig" style="border-color:' + (ORIGEM_LANCAMENTO_LABEL[f.origem] ? ORIGEM_LANCAMENTO_LABEL[f.origem].cor : '#C9C3A4') + '; color:' + (ORIGEM_LANCAMENTO_LABEL[f.origem] ? ORIGEM_LANCAMENTO_LABEL[f.origem].cor : '#6B6B60') + ';">🔗 ' + escapeHtml(ORIGEM_LANCAMENTO_LABEL[f.origem] ? ORIGEM_LANCAMENTO_LABEL[f.origem].label : f.origem) + '</span>' : '') + '</div></div>';
+      h += '<div class="fn-tags">' + (ehMovFinanciamento(f) ? '<span class="fn-orig" style="border-color:#4F95B8; color:#2F6F8F;">🏦 ' + (f.finMov === 'liberacao' ? 'crédito recebido' : 'amortização') + ' · não é ' + (f.finMov === 'liberacao' ? 'receita' : 'custo') + '</span>' : '') + '<span class="fn-dest">' + destinoCelulaHtml(f) + '</span>' + (f.origem ? '<span class="fn-orig" style="border-color:' + (ORIGEM_LANCAMENTO_LABEL[f.origem] ? ORIGEM_LANCAMENTO_LABEL[f.origem].cor : '#C9C3A4') + '; color:' + (ORIGEM_LANCAMENTO_LABEL[f.origem] ? ORIGEM_LANCAMENTO_LABEL[f.origem].cor : '#6B6B60') + ';">🔗 ' + escapeHtml(ORIGEM_LANCAMENTO_LABEL[f.origem] ? ORIGEM_LANCAMENTO_LABEL[f.origem].label : f.origem) + '</span>' : '') + '</div></div>';
       h += '<div class="fn-dir"><b class="' + (rec ? 'fn-pos' : 'fn-neg') + '">' + (rec ? '+ ' : '− ') + fmtBRL(valorTotalLancamento(f)) + '</b>';
       h += '<span class="fn-data">' + (pend ? (atrasado ? '⚠️ venceu ' : 'vence ') : '') + (dr ? fmtDate(dr) : '—') + '</span>';
       h += '<span class="pd-nv ' + (pend ? (atrasado ? 'pd-nv-baixo' : 'pd-nv-perto') : 'pd-nv-ok') + '">' + (pend ? (atrasado ? 'Atrasado' : 'Pendente') : (rec ? 'Recebido' : 'Pago')) + '</span></div>';
@@ -7965,8 +8114,8 @@
     });
     var qtdSemSafraNoFiltroAtual = financeiroFiltrado.filter(function(f){ return destinoEfetivo(f) === 'classificar'; }).length;
     if(financeiroSoSemSafra) financeiroFiltrado = financeiroFiltrado.filter(function(f){ return destinoEfetivo(f) === 'classificar'; });
-    var totalCustos = financeiroFiltrado.filter(function(f){ return f.tipo === 'custo' && (f.status||'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
-    var totalReceitas = financeiroFiltrado.filter(function(f){ return f.tipo === 'receita' && (f.status||'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+    var totalCustos = financeiroFiltrado.filter(function(f){ return f.tipo === 'custo' && (f.status||'Pago') !== 'Pendente' && !ehMovFinanciamento(f); }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+    var totalReceitas = financeiroFiltrado.filter(function(f){ return f.tipo === 'receita' && (f.status||'Pago') !== 'Pendente' && !ehMovFinanciamento(f); }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
     var totalPendente = financeiroFiltrado.filter(function(f){ return f.status === 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
     var saldo = totalReceitas - totalCustos;
     var estoque = estoqueResumo();
@@ -8496,18 +8645,18 @@
     var sacasPorCult = {};
     ativos.filter(function(a){ return ehArrendSacas(a) && a.tipo !== 'Recebido'; }).forEach(function(a){ var k = culturaArrend(a); sacasPorCult[k] = (sacasPorCult[k] || 0) + devidoPorAno(a); });
     var atrasados = 0; ativos.forEach(function(a){ anosArrendamento(a).forEach(function(x){ if(x.situacao === 'atrasado') atrasados++; }); });
-    var html = '<div class="stat-row">';
-    html += statCard('Contratos ativos', ativos.length);
-    html += statCard('Área arrendada', fmtHa(areaTotal));
-    html += statCard('A pagar por ano (R$)', fmtBRL(porAnoR), 'cost');
-    html += statCard('A pagar por ano (sacas)', Object.keys(sacasPorCult).length ? Object.keys(sacasPorCult).map(function(k){ return fmtSc(sacasPorCult[k]) + ' ' + k; }).join(' + ') : '—', 'cost');
-    html += statCard('Anos em atraso', atrasados, atrasados ? 'cost' : '');
-    html += '</div>';
-    var estChip = function(on){ return 'font-family:inherit; font-size:14px; font-weight:600; padding:10px 18px; border-radius:6px; cursor:pointer; border:2px solid ' + (on ? 'var(--accent)' : 'var(--paper-line)') + '; background:' + (on ? 'var(--accent)' : 'var(--paper)') + '; color:' + (on ? '#fff' : 'var(--ink)') + ';'; };
-    html += '<div style="display:flex; flex-wrap:wrap; gap:10px; margin:0 0 16px;">';
-    html += '<button type="button" data-action="arrend-view" data-view="ativos" style="' + estChip(arrendView === 'ativos') + '">📋 Arrendamentos ativos (' + ativos.length + ')</button>';
-    html += '<button type="button" data-action="arrend-view" data-view="novo" style="' + estChip(arrendView === 'novo') + '">' + (editState && editState.scope === 'generic' && editState.entityKey === 'arrendamentos' ? '✏️ Editando arrendamento' : '➕ Novo arrendamento') + '</button>';
-    if(encerrados.length) html += '<button type="button" data-action="arrend-view" data-view="encerrados" style="' + estChip(arrendView === 'encerrados') + '">🗂️ Encerrados (' + encerrados.length + ')</button>';
+    var editandoA = editState && editState.scope === 'generic' && editState.entityKey === 'arrendamentos';
+    var html = uiHead('Arrendamentos', 'Contratos de terra arrendada de terceiros ou para terceiros, em R$ ou em sacas', arrendView !== 'novo' ? '<button type="button" class="tl-btn tl-pri" data-action="arrend-view" data-view="novo">＋ Novo arrendamento</button>' : '');
+    html += uiKpis([
+      {ic:'📜', v: ativos.length, t:'contratos ativos · ' + fmtHa(areaTotal)},
+      {ic:'💸', bg:'#FBE3DE', v: fmtBRL(porAnoR), t:'a pagar por ano (em R$)', cls: porAnoR ? 'fn-neg' : ''},
+      {ic:'🌾', bg:'#FFF1D6', v: Object.keys(sacasPorCult).length ? Object.keys(sacasPorCult).map(function(k){ return fmtSc(sacasPorCult[k]) + ' ' + k; }).join(' + ') : '—', t:'a pagar por ano (em sacas)'},
+      {ic: atrasados ? '⏰' : '✅', bg: atrasados ? '#FBE3DE' : '#E3F1D6', v: atrasados, t:'ano(s) de pagamento em atraso', cls: atrasados ? 'fn-neg' : ''}
+    ]);
+    html += '<div class="tl-tools">';
+    html += '<button type="button" class="tl-chip' + (arrendView === 'ativos' ? ' on' : '') + '" data-action="arrend-view" data-view="ativos">📋 Ativos (' + ativos.length + ')</button>';
+    if(encerrados.length) html += '<button type="button" class="tl-chip' + (arrendView === 'encerrados' ? ' on' : '') + '" data-action="arrend-view" data-view="encerrados">🗂️ Encerrados (' + encerrados.length + ')</button>';
+    if(arrendView === 'novo') html += '<button type="button" class="tl-chip on" data-action="arrend-view" data-view="novo">' + (editandoA ? '✏️ Editando arrendamento' : '➕ Novo arrendamento') + '</button>';
     html += '</div>';
     if(arrendView === 'novo'){
       html += buildGenericFormHtml('arrendamentos');
@@ -8586,6 +8735,7 @@
     var ehContrato = f.sistemaAmortizacao === 'Contrato', editavel = ehContrato && !paraImpressao;
     var entrada = Number(f.valorEntrada) || 0;
     if(entrada > 0) h += '<p style="font-size:12.5px; margin:0 0 6px;"><strong>Entrada</strong> ' + fmtBRL(entrada) + (f.dataEntrada ? ' paga em ' + fmtDate(f.dataEntrada) : '') + ' + financiado ' + fmtBRL(f.valorTotal) + ' = <strong>' + fmtBRL(entrada + (Number(f.valorTotal) || 0)) + '</strong> no total' + (f.entradaFinanceiroId ? ' · ✅ entrada lançada no Financeiro' : (paraImpressao ? '' : ' <button type="button" class="btn-edit" data-action="lancar-entrada-financiamento" style="font-size:11.5px;">Lançar entrada no Financeiro</button>')) + '</p>';
+    if(!paraImpressao) h += '<p style="font-size:12.5px; margin:0 0 6px;">' + (f.liberacaoFinanceiroId ? '✅ Liberação do crédito (' + fmtBRL(f.valorTotal) + ') lançada no Caixa como movimento de financiamento.' : '💵 O dinheiro deste contrato caiu na sua conta? <button type="button" class="btn-edit" data-action="lancar-liberacao-financiamento" data-id="' + f.id + '" style="font-size:11.5px;">Lançar liberação do crédito no Caixa</button> <span style="color:var(--ink-soft); font-size:11.5px;">(entra no caixa, não conta como receita)</span>') + '</p>';
     h += '<p style="font-size:12px; margin:0 0 8px;">Valor financiado ' + fmtBRL(f.valorTotal) + ' · ' + (f.sistemaAmortizacao || 'Parcela informada').replace('Informado', 'Parcela informada').replace('Contrato', 'Parcelas do contrato') + ' · ' + (Number(f.taxaJuros) ? fmtNum(f.taxaJuros) + '% a.a.' : 'sem taxa informada') + ' · ' + (f.numeroParcelas || 0) + ' parcela(s) ' + ({Anual:'anuais', Semestral:'semestrais', Mensal:'mensais'}[f.periodicidade || 'Anual']) + '</p>';
     if(!cr.length){ return h + '<p style="font-size:12.5px;">Informe o número de parcelas e as datas (contratação, 1º vencimento ou data final) para montar o cronograma.</p>' + (paraImpressao ? '' : '</div>'); }
     if(cr.jurosCarencia) h += '<p style="font-size:12px; margin:0 0 8px;">Os juros da carência (' + fmtBRL(cr.jurosCarencia) + ') foram somados ao saldo e são pagos junto com as parcelas — por isso o saldo começa maior que o valor financiado.</p>';
@@ -8940,7 +9090,8 @@
   var chuvasSecao = 'pluviometria';
   function renderChuvas(){
     var el = document.getElementById('tab-chuvas'); if(!el) return;
-    var html = filtroChipsHtml('chuvas-secao', chuvasSecao, {pluviometria:'🌧️ Chuvas registradas', hidrica:'💧 Análise hídrica'});
+    var html = uiHead('Controle pluviométrico', 'Chuvas registradas por propriedade, mapa do ano e análise hídrica (veranicos, déficit e excesso)');
+    html += filtroChipsHtml('chuvas-secao', chuvasSecao, {pluviometria:'🌧️ Chuvas registradas', hidrica:'💧 Análise hídrica'});
     html += htmlSecaoAgro(chuvasSecao);
     el.innerHTML = html;
   }
@@ -9231,10 +9382,10 @@
     return partesDoLancamento(r).reduce(function(s, pt){ return pt.talhaoId === talhaoId ? s + (Number(pt.valor) || 0) : s; }, 0);
   }
   function custosFinanceiroPorTalhao(talhaoId){
-    return state.financeiro.filter(function(f){ return f.tipo === 'custo' && (f.status || 'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + valorDoTalhaoNoLancamento(f, talhaoId); }, 0);
+    return state.financeiro.filter(function(f){ return f.tipo === 'custo' && (f.status || 'Pago') !== 'Pendente' && !ehMovFinanciamento(f); }).reduce(function(s,f){ return s + valorDoTalhaoNoLancamento(f, talhaoId); }, 0);
   }
   function receitasFinanceiroPorTalhao(talhaoId){
-    return state.financeiro.filter(function(f){ return f.tipo === 'receita' && (f.status || 'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + valorDoTalhaoNoLancamento(f, talhaoId); }, 0);
+    return state.financeiro.filter(function(f){ return f.tipo === 'receita' && (f.status || 'Pago') !== 'Pendente' && !ehMovFinanciamento(f); }).reduce(function(s,f){ return s + valorDoTalhaoNoLancamento(f, talhaoId); }, 0);
   }
   function contasPagarPagasPorTalhao(talhaoId){
     return state.contasPagar.filter(function(c){ return c.status === 'Pago'; }).reduce(function(s,c){ return s + valorDoTalhaoNoLancamento(c, talhaoId); }, 0);
@@ -9785,6 +9936,42 @@
     return {porSafra: porSafra, naoAlocado: naoAlocado};
   }
   // Juros das parcelas já pagas de todos os financiamentos (custeio, investimento e aquisição), na data do pagamento
+  // Movimento de financiamento (liberação do crédito e amortização) mexe no caixa, mas NÃO é receita nem custo
+  function ehMovFinanciamento(f){ return !!(f && f.movFinanciamento); }
+  // juros de uma parcela n (mesma regra de jurosPagosFinanciamentos), limitado ao valor pago
+  function jurosDaParcelaFin(fin, n, valorPago){
+    var cr = cronogramaFinanciamento(fin), P0 = Number(fin.valorTotal) || 0, n0 = cr.length, vp0 = Number(fin.valorParcela) || 0;
+    var parcelaEhTotal = (fin.sistemaAmortizacao || 'Informado') === 'Informado' && n0 > 1 && vp0 * n0 > P0 * 1.5 && vp0 <= P0 * 1.6;
+    var l = cr.find(function(x){ return x.n === n; }); if(!l) return 0;
+    var j = parcelaEhTotal ? Math.max(vp0 - P0, 0) / n0 : (Number(l.juros) || 0) + (Number(l.jurosCarencia) || 0);
+    if(Number(valorPago) > 0) j = Math.min(j, Number(valorPago));
+    return Math.round(j * 100) / 100;
+  }
+  // contas usadas pelos lançamentos de financiamento (cria se não existir)
+  function contaJurosFinanciamento(){
+    var c = state.contasFinanceiro.find(function(x){ return x.id === 'ct-juros-financiamento'; }) || state.contasFinanceiro.find(function(x){ return /juro/i.test(x.nome || '') && contaTipo(x.id) === 'custo'; });
+    if(c) return c.id;
+    var sg = state.subgruposFinanceiro.find(function(x){ return x.id === 'sg-custo-administrativo'; }) || state.subgruposFinanceiro.find(function(x){ return x.tipo === 'custo'; });
+    if(!sg) return '';
+    state.contasFinanceiro.push({id:'ct-juros-financiamento', nome:'Juros de financiamento', subgrupoId: sg.id, criadoEm: Date.now()}); saveKey('contasFinanceiro', state.contasFinanceiro);
+    return 'ct-juros-financiamento';
+  }
+  function contaLiberacaoFinanciamento(){
+    var c = state.contasFinanceiro.find(function(x){ return x.id === 'ct-liberacao-financiamento'; });
+    if(c) return c.id;
+    var sg = state.subgruposFinanceiro.find(function(x){ return x.id === 'sg-receita-naooperacional'; }) || state.subgruposFinanceiro.find(function(x){ return x.tipo === 'receita'; });
+    if(!sg) return '';
+    state.contasFinanceiro.push({id:'ct-liberacao-financiamento', nome:'Liberação de financiamento', subgrupoId: sg.id, criadoEm: Date.now()}); saveKey('contasFinanceiro', state.contasFinanceiro);
+    return 'ct-liberacao-financiamento';
+  }
+  // lança a entrada do dinheiro do crédito no caixa (movimento de financiamento)
+  function lancarLiberacaoFinanciamento(fin, data){
+    if(!fin || fin.liberacaoFinanceiroId || !(Number(fin.valorTotal) > 0)) return null;
+    var cid = contaLiberacaoFinanciamento(); if(!cid) return null;
+    var f = {id: uid(), origem: 'financiamento', movFinanciamento: true, finMov: 'liberacao', finId: fin.id, contaId: cid, tipo: 'receita', categoria: 'Liberação de financiamento', valor: Math.round(Number(fin.valorTotal) * 100) / 100, quantidade: 0, peso: 0, unidade: '', status: 'Pago', data: data || fin.dataContratacao || '', vencimento: '', talhoesIds: [], talhaoId: '', parceiroId: '', membroId: '',
+      descricao: 'Liberação do crédito - ' + (fin.banco || '') + (fin.numeroContrato ? ' - Contrato ' + fin.numeroContrato : '') + ' (' + (fin.tipo || 'financiamento') + ')', criadoEm: Date.now()};
+    state.financeiro.push(f); fin.liberacaoFinanceiroId = f.id; return f;
+  }
   function jurosPagosFinanciamentos(){
     var out = [];
     state.financiamentos.forEach(function(f){
@@ -9798,6 +9985,7 @@
         var pg = pgs.find(function(p){ return p.n === l.n; });
         var j = parcelaEhTotal ? Math.max(vp0 - P0, 0) / n0 : (Number(l.juros) || 0) + (Number(l.jurosCarencia) || 0);
         if(pg && Number(pg.valor) > 0) j = Math.min(j, Number(pg.valor));
+        if(pg && pg.juros !== undefined && pg.juros !== null && !isNaN(Number(pg.juros))) j = Number(pg.juros); // juros separados no pagamento (valor real)
         if(j > 0) out.push({valor: j, data: (pg && pg.data) || l.vencimento || '', talhaoId: f.talhaoId || '', finId: f.id});
       });
     });
@@ -10260,7 +10448,8 @@
     var r = ccResumo(ccLavouraId), sfs = safrasDaLavoura(ccLavouraId);
     var est = 'padding:7px 8px; border:1px solid var(--paper-line); border-radius:4px; background:#FCFCF5; font-size:13px;';
     var hoje = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0,10);
-    var h = '<div class="paper form-card" style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">';
+    var h = uiHead('Caderneta do café', 'Apanha por pessoa, lotes do terreiro à tulha e rendimento — ' + escapeHtml(lavouraLabel(ccLavouraId)));
+    h += '<div class="paper form-card" style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">';
     h += '<div class="field"><label for="cc-lavoura">Lavoura de café</label><select id="cc-lavoura">' + lavs.map(function(l){ return '<option value="' + l.id + '"' + (l.id === ccLavouraId ? ' selected' : '') + '>' + escapeHtml(lavouraLabel(l.id)) + '</option>'; }).join('') + '</select></div>';
     h += '<div class="field"><label for="cc-cfg-unidade">Unidade da apanha</label><input id="cc-cfg-unidade" value="' + escapeHtml(un) + '" style="width:120px;"></div>';
     h += '<div class="field"><label for="cc-cfg-valor">Valor padrão por ' + escapeHtml(un) + ' (R$)</label><input type="number" step="0.01" id="cc-cfg-valor" value="' + (Number(cfg.valorPadrao) || '') + '" style="width:140px;"></div>';
@@ -10669,6 +10858,11 @@
     h += '<div class="paper note-box">📟 O horímetro soma a última leitura que você informar com as horas lançadas no Diário de Campo e na Colheita. Caminhões e veículos usam km (informe a leitura). 📋 No plano, cada serviço tem intervalo por horas, km e/ou meses — os modelos prontos são referência: ajuste pelo manual da máquina. 🔧 Ao concluir uma ordem de serviço, as peças saem do estoque (o custo delas já entrou na compra) e o valor do serviço/oficina é lançado no Financeiro com destino na máquina.</div>';
     el.innerHTML = h;
   }
+  document.addEventListener('input', function(e){
+    if(!e.target || e.target.id !== 'ctc-busca') return;
+    ctcBusca = e.target.value; var q = semAcento(ctcBusca).toLowerCase().trim();
+    document.querySelectorAll('#tab-contaCorrente .ctc-item').forEach(function(x){ x.style.display = !q || (x.dataset.nome || '').indexOf(q) !== -1 ? '' : 'none'; });
+  });
   document.addEventListener('change', function(e){ if(e.target && e.target.classList && e.target.classList.contains('mt-os-peca')){ mtLerOSForm(); renderManutencao(); } });
 
   /* ---------- Ficha da máquina (tela própria) ---------- */
@@ -11873,6 +12067,7 @@
     else { if(t.checked) delete cfg.desligados[t.dataset.k]; else cfg.desligados[t.dataset.k] = true; }
     saveKey('configUnidades', state.configUnidades); renderInspecao(); if(typeof renderPainel === 'function') try{ renderPainel(); }catch(er){}
   });
+  var insVista = (function(){ try{ return localStorage.getItem('agro-ins-vista') === 'lista' ? 'lista' : 'cards'; }catch(e){ return 'cards'; } })();
   function renderInspecao(){
     var el = document.getElementById('tab-inspecao'); if(!el) return;
     if(!state.talhoes.length){ el.innerHTML = '<div class="paper empty-state">Cadastre talhões para registrar inspeções.</div>'; return; }
@@ -11890,13 +12085,37 @@
       var ac = ult ? acima(ult) : []; if(ac.length) alert++;
       return {t: t, ult: ult, ant: ant, ac: ac};
     });
-    var h = '<div class="stat-row">' + statCard('Talhões com lavoura', String(talAtivos.length)) + statCard('Inspecionados nos últimos 7 dias', rec + ' de ' + talAtivos.length, rec < talAtivos.length ? 'cost' : 'growth') + statCard('Talhões com alvo no nível de ação', String(alert), alert ? 'cost' : '') + statCard('Última inspeção', ins[0] ? fmtDate(ins[0].data) : '—') + '</div>';
+    var h = uiHead('Inspeção de campo', 'Monitoramento de pragas, doenças e daninhas por talhão, com nível de ação', '<button type="button" class="tl-btn tl-pri" data-action="ins-ir-form">＋ Nova inspeção</button>');
+    h += uiKpis([
+      {ic:'🌱', v: talAtivos.length, t:'talhões com lavoura'},
+      {ic: rec < talAtivos.length ? '⏰' : '✅', bg: rec < talAtivos.length ? '#FFF1D6' : '#E3F1D6', v: rec + ' de ' + talAtivos.length, t:'inspecionados nos últimos 7 dias', cls: rec < talAtivos.length ? 'fn-neg' : 'fn-pos'},
+      {ic: alert ? '🚨' : '🛡️', bg: alert ? '#FBE3DE' : '#E3F1D6', v: alert, t:'talhão(ões) com alvo no nível de ação', cls: alert ? 'fn-neg' : ''},
+      {ic:'🔎', bg:'#DDEEF6', v: ins[0] ? fmtDate(ins[0].data) : '—', t:'última inspeção'}
+    ]);
     if(insMsg){ h += '<div class="paper note-box" style="margin:0 0 14px;">' + insMsg + '</div>'; insMsg = ''; }
     try{ h += calendarioCafeHtml(); }catch(errCal){ console.error(errCal); }
     try{ h += lavourasFaseHtml(); }catch(errFase){ console.error(errFase); }
-    h += '<div class="section-title">Situação por talhão</div>';
+    h += '<div class="mt-cab"><div class="section-title" style="margin:0;">Situação por talhão</div><div class="tl-vista"><button type="button" data-action="ins-vista" data-vista="cards" class="' + (insVista !== 'lista' ? 'on' : '') + '">▦ Cartões</button><button type="button" data-action="ins-vista" data-vista="lista" class="' + (insVista === 'lista' ? 'on' : '') + '">☰ Tabela</button></div></div>';
     if(!linhas.length) h += '<div class="paper empty-state">Nenhum talhão com lavoura em andamento.</div>';
-    else {
+    else if(insVista !== 'lista'){
+      h += '<div class="ins-grid">';
+      linhas.slice().sort(function(a2, b2){ var pa = (a2.ac.length ? 0 : 2) + (!a2.ult || dias(a2.ult.data) > 7 ? 0 : 1), pb = (b2.ac.length ? 0 : 2) + (!b2.ult || dias(b2.ult.data) > 7 ? 0 : 1); return pa - pb || a2.t.nome.localeCompare(b2.t.nome, 'pt-BR'); }).forEach(function(x){
+        var sf = insSafraAtiva(x.t.id), dd = x.ult ? dias(x.ult.data) : null, ci = tlCulturaInfo(sf ? culturaNome(sf.culturaId) : '');
+        var st = x.ac.length ? '<span class="ins-st al">🚨 alvo no nível de ação</span>' : (!x.ult ? '<span class="ins-st at">⏰ nunca inspecionado</span>' : (dd > 7 ? '<span class="ins-st at">⏰ há ' + dd + ' dias</span>' : '<span class="ins-st ok">✅ em dia · há ' + dd + ' dia(s)</span>'));
+        var leit = x.ult ? (x.ult.alvos || []).filter(function(al){ return al.valor !== '' && al.valor != null; }).map(function(al){
+          var pa = x.ant ? (x.ant.alvos || []).find(function(b3){ return b3.alvo === al.alvo; }) : null, ac = al.nivel > 0 && Number(al.valor) >= al.nivel;
+          var seta = pa && pa.valor !== '' && pa.valor != null ? (Number(al.valor) > Number(pa.valor) ? ' ▲' : (Number(al.valor) < Number(pa.valor) ? ' ▼' : '')) : '';
+          return '<span class="di-prod' + (ac ? ' di-prod-falta' : '') + '">' + escapeHtml(al.alvo) + ' <b>' + fmtNum(al.valor) + '</b>' + seta + '</span>';
+        }).join('') : '';
+        var acs = acaoSituacaoHtml(x.t.id);
+        h += '<article class="ins-card' + (x.ac.length ? ' al' : '') + '"><div class="ins-top"><span class="ins-ic" style="background:' + ci.cor + '26;">' + ci.ic + '</span><div><b>' + escapeHtml(x.t.nome) + '</b><small>' + (sf ? escapeHtml(lavouraLabel(sf.lavouraId)) : '—') + '</small></div></div>' + st;
+        if(x.ult) h += '<div class="ins-lin"><span>Última</span><b>' + fmtDate(x.ult.data) + (x.ult.responsavelId ? ' · ' + escapeHtml(membroNome(x.ult.responsavelId)) : '') + '</b></div>';
+        if(leit) h += '<div class="fn-tags">' + leit + '</div>';
+        if(acs) h += '<div class="ins-acao">' + acs + '</div>';
+        h += '<button type="button" class="tl-btn tl-pri ins-bt" data-ins-talhao="' + x.t.id + '">🔎 Inspecionar</button></article>';
+      });
+      h += '</div>';
+    } else {
       h += '<div class="paper table-wrap"><table><thead><tr><th>Talhão</th><th>Lavoura</th><th>Última inspeção</th><th>No nível de ação</th><th>Leituras (vs anterior)</th><th></th></tr></thead><tbody>';
       linhas.forEach(function(x){
         var sf = insSafraAtiva(x.t.id);
@@ -12114,6 +12333,18 @@
   function renderRentabilidade(){
     var el = document.getElementById('tab-rentabilidade');
     var html = '';
+    try{
+      var anoR = psAnoAtual(), tR = {c:0, r:0, e:0, a:0};
+      talhoesAtivos().forEach(function(t){ var x = custoTalhaoNoAno(t.id, anoR); if(!x.sfs.length) return; tR.c += x.custo; tR.r += x.receita; tR.e += x.estoque; tR.a += x.area; });
+      var resRt = tR.r + tR.e - tR.c;
+      html += uiHead('Rentabilidade', 'Custo de produção (método SENAR), resultado por lavoura, cultura, máquina e talhão');
+      html += uiKpis([
+        {ic:'🌱', v: fmtHa(tR.a), t:'área plantada em ' + anoR},
+        {ic:'💸', bg:'#FBE3DE', v: fmtBRL(tR.c), t:'custo direto da safra ' + anoR + (tR.a ? ' · ' + fmtBRL(tR.c / tR.a) + '/ha' : ''), cls:'fn-neg'},
+        {ic:'💰', bg:'#E3F1D6', v: fmtBRL(tR.r + tR.e), t:'receitas + estoque projetado da safra', cls:'fn-pos'},
+        {ic:'⚖️', bg:'#DDEEF6', v: fmtBRL(resRt), t:'resultado direto da safra ' + anoR, cls: resRt >= 0 ? 'fn-pos' : 'fn-neg'}
+      ]);
+    }catch(eRk){}
 
     html += '<div class="paper form-card" style="margin-bottom:20px;">';
     html += '<div style="display:flex; gap:20px; flex-wrap:wrap; align-items:center;">';
@@ -12268,62 +12499,85 @@
     html += '<div class="paper note-box"><strong>Por lavoura / por cultura:</strong> custos e receitas lançados direto na lavoura (destino "Lavoura"), pagos/recebidos. Custos gerais e de máquinas (destinos "Geral" e "Máquina / equipamento") só entram se você ligar a opção, rateados entre as lavouras ativas em cada mês, pela área plantada. Depreciação e custo de oportunidade entram pelos meses em que a lavoura ocupa a terra × área plantada ÷ área total da fazenda. Custos "só talhão" não entram em lavoura.<br><strong>Por talhão:</strong> escolha o ano agrícola para ver o custo da safra de cada talhão; em "Todos os anos" aparece tudo que já caiu no talhão, de qualquer lavoura e de qualquer ano, mais os custos "só talhão".</div>';
 
     el.innerHTML = html;
+    try{ uiAtalhosSecoes('tab-rentabilidade'); }catch(eAt){}
     atualizarSimCustoSenar();
   }
 
   /* ---------------- Fluxo de Caixa ---------------- */
+  var caixaVista = (function(){ try{ return localStorage.getItem('agro-caixa-vista') === 'lista' ? 'lista' : 'cards'; }catch(e){ return 'cards'; } })();
+  var caixaFiltro = 'proximos', caixaMesAberto = '';
+  // lançamentos de um mês (para abrir o cartão)
+  function caixaItensDoMes(ym){
+    var out = [];
+    state.financeiro.forEach(function(f){ var pend = (f.status || 'Pago') === 'Pendente', d = pend ? (f.vencimento || f.data) : f.data; if(!d || d.slice(0,7) !== ym) return; out.push({d: d, desc: f.descricao || (f.contaId ? contaNome(f.contaId) : (f.categoria || 'Lançamento')), parc: f.parceiroId ? parceiroNome(f.parceiroId) : '', ent: f.tipo === 'receita', v: Number(f.valor) || 0, pend: pend, ic: fnIcone(f)}); });
+    state.contasPagar.forEach(function(c){ var pago = c.status === 'Pago', d = pago ? (c.dataPagamento || c.vencimento) : c.vencimento; if(!d || d.slice(0,7) !== ym) return; out.push({d: d, desc: c.descricao || c.categoria || 'Conta a pagar', parc: c.parceiroId ? parceiroNome(c.parceiroId) : '', ent: false, v: Number(c.valor) || 0, pend: !pago, ic: '📤'}); });
+    state.contasReceber.forEach(function(c){ var rec = c.status === 'Recebido', d = rec ? (c.dataRecebimento || c.vencimento) : c.vencimento; if(!d || d.slice(0,7) !== ym) return; out.push({d: d, desc: c.descricao || c.categoria || 'Conta a receber', parc: c.parceiroId ? parceiroNome(c.parceiroId) : '', ent: true, v: valorLiquidoContaReceber(c), pend: !rec, ic: '📥'}); });
+    return out.sort(function(a, b){ return a.d.localeCompare(b.d); });
+  }
   function renderFluxoCaixa(){
     var el = document.getElementById('tab-fluxoCaixa');
-    var events = buildCashEvents();
+    var events = buildCashEvents(), hoje = hojeISO(), ymHoje = hoje.slice(0,7);
     var buckets = {};
     events.forEach(function(e){
       var ym = e.date.slice(0,7);
       if(!buckets[ym]) buckets[ym] = {entradaReal:0, saidaReal:0, entradaPrev:0, saidaPrev:0};
-      if(e.tipo === 'entrada'){
-        if(e.realizado) buckets[ym].entradaReal += e.valor; else buckets[ym].entradaPrev += e.valor;
-      } else {
-        if(e.realizado) buckets[ym].saidaReal += e.valor; else buckets[ym].saidaPrev += e.valor;
-      }
+      if(e.tipo === 'entrada'){ if(e.realizado) buckets[ym].entradaReal += e.valor; else buckets[ym].entradaPrev += e.valor; }
+      else { if(e.realizado) buckets[ym].saidaReal += e.valor; else buckets[ym].saidaPrev += e.valor; }
     });
     var months = Object.keys(buckets).sort();
-
     var saldoRealizado = events.filter(function(e){ return e.realizado; }).reduce(function(s,e){ return s + (e.tipo==='entrada' ? e.valor : -e.valor); }, 0);
     var totalPendenteReceber = state.contasReceber.filter(function(c){ return c.status === 'Pendente'; }).reduce(function(s,c){ return s + valorLiquidoContaReceber(c); }, 0)
       + state.financeiro.filter(function(f){ return f.status === 'Pendente' && f.tipo === 'receita'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
     var totalPendentePagar = state.contasPagar.filter(function(c){ return c.status === 'Pendente'; }).reduce(function(s,c){ return s + Number(c.valor||0); }, 0)
       + state.financeiro.filter(function(f){ return f.status === 'Pendente' && f.tipo === 'custo'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
     var saldoProjetadoFinal = saldoRealizado + totalPendenteReceber - totalPendentePagar;
+    var ate = function(dias){ var lim = new Date(new Date(hoje + 'T12:00:00').getTime() + dias * 86400000).toISOString().slice(0,10); return saldoRealizado + events.filter(function(e){ return !e.realizado && e.date <= lim; }).reduce(function(s,e){ return s + (e.tipo==='entrada' ? e.valor : -e.valor); }, 0); };
+    var s30 = ate(30), s90 = ate(90), atrasados = events.filter(function(e){ return !e.realizado && e.date < hoje; });
     var estoque = estoqueResumo();
-
-    var html = '<div class="stat-row">';
-    html += statCard('Saldo realizado', fmtBRL(saldoRealizado), saldoRealizado >= 0 ? 'growth' : 'cost');
-    html += statCard('A receber (pendente)', fmtBRL(totalPendenteReceber), 'growth');
-    html += statCard('A pagar (pendente)', fmtBRL(totalPendentePagar), 'cost');
-    html += statCard('Saldo projetado', fmtBRL(saldoProjetadoFinal), saldoProjetadoFinal >= 0 ? 'growth' : 'cost');
+    var cor = function(v){ return v >= 0 ? 'fn-pos' : 'fn-neg'; };
+    var html = '<div class="tl-head"><div class="tl-head-txt"><b>Fluxo de caixa</b><span>Entradas e saídas mês a mês · realizado (pago/recebido) e previsto (contas pendentes)</span></div></div>';
+    html += '<div class="tl-kpis">';
+    html += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#E3F1D6;">🏦</span><div><b class="' + cor(saldoRealizado) + '">' + fmtBRL(saldoRealizado) + '</b><small>saldo realizado até hoje</small></div></div>';
+    html += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#DDEEF6;">📅</span><div><b class="' + cor(s30) + '">' + fmtBRL(s30) + '</b><small>saldo previsto em 30 dias</small></div></div>';
+    html += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#FFF1D6;">🗓️</span><div><b class="' + cor(s90) + '">' + fmtBRL(s90) + '</b><small>saldo previsto em 90 dias</small></div></div>';
+    html += '<div class="tl-kpi"><span class="tl-kpi-i">🎯</span><div><b class="' + cor(saldoProjetadoFinal) + '">' + fmtBRL(saldoProjetadoFinal) + '</b><small>se tudo pendente for pago/recebido · <span class="fn-pos">+' + fmtBRL(totalPendenteReceber) + '</span> <span class="fn-neg">−' + fmtBRL(totalPendentePagar) + '</span></small></div></div>';
     html += '</div>';
-
-    html += '<div class="paper note-box" style="margin-top:-8px; margin-bottom:16px;">Esta projeção não inclui o valor da produção em estoque (' + fmtBRL(estoque.total) + '), que ainda não tem data prevista de venda — acompanhe em Estoque de Colheita, ou lance a venda em Contas a Receber quando houver data.</div>';
-
-    if(!months.length){
-      html += '<div class="paper empty-state">Nenhum lançamento com data para projetar o fluxo de caixa ainda.</div>';
-    } else {
+    if(atrasados.length) html += '<div class="paper note-box" style="margin:0 0 12px; border-left-color:#C0453A;">⏰ <b>' + atrasados.length + ' conta(s) pendente(s) com data já vencida</b> (' + fmtBRL(atrasados.reduce(function(s, e){ return s + e.valor; }, 0)) + '). Elas aparecem no mês em que venceram; dê baixa em Lançamentos / Contas a Pagar para o caixa ficar certo.</div>';
+    html += '<div class="paper note-box" style="margin:0 0 14px;">Esta projeção não inclui o valor da produção em estoque (' + fmtBRL(estoque.total) + '), que ainda não tem data prevista de venda — lance a venda em Contas a Receber quando combinar a data.</div>';
+    if(!months.length){ el.innerHTML = html + '<div class="paper empty-state">Nenhum lançamento com data para projetar o fluxo de caixa ainda.</div>'; return; }
+    // saldo acumulado de todos os meses (o filtro só esconde)
+    var acum = 0, linhas = months.map(function(ym){ var b = buckets[ym], ent = b.entradaReal + b.entradaPrev, sai = b.saidaReal + b.saidaPrev, sm = ent - sai; acum += sm; return {ym: ym, b: b, ent: ent, sai: sai, sm: sm, acum: acum}; });
+    var anos = months.map(function(m){ return m.slice(0,4); }).filter(function(v, i, a){ return a.indexOf(v) === i; }).sort().reverse();
+    var ini6 = (function(){ var d = new Date(hoje + 'T12:00:00'); d.setMonth(d.getMonth() - 5); return d.toISOString().slice(0,7); })();
+    if(caixaFiltro !== 'proximos' && caixaFiltro !== 'tudo' && anos.indexOf(caixaFiltro) === -1) caixaFiltro = 'proximos';
+    var vis = linhas.filter(function(l){ return caixaFiltro === 'tudo' ? true : (caixaFiltro === 'proximos' ? l.ym >= ini6 : l.ym.slice(0,4) === caixaFiltro); });
+    html += '<div class="tl-tools"><button type="button" class="tl-chip' + (caixaFiltro === 'proximos' ? ' on' : '') + '" data-action="cx-filtro" data-f="proximos">📅 Últimos 6 meses e futuro</button>' + anos.slice(0, 5).map(function(a){ return '<button type="button" class="tl-chip' + (caixaFiltro === a ? ' on' : '') + '" data-action="cx-filtro" data-f="' + a + '">' + a + '</button>'; }).join('') + '<button type="button" class="tl-chip' + (caixaFiltro === 'tudo' ? ' on' : '') + '" data-action="cx-filtro" data-f="tudo">Tudo</button>';
+    html += '<div class="tl-vista"><button type="button" data-action="cx-vista" data-vista="cards" class="' + (caixaVista !== 'lista' ? 'on' : '') + '">▦ Cartões</button><button type="button" data-action="cx-vista" data-vista="lista" class="' + (caixaVista === 'lista' ? 'on' : '') + '">☰ Tabela</button></div></div>';
+    if(!vis.length){ el.innerHTML = html + '<div class="paper empty-state">Nenhum mês neste filtro.</div>'; return; }
+    if(caixaVista === 'lista'){
       html += '<div class="paper table-wrap"><table><thead><tr><th>Mês</th><th>Entradas realizadas</th><th>Saídas realizadas</th><th>Entradas previstas</th><th>Saídas previstas</th><th>Saldo do mês</th><th>Saldo acumulado</th></tr></thead><tbody>';
-      var acumulado = 0;
-      months.forEach(function(ym){
-        var b = buckets[ym];
-        var saldoMes = (b.entradaReal + b.entradaPrev) - (b.saidaReal + b.saidaPrev);
-        acumulado += saldoMes;
-        html += '<tr data-tip="mes|' + ym + '">';
-        html += '<td>' + monthLabel(ym) + '</td>';
-        html += '<td class="num growth">' + fmtBRL(b.entradaReal) + '</td>';
-        html += '<td class="num cost">' + fmtBRL(b.saidaReal) + '</td>';
-        html += '<td class="num growth">' + fmtBRL(b.entradaPrev) + '</td>';
-        html += '<td class="num cost">' + fmtBRL(b.saidaPrev) + '</td>';
-        html += '<td class="num ' + (saldoMes >= 0 ? 'growth' : 'cost') + '">' + fmtBRL(saldoMes) + '</td>';
-        html += '<td class="num ' + (acumulado >= 0 ? 'growth' : 'cost') + '">' + fmtBRL(acumulado) + '</td>';
-        html += '</tr>';
-      });
+      vis.forEach(function(l){ var b = l.b; html += '<tr data-tip="mes|' + l.ym + '"><td>' + monthLabel(l.ym) + '</td><td class="num growth">' + fmtBRL(b.entradaReal) + '</td><td class="num cost">' + fmtBRL(b.saidaReal) + '</td><td class="num growth">' + fmtBRL(b.entradaPrev) + '</td><td class="num cost">' + fmtBRL(b.saidaPrev) + '</td><td class="num ' + (l.sm >= 0 ? 'growth' : 'cost') + '">' + fmtBRL(l.sm) + '</td><td class="num ' + (l.acum >= 0 ? 'growth' : 'cost') + '">' + fmtBRL(l.acum) + '</td></tr>'; });
       html += '</tbody></table></div>';
+      el.innerHTML = html; return;
+    }
+    var maxV = vis.reduce(function(m, l){ return Math.max(m, l.ent, l.sai); }, 1);
+    html += '<div class="cx-grid">';
+    vis.forEach(function(l){
+      var b = l.b, fut = l.ym > ymHoje, atual = l.ym === ymHoje, prev = b.entradaPrev + b.saidaPrev > 0;
+      var tag = atual ? '<span class="cx-tag cx-tag-at">este mês</span>' : (fut ? '<span class="cx-tag cx-tag-fut">previsto</span>' : (prev ? '<span class="cx-tag cx-tag-atr">tem pendente</span>' : '<span class="cx-tag">realizado</span>'));
+      html += '<button type="button" class="cx-card' + (l.acum < 0 ? ' neg' : '') + (caixaMesAberto === l.ym ? ' sel' : '') + (atual ? ' atual' : '') + '" data-action="cx-mes" data-ym="' + l.ym + '">';
+      html += '<div class="cx-top"><b>' + MESES[parseInt(l.ym.slice(5,7), 10) - 1] + ' ' + l.ym.slice(0,4) + '</b>' + tag + '</div>';
+      html += '<div class="cx-lin"><span>⬆ Entradas</span><b class="fn-pos">' + fmtBRL(l.ent) + '</b></div><div class="cx-bar"><i class="ent" style="width:' + Math.max(1, l.ent / maxV * 100).toFixed(1) + '%"></i></div>' + (b.entradaPrev ? '<small class="cx-prev">' + fmtBRL(b.entradaPrev) + ' ainda a receber</small>' : '');
+      html += '<div class="cx-lin"><span>⬇ Saídas</span><b class="fn-neg">' + fmtBRL(l.sai) + '</b></div><div class="cx-bar"><i class="sai" style="width:' + Math.max(1, l.sai / maxV * 100).toFixed(1) + '%"></i></div>' + (b.saidaPrev ? '<small class="cx-prev">' + fmtBRL(b.saidaPrev) + ' ainda a pagar</small>' : '');
+      html += '<div class="cx-pe"><div><small>Saldo do mês</small><b class="' + cor(l.sm) + '">' + fmtBRL(l.sm) + '</b></div><div><small>Acumulado</small><b class="' + cor(l.acum) + '">' + fmtBRL(l.acum) + '</b></div></div>';
+      html += '</button>';
+    });
+    html += '</div>';
+    if(caixaMesAberto && buckets[caixaMesAberto]){
+      var its = caixaItensDoMes(caixaMesAberto);
+      html += '<div class="paper cx-det" id="cx-det"><div class="cx-det-cab"><b>📋 ' + monthLabel(caixaMesAberto) + ' — ' + its.length + ' lançamento(s)</b><button type="button" class="tl-btn" data-action="cx-mes" data-ym="' + caixaMesAberto + '">✕ Fechar</button></div><div class="fn-lista">';
+      its.forEach(function(it){ html += '<div class="fn-row' + (it.pend ? ' fn-pend' : '') + '"><span class="fn-ic ' + (it.ent ? 'fn-ic-rec' : 'fn-ic-cus') + '">' + it.ic + '</span><div class="fn-main"><div class="fn-desc">' + escapeHtml(it.desc) + '</div><div class="fn-sub">' + fmtDate(it.d) + (it.parc ? ' · 🏪 ' + escapeHtml(it.parc) : '') + '</div></div><div class="fn-dir"><b class="' + (it.ent ? 'fn-pos' : 'fn-neg') + '">' + (it.ent ? '+ ' : '− ') + fmtBRL(it.v) + '</b><span class="pd-nv ' + (it.pend ? (it.d < hoje ? 'pd-nv-baixo' : 'pd-nv-perto') : 'pd-nv-ok') + '">' + (it.pend ? (it.d < hoje ? 'Atrasado' : (it.ent ? 'A receber' : 'A pagar')) : (it.ent ? 'Recebido' : 'Pago')) + '</span></div></div>'; });
+      html += '</div></div>';
     }
     el.innerHTML = html;
   }
@@ -12331,167 +12585,164 @@
   /* ---------------- Conta-Corrente por Parceiro ---------------- */
   var contaCorrenteParceiroId = '';
 
+  var ctcFiltro = '', ctcBusca = '', ctcVista = (function(){ try{ return localStorage.getItem('agro-cc-vista') === 'lista' ? 'lista' : 'cards'; }catch(e){ return 'cards'; } })();
+  function ctcResumo(){
+    var resumo = {};
+    state.financeiro.forEach(function(f){
+      if(!f.parceiroId) return;
+      var r = resumo[f.parceiroId] || (resumo[f.parceiroId] = {pago:0, recebido:0, pendenteAPagar:0, pendenteAReceber:0, n:0, ult:''});
+      var st = f.status || 'Pago', valor = Number(f.valor) || 0, d = st === 'Pendente' ? (f.vencimento || f.data || '') : (f.data || '');
+      r.n++; if(d && d <= hojeISO() && d > r.ult) r.ult = d;
+      if(f.tipo === 'custo'){ if(st === 'Pago') r.pago += valor; else r.pendenteAPagar += valor; }
+      else { if(st === 'Pago') r.recebido += valor; else r.pendenteAReceber += valor; }
+    });
+    return resumo;
+  }
+  function ctcDataRef(f){ return (f.status || 'Pago') === 'Pendente' ? (f.vencimento || f.data || '') : (f.data || f.vencimento || ''); }
   function renderContaCorrente(){
     var el = document.getElementById('tab-contaCorrente');
     var html = '';
-
-    html += '<div class="paper form-card"><h3>Selecionar parceiro</h3>';
-    html += '<div class="entry-form">';
-    html += selectField('cc-parceiro', 'Parceiro', [{value:'', label:'Todos os parceiros (resumo)'}].concat(state.parceiros.map(function(p){ return {value:p.id, label:p.nome}; })), contaCorrenteParceiroId);
-    html += '</div></div>';
-
-    if(!state.parceiros.length){
-      html += '<div class="paper empty-state">Nenhum parceiro cadastrado ainda.</div>';
-      el.innerHTML = html;
-      return;
-    }
-
+    if(!state.parceiros.length){ el.innerHTML = '<div class="paper empty-state">Nenhum parceiro cadastrado ainda.</div>'; return; }
+    var resumo = ctcResumo(), ids = Object.keys(resumo);
+    if(contaCorrenteParceiroId && !state.parceiros.some(function(p){ return p.id === contaCorrenteParceiroId; })) contaCorrenteParceiroId = '';
     if(!contaCorrenteParceiroId){
-      var resumo = {};
-      state.financeiro.forEach(function(f){
-        if(!f.parceiroId) return;
-        if(!resumo[f.parceiroId]) resumo[f.parceiroId] = {pago:0, recebido:0, pendenteAPagar:0, pendenteAReceber:0};
-        var st = f.status || 'Pago';
-        var valor = Number(f.valor) || 0;
-        if(f.tipo === 'custo'){
-          if(st === 'Pago') resumo[f.parceiroId].pago += valor; else resumo[f.parceiroId].pendenteAPagar += valor;
-        } else {
-          if(st === 'Pago') resumo[f.parceiroId].recebido += valor; else resumo[f.parceiroId].pendenteAReceber += valor;
-        }
-      });
-      var idsComMovimento = Object.keys(resumo);
-      if(!idsComMovimento.length){
-        html += '<div class="paper empty-state">Nenhum lançamento vinculado a um parceiro ainda. Vincule parceiros nos Lançamentos para ver o extrato aqui.</div>';
-      } else {
+      var tPag = 0, tRec = 0, nDevo = 0, nRec = 0;
+      ids.forEach(function(id){ tPag += resumo[id].pendenteAPagar; tRec += resumo[id].pendenteAReceber; if(resumo[id].pendenteAPagar > 0.005) nDevo++; if(resumo[id].pendenteAReceber > 0.005) nRec++; });
+      html += '<div class="tl-head"><div class="tl-head-txt"><b>Conta-corrente por parceiro</b><span>Quanto você pagou, recebeu e ainda deve ou tem a receber de cada fornecedor e cliente</span></div></div>';
+      html += '<div class="tl-kpis">';
+      html += '<div class="tl-kpi"><span class="tl-kpi-i">🏪</span><div><b>' + ids.length + '</b><small>parceiros com movimento</small></div></div>';
+      html += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#FBE3DE;">💸</span><div><b class="fn-neg">' + fmtBRL(tPag) + '</b><small>você deve a ' + nDevo + ' parceiro(s)</small></div></div>';
+      html += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#E3F1D6;">💰</span><div><b class="fn-pos">' + fmtBRL(tRec) + '</b><small>a receber de ' + nRec + ' parceiro(s)</small></div></div>';
+      html += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#DDEEF6;">⚖️</span><div><b class="' + (tRec - tPag >= 0 ? 'fn-pos' : 'fn-neg') + '">' + fmtBRL(tRec - tPag) + '</b><small>saldo das pendências</small></div></div>';
+      html += '</div>';
+      if(!ids.length){ el.innerHTML = html + '<div class="paper empty-state">Nenhum lançamento vinculado a um parceiro ainda. Vincule parceiros nos Lançamentos para ver o extrato aqui.</div>'; return; }
+      html += '<div class="tl-tools"><input type="text" id="ctc-busca" class="tl-busca" placeholder="🔍 Buscar parceiro..." value="' + escapeHtml(ctcBusca) + '">';
+      [['', 'Todos (' + ids.length + ')'], ['devo', '💸 Devo (' + nDevo + ')'], ['receber', '💰 A receber (' + nRec + ')'], ['zerado', '✅ Em dia (' + (ids.length - ids.filter(function(id){ return resumo[id].pendenteAPagar > 0.005 || resumo[id].pendenteAReceber > 0.005; }).length) + ')']].forEach(function(x){ html += '<button type="button" class="tl-chip' + (ctcFiltro === x[0] ? ' on' : '') + '" data-action="ctc-filtro" data-f="' + x[0] + '">' + x[1] + '</button>'; });
+      html += '<div class="tl-vista"><button type="button" data-action="ctc-vista" data-vista="cards" class="' + (ctcVista !== 'lista' ? 'on' : '') + '">▦ Cartões</button><button type="button" data-action="ctc-vista" data-vista="lista" class="' + (ctcVista === 'lista' ? 'on' : '') + '">☰ Tabela</button></div></div>';
+      var lista = ids.filter(function(id){ var r = resumo[id]; return !ctcFiltro || (ctcFiltro === 'devo' ? r.pendenteAPagar > 0.005 : (ctcFiltro === 'receber' ? r.pendenteAReceber > 0.005 : r.pendenteAPagar <= 0.005 && r.pendenteAReceber <= 0.005)); })
+        .sort(function(a, b){ var ra = resumo[a], rb = resumo[b]; return (rb.pendenteAPagar + rb.pendenteAReceber) - (ra.pendenteAPagar + ra.pendenteAReceber) || parceiroNome(a).localeCompare(parceiroNome(b), 'pt-BR'); });
+      if(!lista.length) html += '<div class="paper empty-state">Nenhum parceiro neste filtro.</div>';
+      else if(ctcVista === 'lista'){
         html += '<div class="paper table-wrap"><table><thead><tr><th>Parceiro</th><th>Total pago</th><th>Total recebido</th><th>Saldo</th><th>A pagar (pendente)</th><th>A receber (pendente)</th></tr></thead><tbody>';
-        idsComMovimento
-          .sort(function(a,b){ return parceiroNome(a).localeCompare(parceiroNome(b)); })
-          .forEach(function(pid){
-            var r = resumo[pid];
-            var saldo = r.recebido - r.pago;
-            html += '<tr data-tip="parc|' + pid + '">';
-            html += '<td>' + escapeHtml(parceiroNome(pid)) + '</td>';
-            html += '<td class="num cost">' + fmtBRL(r.pago) + '</td>';
-            html += '<td class="num growth">' + fmtBRL(r.recebido) + '</td>';
-            html += '<td class="num ' + (saldo >= 0 ? 'growth' : 'cost') + '">' + fmtBRL(saldo) + '</td>';
-            html += '<td class="num">' + fmtBRL(r.pendenteAPagar) + '</td>';
-            html += '<td class="num">' + fmtBRL(r.pendenteAReceber) + '</td>';
-            html += '</tr>';
-          });
+        lista.forEach(function(pid){ var r = resumo[pid], saldo = r.recebido - r.pago; html += '<tr data-tip="parc|' + pid + '" class="ctc-item" data-nome="' + escapeHtml(semAcento(parceiroNome(pid)).toLowerCase()) + '"><td><button type="button" class="tl-link" data-action="ctc-abrir" data-id="' + pid + '">' + escapeHtml(parceiroNome(pid)) + '</button></td><td class="num cost">' + fmtBRL(r.pago) + '</td><td class="num growth">' + fmtBRL(r.recebido) + '</td><td class="num ' + (saldo >= 0 ? 'growth' : 'cost') + '">' + fmtBRL(saldo) + '</td><td class="num">' + fmtBRL(r.pendenteAPagar) + '</td><td class="num">' + fmtBRL(r.pendenteAReceber) + '</td></tr>'; });
         html += '</tbody></table></div>';
+      } else {
+        html += '<div class="ctc-grid">';
+        lista.forEach(function(pid){
+          var r = resumo[pid], nome = parceiroNome(pid), ini = (nome || '?').replace(/[^A-Za-zÀ-ÿ0-9 ]/g, '').trim().split(/\s+/).slice(0, 2).map(function(w){ return w[0]; }).join('').toUpperCase();
+          var st = r.pendenteAPagar > 0.005 ? '<span class="ctc-st devo">💸 você deve ' + fmtBRL(r.pendenteAPagar) + '</span>' : (r.pendenteAReceber > 0.005 ? '<span class="ctc-st rec">💰 a receber ' + fmtBRL(r.pendenteAReceber) + '</span>' : '<span class="ctc-st ok">✅ em dia</span>');
+          html += '<button type="button" class="ctc-card ctc-item" data-action="ctc-abrir" data-id="' + pid + '" data-nome="' + escapeHtml(semAcento(nome).toLowerCase()) + '">';
+          html += '<div class="ctc-top"><span class="ctc-av">' + escapeHtml(ini || '?') + '</span><div><b>' + escapeHtml(nome) + '</b><small>' + r.n + ' lançamento(s)' + (r.ult ? ' · último em ' + fmtDate(r.ult) : '') + '</small></div></div>' + st;
+          html += '<div class="ctc-nums"><div><small>Pago a ele</small><b class="fn-neg">' + fmtBRL(r.pago) + '</b></div><div><small>Recebido dele</small><b class="fn-pos">' + fmtBRL(r.recebido) + '</b></div></div>';
+          if(r.pendenteAPagar > 0.005 && r.pendenteAReceber > 0.005) html += '<small class="ctc-obs">também tem ' + fmtBRL(r.pendenteAReceber) + ' a receber</small>';
+          html += '</button>';
+        });
+        html += '</div>';
       }
     } else {
-      var lancamentos = state.financeiro.filter(function(f){ return f.parceiroId === contaCorrenteParceiroId; });
+      var pid = contaCorrenteParceiroId, lancamentos = state.financeiro.filter(function(f){ return f.parceiroId === pid; }), hoje = hojeISO();
       var totalPago = lancamentos.filter(function(f){ return f.tipo === 'custo' && (f.status||'Pago') === 'Pago'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
       var totalRecebido = lancamentos.filter(function(f){ return f.tipo === 'receita' && (f.status||'Pago') === 'Pago'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
       var pendAPagar = lancamentos.filter(function(f){ return f.tipo === 'custo' && f.status === 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
       var pendAReceber = lancamentos.filter(function(f){ return f.tipo === 'receita' && f.status === 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
-      var saldoParc = totalRecebido - totalPago;
-
-      html += '<div class="stat-row">';
-      html += statCard('Total pago a este parceiro', fmtBRL(totalPago), 'cost');
-      html += statCard('Total recebido dele', fmtBRL(totalRecebido), 'growth');
-      html += statCard('Saldo', fmtBRL(saldoParc), saldoParc >= 0 ? 'growth' : 'cost');
-      html += statCard('Pendente a pagar', fmtBRL(pendAPagar));
-      html += statCard('Pendente a receber', fmtBRL(pendAReceber));
+      html += '<button type="button" class="mtf-voltar" data-action="ctc-voltar">← Todos os parceiros</button>';
+      html += '<div class="tl-head"><div class="tl-head-txt"><b>' + escapeHtml(parceiroNome(pid)) + '</b><span>Extrato da conta-corrente · ' + lancamentos.length + ' lançamento(s)</span></div><button type="button" class="tl-btn" data-action="ctc-imprimir">🖨️ Imprimir extrato</button></div>';
+      html += '<div class="tl-kpis">';
+      html += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#FBE3DE;">📤</span><div><b class="fn-neg">' + fmtBRL(totalPago) + '</b><small>total pago a este parceiro</small></div></div>';
+      html += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#E3F1D6;">📥</span><div><b class="fn-pos">' + fmtBRL(totalRecebido) + '</b><small>total recebido dele</small></div></div>';
+      html += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#FFF1D6;">💸</span><div><b class="' + (pendAPagar > 0 ? 'fn-neg' : '') + '">' + fmtBRL(pendAPagar) + '</b><small>pendente a pagar</small></div></div>';
+      html += '<div class="tl-kpi"><span class="tl-kpi-i" style="background:#DDEEF6;">💰</span><div><b class="' + (pendAReceber > 0 ? 'fn-pos' : '') + '">' + fmtBRL(pendAReceber) + '</b><small>pendente a receber</small></div></div>';
       html += '</div>';
-
-      if(!lancamentos.length){
-        html += '<div class="paper empty-state">Nenhum lançamento vinculado a este parceiro ainda.</div>';
-      } else {
-        html += '<div class="paper table-wrap"><table><thead><tr><th>Data/Venc.</th><th>Tipo</th><th>Conta</th><th>Descrição</th><th>Status</th><th>Valor</th></tr></thead><tbody>';
-        lancamentos.slice().sort(function(a,b){ return (b.criadoEm||0)-(a.criadoEm||0); }).forEach(function(f){
-          var st = f.status || 'Pago';
-          html += '<tr data-tip-fin="' + f.id + '">';
-          html += '<td>' + fmtDate(st === 'Pendente' ? f.vencimento : f.data) + '</td>';
-          html += '<td><span class="badge tipo-' + f.tipo + '">' + (f.tipo === 'custo' ? 'Custo' : 'Receita') + '</span></td>';
-          html += '<td>' + (f.contaId ? escapeHtml(contaLabel(f.contaId)) : escapeHtml(f.categoria || '—')) + '</td>';
-          html += '<td>' + escapeHtml(f.descricao || '—') + '</td>';
-          html += '<td><span class="badge" style="background:' + (st === 'Pendente' ? '#DFA84E' : '#7FA36D') + '; color:#1B1508">' + st + '</span></td>';
-          html += '<td class="num ' + (f.tipo === 'custo' ? 'cost' : 'growth') + '">' + (f.tipo === 'custo' ? '−' : '+') + ' ' + fmtBRL(f.valor) + '</td>';
-          html += '</tr>';
+      if(!lancamentos.length) html += '<div class="paper empty-state">Nenhum lançamento vinculado a este parceiro ainda.</div>';
+      else {
+        var grupo = null;
+        lancamentos.slice().sort(function(a, b){ return (ctcDataRef(b) || '').localeCompare(ctcDataRef(a) || '') || (b.criadoEm||0) - (a.criadoEm||0); }).forEach(function(f){
+          var st = f.status || 'Pago', pend = st === 'Pendente', rec = f.tipo === 'receita', dr = ctcDataRef(f), atr = pend && dr && dr < hoje, k = dr ? dr.slice(0,7) : 'sem data';
+          if(k !== grupo){ if(grupo !== null) html += '</div>'; grupo = k; html += '<div class="fn-mes-cab"><b>' + (k === 'sem data' ? 'Sem data' : MESES[parseInt(k.slice(5,7), 10) - 1] + ' ' + k.slice(0,4)) + '</b></div><div class="paper fn-lista">'; }
+          html += '<div class="fn-row' + (pend ? ' fn-pend' : '') + '" data-tip-fin="' + f.id + '"><span class="fn-ic ' + (rec ? 'fn-ic-rec' : 'fn-ic-cus') + '">' + fnIcone(f) + '</span><div class="fn-main"><div class="fn-desc">' + escapeHtml(f.descricao || (f.contaId ? contaNome(f.contaId) : '—')) + '</div><div class="fn-sub">' + escapeHtml(f.contaId ? contaLabel(f.contaId) : (f.categoria || '—')) + '</div></div>';
+          html += '<div class="fn-dir"><b class="' + (rec ? 'fn-pos' : 'fn-neg') + '">' + (rec ? '+ ' : '− ') + fmtBRL(f.valor) + '</b><span class="fn-data">' + (pend ? (atr ? '⚠️ venceu ' : 'vence ') : '') + (dr ? fmtDate(dr) : '—') + '</span><span class="pd-nv ' + (pend ? (atr ? 'pd-nv-baixo' : 'pd-nv-perto') : 'pd-nv-ok') + '">' + (pend ? (atr ? 'Atrasado' : 'Pendente') : (rec ? 'Recebido' : 'Pago')) + '</span></div>';
+          html += '<div class="fn-acts"><button type="button" class="tl-btn fn-ed" data-action="edit-financeiro" data-id="' + f.id + '" title="Abrir em Lançamentos">✏️</button></div></div>';
         });
-        html += '</tbody></table></div>';
+        if(grupo !== null) html += '</div>';
       }
     }
-
-    html += '<div class="paper note-box">Este extrato considera os lançamentos da aba Financeiro vinculados a um Parceiro. Contas a pagar/receber e serviços também são lançamentos e entram aqui quando têm parceiro. Arrendamentos e Financiamentos têm seus próprios controles e só entram quando a parcela é paga.</div>';
+    html += '<div class="paper note-box">Este extrato considera os lançamentos da aba Financeiro vinculados a um Parceiro. Contas a pagar/receber e serviços também são lançamentos e entram aqui quando têm parceiro.</div>';
     el.innerHTML = html;
   }
 
   /* ---------------- Orçado x Realizado ---------------- */
   var orcamentoAnoSelecionado = new Date().getFullYear();
 
+  var orcFormAberto = false, orcContaEditar = '', orcVista = (function(){ try{ return localStorage.getItem('agro-orc-vista') === 'lista' ? 'lista' : 'cards'; }catch(e){ return 'cards'; } })();
   function renderOrcamento(){
     var el = document.getElementById('tab-orcamento');
-    var html = '';
-
-    var anosDisponiveis = [];
-    for(var ay = new Date().getFullYear() - 2; ay <= new Date().getFullYear() + 2; ay++) anosDisponiveis.push(ay);
-
-    html += '<div class="paper form-card"><h3>Definir orçamento</h3>';
-    html += '<div class="entry-form">';
-    html += selectField('orc-ano-view', 'Ano em análise', anosDisponiveis.map(function(a){ return {value:String(a), label:String(a)}; }), String(orcamentoAnoSelecionado));
-    if(state.contasFinanceiro.length){
-      html += selectField('orc-conta', 'Conta', state.contasFinanceiro.map(function(c){ return {value:c.id, label: contaLabel(c.id)}; }));
-      html += field('number', 'orc-valor', 'Valor orçado para o ano (R$)', false, '0,00', {step:'0.01', min:'0'});
-      html += '<button type="button" class="btn" data-action="salvar-orcamento" style="align-self:end;">Salvar orçamento</button>';
-    }
-    html += '</div></div>';
-
-    if(!state.contasFinanceiro.length){
-      html += '<div class="paper empty-state">Cadastre contas financeiras (aba Lançamentos → botão "+" ao lado de Conta) antes de definir orçamentos.</div>';
-      el.innerHTML = html;
-      return;
-    }
-
+    var anoAt = new Date().getFullYear(), anos = []; for(var ay = anoAt - 2; ay <= anoAt + 2; ay++) anos.push(ay);
+    var html = uiHead('Orçado × Realizado', 'Quanto você planejou gastar e receber em cada conta no ano, e quanto já foi de verdade', state.contasFinanceiro.length ? '<button type="button" class="tl-btn' + (orcFormAberto ? '' : ' tl-pri') + '" data-action="orc-form">' + (orcFormAberto ? '✕ Fechar' : '＋ Definir orçamento') + '</button>' : '');
+    if(!state.contasFinanceiro.length){ el.innerHTML = html + '<div class="paper empty-state">Cadastre contas financeiras (aba Lançamentos → botão "+" ao lado de Conta) antes de definir orçamentos.</div>'; return; }
     var orcamentosDoAno = state.orcamentos.filter(function(o){ return o.ano === orcamentoAnoSelecionado; });
     var contasComMovimento = {};
     state.financeiro.forEach(function(f){
-      if((f.status || 'Pago') !== 'Pago') return;
-      var ano = parseInt((f.data || '').slice(0, 4), 10);
-      if(ano !== orcamentoAnoSelecionado) return;
-      if(!contasComMovimento[f.contaId]) contasComMovimento[f.contaId] = 0;
-      contasComMovimento[f.contaId] += Number(f.valor) || 0;
+      if((f.status || 'Pago') !== 'Pago' || ehMovFinanciamento(f)) return;
+      var ano = parseInt((f.data || '').slice(0, 4), 10); if(ano !== orcamentoAnoSelecionado) return;
+      contasComMovimento[f.contaId] = (contasComMovimento[f.contaId] || 0) + (Number(f.valor) || 0);
     });
-
     var idsRelevantes = {};
     orcamentosDoAno.forEach(function(o){ idsRelevantes[o.contaId] = true; });
     Object.keys(contasComMovimento).forEach(function(cid){ idsRelevantes[cid] = true; });
-
     var linhas = Object.keys(idsRelevantes).map(function(cid){
-      var orc = orcamentosDoAno.find(function(o){ return o.contaId === cid; });
-      var orcado = orc ? orc.valorOrcado : 0;
-      var realizado = contasComMovimento[cid] || 0;
-      var diferenca = orcado - realizado;
-      var pctUsado = orcado ? (realizado / orcado * 100) : null;
-      return {contaId: cid, orcado: orcado, realizado: realizado, diferenca: diferenca, pctUsado: pctUsado, tipo: contaTipo(cid)};
+      var orc = orcamentosDoAno.find(function(o){ return o.contaId === cid; }), orcado = orc ? orc.valorOrcado : 0, realizado = contasComMovimento[cid] || 0;
+      return {contaId: cid, orcado: orcado, realizado: realizado, diferenca: orcado - realizado, pctUsado: orcado ? (realizado / orcado * 100) : null, tipo: contaTipo(cid)};
     }).sort(function(a,b){ return contaLabel(a.contaId).localeCompare(contaLabel(b.contaId)); });
-
-    if(!linhas.length){
-      html += '<div class="paper empty-state">Nenhum orçamento definido nem movimento em ' + orcamentoAnoSelecionado + ' ainda.</div>';
-    } else {
+    var custo = linhas.filter(function(l){ return l.tipo === 'custo'; }), rec = linhas.filter(function(l){ return l.tipo !== 'custo'; });
+    var oC = custo.reduce(function(s, l){ return s + l.orcado; }, 0), rC = custo.reduce(function(s, l){ return s + l.realizado; }, 0), oR = rec.reduce(function(s, l){ return s + l.orcado; }, 0), rR = rec.reduce(function(s, l){ return s + l.realizado; }, 0);
+    var estouradas = custo.filter(function(l){ return l.orcado > 0 && l.realizado > l.orcado; }), semOrc = linhas.filter(function(l){ return !l.orcado; }).length;
+    var rCo = custo.filter(function(l){ return l.orcado > 0; }).reduce(function(s, l){ return s + l.realizado; }, 0);
+    html += uiKpis([
+      {ic:'🎯', v: fmtBRL(oC), t:'despesas orçadas em ' + orcamentoAnoSelecionado + ' (' + custo.filter(function(l){ return l.orcado > 0; }).length + ' conta(s))'},
+      {ic:'📊', bg:'#FFF1D6', v: fmtBRL(rCo), t: oC ? 'gasto nessas contas · ' + Math.round(rCo / oC * 100) + '% do orçado' : 'defina orçamentos para comparar', cls: oC && rCo > oC ? 'fn-neg' : ''},
+      {ic:'💸', bg:'#FBE3DE', v: fmtBRL(rC), t:'todas as despesas pagas no ano · receitas ' + fmtBRL(rR), cls:'fn-neg'},
+      {ic: estouradas.length ? '⚠️' : '✅', bg: estouradas.length ? '#FBE3DE' : '#E3F1D6', v: estouradas.length, t:'conta(s) que passaram do orçado' + (semOrc ? ' · ' + semOrc + ' sem orçamento' : ''), cls: estouradas.length ? 'fn-neg' : ''}
+    ]);
+    if(orcFormAberto){
+      var orcEd = orcContaEditar ? orcamentosDoAno.find(function(o){ return o.contaId === orcContaEditar; }) : null;
+      html += '<div class="paper form-card"><h3>Definir orçamento de ' + orcamentoAnoSelecionado + '</h3><div class="entry-form">';
+      html += selectField('orc-conta', 'Conta', state.contasFinanceiro.map(function(c){ return {value:c.id, label: contaLabel(c.id)}; }), orcContaEditar || undefined);
+      html += field('number', 'orc-valor', 'Valor orçado para o ano (R$)', false, '0,00', {step:'0.01', min:'0'}, orcEd ? orcEd.valorOrcado : undefined);
+      html += '<button type="button" class="btn" data-action="salvar-orcamento" style="align-self:end;">Salvar orçamento</button></div><p style="font-size:11.5px; color:var(--ink-soft); margin:8px 0 0;">Se a conta já tiver orçamento neste ano, o valor é substituído.</p></div>';
+    }
+    html += '<div class="tl-tools">' + anos.map(function(a){ return '<button type="button" class="tl-chip' + (a === orcamentoAnoSelecionado ? ' on' : '') + '" data-action="orc-ano" data-ano="' + a + '">' + a + (a === anoAt ? ' (atual)' : '') + '</button>'; }).join('');
+    html += '<div class="tl-vista"><button type="button" data-action="orc-vista" data-vista="cards" class="' + (orcVista !== 'lista' ? 'on' : '') + '">▦ Cartões</button><button type="button" data-action="orc-vista" data-vista="lista" class="' + (orcVista === 'lista' ? 'on' : '') + '">☰ Tabela</button></div></div>';
+    if(!linhas.length) html += '<div class="paper empty-state">Nenhum orçamento definido nem movimento em ' + orcamentoAnoSelecionado + ' ainda. Clique em ＋ Definir orçamento.</div>';
+    else if(orcVista === 'lista'){
       html += '<div class="paper table-wrap"><table><thead><tr><th>Conta</th><th>Orçado (ano)</th><th>Realizado</th><th>Diferença</th><th>% usado</th></tr></thead><tbody>';
       linhas.forEach(function(l){
         var estourou = l.tipo === 'custo' && l.orcado > 0 && l.realizado > l.orcado;
-        html += '<tr data-tip="orc|' + l.contaId + '|' + orcamentoAnoSelecionado + '">';
-        html += '<td>' + escapeHtml(contaLabel(l.contaId)) + '</td>';
-        html += '<td class="num">' + (l.orcado ? fmtBRL(l.orcado) : '—') + '</td>';
-        html += '<td class="num">' + fmtBRL(l.realizado) + '</td>';
-        html += '<td class="num ' + (l.diferenca >= 0 ? 'growth' : 'cost') + '">' + fmtBRL(l.diferenca) + '</td>';
-        html += '<td class="num">' + (l.pctUsado !== null ? '<span class="badge" style="background:' + (estourou ? '#A23E2E' : '#7FA36D') + '; color:#fff;">' + l.pctUsado.toFixed(0) + '%</span>' : '—') + '</td>';
-        html += '</tr>';
+        html += '<tr data-tip="orc|' + l.contaId + '|' + orcamentoAnoSelecionado + '"><td>' + escapeHtml(contaLabel(l.contaId)) + '</td><td class="num">' + (l.orcado ? fmtBRL(l.orcado) : '—') + '</td><td class="num">' + fmtBRL(l.realizado) + '</td><td class="num ' + (l.diferenca >= 0 ? 'growth' : 'cost') + '">' + fmtBRL(l.diferenca) + '</td><td class="num">' + (l.pctUsado !== null ? '<span class="badge" style="background:' + (estourou ? '#A23E2E' : '#7FA36D') + '; color:#fff;">' + l.pctUsado.toFixed(0) + '%</span>' : '—') + '</td></tr>';
       });
       html += '</tbody></table></div>';
+    } else {
+      var grupo = function(lista, tit){
+        if(!lista.length) return '';
+        var h = '<div class="section-title">' + tit + '</div><div class="orc-grid">';
+        lista.slice().sort(function(a, b){ return (b.pctUsado || -1) - (a.pctUsado || -1) || b.realizado - a.realizado; }).forEach(function(l){
+          var custoL = l.tipo === 'custo', pct = l.pctUsado, est = custoL && l.orcado > 0 && l.realizado > l.orcado;
+          var cls = !l.orcado ? 'sem' : (custoL ? (est ? 'est' : (pct >= 85 ? 'perto' : 'ok')) : (pct >= 100 ? 'ok' : 'perto'));
+          h += '<div class="orc-card orc-' + cls + '" data-tip="orc|' + l.contaId + '|' + orcamentoAnoSelecionado + '"><div class="orc-top"><b>' + escapeHtml(contaNome(l.contaId)) + '</b>' + (pct !== null ? '<span class="orc-pct">' + Math.round(pct) + '%</span>' : '<span class="orc-pct sem">sem orçamento</span>') + '</div>';
+          h += '<div class="orc-bar"><i style="width:' + Math.min(100, pct || 0).toFixed(1) + '%"></i></div>';
+          h += '<div class="orc-nums"><div><small>Realizado</small><b>' + fmtBRL(l.realizado) + '</b></div><div><small>Orçado</small><b>' + (l.orcado ? fmtBRL(l.orcado) : '—') + '</b></div></div>';
+          h += '<div class="orc-pe">' + (!l.orcado ? '<span>—</span>' : (custoL ? (est ? '<span class="fn-neg">passou ' + fmtBRL(-l.diferenca) + '</span>' : '<span>sobra ' + fmtBRL(l.diferenca) + '</span>') : (l.diferenca > 0 ? '<span>faltam ' + fmtBRL(l.diferenca) + '</span>' : '<span class="fn-pos">meta batida</span>'))) + '<button type="button" class="tl-btn" data-action="orc-editar" data-id="' + l.contaId + '">' + (l.orcado ? '✏️ Ajustar' : '＋ Orçar') + '</button></div></div>';
+        });
+        return h + '</div>';
+      };
+      html += grupo(custo, '💸 Despesas') + grupo(rec, '💰 Receitas');
     }
-
-    html += '<div class="paper note-box">"Realizado" considera só lançamentos com status "Pago" e data dentro do ano selecionado. Para despesas (custo), passar de 100% significa que já foi gasto mais do que o orçado.</div>';
+    html += '<div class="paper note-box">"Realizado" considera só lançamentos com status "Pago" e data dentro do ano selecionado. Para despesas, passar de 100% significa que já foi gasto mais do que o orçado.</div>';
     el.innerHTML = html;
   }
 
   /* ---------------- Relatórios (DRE por Subgrupo/Conta) ---------------- */
   function relatoriosContaStats(contaId){
-    var entries = state.financeiro.filter(function(f){ return f.contaId === contaId && (f.status || 'Pago') !== 'Pendente'; });
+    var entries = state.financeiro.filter(function(f){ return f.contaId === contaId && (f.status || 'Pago') !== 'Pendente' && !ehMovFinanciamento(f); });
     var valor = 0, qtd = 0;
     entries.forEach(function(f){ valor += Number(f.valor||0); qtd += Number(f.quantidade||0); });
     return {valor:valor, qtd:qtd, entries:entries, precoMedio: qtd ? valor/qtd : 0};
@@ -12500,8 +12751,8 @@
 
   function renderRelatorios(){
     var el = document.getElementById('tab-relatorios');
-    var totalReceitas = state.financeiro.filter(function(f){ return contaTipo(f.contaId) === 'receita' && (f.status||'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
-    var totalCustos = state.financeiro.filter(function(f){ return contaTipo(f.contaId) === 'custo' && (f.status||'Pago') !== 'Pendente'; }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+    var totalReceitas = state.financeiro.filter(function(f){ return contaTipo(f.contaId) === 'receita' && (f.status||'Pago') !== 'Pendente' && !ehMovFinanciamento(f); }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
+    var totalCustos = state.financeiro.filter(function(f){ return contaTipo(f.contaId) === 'custo' && (f.status||'Pago') !== 'Pendente' && !ehMovFinanciamento(f); }).reduce(function(s,f){ return s + Number(f.valor||0); }, 0);
 
     function renderSecao(tipoSecao, totalSecao, label){
       var subgrupos = state.subgruposFinanceiro.filter(function(s){ return s.tipo === tipoSecao; }).sort(function(a,b){ return (a.criadoEm||0)-(b.criadoEm||0); });
@@ -12574,13 +12825,25 @@
       return html;
     }
 
-    var html = '<div class="stat-row">';
-    html += statCard('Total de receitas', fmtBRL(totalReceitas), 'growth');
-    html += statCard('Total de despesas', fmtBRL(totalCustos), 'cost');
-    html += statCard('Resultado', fmtBRL(totalReceitas - totalCustos), (totalReceitas - totalCustos) >= 0 ? 'growth' : 'cost');
-    html += '</div>';
+    var resR = totalReceitas - totalCustos;
+    var html = uiHead('Relatórios', 'Resultado (DRE) por subgrupo e conta — tudo o que já foi pago ou recebido', '<button type="button" class="tl-btn" data-action="ui-imprimir">🖨️ Imprimir / PDF</button>');
+    html += uiKpis([
+      {ic:'💰', bg:'#E3F1D6', v: fmtBRL(totalReceitas), t:'total de receitas', cls:'fn-pos'},
+      {ic:'💸', bg:'#FBE3DE', v: fmtBRL(totalCustos), t:'total de despesas', cls:'fn-neg'},
+      {ic:'⚖️', bg:'#DDEEF6', v: fmtBRL(resR), t:'resultado (receitas − despesas)', cls: resR >= 0 ? 'fn-pos' : 'fn-neg'},
+      {ic:'📊', v: totalReceitas ? fmtPct(resR / totalReceitas * 100) : '—', t:'margem sobre as receitas'}
+    ]);
     html += renderSecao('receita', totalReceitas, 'RECEITAS');
     html += renderSecao('custo', totalCustos, 'DESPESAS');
+    var movF = state.financeiro.filter(function(f){ return ehMovFinanciamento(f) && (f.status || 'Pago') !== 'Pendente'; });
+    if(movF.length){
+      var libT = movF.filter(function(f){ return f.finMov === 'liberacao'; }).reduce(function(s2, f){ return s2 + (Number(f.valor) || 0); }, 0), amoT = movF.filter(function(f){ return f.finMov !== 'liberacao'; }).reduce(function(s2, f){ return s2 + (Number(f.valor) || 0); }, 0);
+      html += '<div class="paper" style="padding:16px 18px; margin-bottom:16px; border-left:4px solid #4F95B8;"><div style="font-family:\'Zilla Slab\',serif; font-size:18px; font-weight:700; color:#2F6F8F; margin-bottom:8px;">🏦 MOVIMENTO DE FINANCIAMENTOS <span style="font-size:12px; font-family:inherit; color:var(--ink-soft); font-weight:500;">— entra e sai do caixa, mas não é receita nem custo</span></div>';
+      html += '<div class="table-wrap"><table><thead><tr><th>Data</th><th>Movimento</th><th class="num">Valor</th></tr></thead><tbody>';
+      movF.slice().sort(function(a2, b2){ return (a2.data || '').localeCompare(b2.data || ''); }).forEach(function(f){ var lib = f.finMov === 'liberacao'; html += '<tr><td>' + fmtDate(f.data) + '</td><td>' + escapeHtml(f.descricao || '') + '</td><td class="num ' + (lib ? 'growth' : 'cost') + '">' + (lib ? '+ ' : '− ') + fmtBRL(f.valor) + '</td></tr>'; });
+      html += '<tr style="font-weight:700; border-top:2px solid var(--paper-line);"><td></td><td>Crédito recebido ' + fmtBRL(libT) + ' · devolvido (amortização) ' + fmtBRL(amoT) + '</td><td class="num">' + fmtBRL(libT - amoT) + '</td></tr></tbody></table></div>';
+      html += '<p style="font-size:11.5px; color:var(--ink-soft); margin:8px 0 0;">Os <b>juros</b> das parcelas estão nas despesas (conta "Juros de financiamento"), porque esses sim são custo.</p></div>';
+    }
     html += '<div class="paper note-box">Este relatório considera apenas lançamentos do Financeiro marcados como "Pago" e vinculados a uma Conta (cadastrada pelo botão "+" no formulário de Lançamentos). Lançamentos ainda pendentes (contas a pagar/receber) não entram aqui — acompanhe-os nas abas Contas a Pagar e Contas a Receber.</div>';
     el.innerHTML = html;
   }
@@ -12589,7 +12852,7 @@
   function financeiroPorMes(){
     var map = {};
     state.financeiro.forEach(function(f){
-      if(!f.data) return;
+      if(!f.data || ehMovFinanciamento(f)) return;
       var ym = f.data.slice(0,7);
       if(!map[ym]) map[ym] = {custo:0, receita:0};
       map[ym][f.tipo === 'custo' ? 'custo' : 'receita'] += Number(f.valor) || 0;
@@ -12603,7 +12866,7 @@
   }
   function custosPorCategoria(){
     var map = {};
-    state.financeiro.filter(function(f){ return f.tipo === 'custo'; }).forEach(function(f){
+    state.financeiro.filter(function(f){ return f.tipo === 'custo' && !ehMovFinanciamento(f); }).forEach(function(f){
       map[f.categoria] = (map[f.categoria] || 0) + Number(f.valor || 0);
     });
     var labels = Object.keys(map);
@@ -13937,14 +14200,7 @@
   function lancamentoEstaFechado(f){
     return periodoFechado(f.data || f.vencimento || '');
   }
-  function addMesesISO(dataISO, meses){
-    if(!dataISO) return '';
-    var partes = dataISO.split('-');
-    var d = new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
-    d.setMonth(d.getMonth() + meses);
-    var y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), dia = String(d.getDate()).padStart(2, '0');
-    return y + '-' + m + '-' + dia;
-  }
+  // addMesesISO: usa a versão do início do arquivo (vencimento dia 31 + 1 mês = último dia do mês seguinte, sem pular mês)
   function parseNFeXML(xmlText){
     try{
       var parser = new DOMParser();
@@ -14263,7 +14519,7 @@
   }
   function renderConfiguracoes(){
     var el = document.getElementById('tab-configuracoes');
-    var html = '';
+    var html = uiHead('Configurações', 'Senha, equipe e convites, fazendas (espaços), certificado da SEFAZ, backup e preferências');
     if(hasNetlifyBlobs){
       html += '<div class="section-title" style="margin-top:0;">Senha de acesso</div>';
       html += '<div class="paper form-card"><form class="entry-form" id="form-trocar-senha">';
@@ -14318,10 +14574,17 @@
   function renderIndicadores(){
     var el = document.getElementById('tab-indicadores');
     var html = '';
-    html += '<div class="no-print" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px;">';
-    html += '<button class="btn" type="button" data-action="export-excel">Exportar para Excel</button>';
-    html += '<button class="btn" type="button" data-action="export-pdf" style="background:var(--panel); color:var(--paper);">Imprimir / Salvar como PDF</button>';
-    html += '</div>';
+    var hojeI = hojeISO(), ini12 = addMesesISO(hojeI, -12), r12 = 0, c12 = 0;
+    (state.financeiro || []).forEach(function(f){ if((f.status || 'Pago') === 'Pendente' || !f.data || f.data < ini12 || f.data > hojeI || ehMovFinanciamento(f)) return; if(f.tipo === 'receita') r12 += Number(f.valor) || 0; else c12 += Number(f.valor) || 0; });
+    var maior = {}, maiorK = ''; (state.financeiro || []).forEach(function(f){ if(f.tipo !== 'custo' || ehMovFinanciamento(f) || (f.status || 'Pago') === 'Pendente' || !f.data || f.data < ini12) return; var k = f.contaId ? contaNome(f.contaId) : (f.categoria || 'Outros'); maior[k] = (maior[k] || 0) + (Number(f.valor) || 0); });
+    Object.keys(maior).forEach(function(k){ if(!maiorK || maior[k] > maior[maiorK]) maiorK = k; });
+    html += uiHead('Indicadores', 'Gráficos dos últimos meses e exportação para Excel e PDF', '<div class="no-print" style="display:flex; gap:6px; flex-wrap:wrap;"><button class="tl-btn" type="button" data-action="export-excel">📗 Exportar para Excel</button><button class="tl-btn" type="button" data-action="export-pdf">🖨️ Imprimir / PDF</button></div>');
+    html += uiKpis([
+      {ic:'💰', bg:'#E3F1D6', v: fmtBRL(r12), t:'receitas nos últimos 12 meses', cls:'fn-pos'},
+      {ic:'💸', bg:'#FBE3DE', v: fmtBRL(c12), t:'despesas nos últimos 12 meses', cls:'fn-neg'},
+      {ic:'⚖️', bg:'#DDEEF6', v: fmtBRL(r12 - c12), t:'resultado em 12 meses', cls: r12 - c12 >= 0 ? 'fn-pos' : 'fn-neg'},
+      {ic:'🔝', bg:'#FFF1D6', v: maiorK ? fmtBRL(maior[maiorK]) : '—', t: maiorK ? 'maior despesa: ' + escapeHtml(maiorK) : 'maior despesa'}
+    ]);
 
     var semDadosFinanceiro = !state.financeiro || !state.financeiro.length;
 
@@ -15271,6 +15534,7 @@
     }
 
     if(form.dataset.form === 'generic'){
+      if(form.dataset.entity === 'vendasAntecipadas' || form.dataset.entity === 'culturas') genFormAberto[form.dataset.entity] = false;
       if(form.dataset.entity === 'patrimonio') patrimonioFormAberto = false;
       if(form.dataset.entity === 'financiamentos') financiamentosFormAberto = false;
       if(form.dataset.entity === 'propriedades') propriedadesFormAberto = false;
@@ -15833,7 +16097,7 @@
     var action = btn.dataset.action;
     var id = btn.dataset.id;
     if(action.indexOf('mapa-') === 0 && acaoMapa(action, btn)) return;
-    if(/^(mg|ps|rs|rent-talhao|tl-ver-custo)/.test(action) && acaoTelasNovas(action, btn)) return;
+    if(/^(mg|ps|rs|rent-talhao|tl-ver-custo|cx-|ctc-|ui-ir|ui-imprimir|ins-vista|ins-ir-form|gen-novo|orc-ano|orc-form|orc-vista|orc-editar)/.test(action) && acaoTelasNovas(action, btn)) return;
     if(action.indexOf('dossie-') === 0){ acaoDossie(action, btn); return; }
     if(action === 'carencia-usar-bula'){ aplicarBulaNoForm(); return; }
     if(action === 'ativo-usar-catalogo'){ aplicarAtivoCatalogoNoForm(); return; }
@@ -16436,6 +16700,14 @@
       state.financeiro.push({id: fEn.entradaFinanceiroId, origem: 'financiamento', contaId: fEn.contaId, tipo: contaTipo(fEn.contaId), categoria: ctEn ? ctEn.nome : '', valor: Number(fEn.valorEntrada), quantidade: 0, peso: 0, unidade: '', status: 'Pago', data: dEn, vencimento: '', talhoesIds: [], talhaoId: '', parceiroId: '', membroId: '', descricao: 'Entrada - ' + fEn.banco + (fEn.numeroContrato ? ' - Contrato ' + fEn.numeroContrato : '') + (fEn.observacao ? ' (' + fEn.observacao.split(' Parcela')[0].slice(0, 40) + ')' : ''), criadoEm: Date.now()});
       saveKey('financeiro', state.financeiro); saveKey('financiamentos', state.financiamentos); renderAll(); return;
     }
+    if(action === 'lancar-liberacao-financiamento'){
+      var fLb = state.financiamentos.find(function(x){ return x.id === (id || financiamentoCronogramaId); }); if(!fLb) return;
+      if(fLb.liberacaoFinanceiroId){ alert('A liberação deste contrato já está lançada.'); return; }
+      var dLb = fLb.dataContratacao || hojeISO();
+      if(periodoFechado(dLb)){ alert('O mês de ' + fmtDate(dLb) + ' está fechado no Financeiro. Reabra-o antes.'); return; }
+      if(!window.confirm('Lançar a entrada de ' + fmtBRL(fLb.valorTotal) + ' em ' + fmtDate(dLb) + ' como LIBERAÇÃO do crédito?\n\nEla entra no Caixa, mas não conta como receita no resultado.\nSó lance se o dinheiro caiu na sua conta (em custeio, normalmente sim; em compra de máquina financiada, o banco costuma pagar direto ao vendedor).')) return;
+      lancarLiberacaoFinanciamento(fLb, dLb); saveKey('financeiro', state.financeiro); saveKey('financiamentos', state.financiamentos); renderAll(); return;
+    }
     if(action === 'fechar-cronograma-financiamento'){ financiamentoCronogramaId = null; renderFinanciamentos(); return; }
     if(action === 'imprimir-cronograma-financiamento'){
       var fImp = state.financiamentos.find(function(x){ return x.id === financiamentoCronogramaId; });
@@ -16467,16 +16739,29 @@
       var contaFin = state.contasFinanceiro.find(function(c){ return c.id === fin.contaId; });
       var finParcId = uid();
       if(!Array.isArray(fin.pagamentos)) fin.pagamentos = [];
-      fin.pagamentos.push({n: novaPagas, data: dataPagFin, valor: valorParcelaFin, financeiroId: finParcId});
+      // a amortização do cronograma é a parte do empréstimo devolvida; o que passar dela é juros (se pagou a mais, a diferença conta como juros)
+      var amortParc, jurosParc;
+      if(proxParc && Number(proxParc.amortizacao) > 0){ amortParc = Math.round(Math.min(Number(proxParc.amortizacao), valorParcelaFin) * 100) / 100; jurosParc = Math.round((valorParcelaFin - amortParc) * 100) / 100; }
+      else { jurosParc = Math.min(jurosDaParcelaFin(fin, novaPagas, valorParcelaFin), valorParcelaFin); amortParc = Math.round((valorParcelaFin - jurosParc) * 100) / 100; }
+      var baseDesc = 'Parcela ' + novaPagas + '/' + (fin.numeroParcelas || '?') + ' - ' + fin.banco + (fin.numeroContrato ? ' - Contrato ' + fin.numeroContrato : '');
+      var jurosId = jurosParc > 0 ? uid() : '';
+      fin.pagamentos.push({n: novaPagas, data: dataPagFin, valor: valorParcelaFin, financeiroId: finParcId, jurosFinanceiroId: jurosId, juros: jurosParc, amortizacao: amortParc});
       saveKey('financiamentos', state.financiamentos);
+      // amortização: devolve o dinheiro emprestado — sai do caixa, mas não é custo
       state.financeiro.push({
-        id: finParcId, origem: 'financiamento', contaId: fin.contaId, tipo: contaTipo(fin.contaId), categoria: contaFin ? contaFin.nome : '',
-        valor: valorParcelaFin, quantidade: 0, peso: 0, unidade: '', status: 'Pago',
+        id: finParcId, origem: 'financiamento', movFinanciamento: true, finMov: 'amortizacao', finId: fin.id, contaId: fin.contaId, tipo: contaTipo(fin.contaId), categoria: contaFin ? contaFin.nome : '',
+        valor: amortParc, quantidade: 0, peso: 0, unidade: '', status: 'Pago',
         data: dataPagFin, vencimento: proxParc ? proxParc.vencimento || '' : '',
-        talhoesIds: fin.talhaoId ? [fin.talhaoId] : [], talhaoId: fin.talhaoId || '', parceiroId: '', membroId: '',
-        descricao: 'Parcela ' + novaPagas + '/' + (fin.numeroParcelas || '?') + ' - ' + fin.banco + (fin.numeroContrato ? ' - Contrato ' + fin.numeroContrato : '') + (proxParc && proxParc.juros > 0 ? ' (amortização ' + fmtBRL(proxParc.amortizacao) + ' + juros ' + fmtBRL(proxParc.juros + (proxParc.jurosCarencia || 0)) + ')' : ''),
+        talhoesIds: [], talhaoId: '', parceiroId: '', membroId: '',
+        descricao: baseDesc + ' — amortização (devolução do empréstimo)' + (jurosParc > 0 ? '; juros ' + fmtBRL(jurosParc) + ' lançados à parte' : ''),
         criadoEm: Date.now()
       });
+      // juros: esses sim são custo
+      if(jurosParc > 0){
+        var cJ = contaJurosFinanciamento();
+        state.financeiro.push({id: jurosId, origem: 'financiamento', finMov: 'juros', finId: fin.id, contaId: cJ, tipo: 'custo', categoria: 'Juros de financiamento', valor: jurosParc, quantidade: 0, peso: 0, unidade: '', status: 'Pago', data: dataPagFin, vencimento: '',
+          talhoesIds: fin.talhaoId ? [fin.talhaoId] : [], talhaoId: fin.talhaoId || '', parceiroId: '', membroId: '', descricao: baseDesc + ' — juros', criadoEm: Date.now() + 1});
+      }
       saveKey('financeiro', state.financeiro);
       renderAll();
       return;
@@ -17156,7 +17441,7 @@
       } else {
         state.orcamentos.push({id: uid(), contaId: orcContaId, ano: orcamentoAnoSelecionado, valorOrcado: orcValor, criadoEm: Date.now()});
       }
-      saveKey('orcamentos', state.orcamentos);
+      saveKey('orcamentos', state.orcamentos); orcFormAberto = false; orcContaEditar = '';
       renderOrcamento();
       return;
     }
