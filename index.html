@@ -272,6 +272,7 @@
   .nav-btn[data-tab="painel"]::before{content:'🏠';}
   .nav-btn[data-tab="mapaGeral"]::before{content:'🗺️';}
   .nav-btn[data-tab="rastreabilidade"]::before{content:'🔗';}
+  .nav-btn[data-tab="lcdpr"]::before{content:'📒';}
   .nav-btn[data-tab="planoSafra"]::before{content:'🗓️';}
   .nav-btn[data-tab="planoAdubacao"]::before{content:'🌿';}
   .nav-btn[data-hub="inventario"]::before{content:'📦';}
@@ -591,6 +592,23 @@
   .di-st-aex{background:#FFF1D6; color:#8A6514;} .di-st-exec{background:#DDEEF6; color:#2F6F8F;} .di-st-atr{background:#FBE3DE; color:#A23E2E;}
   .di-prod-falta{border-color:#E8A797 !important; background:#FDF0EC !important; color:#A23E2E;}
   .di-prog-acts{flex-wrap:wrap; justify-content:flex-end;}
+  /* ---------- Livro Caixa (LCDPR) ---------- */
+  .lc-box{padding:14px 16px; margin-bottom:12px;} .lc-tit{font-weight:700; font-size:14.5px; margin-bottom:10px; display:flex; gap:10px; align-items:baseline; flex-wrap:wrap;} .lc-tit small{font-weight:400; color:var(--ink-soft); font-size:12px;}
+  .lc-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:10px 12px; align-items:start;}
+  .lc-f{display:flex; flex-direction:column; gap:4px; font-size:12px;} .lc-f > span{font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.03em;}
+  .lc-f input, .lc-f select{font:inherit; font-size:13.5px; padding:7px 9px; border:1px solid var(--paper-line); border-radius:8px; background:#fff; color:var(--ink); min-width:0;}
+  .lc-g2{grid-column:span 2;} @media (max-width:560px){ .lc-g2{grid-column:span 1;} }
+  .lc-chk{display:inline-flex; gap:6px; align-items:center; font-size:13px; cursor:pointer;}
+  .lc-off{opacity:.65;} .lc-sub{font-size:12px; font-weight:700; margin:12px 0 6px; color:var(--ink-soft);} .lc-terc{margin-bottom:8px; padding-top:8px; border-top:1px dashed var(--paper-line);}
+  .lc-cab{display:flex; justify-content:space-between; align-items:flex-end; gap:10px; flex-wrap:wrap; margin:20px 0 10px;}
+  .lc-cab > .lc-chk, .lc-cab > .lc-f > span{color:#E4E8D2;}
+  .lc-contas{display:flex; flex-wrap:wrap; gap:6px 16px;} .lc-nota{font-size:12.5px; color:var(--ink-soft); margin:6px 0;}
+  .lc-falta{padding:14px 16px; border:1px solid #E9C98A; background:#FFF8E6; margin:12px 0;} .lc-falta-g{display:flex; gap:10px; align-items:flex-start; margin-top:6px;} .lc-falta-g ul{margin:0; padding-left:18px; font-size:13px;} .lc-falta-g li{margin:2px 0;}
+  .lc-pess{display:flex; flex-direction:column;} .lc-pes-l{display:flex; justify-content:space-between; gap:12px; align-items:center; padding:9px 0; border-top:1px solid var(--paper-line);} .lc-pes-l:first-child{border-top:0;} .lc-pes-l small{display:block; color:var(--ink-soft); font-size:11.5px;} .lc-pes-l input{width:190px; font:inherit; padding:7px 9px; border:1px solid var(--paper-line); border-radius:8px;}
+  @media (max-width:560px){ .lc-falta-g{flex-direction:column; gap:4px;} .lc-pes-l{flex-wrap:wrap;} .lc-pes-l input{width:100%;} .lc-mes-cab{gap:6px 12px;} }
+  .lc-mes{margin-bottom:8px; padding:0; overflow:hidden;} .lc-mes-cab{width:100%; display:flex; gap:14px; align-items:center; flex-wrap:wrap; padding:11px 14px; background:none; border:0; cursor:pointer; font:inherit; font-size:13px; color:var(--ink); text-align:left;} .lc-mes-cab b{min-width:150px;}
+  .lc-tab td{vertical-align:top; font-size:12.5px;} .lc-tab td small{display:block; color:var(--ink-soft); font-size:11px;} .lc-hist{max-width:280px;} .lc-tab tr.lc-fora td{opacity:.55;}
+  .lc-in-s{font:inherit; font-size:12px; padding:4px 6px; border:1px solid var(--paper-line); border-radius:6px; max-width:150px; display:block; margin-bottom:3px; background:#fff;} .lc-in-s.lc-erro{border-color:#C0453A; background:#FBE3DE;}
   /* ---------- Inspeção: cartões ---------- */
   .fe-bal tr.fe-bal-mic td{font-size:12.5px; color:var(--ink-soft);} .fe-bal tr.fe-bal-mic td:first-child{padding-left:14px;}
   .ins-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:12px; margin-bottom:8px;}
@@ -897,6 +915,7 @@
       <button class="nav-btn nav-sub" data-tab="contaCorrente"><span class="nav-txt">Conta-Corrente</span></button>
       <button class="nav-btn" data-tab="compras"><span class="nav-txt">Compras e NF-e</span></button>
       <button class="nav-btn" data-tab="financiamentos"><span class="nav-txt">Contratos e Financiamentos</span></button>
+      <button class="nav-btn" data-tab="lcdpr"><span class="nav-txt">Livro Caixa (LCDPR)</span></button>
       <div class="nav-group-label" data-group="resultados"><span class="nav-g-ic">📊</span><span class="nav-g-txt">Resultados</span><span class="nav-g-badge"></span></div>
       <button class="nav-btn" data-tab="indicadores"><span class="nav-txt">Indicadores</span></button>
       <button class="nav-btn" data-tab="rentabilidade"><span class="nav-txt">Rentabilidade</span></button>
@@ -933,6 +952,7 @@
     <section id="tab-fertilidade" class="tab-content hidden"></section>
     <section id="tab-mapaGeral" class="tab-content hidden"></section>
     <section id="tab-rastreabilidade" class="tab-content hidden"></section>
+    <section id="tab-lcdpr" class="tab-content hidden"></section>
     <section id="tab-planoSafra" class="tab-content hidden"></section>
     <section id="tab-planoAdubacao" class="tab-content hidden"></section>
     <section id="tab-safras" class="tab-content hidden"></section>
@@ -973,13 +993,14 @@
 (function(){
   "use strict";
 
-  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas','sefazNotasPendentes','sefazItensRevisao','sefazProgresso','analisesSolo','imagensCampo','importsAplicados','lavouras','sefazResumos','ajustesEstoque','configUnidades','alertasLidos','manutPlanos','manutOS','manutLeituras','manutCalibracoes','colheitaApanhas','cafeLotes','inspecoes','diarioProgramadas'];
+  var ALL_KEYS = ['propriedades','talhoes','culturas','safras','produtos','parceiros','equipe','patrimonio','producao','operacoes','financeiro','pagamentos','contasPagar','contasReceber','tiposAtividade','categoriasProduto','subgruposFinanceiro','contasFinanceiro','arrendamentos','financiamentos','servicosPrestados','cotacoes','periodosFechados','orcamentos','vendasAntecipadas','compras','notasFiscaisImportadas','chuvas','sefazNotasPendentes','sefazItensRevisao','sefazProgresso','analisesSolo','imagensCampo','importsAplicados','lavouras','sefazResumos','ajustesEstoque','configUnidades','alertasLidos','manutPlanos','manutOS','manutLeituras','manutCalibracoes','colheitaApanhas','cafeLotes','inspecoes','diarioProgramadas','lcdpr'];
   var state = {};
   var editState = null; // {scope:'generic', entityKey, id} ou {scope:'talhoes'|'safras'|'operacoes'|'financeiro'|'producao', id}
   ALL_KEYS.forEach(function(k){ state[k] = []; });
 
   var pageMeta = {
     painel: {title:'Início', subtitle:'Visão geral da propriedade'},
+    lcdpr: {title:'Livro Caixa Digital (LCDPR)', subtitle:'Livro Caixa do Produtor Rural para a Receita Federal — leiaute 1.3'},
     rastreabilidade: {title:'Rastreabilidade', subtitle:'Do talhão ao comprador — conferência por lavoura, carência, linha do tempo e dossiê (PDF, GeoJSON EUDR, KML)'},
     mapaGeral: {title:'Mapa da Propriedade', subtitle:'Todos os talhões no lugar real, coloridos por cultura, fertilidade ou situação'},
     planoSafra: {title:'Plano de Safra', subtitle:'O que plantar em cada talhão, ano a ano — rotação e área planejada'},
@@ -1544,19 +1565,22 @@
       fields: [
         {name:'nome', type:'text', label:'Nome', required:true, placeholder:'Ex: Cooperativa Central'},
         {name:'tipo', type:'select', label:'Tipo', options:['Fornecedor','Cliente','Fornecedor e Cliente'].map(function(c){return {value:c,label:c};})},
-        {name:'contato', type:'text', label:'Contato', placeholder:'Telefone ou e-mail'}
+        {name:'contato', type:'text', label:'Contato', placeholder:'Telefone ou e-mail'},
+        {name:'documento', type:'text', label:'CPF / CNPJ', placeholder:'Usado no Livro Caixa (LCDPR)'}
       ],
       columns: [
         {key:'nome', label:'Nome'},
         {key:'tipo', label:'Tipo'},
-        {key:'contato', label:'Contato'}
+        {key:'contato', label:'Contato'},
+        {key:'documento', label:'CPF / CNPJ'}
       ]
     },
     equipe: {
       label: 'funcionário',
       fields: [
         {name:'nome', type:'text', label:'Nome', required:true, placeholder:'Ex: João'},
-        {name:'papel', type:'text', label:'Função', placeholder:'Ex: Encarregado de campo'}
+        {name:'papel', type:'text', label:'Função', placeholder:'Ex: Encarregado de campo'},
+        {name:'documento', type:'text', label:'CPF', placeholder:'Usado no Livro Caixa (LCDPR)'}
       ],
       columns: [
         {key:'nome', label:'Nome'},
@@ -3108,6 +3132,7 @@
     ]}
   ];
   var AJUDA_TELAS = {
+    lcdpr: {t:'Livro Caixa Digital (LCDPR)', txt:'Junta todos os pagamentos e recebimentos do ano (Lançamentos, Contas a Pagar e a Receber) e monta o Livro Caixa no formato da Receita. 1) Em <b>🏡 Cadastro</b> informe seus dados, o NIRF/CAEPF e o endereço de cada imóvel e as contas bancárias (marque a conta principal). 2) Em <b>👥 Pessoas</b> informe o CPF/CNPJ que falta — fica gravado no cadastro da pessoa. 3) Em <b>📏 O que entra</b> marque as contas que ficam fora (liberação e amortização de custeio já ficam fora sozinhas; juros entram). 4) No <b>📒 Livro</b> confira mês a mês; dá para tirar ou pôr um lançamento, mudar o documento, o tipo e a conta. 5) Quando o quadro "O que falta" sumir, clique em <b>⬇️ Gerar arquivo da Receita</b> e entregue ao contador para validar, assinar e transmitir. Obrigatório acima de R$ 4,8 milhões de receita bruta no ano.'},
     rastreabilidade: {t:'Rastreabilidade', txt:'Mostra, para cada lavoura do ano, se está tudo pronto para provar a origem da produção: croquis das áreas, CAR, receituário nas aplicações, carência respeitada, produto registrado para a cultura, colheita e destino. ✖ é o que falta corrigir. <b>🔒 Em carência agora</b> lista os talhões que ainda não podem ser colhidos e a data em que liberam. <b>🕓 Linha do tempo</b> mostra plantio → aplicações → colheita → venda. <b>📄 Dossiê</b> gera o documento para comprador ou certificadora, e no ⋯ ficam os arquivos das áreas (GeoJSON para a EUDR e KML para o Google Earth). Tudo vem do que já está lançado no Diário, na Colheita e nos cadastros — esta tela não pede digitação nova.'},
     mapaGeral: {t:'Mapa da Propriedade', txt:'Mostra todos os talhões que têm croqui desenhado, na posição real. Escolha em cima como colorir: <b>cultura</b> atual, <b>fator limitante</b> da análise de solo, <b>situação da análise</b> (em dia, vencida ou sem) ou <b>recomendações pendentes</b>. Toque num talhão para ver o resumo e abrir a fertilidade ou o croqui. Talhões sem desenho aparecem embaixo com o botão ✏️ Desenhar.'},
     planoSafra: {t:'Plano de Safra', txt:'Cada linha é um talhão e cada coluna um ano agrícola. Os quadrinhos tracejados são safras <b>planejadas</b>. Clique em <b>＋</b> num ano para planejar: abre o cadastro de lavoura com o ano e o status "Planejada" já preenchidos. O aviso 🔁 aparece quando a mesma cultura anual se repete 3 anos seguidos no talhão.'},
@@ -4497,6 +4522,344 @@
     return '<div class="paper" style="padding:12px 16px; margin:0 0 14px; border-left:4px solid #B5822B;">' + (temProd ? '' : '<p style="font-size:12.5px; margin:0 0 6px; color:var(--cost-dark);">⚠️ <b>' + escapeHtml(r.fonte || r.tipo) + '</b> não está no seu estoque — escolha o produto que você vai usar na lista abaixo (ou cadastre em Produtos) para dar baixa e lançar o custo.</p>') + '<div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center;"><b>📒 Lançando a recomendação de ' + escapeHtml(talhaoNome(a.talhaoId)) + ': ' + escapeHtml(r.tipo) + (r.epoca ? ' · ' + escapeHtml(r.epoca) : '') + ' — ' + escapeHtml(r.fonte || '') + ' ' + fmtNum(r.doseMedia || 0) + ' kg/ha</b><button type="button" class="btn-cancel" data-action="fe-desvincular" style="margin:0;">✕ Cancelar</button></div><p style="font-size:12.5px; margin:6px 0 0;">Confira data, área, produto e dose abaixo. A atividade só é registrada quando você clicar em <b>Registrar atividade</b> — aí a recomendação passa para “Aplicada”, o estoque baixa e o custo vai para a lavoura.</p></div>';
   }
 
+  /* ---------------- Livro Caixa Digital do Produtor Rural (LCDPR) ---------------- */
+  // Leiaute 1.3 da Receita Federal (Manual de Preenchimento do LCDPR, ADE COPES 1/2020).
+  // Registros: 0000, 0010, 0030, 0040 (+0045), 0050, Q100, Q200 e 9999. Campos separados por "|", sem "|" no começo nem no fim, linha termina em CR+LF.
+  // Os dados do produtor (CPF, endereço etc.) são digitados pelo usuário na tela e ficam na chave "lcdpr" — nada fica escrito no código.
+  var lcAno = String(new Date().getFullYear()), lcSecao = 'livro', lcMesAberto = {}, lcVerFora = false;
+  function lcCfg(){
+    if(!state.lcdpr) state.lcdpr = [];
+    if(!state.lcdpr[0]) state.lcdpr[0] = {id:'cfg'};
+    var c = state.lcdpr[0];
+    c.produtor = c.produtor || {}; c.contador = c.contador || {}; c.imoveis = c.imoveis || {}; c.contas = c.contas || []; c.docFin = c.docFin || {};
+    return c;
+  }
+  function lcSalvar(){ saveKey('lcdpr', state.lcdpr); }
+  function lcDig(s){ return String(s == null ? '' : s).replace(/\D/g, ''); }
+  function lcCpfOk(c){ c = lcDig(c); if(c.length !== 11 || /^(\d)\1+$/.test(c)) return false; for(var t = 9; t < 11; t++){ var s = 0; for(var i = 0; i < t; i++) s += Number(c[i]) * (t + 1 - i); if(((s * 10) % 11) % 10 !== Number(c[t])) return false; } return true; }
+  function lcCnpjOk(c){ c = lcDig(c); if(c.length !== 14 || /^(\d)\1+$/.test(c)) return false; var dv = function(n){ var s = 0, p = n - 7; for(var i = 0; i < n; i++){ s += Number(c[i]) * p--; if(p < 2) p = 9; } var r = s % 11; return r < 2 ? 0 : 11 - r; }; return dv(12) === Number(c[12]) && dv(13) === Number(c[13]); }
+  function lcDocOk(d){ d = lcDig(d); return d.length === 11 ? lcCpfOk(d) : (d.length === 14 ? lcCnpjOk(d) : false); }
+  function lcFmtDoc(d){ d = lcDig(d); if(d.length === 11) return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4'); if(d.length === 14) return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5'); return d; }
+  // texto do arquivo: sem acento, sem "|", sem caracteres de controle
+  function lcTxt(s, max){ s = String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[|\u0000-\u001f\u007f-￿]/g, ' ').replace(/\s+/g, ' ').trim(); return max ? s.slice(0, max).trim() : s; }
+  function lcCent(v){ var c = Math.round(Math.abs(Number(v) || 0) * 100); return c < 100 ? ('00' + c).slice(-3) : String(c); }
+  function lcData(iso){ return iso ? iso.slice(8, 10) + iso.slice(5, 7) + iso.slice(0, 4) : ''; }
+  function lcImovel(p){
+    var im = lcCfg().imoveis[p.id] || {}, car = /^[A-Za-z]{2}-(\d{7})-/.exec(p.codigoCAR || '');
+    return {
+      usar: im.usar !== false, cadItr: im.cadItr || '', caepf: im.caepf || '', ie: im.ie != null ? im.ie : lcDig(p.inscricaoEstadual),
+      endereco: im.endereco || '', num: im.num || '', compl: im.compl || '', bairro: im.bairro || '',
+      uf: im.uf || String(p.estado || '').toUpperCase().slice(0, 2), codMun: im.codMun || (car ? car[1] : ''), cep: im.cep || '',
+      tipo: im.tipo || '1', part: im.part != null && im.part !== '' ? Number(im.part) : 100, terceiros: im.terceiros || []
+    };
+  }
+  function lcImoveisUsados(){ return state.propriedades.filter(function(p){ return lcImovel(p).usar; }); }
+  // Contas do plano que ficam fora do Livro por padrão: receitas não operacionais (arrendamento recebido, outras) e serviços prestados a terceiros
+  function lcContasFora(){
+    var c = lcCfg();
+    if(c.contasFora) return c.contasFora;
+    var o = {};
+    state.contasFinanceiro.forEach(function(ct){ if(ct.subgrupoId === 'sg-receita-naooperacional' || ct.subgrupoId === 'sg-receita-servicos') o[ct.id] = true; });
+    return o;
+  }
+  var LC_TIPO_DOC = {'1':'Nota fiscal', '2':'Fatura', '3':'Recibo', '4':'Contrato', '5':'Folha de pagamento', '6':'Outros'};
+  var LC_TIPO_LANC = {'1':'Receita da atividade rural', '2':'Custeio e investimento', '3':'Produto entregue de adiantamento'};
+  var LC_TIPO_EXP = {'1':'Exploração individual (próprio)', '2':'Condomínio', '3':'Imóvel arrendado', '4':'Parceria', '5':'Comodato', '6':'Outros'};
+  var LC_TIPO_CONTRA = {'1':'Condômino', '2':'Arrendador', '3':'Parceiro', '4':'Comodante', '5':'Outros'};
+  function lcRef(src, id){ var arr = state[src] || []; return arr.find(function(x){ return x.id === id; }) || null; }
+  function lcNomeConta(contaId, ref){ var n = contaNome(contaId); return n && n !== '—' ? n : (ref.categoria || ''); }
+  // Todas as movimentações de dinheiro (pagas/recebidas) do ano, com o que vai para o arquivo
+  function lcLinhasAno(ano){
+    var c = lcCfg(), fora = lcContasFora(), prodCpf = lcDig(c.produtor.cpf), base = [];
+    state.financeiro.forEach(function(f){ if((f.status || 'Pago') === 'Pendente' || !f.data || f.data.slice(0, 4) !== ano) return; base.push({src:'financeiro', ref:f, data:f.data, ent: f.tipo === 'receita', valor: Number(f.valor) || 0}); });
+    state.contasPagar.forEach(function(x){ var d = x.dataPagamento || x.vencimento; if(x.status !== 'Pago' || !d || d.slice(0, 4) !== ano) return; base.push({src:'contasPagar', ref:x, data:d, ent:false, valor: Number(x.valor) || 0}); });
+    state.contasReceber.forEach(function(x){ var d = x.dataRecebimento || x.vencimento; if(x.status !== 'Recebido' || !d || d.slice(0, 4) !== ano) return; base.push({src:'contasReceber', ref:x, data:d, ent:true, valor: valorLiquidoContaReceber(x)}); });
+    var usados = lcImoveisUsados(), principal = c.imovelPrincipal && usados.some(function(p){ return p.id === c.imovelPrincipal; }) ? c.imovelPrincipal : (usados[0] ? usados[0].id : '');
+    return base.filter(function(b){ return b.valor > 0.004; }).map(function(b){
+      var f = b.ref, contaId = f.contaId || '', cn = lcNomeConta(contaId, f), cnS = semAcento(cn), fin = f.finId ? state.financiamentos.find(function(x){ return x.id === f.finId; }) : null;
+      // fora do livro por padrão
+      var motivo = '';
+      if(f.movFinanciamento && f.finMov === 'liberacao') motivo = 'liberação de financiamento — empréstimo não é receita';
+      else if(f.movFinanciamento && f.finMov === 'amortizacao' && (!fin || fin.tipo === 'Custeio' || fin.tipo === 'Outro')) motivo = 'amortização de ' + (fin ? (fin.tipo === 'Outro' ? 'empréstimo' : 'custeio') : 'financiamento') + ' — devolução do dinheiro emprestado';
+      else if(contaId && fora[contaId] && (b.ent || contaTipo(contaId) !== 'receita')) motivo = 'conta "' + cn + '" está marcada para ficar fora';
+      var incluir = f.lcdprIncluir === true ? true : (f.lcdprIncluir === false ? false : !motivo);
+      // documento
+      var mNf = /\bNF[-\s]*e?\s*(?:n[ºo°.]?\s*)?(\d{1,9})\b/i.exec((f.descricao || '') + ' ' + (f.observacao || '')), numDoc = f.lcdprDoc != null ? f.lcdprDoc : (mNf ? mNf[1] : (fin && fin.numeroContrato ? fin.numeroContrato : ''));
+      var tdoc = f.lcdprTipoDoc || (mNf ? '1' : (fin ? '4' : (/salario/.test(cnS) ? '5' : (/diaria|empreitada|mao de obra/.test(cnS) ? '3' : '6'))));
+      // participante (CPF/CNPJ)
+      var partNome = '', partDoc = '', partOrig = '', partId = '';
+      if(f.lcdprPartic){ partDoc = lcDig(f.lcdprPartic); partNome = 'informado no lançamento'; partOrig = 'manual'; }
+      else if(f.parceiroId){ var pa = state.parceiros.find(function(x){ return x.id === f.parceiroId; }); partNome = pa ? pa.nome : ''; partDoc = pa ? lcDig(pa.documento) : ''; partOrig = 'parceiro'; partId = f.parceiroId; }
+      else if(f.membroId){ var me = state.equipe.find(function(x){ return x.id === f.membroId; }); partNome = me ? me.nome : ''; partDoc = me ? lcDig(me.documento) : ''; partOrig = 'membro'; partId = f.membroId; }
+      else if(fin){ partNome = fin.banco || 'financiamento'; partDoc = lcDig(c.docFin[fin.id]); partOrig = 'fin'; partId = fin.id; }
+      // sem parceiro nem funcionário: imposto pago ou folha em lote saem no CPF do próprio produtor (regra do Manual)
+      if(!partDoc && !partOrig && !b.ent && (/\b(receita federal|impostos?|itr|funrural|inss|fgts|darf|gps)\b/.test(cnS + ' ' + semAcento(f.descricao || '')) || tdoc === '5')){ partDoc = prodCpf; partNome = 'seu CPF (imposto/folha)'; partOrig = 'produtor'; }
+      // imóvel: pelos talhões do lançamento (rateio pelas partes ou pela área)
+      var pesos = {};
+      if(Array.isArray(f.partes) && f.partes.length) f.partes.forEach(function(p){ var t = state.talhoes.find(function(x){ return x.id === p.talhaoId; }); if(t && t.propriedadeId) pesos[t.propriedadeId] = (pesos[t.propriedadeId] || 0) + (Number(p.valor) || 0); });
+      else { var ts = (f.talhoesIds && f.talhoesIds.length ? f.talhoesIds : (f.talhaoId ? [f.talhaoId] : [])); ts.forEach(function(id){ var t = state.talhoes.find(function(x){ return x.id === id; }); if(t && t.propriedadeId) pesos[t.propriedadeId] = (pesos[t.propriedadeId] || 0) + (Number(t.area) || 1); }); }
+      Object.keys(pesos).forEach(function(k){ if(!usados.some(function(p){ return p.id === k; }) || !(pesos[k] > 0)) delete pesos[k]; });
+      if(!Object.keys(pesos).length && principal) pesos[principal] = 1;
+      var conta = f.lcdprConta != null ? f.lcdprConta : (c.contaPadrao || '');
+      return {
+        src: b.src, id: f.id, ref: f, data: b.data, ent: b.ent, valor: Math.round(b.valor * 100) / 100, contaId: contaId, contaNome: cn,
+        hist: f.lcdprHist || f.descricao || cn || (b.ent ? 'Receita' : 'Despesa'), motivo: motivo, incluir: incluir,
+        tipoLanc: f.lcdprTipo || (b.ent ? '1' : '2'), numDoc: numDoc, tipoDoc: tdoc,
+        partNome: partNome, partDoc: partDoc, partOrig: partOrig, partId: partId, conta: conta, pesos: pesos
+      };
+    }).sort(function(a, b){ return a.data.localeCompare(b.data) || (a.ent === b.ent ? 0 : (a.ent ? -1 : 1)); });
+  }
+  // Monta tudo e aponta o que falta
+  function lcMontar(ano){
+    var c = lcCfg(), P = c.produtor, falta = [], avisos = [], linhas = lcLinhasAno(ano), dentro = linhas.filter(function(l){ return l.incluir; });
+    if(!lcCpfOk(P.cpf)) falta.push({sec:'cadastro', txt:'Seu <b>CPF</b> (produtor) ' + (P.cpf ? 'não é válido' : 'não foi informado') + '.'});
+    if(!lcTxt(P.nome)) falta.push({sec:'cadastro', txt:'Seu <b>nome completo</b> não foi informado.'});
+    ['endereco', 'num', 'bairro', 'uf', 'codMun', 'cep', 'email'].forEach(function(k){ if(!lcTxt(P[k])) falta.push({sec:'cadastro', txt:'Seu endereço: falta <b>' + {endereco:'rua/endereço', num:'número', bairro:'bairro', uf:'UF', codMun:'código do município (IBGE)', cep:'CEP', email:'e-mail'}[k] + '</b>.'}); });
+    if(P.codMun && lcDig(P.codMun).length !== 7) falta.push({sec:'cadastro', txt:'O código do município do seu endereço deve ter <b>7 números</b> (código IBGE).'});
+    if(P.cep && lcDig(P.cep).length !== 8) falta.push({sec:'cadastro', txt:'O CEP do seu endereço deve ter 8 números.'});
+    var usados = lcImoveisUsados();
+    if(!usados.length) falta.push({sec:'cadastro', txt:'Nenhum <b>imóvel</b> marcado para entrar no Livro.'});
+    usados.forEach(function(p){
+      var im = lcImovel(p), nm = '<b>' + escapeHtml(p.nome) + '</b>';
+      if(lcDig(im.cadItr).length !== 8) falta.push({sec:'cadastro', txt:nm + ': falta o <b>número do imóvel na Receita (NIRF/CIB do ITR)</b>, com 8 números.'});
+      if(im.tipo === '1' && !im.caepf) falta.push({sec:'cadastro', txt:nm + ': falta o <b>CAEPF</b> (cadastro de atividade econômica da pessoa física).'});
+      if(im.caepf && lcDig(im.caepf).length !== 14) falta.push({sec:'cadastro', txt:nm + ': o CAEPF deve ter 14 números.'});
+      if(!lcTxt(im.endereco) || !lcTxt(im.bairro)) falta.push({sec:'cadastro', txt:nm + ': falta o <b>endereço</b> e/ou o <b>bairro/localidade</b> do imóvel.'});
+      if(lcDig(im.codMun).length !== 7 || !im.uf || lcDig(im.cep).length !== 8) falta.push({sec:'cadastro', txt:nm + ': confira <b>UF, código do município (7 números) e CEP (8 números)</b>.'});
+      if((im.tipo !== '1' || im.part < 100) && !im.terceiros.length) falta.push({sec:'cadastro', txt:nm + ': como não é exploração individual de 100%, informe <b>quem é o outro lado</b> (arrendador, parceiro, condômino…).'});
+      im.terceiros.forEach(function(t){ if(!lcDocOk(t.doc) || !lcTxt(t.nome)) falta.push({sec:'cadastro', txt:nm + ': o terceiro "' + escapeHtml(t.nome || '?') + '" está sem nome ou com CPF/CNPJ inválido.'}); });
+    });
+    if(!c.contas.length) falta.push({sec:'cadastro', txt:'Cadastre ao menos uma <b>conta bancária</b> (ou marque os pagamentos como "dinheiro").'});
+    c.contas.forEach(function(ct){ if(lcDig(ct.banco).length < 1 || !lcTxt(ct.nomeBanco) || lcDig(ct.agencia).length < 1 || lcDig(ct.conta).length < 2) falta.push({sec:'cadastro', txt:'Conta bancária <b>' + escapeHtml(ct.nomeBanco || '?') + '</b>: confira código do banco, agência e número da conta.'}); });
+    var semConta = dentro.filter(function(l){ return !l.conta || (l.conta !== '000' && !c.contas.some(function(ct){ return ct.id === l.conta; })); });
+    if(semConta.length) falta.push({sec:'livro', txt:'<b>' + semConta.length + '</b> lançamento(s) sem a <b>conta</b> por onde o dinheiro passou. Escolha uma "conta principal" no Cadastro ou ajuste no Livro.'});
+    var semPart = {}; dentro.forEach(function(l){ if(!lcDocOk(l.partDoc)){ var k = l.partId ? l.partOrig + '|' + l.partId : 'sem|' + semAcento(l.partNome || l.hist); if(!semPart[k]) semPart[k] = {nome: l.partId ? (l.partNome || '?') : 'Sem parceiro: ' + l.hist, orig: l.partId ? l.partOrig : '', id: l.partId, linhas: []}; semPart[k].linhas.push(l); } });
+    var nSP = Object.keys(semPart).length;
+    if(nSP) falta.push({sec:'pessoas', txt:'<b>' + nSP + '</b> pessoa(s)/empresa(s) sem <b>CPF/CNPJ</b> válido em lançamentos do Livro.'});
+    var semImovel = dentro.filter(function(l){ return !Object.keys(l.pesos).length; });
+    if(semImovel.length) falta.push({sec:'cadastro', txt:'<b>' + semImovel.length + '</b> lançamento(s) sem imóvel — escolha o <b>imóvel principal</b> no Cadastro.'});
+    if(!dentro.length) falta.push({sec:'livro', txt:'Nenhum lançamento pago/recebido em ' + ano + ' entrou no Livro.'});
+    var arrPago = state.arrendamentos.filter(function(a){ return a.tipo === 'Pago' && a.status === 'Ativo'; });
+    if(arrPago.length && !usados.some(function(p){ return lcImovel(p).tipo === '3'; })) avisos.push('Você tem arrendamento(s) pago(s) (' + arrPago.map(function(a){ return escapeHtml(a.nome); }).join(', ') + '). Na Receita, a terra arrendada é um imóvel à parte, do tipo "Imóvel arrendado", com o arrendador informado. Confira com seu contador como cadastrar.');
+    var ent = 0, sai = 0; dentro.forEach(function(l){ if(l.ent) ent += l.valor; else sai += l.valor; });
+    if(ent > 4800000) avisos.push('A receita bruta do ano passou de R$ 4,8 milhões: a entrega do LCDPR é obrigatória.');
+    return {ano: ano, linhas: linhas, dentro: dentro, falta: falta, avisos: avisos, semPart: semPart, ent: Math.round(ent * 100) / 100, sai: Math.round(sai * 100) / 100};
+  }
+  // Gera o texto do arquivo (só quando não falta nada)
+  function lcArquivo(ano){
+    var r = lcMontar(ano); if(r.falta.length) return {erro: r.falta};
+    var c = lcCfg(), P = c.produtor, K = c.contador, L = [], ln = function(a){ L.push(a.join('|')); };
+    ln(['0000', 'LCDPR', '0013', lcDig(P.cpf), lcTxt(P.nome), P.indSit || '0', P.sitEsp || '0', P.sitEsp && P.sitEsp !== '0' ? lcData(P.dtSitEsp) : '', '0101' + ano, '3112' + ano]);
+    ln(['0010', P.formaApur || '1']);
+    ln(['0030', lcTxt(P.endereco, 150), lcTxt(P.num, 6), lcTxt(P.compl, 50), lcTxt(P.bairro, 50), lcTxt(P.uf, 2).toUpperCase(), lcDig(P.codMun), lcDig(P.cep), lcDig(P.fone).slice(0, 15), lcTxt(P.email, 115)]);
+    var codIm = {};
+    lcImoveisUsados().forEach(function(p, i){
+      var im = lcImovel(p), cod = ('00' + (i + 1)).slice(-3); codIm[p.id] = cod;
+      ln(['0040', cod, 'BR', 'BRL', lcDig(im.cadItr), lcDig(im.caepf), lcDig(im.ie).slice(0, 14), lcTxt(p.nome, 50), lcTxt(im.endereco, 150), lcTxt(im.num, 6), lcTxt(im.compl, 50), lcTxt(im.bairro, 50), lcTxt(im.uf, 2).toUpperCase(), lcDig(im.codMun), lcDig(im.cep), im.tipo, lcCent(im.part).padStart(5, '0')]);
+      im.terceiros.forEach(function(t){ ln(['0045', cod, t.tipo || '5', lcDig(t.doc), lcTxt(t.nome, 50), lcCent(t.perc).padStart(5, '0')]); });
+    });
+    var codCt = {};
+    c.contas.forEach(function(ct, i){ var cod = ('00' + (i + 1)).slice(-3); codCt[ct.id] = cod; ln(['0050', cod, 'BR', ('00' + lcDig(ct.banco)).slice(-3), lcTxt(ct.nomeBanco, 30), lcDig(ct.agencia).slice(0, 4), lcDig(ct.conta).slice(0, 16)]); });
+    var saldo = 0, meses = {}, ordemMes = [];
+    r.dentro.forEach(function(l){
+      var ks = Object.keys(l.pesos), tot = ks.reduce(function(s, k){ return s + l.pesos[k]; }, 0), cents = Math.round(l.valor * 100), usado = 0;
+      ks.forEach(function(k, i){
+        var parte = i === ks.length - 1 ? cents - usado : Math.round(cents * l.pesos[k] / tot); usado += parte; if(parte <= 0) return;
+        var v = parte / 100; saldo = Math.round((saldo + (l.ent ? v : -v)) * 100) / 100;
+        var hist = lcTxt(l.hist, ks.length > 1 ? 230 : 255) + (ks.length > 1 ? ' (rateio ' + Math.round(l.pesos[k] / tot * 100) + '%)' : '');
+        ln(['Q100', lcData(l.data), codIm[k], l.conta === '000' ? '000' : codCt[l.conta], lcTxt(l.numDoc, 60), l.tipoDoc, hist, lcDig(l.partDoc), l.tipoLanc, l.ent ? lcCent(v) : '000', l.ent ? '000' : lcCent(v), lcCent(saldo), saldo < 0 ? 'N' : 'P']);
+        var ym = l.data.slice(5, 7) + l.data.slice(0, 4); if(!meses[ym]){ meses[ym] = {e:0, s:0}; ordemMes.push(ym); } if(l.ent) meses[ym].e += v; else meses[ym].s += v;
+      });
+    });
+    var acum = 0;
+    ordemMes.forEach(function(ym){ var m = meses[ym]; acum = Math.round((acum + m.e - m.s) * 100) / 100; ln(['Q200', ym, lcCent(m.e), lcCent(m.s), lcCent(acum), acum < 0 ? 'N' : 'P']); });
+    var n9 = L.length + 1;
+    ln(['9999', lcTxt(K.nome), lcDig(K.doc), lcTxt(K.crc, 20), lcTxt(K.email, 115), lcDig(K.fone).slice(0, 15), String(n9)]);
+    return {texto: L.join('\r\n') + '\r\n', linhas: L.length, saldo: saldo, r: r};
+  }
+  // ----- tela -----
+  function lcInp(attr, val, ph, extra){ return '<input ' + attr + ' value="' + escapeHtml(val == null ? '' : String(val)) + '"' + (ph ? ' placeholder="' + escapeHtml(ph) + '"' : '') + (extra || '') + '>'; }
+  function lcCampo(rot, html, larg){ return '<label class="lc-f' + (larg ? ' lc-' + larg : '') + '"><span>' + rot + '</span>' + html + '</label>'; }
+  function lcSel(attr, opts, val){ return '<select ' + attr + '>' + Object.keys(opts).map(function(k){ return '<option value="' + escapeHtml(k) + '"' + (String(val) === k ? ' selected' : '') + '>' + escapeHtml(opts[k]) + '</option>'; }).join('') + '</select>'; }
+  function lcCadastroHtml(){
+    var c = lcCfg(), P = c.produtor, K = c.contador, h = '';
+    var pf = function(k, rot, ph, larg){ return lcCampo(rot, lcInp('data-lc-p="' + k + '"', P[k], ph), larg); };
+    h += '<div class="paper lc-box"><div class="lc-tit">👤 Produtor (quem entrega o Livro)</div><div class="lc-grid">';
+    h += pf('nome', 'Nome completo', '', 'g2') + pf('cpf', 'CPF', 'só números') + lcCampo('Forma de apuração', lcSel('data-lc-p="formaApur"', {'1':'Livro Caixa (receitas − despesas)', '2':'20% da receita bruta (Lei 8.023/90)'}, P.formaApur || '1'), 'g2');
+    h += pf('endereco', 'Endereço (rua)', '', 'g2') + pf('num', 'Número') + pf('compl', 'Complemento') + pf('bairro', 'Bairro') + pf('uf', 'UF', 'PR') + pf('codMun', 'Código do município (IBGE)', '7 números') + pf('cep', 'CEP', '8 números') + pf('fone', 'Telefone', 'DDD + número') + pf('email', 'E-mail', '', 'g2');
+    h += lcCampo('Situação no início do ano', lcSel('data-lc-p="indSit"', {'0':'Normal (desde 1º de janeiro)', '1':'Começou a atividade neste ano', '2':'Passou a ser obrigado no meio do ano'}, P.indSit || '0'), 'g2');
+    h += lcCampo('Situação especial', lcSel('data-lc-p="sitEsp"', {'0':'Nenhuma', '1':'Falecimento', '2':'Espólio', '3':'Saída definitiva do país'}, P.sitEsp || '0'));
+    if(P.sitEsp && P.sitEsp !== '0') h += lcCampo('Data da situação especial', lcInp('type="date" data-lc-p="dtSitEsp"', P.dtSitEsp));
+    h += '</div></div>';
+    h += '<div class="paper lc-box"><div class="lc-tit">🧮 Contador (opcional — sai no encerramento do arquivo)</div><div class="lc-grid">';
+    ['nome:Nome', 'doc:CPF ou CNPJ', 'crc:CRC', 'email:E-mail', 'fone:Telefone'].forEach(function(x){ var k = x.split(':'); h += lcCampo(k[1], lcInp('data-lc-k="' + k[0] + '"', K[k[0]]), k[0] === 'nome' || k[0] === 'email' ? 'g2' : ''); });
+    h += '</div></div>';
+    h += '<div class="lc-cab"><div class="section-title" style="margin:0;">🏡 Imóveis rurais</div><label class="lc-f" style="min-width:260px;"><span>Imóvel principal (para despesas gerais, sem talhão)</span>' + lcSel('data-lc-cfg="imovelPrincipal"', state.propriedades.reduce(function(o, p){ o[p.id] = p.nome; return o; }, {}), c.imovelPrincipal || (lcImoveisUsados()[0] || {}).id || '') + '</label></div>';
+    state.propriedades.forEach(function(p){
+      var im = lcImovel(p), a = 'data-lc-im="' + p.id + '" data-k=';
+      h += '<div class="paper lc-box lc-im' + (im.usar ? '' : ' lc-off') + '"><div class="lc-tit"><label class="lc-chk"><input type="checkbox" ' + a + '"usar"' + (im.usar ? ' checked' : '') + '> ' + escapeHtml(p.nome) + '</label><small>' + fmtNum(p.areaTotal || 0) + ' ha · ' + escapeHtml(p.cidade || '') + (p.ccir ? ' · CCIR ' + escapeHtml(p.ccir) : '') + '</small></div>';
+      if(im.usar){
+        h += '<div class="lc-grid">';
+        h += lcCampo('NIRF / CIB (nº do imóvel no ITR)', lcInp(a + '"cadItr"', im.cadItr, '8 números')) + lcCampo('CAEPF', lcInp(a + '"caepf"', im.caepf, '14 números')) + lcCampo('Inscrição estadual', lcInp(a + '"ie"', im.ie));
+        h += lcCampo('Tipo de exploração', lcSel(a + '"tipo"', LC_TIPO_EXP, im.tipo), 'g2') + lcCampo('Sua participação (%)', lcInp('type="number" min="0" max="100" step="0.01" ' + a + '"part"', im.part));
+        h += lcCampo('Endereço / estrada', lcInp(a + '"endereco"', im.endereco, 'Ex.: Estrada …, km …'), 'g2') + lcCampo('Número', lcInp(a + '"num"', im.num)) + lcCampo('Bairro / localidade', lcInp(a + '"bairro"', im.bairro, 'Ex.: Zona Rural')) + lcCampo('UF', lcInp(a + '"uf"', im.uf)) + lcCampo('Código do município (IBGE)', lcInp(a + '"codMun"', im.codMun, '7 números')) + lcCampo('CEP', lcInp(a + '"cep"', im.cep, '8 números'));
+        h += '</div>';
+        if(im.tipo !== '1' || im.part < 100){
+          h += '<div class="lc-sub">Outras partes deste imóvel (arrendador, parceiro, condômino…)</div>';
+          im.terceiros.forEach(function(t, i){ var b = 'data-lc-te="' + p.id + '" data-i="' + i + '" data-k='; h += '<div class="lc-grid lc-terc">' + lcCampo('Quem é', lcSel(b + '"tipo"', LC_TIPO_CONTRA, t.tipo || '2')) + lcCampo('Nome', lcInp(b + '"nome"', t.nome), 'g2') + lcCampo('CPF/CNPJ', lcInp(b + '"doc"', t.doc)) + lcCampo('Participação (%)', lcInp('type="number" step="0.01" ' + b + '"perc"', t.perc)) + '<button type="button" class="btn-delete" data-action="lc-terc-del" data-id="' + p.id + '" data-i="' + i + '">Remover</button></div>'; });
+          h += '<button type="button" class="tl-btn" data-action="lc-terc-add" data-id="' + p.id + '">＋ Outra parte</button>';
+        }
+      }
+      h += '</div>';
+    });
+    h += '<div class="lc-cab"><div class="section-title" style="margin:0;">🏦 Contas bancárias</div><button type="button" class="tl-btn tl-pri" data-action="lc-conta-add">＋ Conta bancária</button></div>';
+    if(!c.contas.length) h += '<div class="paper empty-state">Cadastre a(s) conta(s) por onde passa o dinheiro da atividade rural.</div>';
+    c.contas.forEach(function(ct, i){ var a = 'data-lc-ct="' + i + '" data-k='; h += '<div class="paper lc-box"><div class="lc-grid">' + lcCampo('Código do banco', lcInp(a + '"banco"', ct.banco, 'Ex.: 001')) + lcCampo('Nome do banco', lcInp(a + '"nomeBanco"', ct.nomeBanco, 'Ex.: Banco do Brasil'), 'g2') + lcCampo('Agência (sem dígito)', lcInp(a + '"agencia"', ct.agencia)) + lcCampo('Conta (com dígito)', lcInp(a + '"conta"', ct.conta)) + '<label class="lc-chk" style="align-self:end;"><input type="radio" name="lc-ct-padrao" data-lc-padrao="' + ct.id + '"' + (c.contaPadrao === ct.id ? ' checked' : '') + '> conta principal</label><button type="button" class="btn-delete" data-action="lc-conta-del" data-i="' + i + '" style="align-self:end;">Remover</button></div></div>'; });
+    h += '<label class="lc-chk" style="margin:6px 0 0;"><input type="radio" name="lc-ct-padrao" data-lc-padrao="000"' + (c.contaPadrao === '000' ? ' checked' : '') + '> Principal = dinheiro em espécie (código 000)</label>';
+    var fins = state.financiamentos.filter(function(f){ return f.status === 'Ativo' || state.financeiro.some(function(x){ return x.finId === f.id; }); });
+    if(fins.length){
+      h += '<div class="section-title">🏛️ CNPJ dos financiadores (para juros e parcelas)</div><div class="paper lc-box"><div class="lc-grid">';
+      fins.forEach(function(f){ h += lcCampo(escapeHtml((f.banco || '?') + ' · ' + (f.tipo || '') + (f.numeroContrato ? ' ' + f.numeroContrato : '')), lcInp('data-lc-fin="' + f.id + '"', c.docFin[f.id] || '', 'CNPJ do banco / CPF'), 'g2'); });
+      h += '</div></div>';
+    }
+    return h;
+  }
+  function lcPessoasHtml(r){
+    var h = '<div class="paper lc-box"><div class="lc-tit">👥 CPF/CNPJ que faltam <small>o número fica gravado no cadastro da pessoa e serve para todos os lançamentos dela</small></div>';
+    var ks = Object.keys(r.semPart);
+    if(!ks.length) return h + '<div class="fe-vazio">Todos os lançamentos do Livro têm CPF/CNPJ válido. 👍</div></div>';
+    h += '<div class="lc-pess">';
+    ks.sort(function(a, b){ return r.semPart[b].linhas.length - r.semPart[a].linhas.length; }).forEach(function(k){
+      var s = r.semPart[k], tot = s.linhas.reduce(function(t, l){ return t + l.valor; }, 0), attr;
+      if(s.orig === 'parceiro') attr = 'data-lc-doc="parceiro" data-id="' + s.id + '"';
+      else if(s.orig === 'membro') attr = 'data-lc-doc="membro" data-id="' + s.id + '"';
+      else if(s.orig === 'fin') attr = 'data-lc-fin="' + s.id + '"';
+      else attr = 'data-lc-doc="linhas" data-ids="' + s.linhas.map(function(l){ return l.src + ':' + l.id; }).join(',') + '"';
+      h += '<div class="lc-pes-l"><div><b>' + escapeHtml(s.nome) + '</b><small>' + s.linhas.length + ' lançamento(s) · ' + fmtBRL(tot) + (s.orig ? '' : ' · o número vale para estes lançamentos; se forem pessoas diferentes, escolha o parceiro em cada lançamento') + '</small></div>' + lcInp(attr, '', 'CPF ou CNPJ') + '</div>';
+    });
+    return h + '</div></div>';
+  }
+  function lcRegrasHtml(){
+    var fora = lcContasFora(), h = '<div class="paper lc-box"><div class="lc-tit">📏 Contas do plano que ficam fora do Livro <small>o Livro Caixa só leva receitas e despesas da atividade rural — confirme com seu contador</small></div>';
+    h += '<p class="lc-nota">Já ficam fora sozinhos: <b>liberação de financiamento</b> (empréstimo não é receita) e <b>amortização de custeio/empréstimo</b> (é só devolver o dinheiro). Os <b>juros</b> entram como despesa. As parcelas de financiamento de <b>investimento e aquisição</b> entram como investimento, porque o banco pagou a máquina/obra direto ao vendedor.</p>';
+    state.subgruposFinanceiro.forEach(function(sg){
+      var cts = state.contasFinanceiro.filter(function(c){ return c.subgrupoId === sg.id; }); if(!cts.length) return;
+      h += '<div class="lc-sub">' + escapeHtml(sg.nome) + '</div><div class="lc-contas">' + cts.map(function(c){ return '<label class="lc-chk"><input type="checkbox" data-lc-fora="' + c.id + '"' + (fora[c.id] ? ' checked' : '') + '> ' + escapeHtml(c.nome) + '</label>'; }).join('') + '</div>';
+    });
+    return h + '<p class="lc-nota">Marcado = fica <b>fora</b> do Livro. Também dá para tirar ou pôr um lançamento só, direto no Livro.</p></div>';
+  }
+  function lcLivroHtml(r){
+    var c = lcCfg(), h = '', meses = {}, ordem = [];
+    var opsConta = {'':'— escolha —', '000':'Dinheiro'}; c.contas.forEach(function(ct){ opsConta[ct.id] = (ct.nomeBanco || 'Conta') + ' ' + (ct.conta || ''); });
+    r.linhas.forEach(function(l){ if(!l.incluir && !lcVerFora) return; var ym = l.data.slice(0, 7); if(!meses[ym]){ meses[ym] = []; ordem.push(ym); } meses[ym].push(l); });
+    var nFora = r.linhas.filter(function(l){ return !l.incluir; }).length;
+    h += '<div class="lc-cab"><div class="section-title" style="margin:0;">📒 Livro de ' + r.ano + '</div><label class="lc-chk"><input type="checkbox" data-lc-verfora' + (lcVerFora ? ' checked' : '') + '> mostrar também os ' + nFora + ' que ficaram fora</label></div>';
+    if(!ordem.length) return h + '<div class="paper empty-state">Nenhum pagamento ou recebimento em ' + r.ano + '.</div>';
+    var saldo = 0;
+    ordem.forEach(function(ym){
+      var ls = meses[ym], e = 0, s = 0; ls.forEach(function(l){ if(!l.incluir) return; if(l.ent) e += l.valor; else s += l.valor; });
+      saldo += e - s; var aberto = !!lcMesAberto[ym];
+      h += '<div class="paper lc-mes"><button type="button" class="lc-mes-cab" data-action="lc-mes" data-id="' + ym + '"><b>' + (aberto ? '▾ ' : '▸ ') + nomeMesAno(ym) + '</b><span>' + ls.filter(function(l){ return l.incluir; }).length + ' lanç.</span><span class="fn-pos">+ ' + fmtBRL(e) + '</span><span class="fn-neg">− ' + fmtBRL(s) + '</span><span>saldo do ano <b class="' + (saldo < 0 ? 'fn-neg' : 'fn-pos') + '">' + fmtBRL(saldo) + '</b></span></button>';
+      if(aberto){
+        h += '<div class="table-wrap"><table class="sem-ordenacao lc-tab"><thead><tr><th>Entra</th><th>Data</th><th>Histórico</th><th>CPF/CNPJ</th><th>Documento</th><th>Tipo</th><th>Conta</th><th class="num">Entrada</th><th class="num">Saída</th></tr></thead><tbody>';
+        ls.forEach(function(l){
+          var a = 'data-lc-ln="' + l.src + ':' + l.id + '" data-k=', okP = lcDocOk(l.partDoc);
+          h += '<tr class="' + (l.incluir ? '' : 'lc-fora') + '"><td><input type="checkbox" ' + a + '"incluir"' + (l.incluir ? ' checked' : '') + ' title="' + escapeHtml(l.motivo || 'Entra no Livro') + '"></td><td>' + fmtDate(l.data) + '</td><td><div class="lc-hist">' + escapeHtml(l.hist) + '</div><small>' + escapeHtml(l.contaNome) + (Object.keys(l.pesos).length > 1 ? ' · rateado em ' + Object.keys(l.pesos).length + ' imóveis' : (Object.keys(l.pesos)[0] ? ' · ' + escapeHtml(propriedadeNome(Object.keys(l.pesos)[0])) : '')) + (l.motivo ? ' · <i>' + escapeHtml(l.motivo) + '</i>' : '') + '</small></td>';
+          h += '<td>' + (okP ? '<span title="' + escapeHtml(l.partNome) + '">' + lcFmtDoc(l.partDoc) + '</span>' : '<span class="fn-neg" title="Informe na aba Pessoas">⚠️ falta</span>') + '<small>' + escapeHtml(l.partNome) + '</small></td>';
+          h += '<td>' + lcInp(a + '"doc" class="lc-in-s"', l.numDoc, 'nº') + lcSel(a + '"tipoDoc" class="lc-in-s"', LC_TIPO_DOC, l.tipoDoc) + '</td>';
+          h += '<td>' + lcSel(a + '"tipo" class="lc-in-s"', LC_TIPO_LANC, l.tipoLanc) + '</td><td>' + lcSel(a + '"conta" class="lc-in-s' + (l.incluir && !opsConta[l.conta] || l.incluir && !l.conta ? ' lc-erro' : '') + '"', opsConta, l.conta) + '</td>';
+          h += '<td class="num">' + (l.ent ? fmtBRL(l.valor) : '') + '</td><td class="num">' + (l.ent ? '' : fmtBRL(l.valor)) + '</td></tr>';
+        });
+        h += '</tbody></table></div>';
+      }
+      h += '</div>';
+    });
+    return h;
+  }
+  function nomeMesAno(ym){ var m = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][Number(ym.slice(5, 7)) - 1]; return m.charAt(0).toUpperCase() + m.slice(1) + ' ' + ym.slice(0, 4); }
+  function renderLcdpr(){
+    var el = document.getElementById('tab-lcdpr'); if(!el) return;
+    var anos = {}; anos[String(new Date().getFullYear())] = 1; anos[String(new Date().getFullYear() - 1)] = 1;
+    state.financeiro.forEach(function(f){ if(f.data) anos[f.data.slice(0, 4)] = 1; });
+    var listaAnos = Object.keys(anos).filter(function(a){ return /^\d{4}$/.test(a); }).sort().reverse();
+    if(listaAnos.indexOf(lcAno) === -1) lcAno = listaAnos[0];
+    var r = lcMontar(lcAno), h = '';
+    h += uiHead('Livro Caixa Digital (LCDPR)', 'Receitas e despesas da atividade rural no ano, no formato da Receita Federal', '<button type="button" class="tl-btn" data-action="lc-imprimir">🖨️ Imprimir</button><button type="button" class="tl-btn tl-pri" data-action="lc-gerar"' + (r.falta.length ? ' title="Resolva o que falta primeiro"' : '') + '>⬇️ Gerar arquivo da Receita</button>');
+    h += '<div class="tl-tools">' + listaAnos.map(function(a){ return '<button type="button" class="tl-chip' + (a === lcAno ? ' on' : '') + '" data-action="lc-ano" data-ano="' + a + '">' + a + '</button>'; }).join('') + '</div>';
+    var res = r.ent - r.sai;
+    h += uiKpis([
+      {ic:'💰', bg:'#E3F1D6', v: fmtBRL(r.ent), t:'receitas da atividade rural', cls:'fn-pos'},
+      {ic:'💸', bg:'#FBE3DE', v: fmtBRL(r.sai), t:'despesas de custeio e investimento', cls:'fn-neg'},
+      {ic:'⚖️', bg:'#DDEEF6', v: fmtBRL(res), t:'resultado (receitas − despesas)', cls: res < 0 ? 'fn-neg' : 'fn-pos'},
+      {ic: r.falta.length ? '⚠️' : '✅', bg: r.falta.length ? '#FFF1D6' : '#E3F1D6', v: r.falta.length ? r.falta.length : 'Pronto', t: r.falta.length ? 'item(ns) faltando para gerar o arquivo' : 'pode gerar o arquivo', cls: r.falta.length ? 'fn-neg' : 'fn-pos'}
+    ]);
+    if(r.falta.length){
+      var porSec = {cadastro:[], pessoas:[], livro:[]}; r.falta.forEach(function(f){ (porSec[f.sec] || porSec.livro).push(f.txt); });
+      h += '<div class="paper lc-falta"><div class="lc-tit">⚠️ O que falta para gerar o arquivo</div>';
+      [['cadastro','🏡 Cadastro'], ['pessoas','👥 Pessoas'], ['livro','📒 Livro']].forEach(function(s){ if(!porSec[s[0]].length) return; var lst = porSec[s[0]]; h += '<div class="lc-falta-g"><button type="button" class="tl-chip" data-action="lc-secao" data-sec="' + s[0] + '">' + s[1] + ' →</button><ul>' + lst.slice(0, 8).map(function(t){ return '<li>' + t + '</li>'; }).join('') + (lst.length > 8 ? '<li>… e mais ' + (lst.length - 8) + '</li>' : '') + '</ul></div>'; });
+      h += '</div>';
+    }
+    r.avisos.forEach(function(a){ h += '<div class="fe-aviso">ℹ️ ' + a + '</div>'; });
+    h += '<div class="tl-tools" style="margin-top:14px;">' + [['livro','📒 Livro do ano'], ['cadastro','🏡 Cadastro'], ['pessoas','👥 Pessoas (CPF/CNPJ)'], ['regras','📏 O que entra']].map(function(s){ return '<button type="button" class="tl-chip' + (lcSecao === s[0] ? ' on' : '') + '" data-action="lc-secao" data-sec="' + s[0] + '">' + s[1] + '</button>'; }).join('') + '</div>';
+    if(lcSecao === 'cadastro') h += lcCadastroHtml();
+    else if(lcSecao === 'pessoas') h += lcPessoasHtml(r);
+    else if(lcSecao === 'regras') h += lcRegrasHtml();
+    else h += lcLivroHtml(r);
+    h += '<div class="fe-fonte" style="margin-top:14px;">Arquivo no leiaute 1.3 do LCDPR (Manual de Preenchimento da Receita Federal). Depois de gerado, o arquivo é validado, assinado com certificado digital e transmitido pelo programa da Receita — normalmente quem faz é o contador. O LCDPR é obrigatório para quem teve receita bruta da atividade rural acima de R$ 4,8 milhões no ano; abaixo disso é opcional. Confira sempre com seu contador antes de entregar.</div>';
+    el.innerHTML = h;
+  }
+  function lcImprimir(){
+    var r = lcMontar(lcAno), c = lcCfg(), h = '<h1>Livro Caixa do Produtor Rural — ' + lcAno + '</h1><p>' + escapeHtml(c.produtor.nome || '') + (c.produtor.cpf ? ' · CPF ' + lcFmtDoc(c.produtor.cpf) : '') + '</p>';
+    h += '<table><thead><tr><th>Data</th><th>Histórico</th><th>Documento</th><th>CPF/CNPJ</th><th>Entrada</th><th>Saída</th><th>Saldo</th></tr></thead><tbody>';
+    var s = 0; r.dentro.forEach(function(l){ s += l.ent ? l.valor : -l.valor; h += '<tr><td>' + fmtDate(l.data) + '</td><td>' + escapeHtml(l.hist) + '</td><td>' + escapeHtml((LC_TIPO_DOC[l.tipoDoc] || '') + (l.numDoc ? ' ' + l.numDoc : '')) + '</td><td>' + (lcDocOk(l.partDoc) ? lcFmtDoc(l.partDoc) : '—') + '</td><td style="text-align:right;">' + (l.ent ? fmtBRL(l.valor) : '') + '</td><td style="text-align:right;">' + (l.ent ? '' : fmtBRL(l.valor)) + '</td><td style="text-align:right;">' + fmtBRL(s) + '</td></tr>'; });
+    h += '</tbody></table><p><b>Receitas:</b> ' + fmtBRL(r.ent) + ' · <b>Despesas:</b> ' + fmtBRL(r.sai) + ' · <b>Resultado:</b> ' + fmtBRL(r.ent - r.sai) + '</p>';
+    abrirImpressao('Livro Caixa ' + lcAno, h);
+  }
+  function lcAcao(action, btn){
+    var c = lcCfg();
+    if(action === 'lc-ano'){ lcAno = btn.dataset.ano; renderLcdpr(); return true; }
+    if(action === 'lc-secao'){ lcSecao = btn.dataset.sec; renderLcdpr(); return true; }
+    if(action === 'lc-mes'){ lcMesAberto[btn.dataset.id] = !lcMesAberto[btn.dataset.id]; renderLcdpr(); return true; }
+    if(action === 'lc-imprimir'){ lcImprimir(); return true; }
+    if(action === 'lc-gerar'){
+      var g = lcArquivo(lcAno);
+      if(g.erro){ lcSecao = g.erro[0].sec; renderLcdpr(); alert('Ainda falta resolver ' + g.erro.length + ' item(ns) antes de gerar o arquivo. Eles estão listados no quadro "O que falta".'); return true; }
+      baixarArquivoTexto('LCDPR_' + lcDig(c.produtor.cpf) + '_' + lcAno + '.txt', g.texto, 'text/plain;charset=utf-8');
+      return true;
+    }
+    if(action === 'lc-conta-add'){ c.contas.push({id: uid(), banco:'', nomeBanco:'', agencia:'', conta:''}); if(!c.contaPadrao) c.contaPadrao = c.contas[0].id; lcSalvar(); renderLcdpr(); return true; }
+    if(action === 'lc-conta-del'){ var ct = c.contas[Number(btn.dataset.i)]; if(!ct || !confirm('Remover a conta ' + (ct.nomeBanco || '') + '?')) return true; c.contas.splice(Number(btn.dataset.i), 1); if(c.contaPadrao === ct.id) c.contaPadrao = c.contas[0] ? c.contas[0].id : ''; lcSalvar(); renderLcdpr(); return true; }
+    if(action === 'lc-terc-add'){ var im = c.imoveis[btn.dataset.id] = c.imoveis[btn.dataset.id] || {}; im.terceiros = im.terceiros || []; im.terceiros.push({tipo:'2', nome:'', doc:'', perc:''}); lcSalvar(); renderLcdpr(); return true; }
+    if(action === 'lc-terc-del'){ var im2 = c.imoveis[btn.dataset.id]; if(im2 && im2.terceiros && confirm('Remover esta parte?')){ im2.terceiros.splice(Number(btn.dataset.i), 1); lcSalvar(); renderLcdpr(); } return true; }
+    return false;
+  }
+  document.addEventListener('change', function(e){
+    var t = e.target; if(!t || !t.closest || !t.closest('#tab-lcdpr')) return;
+    var c = lcCfg(), v = t.type === 'checkbox' ? t.checked : String(t.value || '').trim(), ds = t.dataset;
+    if(ds.lcP){ c.produtor[ds.lcP] = v; lcSalvar(); }
+    else if(ds.lcK){ c.contador[ds.lcK] = v; lcSalvar(); }
+    else if(ds.lcCfg){ c[ds.lcCfg] = v; lcSalvar(); }
+    else if(ds.lcIm){ var im = c.imoveis[ds.lcIm] = c.imoveis[ds.lcIm] || {}; im[ds.k] = ds.k === 'part' ? (v === '' ? '' : Number(String(v).replace(',', '.'))) : v; lcSalvar(); }
+    else if(ds.lcTe){ var im2 = c.imoveis[ds.lcTe]; if(im2 && im2.terceiros && im2.terceiros[Number(ds.i)]){ im2.terceiros[Number(ds.i)][ds.k] = v; lcSalvar(); } }
+    else if(ds.lcCt){ var ct = c.contas[Number(ds.lcCt)]; if(ct){ ct[ds.k] = v; lcSalvar(); } }
+    else if(ds.lcPadrao){ c.contaPadrao = ds.lcPadrao; lcSalvar(); }
+    else if(ds.lcFin !== undefined && ds.lcFin){ if(v && !lcDocOk(v)){ alert('CPF/CNPJ inválido. Confira os números.'); return; } c.docFin[ds.lcFin] = lcDig(v); lcSalvar(); }
+    else if(ds.lcFora){ var fora = Object.assign({}, lcContasFora()); if(v) fora[ds.lcFora] = true; else delete fora[ds.lcFora]; c.contasFora = fora; lcSalvar(); }
+    else if(t.hasAttribute('data-lc-verfora')){ lcVerFora = !!v; }
+    else if(ds.lcDoc){
+      if(v && !lcDocOk(v)){ alert('CPF/CNPJ inválido. Confira os números.'); return; }
+      if(ds.lcDoc === 'parceiro'){ var pa = state.parceiros.find(function(x){ return x.id === ds.id; }); if(pa){ pa.documento = lcFmtDoc(v); saveKey('parceiros', state.parceiros); } }
+      else if(ds.lcDoc === 'membro'){ var me = state.equipe.find(function(x){ return x.id === ds.id; }); if(me){ me.documento = lcFmtDoc(v); saveKey('equipe', state.equipe); } }
+      else if(ds.lcDoc === 'linhas'){ var mud = {}; (ds.ids || '').split(',').forEach(function(k){ var p = k.split(':'), ref = lcRef(p[0], p[1]); if(ref){ ref.lcdprPartic = lcDig(v); mud[p[0]] = 1; } }); Object.keys(mud).forEach(function(k){ saveKey(k, state[k]); }); }
+    }
+    else if(ds.lcLn){
+      var p = ds.lcLn.split(':'), ref = lcRef(p[0], p[1]); if(!ref) return;
+      var mapa = {incluir:'lcdprIncluir', doc:'lcdprDoc', tipoDoc:'lcdprTipoDoc', tipo:'lcdprTipo', conta:'lcdprConta'};
+      ref[mapa[ds.k]] = v; saveKey(p[0], state[p[0]]);
+    } else return;
+    renderLcdpr();
+  });
+
   function renderAll(){
     safeRender('painel', renderPainel);
     safeRender('propriedades', renderPropriedades);
@@ -4505,6 +4868,7 @@
     safeRender('fertilidade', renderFertilidade);
     safeRender('mapaGeral', renderMapaGeral);
     safeRender('rastreabilidade', renderRastreabilidade);
+    safeRender('lcdpr', renderLcdpr);
     safeRender('planoSafra', renderPlanoSafra);
     safeRender('planoAdubacao', renderPlanoAdubacao);
     safeRender('culturas', function(){ renderGenericTab('culturas'); });
@@ -6551,7 +6915,7 @@
         item.safraId = '';
         item.numeroNota = parsed.numero;
         item.dataEmissaoNota = parsed.dataEmissao;
-        item.fornecedorNomeNota = parsed.fornecedorNome;
+        item.fornecedorNomeNota = parsed.fornecedorNome; item.fornecedorDocNota = parsed.fornecedorDoc || '';
         item.chaveNota = parsed.chave;
         item.naturezaNota = parsed.natureza;
         item.duplicatasNota = parsed.duplicatas || [];
@@ -14215,6 +14579,7 @@
       var dataEmissaoRaw = ideEl ? (tagText(ideEl, 'dhEmi') || tagText(ideEl, 'dEmi')) : '';
       var dataEmissao = dataEmissaoRaw ? dataEmissaoRaw.slice(0, 10) : '';
       var fornecedorNome = emitEl ? tagText(emitEl, 'xNome') : '';
+      var fornecedorDoc = emitEl ? (tagText(emitEl, 'CNPJ') || tagText(emitEl, 'CPF')) : '';
       var chave = tagText(xml, 'chNFe');
       if(!chave){
         var idAttr = infNFe.getAttribute ? (infNFe.getAttribute('Id') || '') : '';
@@ -14246,7 +14611,7 @@
           duplicatas.push({numero: tagText(dupEls[j], 'nDup'), vencimento: dVencTxt, valor: parseFloat(vDupTxt) || 0});
         }
       }
-      return {numero: numero, dataEmissao: dataEmissao, fornecedorNome: fornecedorNome, chave: chave, natureza: natureza, itens: itens, duplicatas: duplicatas};
+      return {numero: numero, dataEmissao: dataEmissao, fornecedorNome: fornecedorNome, fornecedorDoc: fornecedorDoc, chave: chave, natureza: natureza, itens: itens, duplicatas: duplicatas};
     }catch(err){
       console.error('Erro ao ler XML da NF-e:', err);
       return null;
@@ -16097,6 +16462,7 @@
     var action = btn.dataset.action;
     var id = btn.dataset.id;
     if(action.indexOf('mapa-') === 0 && acaoMapa(action, btn)) return;
+    if(/^lc-/.test(action) && lcAcao(action, btn)) return;
     if(/^(mg|ps|rs|rent-talhao|tl-ver-custo|cx-|ctc-|ui-ir|ui-imprimir|ins-vista|ins-ir-form|gen-novo|orc-ano|orc-form|orc-vista|orc-editar)/.test(action) && acaoTelasNovas(action, btn)) return;
     if(action.indexOf('dossie-') === 0){ acaoDossie(action, btn); return; }
     if(action === 'carencia-usar-bula'){ aplicarBulaNoForm(); return; }
@@ -16429,7 +16795,7 @@
           item.safraId = '';
           item.numeroNota = parsed.numero;
           item.dataEmissaoNota = parsed.dataEmissao;
-          item.fornecedorNomeNota = parsed.fornecedorNome;
+          item.fornecedorNomeNota = parsed.fornecedorNome; item.fornecedorDocNota = parsed.fornecedorDoc || '';
           item.chaveNota = parsed.chave;
           item.naturezaNota = parsed.natureza;
           item.duplicatasNota = parsed.duplicatas || [];
@@ -16466,7 +16832,7 @@
       var fornecedoresCache = {};
       var mudouFinanceiro = false;
 
-      function resolverFornecedor(nome){
+      function resolverFornecedor(nome, doc){
         if(!nome) return '';
         var chave = nome.trim().toLowerCase();
         if(fornecedoresCache[chave]) return fornecedoresCache[chave];
@@ -16474,8 +16840,9 @@
         var id;
         if(existente){
           id = existente.id;
+          if(doc && !existente.documento && lcDocOk(doc)) existente.documento = lcFmtDoc(doc); // CNPJ da NF-e completa o cadastro (usado no LCDPR)
         } else {
-          var novo = {id: uid(), nome: nome, tipo: 'Fornecedor', contato: '', criadoEm: Date.now()};
+          var novo = {id: uid(), nome: nome, tipo: 'Fornecedor', contato: '', documento: doc && lcDocOk(doc) ? lcFmtDoc(doc) : '', criadoEm: Date.now()};
           state.parceiros.push(novo);
           id = novo.id;
         }
@@ -16495,7 +16862,7 @@
           });
           return;
         }
-        var fornecedorId = resolverFornecedor(item.fornecedorNomeNota);
+        var fornecedorId = resolverFornecedor(item.fornecedorNomeNota, item.fornecedorDocNota);
         var produtoId = item.produtoId;
         var prodExistente = produtoId ? state.produtos.find(function(p){ return p.id === produtoId; }) : null;
         var sugImp = sugerirFatorNfe(item, prodExistente);
