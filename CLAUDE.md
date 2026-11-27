@@ -67,6 +67,9 @@ Não é preciso `netlify deploy`. Não rodar `git push --force` na `main`, `git 
 - Das ideias do eProdutor, **não quer**: romaneio com descontos, indicadores em sacas/dólar, extrato de IR, painel de tempo e cotações. Manutenção de máquinas já existe e fica como está.
 - Imagens de campo por upload manual (não integrar Climate FieldView).
 
+- Fertilidade: além das classes do Manual PR, o sistema mostra o **equilíbrio das bases na CTC** com as metas do professor/agrônomo (Ca 60%, Mg 20%, K até 5%). K acima de 8% da CTC zera a dose de K₂O; entre 5% e 8% usa o menor valor da faixa. Com pH CaCl₂ acima de 6,0, sugere gesso + sulfato de magnésio no lugar do calcário. Talhão sem lavoura não assume soja: pede a cultura (tomate/hortaliças ainda sem tabela).
+- Soja: potássio em cobertura a lanço até V4/V5 (orientação do professor).
+
 ## Pendências conhecidas
 
 - Testar a ciência e o download de notas na SEFAZ real (consultar com NSU 0 e dar ciência em 1–2 notas).
